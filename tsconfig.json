@@ -38,6 +38,11 @@
   ],
   "exclude": [
     "node_modules",
-    "supabase"
+    "supabase",
+    "tests/**/*",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/*.spec.ts",
+    "**/*.spec.tsx"
   ]
 }
