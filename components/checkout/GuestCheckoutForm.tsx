@@ -254,7 +254,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         const { data: whatsappData } = await supabase.functions.invoke('dual-whatsapp-notification', {
           body: {
             orderData: {
-              id: order.data?.id || 'ORDER-' + Date.now(),
+              id: guestOrder.id || 'ORDER-' + Date.now(),
               items: orderData.items,
               total
             },
