@@ -89,55 +89,44 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     setStep('processing');
 
     try {
-      // 2. Enviar notificación WhatsApp
-      try {
-        const orderData = {
-          items: items.map(item => ({
-            productName: item.product.name,
-            variantName: item.variant?.variant_value || null,
-            quantity: item.quantity,
-            price: item.price
-          })),
-          total,
-          deliveryDate: formData.deliveryDate,
-          deliveryTime: formData.deliveryTime
-        };
+      // 2. Crear mensaje de WhatsApp pre-formateado
+      const orderData = {
+        id: orderId || 'ORDER-' + Date.now(),
+        items: items.map(item => ({
+          productName: item.product.name,
+          variantName: item.variant?.variant_value || null,
+          quantity: item.quantity,
+          price: item.price
+        })),
+        total,
+        deliveryDate: formData.deliveryDate,
+        deliveryTime: formData.deliveryTime
+      };
 
-        const { data: whatsappData } = await supabase.functions.invoke('dual-whatsapp-notification', {
-          body: {
-            orderData: {
-              id: 'ORDER-' + Date.now(),
-              items: orderData.items,
-              total
-            },
-            customerInfo: {
-              name: formData.name,
-              phone: formData.phone,
-              email: formData.email,
-              address: formData.address,
-              deliveryDate: formData.deliveryDate,
-              deliveryTime: formData.deliveryTime
-            }
-          }
-        });
+      // Generar mensaje para WhatsApp (como si el cliente lo escribiera)
+      const mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
 
-        // Abrir WhatsApp de la empresa inmediatamente
-        if (whatsappData?.businessWhatsAppUrl) {
-          window.open(whatsappData.businessWhatsAppUrl, '_blank');
-        }
+*Cliente:* ${formData.name}
+*Teléfono:* ${formData.phone}
+*Email:* ${formData.email}
+*Dirección:* ${formData.address}
 
-        // Abrir WhatsApp del cliente después de 3 segundos
-        if (whatsappData?.customerWhatsAppUrl) {
-          setTimeout(() => {
-            window.open(whatsappData.customerWhatsAppUrl, '_blank');
-          }, 3000);
-        }
-      } catch (whatsappError) {
-        console.error('Error sending WhatsApp:', whatsappError);
-        // No bloquear el pedido por error de WhatsApp
-      }
+*Pedido:*
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}
 
-      // 3. Actualizar estado del pedido con método de pago
+*Total:* $${total.toLocaleString('es-CO')} COP
+
+*Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
+
+*Método de pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
+
+¡Gracias por tu compra! 🥑`;
+
+      // 3. Abrir WhatsApp con mensaje pre-completado
+      const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
+      window.open(whatsappUrl, '_blank');
+
+      // 4. Actualizar estado del pedido con método de pago
       const paymentStatus = formData.paymentMethod === 'efectivo' ? 'pendiente_pago' : 'pagado';
       await supabase
         .from('guest_orders')
@@ -145,11 +134,13 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           status: formData.paymentMethod === 'efectivo' ? 'pendiente_entrega' : 'pagado',
           payment_status: paymentStatus,
           payment_method: formData.paymentMethod,
-          paid_at: formData.paymentMethod === 'daviplata' ? new Date().toISOString() : null
+          paid_at: formData.paymentMethod === 'daviplata' ? new Date().toISOString() : null,
+          whatsapp_message: mensajeWhatsApp,
+          whatsapp_sent: true
         })
         .eq('id', orderId);
 
-      // 4. Opcional: crear cuenta si el usuario lo solicitó
+      // 5. Opcional: crear cuenta si el usuario lo solicitó
       if (formData.createAccount && formData.password) {
         try {
           const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -188,7 +179,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         }
       }
 
-      // 5. Limpiar carrito y redirigir
+      // 6. Limpiar carrito y redirigir
       clearCart();
       onSuccess(orderId);
 
@@ -249,40 +240,40 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
       if (orderError) throw orderError;
 
-      // Enviar notificación WhatsApp
-      try {
-        const { data: whatsappData } = await supabase.functions.invoke('dual-whatsapp-notification', {
-          body: {
-            orderData: {
-              id: guestOrder.id || 'ORDER-' + Date.now(),
-              items: orderData.items,
-              total
-            },
-            customerInfo: {
-              name: formData.name,
-              phone: formData.phone,
-              email: formData.email,
-              address: formData.address,
-              deliveryDate: formData.deliveryDate,
-              deliveryTime: formData.deliveryTime
-            }
-          }
-        });
+      // 2. Generar mensaje de WhatsApp pre-formateado para pedido contra entrega
+      const mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
 
-        // Abrir WhatsApp de la empresa inmediatamente
-        if (whatsappData?.businessWhatsAppUrl) {
-          window.open(whatsappData.businessWhatsAppUrl, '_blank');
-        }
+*Cliente:* ${formData.name}
+*Teléfono:* ${formData.phone}
+*Email:* ${formData.email}
+*Dirección:* ${formData.address}
 
-        // Abrir WhatsApp del cliente después de 3 segundos
-        if (whatsappData?.customerWhatsAppUrl) {
-          setTimeout(() => {
-            window.open(whatsappData.customerWhatsAppUrl, '_blank');
-          }, 3000);
-        }
-      } catch (whatsappError) {
-        console.error('Error sending WhatsApp:', whatsappError);
-      }
+*Pedido:*
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}
+
+*Total:* $${total.toLocaleString('es-CO')} COP
+
+*Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
+
+*Método de pago:* Efectivo contra entrega
+
+¡Gracias por tu compra! 🥑`;
+
+      // 3. Abrir WhatsApp con mensaje pre-completado
+      const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
+      window.open(whatsappUrl, '_blank');
+
+      // 4. Actualizar estado del pedido
+      await supabase
+        .from('guest_orders')
+        .update({
+          status: 'pendiente_entrega',
+          payment_status: 'pendiente_pago',
+          payment_method: 'efectivo',
+          whatsapp_message: mensajeWhatsApp,
+          whatsapp_sent: true
+        })
+        .eq('id', guestOrder.id);
 
       // Limpiar carrito y redirigir
       clearCart();
@@ -426,9 +417,12 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
             type="button"
             onClick={handleConfirmOrder}
             disabled={loading}
-            className="w-full bg-white text-verde-bosque border-2 border-verde-aguacate hover:bg-gray-50 disabled:bg-gray-100 disabled:cursor-not-allowed font-bold py-4 px-6 rounded-lg transition-all"
+            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
           >
-            Pagar Contra Entrega (Sin pago online)
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016.393 7H3a2 2 0 00-1.997 1.884zM4.5 6.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm7.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+            </svg>
+            <span>Pagar Contra Entrega (Envío por WhatsApp)</span>
           </button>
         </div>
 
@@ -495,13 +489,12 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
                 </div>
               </div>
               <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                <p className="text-sm font-medium text-purple-900 mb-2">📱 Instrucciones:</p>
+                <p className="text-sm font-medium text-purple-900 mb-2">📱 Proceso de Pago:</p>
                 <ol className="text-xs text-purple-800 space-y-1 list-decimal list-inside">
-                  <li>Abre tu app Daviplata</li>
-                  <li>Selecciona "Transferir"</li>
-                  <li>Ingresa el número: <span className="font-bold">320 306 2007</span></li>
-                  <li>Ingresa el monto: <span className="font-bold">${total.toLocaleString('es-CO')} COP</span></li>
-                  <li>Envía el comprobante por WhatsApp</li>
+                  <li>Confirmas tu pedido en esta página</li>
+                  <li>Hacemos clic en "Confirmar Pedido"</li>
+                  <li>WhatsApp se abre con tu pedido ya escrito</li>
+                  <li>Envía el mensaje para notificar tu compra</li>
                 </ol>
               </div>
             </div>
@@ -528,13 +521,14 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
                 </div>
               </div>
               <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-900 mb-2">💵 Instrucciones:</p>
-                <ul className="text-xs text-green-800 space-y-1 list-disc list-inside">
-                  <li>Prepara el dinero exacto si es posible</li>
-                  <li>Nuestro mensajero te contactará al llegar</li>
-                  <li>Recibirás tu pedido inmediatamente</li>
-                  <li>Sin comisiones adicionales</li>
-                </ul>
+                <p className="text-sm font-medium text-green-900 mb-2">💵 Proceso de Entrega:</p>
+                <ol className="text-xs text-green-800 space-y-1 list-decimal list-inside">
+                  <li>Confirmas tu pedido en esta página</li>
+                  <li>Hacemos clic en "Confirmar Pedido"</li>
+                  <li>WhatsApp se abre con tu pedido ya escrito</li>
+                  <li>Envía el mensaje para confirmar entrega</li>
+                  <li>Paga al recibir tu pedido (dinero exacto si es posible)</li>
+                </ol>
               </div>
             </div>
           </label>
