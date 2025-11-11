@@ -8,6 +8,7 @@ import type { Product } from '@/lib/supabase';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
+import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
 
 interface ProductVariant {
   id: string;
@@ -69,21 +70,17 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link href={`/producto/${product.slug}`} className="group block">
       <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1">
-        {/* Imagen */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
-          {product.main_image_url ? (
-            <Image
-              src={product.main_image_url}
-              alt={product.name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-crema">
-              <span className="text-gray-400">Sin imagen</span>
-            </div>
-          )}
-          
+        {/* Imagen con ProductImagePlaceholder */}
+        <div className="relative aspect-square overflow-hidden">
+          <ProductImagePlaceholder
+            productName={product.name}
+            price={displayPrice}
+            category={product.category}
+            imageUrl={product.main_image_url}
+            showPrice={false} // El precio se mostrará en la sección de abajo
+            className="w-full h-full"
+          />
+
           {/* Badges */}
           <div className="absolute top-3 left-3 flex flex-col gap-2">
             {hasDiscount && (
@@ -94,7 +91,7 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Botón Favorito */}
-          <button 
+          <button
             className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all"
             onClick={(e) => { e.preventDefault(); }}
           >
