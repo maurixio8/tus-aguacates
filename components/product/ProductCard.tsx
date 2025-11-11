@@ -75,7 +75,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <ProductImagePlaceholder
             productName={product.name}
             price={displayPrice}
-            category={product.category}
+            category="aguacates"
             imageUrl={product.main_image_url}
             showPrice={false} // El precio se mostrará en la sección de abajo
             className="w-full h-full"
