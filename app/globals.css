@@ -1,47 +1,6 @@
-@import "tailwindcss";
-
-@theme {
-  /* Colores personalizados */
-  --color-verde-bosque: #2D5016;
-  --color-verde-bosque-50: #EBF3E7;
-  --color-verde-bosque-100: #D7E7CF;
-  --color-verde-bosque-200: #AECF9F;
-  --color-verde-bosque-300: #86B76F;
-  --color-verde-bosque-400: #5D9F3F;
-  --color-verde-bosque-500: #2D5016;
-  --color-verde-bosque-600: #244012;
-  --color-verde-bosque-700: #1B300E;
-  --color-verde-bosque-800: #122009;
-  --color-verde-bosque-900: #091005;
-
-  --color-verde-aguacate: #6B8E23;
-  --color-verde-aguacate-50: #F2F6E8;
-  --color-verde-aguacate-100: #E5EDD1;
-  --color-verde-aguacate-200: #CBDBA3;
-  --color-verde-aguacate-300: #B1C975;
-  --color-verde-aguacate-400: #97B747;
-  --color-verde-aguacate-500: #6B8E23;
-  --color-verde-aguacate-600: #56721C;
-  --color-verde-aguacate-700: #415515;
-  --color-verde-aguacate-800: #2B390E;
-  --color-verde-aguacate-900: #161D07;
-
-  --color-crema: #FFFEF5;
-  --color-crema-50: #FFFEF5;
-  --color-crema-100: #FFFDF0;
-  --color-crema-200: #FFFCE6;
-  --color-crema-300: #FFFBDC;
-  --color-crema-400: #FFFAD2;
-  --color-crema-500: #FFF9C8;
-
-  --color-tierra: #D4AF85;
-  --color-naranja-frutal: #E8A838;
-  --color-rojo-natural: #C1440E;
-
-  --font-sans: Inter, system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 * {
   border-color: rgb(229 231 235);
