@@ -143,9 +143,9 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
             {/* Product Images */}
             <div>
               <div className="relative aspect-square bg-gray-100 rounded-2xl overflow-hidden">
-                {product.image_url ? (
+                {product.main_image_url ? (
                   <Image
-                    src={product.image_url}
+                    src={product.main_image_url}
                     alt={product.name}
                     fill
                     className="object-cover"
@@ -163,7 +163,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
               {/* Image Gallery */}
               {product.gallery_images && product.gallery_images.length > 0 && (
                 <div className="grid grid-cols-4 gap-2 mt-4">
-                  {[product.image_url, ...product.gallery_images].map((img, index) => (
+                  {[product.main_image_url, ...product.gallery_images].map((img, index) => (
                     <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                       {img && (
                         <Image
