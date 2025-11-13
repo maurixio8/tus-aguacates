@@ -147,7 +147,7 @@ export async function logAdminActivity(
 // Obtener usuario actual autenticado desde token JWT
 export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   try {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const token = cookieStore.get('admin-token')?.value;
 
     if (!token) {
