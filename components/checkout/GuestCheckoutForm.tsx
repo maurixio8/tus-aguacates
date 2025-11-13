@@ -74,7 +74,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           total_amount: totals.total,
           status: 'pendiente',
           payment_status: 'pendiente',
-          delivery_date: formData.deliveryDate || null
+          delivery_date: null, // No requerido en checkout rápido
         })
         .select()
         .single();
@@ -278,7 +278,7 @@ ${orderData.appliedCoupon.description}
           status: 'pendiente_entrega',
           payment_status: 'pendiente_pago',
           payment_method: 'efectivo',
-          delivery_date: formData.deliveryDate || null
+          delivery_date: null, // No requerido en checkout rápido
         })
         .select()
         .single();
