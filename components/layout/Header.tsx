@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Menu, Heart, LogIn } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
+import branding from '@/lib/config/branding';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
   const { user } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const itemCount = getItemCount();
 
@@ -18,19 +18,30 @@ export function Header() {
   }, []);
 
   return (
-    <header className="bg-verde-bosque text-white sticky top-0 z-50 shadow-md">
+    <header className="hidden md:block bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <img 
-              src="/images/logo-animated.gif" 
-              alt="Tus Aguacates" 
-              className="w-10 h-10 md:w-12 md:h-12 object-contain"
+          <Link href="/" className="flex items-center">
+            {/*
+              PREPARADO PARA NUEVO LOGO
+              Reemplazar esta imagen con el nuevo logo del usuario
+            */}
+            <img
+              src={branding.logo.url}
+              alt={branding.logo.alt}
+              width={branding.logo.width}
+              height={branding.logo.height}
+              className="object-contain h-12 w-auto"
             />
-            <span className="font-display font-bold text-xl md:text-2xl hidden sm:inline">
-              Tus Aguacates
-            </span>
+
+            {/*
+              TEXTO "TUS AGUACATES" ELIMINADO
+              Si necesitas agregar texto de nuevo, descomenta esto:
+              <span className="font-display font-bold text-2xl hidden lg:inline ml-3">
+                {branding.brand.name}
+              </span>
+            */}
           </Link>
 
           {/* Navegación Desktop */}
@@ -48,17 +59,17 @@ export function Header() {
 
           {/* Acciones */}
           <div className="flex items-center space-x-4">
-            <button className="hover:text-verde-aguacate-200 transition-colors hidden md:block">
+            <button className="hover:text-verde-aguacate-200 transition-colors">
               <Search className="w-5 h-5" />
             </button>
-            
-            <Link href="/perfil/favoritos" className="hover:text-verde-aguacate-200 transition-colors hidden md:block">
+
+            <Link href="/perfil/favoritos" className="hover:text-verde-aguacate-200 transition-colors">
               <Heart className="w-5 h-5" />
             </Link>
 
             {user ? (
-              <Link 
-                href="/cuenta" 
+              <Link
+                href="/cuenta"
                 className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
                 title="Mi Cuenta"
               >
@@ -66,8 +77,8 @@ export function Header() {
                 <span className="hidden lg:inline text-sm">Mi Cuenta</span>
               </Link>
             ) : (
-              <Link 
-                href="/auth/login" 
+              <Link
+                href="/auth/login"
                 className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
                 title="Iniciar Sesión"
               >
@@ -76,7 +87,7 @@ export function Header() {
               </Link>
             )}
 
-            <button 
+            <button
               onClick={toggleCart}
               className="relative hover:text-verde-aguacate-200 transition-colors"
             >
@@ -87,35 +98,8 @@ export function Header() {
                 </span>
               )}
             </button>
-
-            <button 
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="md:hidden hover:text-verde-aguacate-200 transition-colors"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
           </div>
         </div>
-
-        {/* Menú Mobile */}
-        {isMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-verde-bosque-400">
-            <div className="flex flex-col space-y-3">
-              <Link href="/productos" className="hover:text-verde-aguacate-200 transition-colors">
-                Todos los Productos
-              </Link>
-              <Link href="/productos?categoria=aguacates" className="hover:text-verde-aguacate-200 transition-colors">
-                Aguacates
-              </Link>
-              <Link href="/productos?categoria=frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
-                Frutas Tropicales
-              </Link>
-              <Link href="/productos?categoria=verduras" className="hover:text-verde-aguacate-200 transition-colors">
-                Verduras
-              </Link>
-            </div>
-          </nav>
-        )}
       </div>
     </header>
   );

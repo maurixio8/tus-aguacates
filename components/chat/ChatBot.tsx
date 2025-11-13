@@ -186,7 +186,7 @@ export function ChatBot() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 z-50 bg-verde-bosque hover:bg-verde-bosque-600 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
+        className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 bg-verde-bosque hover:bg-verde-bosque-600 text-white rounded-full p-4 shadow-lg transition-all hover:scale-110"
         aria-label="Abrir chat"
       >
         <MessageCircle className="w-6 h-6" />
@@ -195,7 +195,7 @@ export function ChatBot() {
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
+    <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden">
       {/* Header */}
       <div className="gradient-verde text-white p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">

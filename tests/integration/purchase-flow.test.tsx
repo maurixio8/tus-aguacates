@@ -324,16 +324,20 @@ describe('🛒 Flujo Completo de Compra - Integration Tests', () => {
     test('✅ Debe navegar al checkout', async () => {
       const user = userEvent.setup();
       const mockPush = vi.fn();
-
-      const mockPush = vi.fn();
-    const mockRouter = { push: mockPush, prefetch: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
-    vi.doMock('next/navigation', () => ({
-      useRouter: () => mockRouter,
-      usePathname: () => '/productos',
-      useSearchParams: () => new URLSearchParams(),
-    }));
+      const mockRouter = {
         push: mockPush,
-      });
+        prefetch: vi.fn(),
+        back: vi.fn(),
+        forward: vi.fn(),
+        refresh: vi.fn(),
+        replace: vi.fn()
+      };
+
+      vi.doMock('next/navigation', () => ({
+        useRouter: () => mockRouter,
+        usePathname: () => '/productos',
+        useSearchParams: () => new URLSearchParams(),
+      }));
 
       useCartStore.getState().addItem(mockProduct);
 

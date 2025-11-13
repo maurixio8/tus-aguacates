@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Compra aguacates, frutas y verduras frescas directamente del Eje Cafetero. Calidad garantizada, entrega martes y viernes en Bogotá.",
   keywords: "aguacates, frutas, verduras, eje cafetero, colombia, frescos, Bogotá",
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.ico',
   },
 };
 

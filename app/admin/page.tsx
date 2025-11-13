@@ -2,18 +2,31 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
-import { 
-  ShoppingBag, 
-  Users, 
-  DollarSign, 
+import {
+  ShoppingBag,
+  Users,
+  DollarSign,
   TrendingUp,
   Package,
   Clock,
   CheckCircle,
   XCircle,
-  Download
+  Download,
+  LogOut,
+  Shield,
+  Trash2,
+  X,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Package as PackageIcon,
+  CreditCard,
+  Box,
+  ArrowLeft,
+  Ticket
 } from 'lucide-react';
 
 interface GuestOrder {
@@ -36,9 +49,17 @@ interface OrderStats {
   revenue: number;
 }
 
+interface AdminUser {
+  id: string;
+  email: string;
+  name: string;
+  role: string;
+}
+
 export default function AdminDashboard() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [orders, setOrders] = useState<GuestOrder[]>([]);
   const [stats, setStats] = useState<OrderStats>({
     total: 0,
@@ -49,17 +70,56 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, authLoading, router]);
+  // Modal and UI state
+  const [selectedOrder, setSelectedOrder] = useState<GuestOrder | null>(null);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
+
+  // Editing state
+  const [isEditingOrder, setIsEditingOrder] = useState(false);
+  const [editedOrder, setEditedOrder] = useState<Partial<GuestOrder>>({});
+  const [savingOrderId, setSavingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    checkAuth();
+  }, []);
+
+  useEffect(() => {
+    if (adminUser) {
       loadOrders();
     }
-  }, [user, selectedStatus]);
+  }, [adminUser, selectedStatus]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/admin/me');
+      const data = await response.json();
+
+      if (data.success && data.user) {
+        setAdminUser(data.user);
+      } else {
+        router.push('/admin/login');
+      }
+    } catch (error) {
+      console.error('Auth check error:', error);
+      router.push('/admin/login');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/admin/logout', { method: 'POST' });
+      router.push('/admin/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      router.push('/admin/login');
+    }
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -98,18 +158,151 @@ export default function AdminDashboard() {
   };
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    console.log('🔄 updateOrderStatus called:', { orderId, newStatus });
+    setUpdatingOrderId(orderId);
+
+    try {
+      console.log('📊 Updating order in database...');
+      const { data, error, status: dbStatus } = await supabase
+        .from('guest_orders')
+        .update({
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select();
+
+      console.log('💾 Database response:', { data, error, dbStatus });
+
+      if (error) {
+        console.error('❌ Database error:', error);
+        throw error;
+      }
+
+      console.log('✅ Order updated successfully, refreshing data...');
+      await loadOrders();
+
+      console.log('✅ Orders refreshed successfully');
+      alert(`Pedido ${newStatus === 'completado' ? 'completado' : 'cancelado'} con éxito`);
+
+    } catch (error) {
+      console.error('❌ Error updating order:', error);
+      alert(`Error al actualizar el pedido: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const openOrderDetails = (order: GuestOrder) => {
+    setSelectedOrder(order);
+    setShowOrderModal(true);
+    setIsEditingOrder(false);
+    setEditedOrder({});
+  };
+
+  const closeOrderModal = () => {
+    setSelectedOrder(null);
+    setShowOrderModal(false);
+    setIsEditingOrder(false);
+    setEditedOrder({});
+  };
+
+  const startEditingOrder = () => {
+    if (selectedOrder) {
+      setIsEditingOrder(true);
+      setEditedOrder({
+        guest_name: selectedOrder.guest_name,
+        guest_email: selectedOrder.guest_email,
+        guest_phone: selectedOrder.guest_phone,
+        guest_address: selectedOrder.guest_address
+      });
+    }
+  };
+
+  const cancelEditingOrder = () => {
+    setIsEditingOrder(false);
+    setEditedOrder({});
+  };
+
+  const saveOrderChanges = async () => {
+    if (!selectedOrder || !editedOrder) return;
+
+    setSavingOrderId(selectedOrder.id);
+    try {
+      console.log('💾 Saving order changes:', editedOrder);
+
+      const { data, error, status: dbStatus } = await supabase
+        .from('guest_orders')
+        .update({
+          guest_name: editedOrder.guest_name || selectedOrder.guest_name,
+          guest_email: editedOrder.guest_email || selectedOrder.guest_email,
+          guest_phone: editedOrder.guest_phone || selectedOrder.guest_phone,
+          guest_address: editedOrder.guest_address || selectedOrder.guest_address,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', selectedOrder.id)
+        .select();
+
+      console.log('💾 Save response:', { data, error, dbStatus });
+
+      if (error) {
+        console.error('❌ Error saving order:', error);
+        throw error;
+      }
+
+      console.log('✅ Order saved successfully');
+      alert('Pedido actualizado con éxito');
+
+      // Update selected order with new data
+      if (data && data[0]) {
+        setSelectedOrder(data[0]);
+      }
+
+      // Refresh the orders list
+      await loadOrders();
+
+      // Exit editing mode
+      setIsEditingOrder(false);
+      setEditedOrder({});
+
+    } catch (error) {
+      console.error('❌ Error saving order:', error);
+      alert(`Error al guardar el pedido: ${error instanceof Error ? error.message : 'Error desconocido'}`);
+    } finally {
+      setSavingOrderId(null);
+    }
+  };
+
+  const confirmDelete = (orderId: string) => {
+    setOrderToDelete(orderId);
+    setShowDeleteConfirm(true);
+  };
+
+  const cancelDelete = () => {
+    setOrderToDelete(null);
+    setShowDeleteConfirm(false);
+  };
+
+  const deleteOrder = async () => {
+    if (!orderToDelete) return;
+
+    setDeletingOrderId(orderToDelete);
     try {
       const { error } = await supabase
         .from('guest_orders')
-        .update({ status: newStatus })
-        .eq('id', orderId);
+        .delete()
+        .eq('id', orderToDelete);
 
       if (error) throw error;
 
       await loadOrders();
+      setShowDeleteConfirm(false);
+      setOrderToDelete(null);
     } catch (error) {
-      console.error('Error updating order:', error);
-      alert('Error al actualizar el pedido');
+      console.error('Error deleting order:', error);
+      alert('Error al eliminar el pedido');
+    } finally {
+      setDeletingOrderId(null);
     }
   };
 
@@ -134,7 +327,7 @@ export default function AdminDashboard() {
     a.click();
   };
 
-  if (authLoading || !user) {
+  if (authLoading || !adminUser) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -148,12 +341,58 @@ export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-gradient-suave py-8">
       <div className="container mx-auto px-4">
-        {/* Header */}
+        {/* Header with Navigation */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-            Dashboard Administrativo
-          </h1>
-          <p className="text-gray-600">Gestion de pedidos y ventas</p>
+          {/* Navigation Bar */}
+          <div className="bg-white rounded-2xl shadow-soft p-4 mb-6">
+            <nav className="flex flex-wrap items-center gap-4">
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 border-2 border-verde-aguacate"
+              >
+                <ShoppingBag className="w-5 h-5" />
+                Pedidos
+              </button>
+              <button
+                onClick={() => router.push('/admin/products')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <Box className="w-5 h-5" />
+                Productos
+              </button>
+              <button
+                onClick={() => router.push('/admin/coupons')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                <Ticket className="w-5 h-5" />
+                Cupones
+              </button>
+            </nav>
+          </div>
+
+          {/* Dashboard Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
+                Dashboard Administrativo
+              </h1>
+              <p className="text-gray-600">Gestión de pedidos y ventas</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Administrador</p>
+                <p className="font-semibold text-gray-900">{adminUser.name}</p>
+                <p className="text-xs text-gray-500">{adminUser.role}</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+                Salir
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -277,14 +516,18 @@ export default function AdminDashboard() {
                   </tr>
                 ) : (
                   orders.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
+                    <tr
+                      key={order.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={() => openOrderDetails(order)}
+                    >
                       <td className="px-6 py-4 text-sm">
                         {new Date(order.created_at).toLocaleDateString('es-CO')}
                         <br />
                         <span className="text-xs text-gray-500">
-                          {new Date(order.created_at).toLocaleTimeString('es-CO', { 
-                            hour: '2-digit', 
-                            minute: '2-digit' 
+                          {new Date(order.created_at).toLocaleTimeString('es-CO', {
+                            hour: '2-digit',
+                            minute: '2-digit'
                           })}
                         </span>
                       </td>
@@ -328,22 +571,53 @@ export default function AdminDashboard() {
                         <div className="flex gap-2">
                           {order.status === 'pendiente' && (
                             <button
-                              onClick={() => updateOrderStatus(order.id, 'completado')}
-                              className="text-green-600 hover:text-green-800 p-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'completado');
+                              }}
+                              disabled={updatingOrderId === order.id}
+                              className="text-green-600 hover:text-green-800 p-1 disabled:opacity-50"
                               title="Marcar como completado"
                             >
-                              <CheckCircle className="w-5 h-5" />
+                              {updatingOrderId === order.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+                              ) : (
+                                <CheckCircle className="w-5 h-5" />
+                              )}
                             </button>
                           )}
                           {order.status === 'pendiente' && (
                             <button
-                              onClick={() => updateOrderStatus(order.id, 'cancelado')}
-                              className="text-red-600 hover:text-red-800 p-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                updateOrderStatus(order.id, 'cancelado');
+                              }}
+                              disabled={updatingOrderId === order.id}
+                              className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50"
                               title="Cancelar"
                             >
-                              <XCircle className="w-5 h-5" />
+                              {updatingOrderId === order.id ? (
+                                <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent"></div>
+                              ) : (
+                                <XCircle className="w-5 h-5" />
+                              )}
                             </button>
                           )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              confirmDelete(order.id);
+                            }}
+                            disabled={deletingOrderId === order.id}
+                            className="text-red-600 hover:text-red-800 p-1 disabled:opacity-50"
+                            title="Eliminar pedido"
+                          >
+                            {deletingOrderId === order.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-600 border-t-transparent"></div>
+                            ) : (
+                              <Trash2 className="w-5 h-5" />
+                            )}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -353,6 +627,304 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
+
+        {/* Order Details Modal */}
+        {showOrderModal && selectedOrder && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-900">Detalles del Pedido</h2>
+                <button
+                  onClick={closeOrderModal}
+                  className="text-gray-500 hover:text-gray-700 p-2"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                {/* Customer Information */}
+                <div className="bg-gray-50 rounded-xl p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <User className="w-5 h-5 text-gray-600" />
+                      Información del Cliente
+                    </h3>
+                    {!isEditingOrder ? (
+                      <button
+                        onClick={startEditingOrder}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Editar
+                      </button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={saveOrderChanges}
+                          disabled={savingOrderId === selectedOrder.id}
+                          className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1"
+                        >
+                          {savingOrderId === selectedOrder.id ? (
+                            <div className="animate-spin rounded-full h-3 w-3 border-2 border-white border-t-transparent"></div>
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                          Guardar
+                        </button>
+                        <button
+                          onClick={cancelEditingOrder}
+                          disabled={savingOrderId === selectedOrder.id}
+                          className="bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white px-3 py-1 rounded-lg text-sm flex items-center gap-1"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Cancelar
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3">
+                      <User className="w-4 h-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Nombre</p>
+                        {!isEditingOrder ? (
+                          <p className="font-medium">{selectedOrder.guest_name}</p>
+                        ) : (
+                          <input
+                            type="text"
+                            value={editedOrder.guest_name || selectedOrder.guest_name}
+                            onChange={(e) => setEditedOrder({ ...editedOrder, guest_name: e.target.value })}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Mail className="w-4 h-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Email</p>
+                        {!isEditingOrder ? (
+                          <p className="font-medium">{selectedOrder.guest_email}</p>
+                        ) : (
+                          <input
+                            type="email"
+                            value={editedOrder.guest_email || selectedOrder.guest_email}
+                            onChange={(e) => setEditedOrder({ ...editedOrder, guest_email: e.target.value })}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Teléfono</p>
+                        {!isEditingOrder ? (
+                          <p className="font-medium">{selectedOrder.guest_phone}</p>
+                        ) : (
+                          <input
+                            type="tel"
+                            value={editedOrder.guest_phone || selectedOrder.guest_phone}
+                            onChange={(e) => setEditedOrder({ ...editedOrder, guest_phone: e.target.value })}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 md:col-span-2">
+                      <MapPin className="w-4 h-4 text-gray-500 mt-2" />
+                      <div className="flex-1">
+                        <p className="text-sm text-gray-500">Dirección</p>
+                        {!isEditingOrder ? (
+                          <p className="font-medium">{selectedOrder.guest_address}</p>
+                        ) : (
+                          <textarea
+                            value={editedOrder.guest_address || selectedOrder.guest_address}
+                            onChange={(e) => setEditedOrder({ ...editedOrder, guest_address: e.target.value })}
+                            rows={2}
+                            className="w-full px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Information */}
+                <div className="bg-blue-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <PackageIcon className="w-5 h-5 text-blue-600" />
+                    Información del Pedido
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-3">
+                      <Calendar className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Fecha del Pedido</p>
+                        <p className="font-medium">
+                          {new Date(selectedOrder.created_at).toLocaleDateString('es-CO')}{' '}
+                          {new Date(selectedOrder.created_at).toLocaleTimeString('es-CO', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    {selectedOrder.delivery_date && (
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-sm text-gray-500">Fecha de Entrega</p>
+                          <p className="font-medium">{selectedOrder.delivery_date}</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-4 h-4 text-blue-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Total</p>
+                        <p className="font-bold text-lg text-green-600">
+                          ${Number(selectedOrder.total_amount).toLocaleString('es-CO')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Products */}
+                <div className="bg-green-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Package className="w-5 h-5 text-green-600" />
+                    Productos del Pedido
+                  </h3>
+                  <div className="space-y-3">
+                    {selectedOrder.order_data?.items?.map((item: any, idx: number) => (
+                      <div key={idx} className="bg-white rounded-lg p-4 flex justify-between items-center">
+                        <div>
+                          <p className="font-medium">{item.productName}</p>
+                          {item.variantName && (
+                            <p className="text-sm text-gray-500">Variante: {item.variantName}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">${Number(item.price).toLocaleString('es-CO')}</p>
+                          <p className="text-sm text-gray-500">x{item.quantity}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status Management */}
+                <div className="bg-yellow-50 rounded-xl p-6">
+                  <h3 className="text-lg font-semibold mb-4">Gestión de Estado</h3>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-500">Estado Actual</p>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        selectedOrder.status === 'completado'
+                          ? 'bg-green-100 text-green-800'
+                          : selectedOrder.status === 'pendiente'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}>
+                        {selectedOrder.status}
+                      </span>
+                    </div>
+                    <div className="flex gap-3">
+                      {selectedOrder.status === 'pendiente' && (
+                        <>
+                          <button
+                            onClick={() => {
+                              updateOrderStatus(selectedOrder.id, 'completado');
+                              closeOrderModal();
+                            }}
+                            disabled={updatingOrderId === selectedOrder.id}
+                            className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                          >
+                            {updatingOrderId === selectedOrder.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                            Marcar Completado
+                          </button>
+                          <button
+                            onClick={() => {
+                              updateOrderStatus(selectedOrder.id, 'cancelado');
+                              closeOrderModal();
+                            }}
+                            disabled={updatingOrderId === selectedOrder.id}
+                            className="bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                          >
+                            {updatingOrderId === selectedOrder.id ? (
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                            ) : (
+                              <XCircle className="w-4 h-4" />
+                            )}
+                            Cancelar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">Confirmar Eliminación</h3>
+              </div>
+
+              <p className="text-gray-600 mb-6">
+                ¿Estás seguro de que quieres eliminar este pedido? Esta acción no se puede deshacer y el pedido se eliminará permanentemente de la base de datos.
+              </p>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={cancelDelete}
+                  disabled={deletingOrderId !== null}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={deleteOrder}
+                  disabled={deletingOrderId !== null}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50 flex items-center gap-2"
+                >
+                  {deletingOrderId ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      Eliminar Pedido
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

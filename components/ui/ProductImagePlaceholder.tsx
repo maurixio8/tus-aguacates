@@ -50,6 +50,9 @@ export function ProductImagePlaceholder({
 
   // Obtener iniciales del nombre del producto
   const getInitials = (name: string): string => {
+    if (!name || typeof name !== 'string') {
+      return 'PR'; // Default fallback seguro
+    }
     const words = name.trim().split(' ');
     if (words.length >= 2) {
       return (words[0][0] + words[1][0]).toUpperCase();
@@ -59,6 +62,13 @@ export function ProductImagePlaceholder({
 
   // Determinar colores según el nombre del producto
   const getAvocadoColors = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      return {
+        gradient: 'from-green-600 to-green-500',
+        bgLight: 'bg-green-50',
+        textLight: 'text-green-700'
+      };
+    }
     const normalizedName = name.toLowerCase();
 
     if (normalizedName.includes('hass') || normalizedName.includes('dark')) {

@@ -2,6 +2,18 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { Product } from './supabase';
 
+/**
+ * Default shipping information fallback
+ */
+const getDefaultShippingInfo = (subtotal: number = 0): ShippingInfo => ({
+  cost: 7400,
+  freeShipping: false,
+  freeShippingMin: 68900,
+  amountForFreeShipping: Math.max(0, 68900 - subtotal),
+  estimatedDays: 1,
+  message: 'Envío: $7.400'
+});
+
 export interface ProductVariant {
   id: string;
   variant_name: string;
@@ -16,9 +28,38 @@ export interface CartItemWithProduct {
   variant?: ProductVariant;
 }
 
+export interface AppliedCoupon {
+  id: string;
+  code: string;
+  description: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  discount_amount: number;
+  min_purchase: number;
+  free_shipping: boolean;
+}
+
+export interface ShippingInfo {
+  cost: number;
+  freeShipping: boolean;
+  freeShippingMin: number;
+  amountForFreeShipping: number;
+  estimatedDays: number;
+  message: string;
+}
+
+export interface CartTotals {
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+}
+
 interface CartState {
   items: CartItemWithProduct[];
   isOpen: boolean;
+  appliedCoupon: AppliedCoupon | null;
+  shipping: ShippingInfo;
   addItem: (product: Product & { variant?: ProductVariant }, quantity?: number) => void;
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
@@ -26,6 +67,11 @@ interface CartState {
   toggleCart: () => void;
   getTotal: () => number;
   getItemCount: () => number;
+  getSubtotal: () => number;
+  applyCoupon: (code: string, userEmail?: string) => Promise<boolean>;
+  removeCoupon: () => void;
+  calculateShipping: (location?: string) => Promise<void>;
+  getTotals: () => CartTotals;
 }
 
 export const useCartStore = create<CartState>()(
@@ -33,21 +79,23 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       isOpen: false,
-      
+      appliedCoupon: null,
+      shipping: getDefaultShippingInfo(0),
+
       addItem: (product, quantity = 1) => {
         set((state) => {
           // Buscar item existente considerando variante
-          const itemKey = product.variant 
+          const itemKey = product.variant
             ? `${product.id}-${product.variant.id}`
             : product.id;
-          
+
           const existingItem = state.items.find((item) => {
             const existingKey = item.variant
               ? `${item.product.id}-${item.variant.id}`
               : item.product.id;
             return existingKey === itemKey;
           });
-          
+
           if (existingItem) {
             return {
               items: state.items.map((item) => {
@@ -60,7 +108,7 @@ export const useCartStore = create<CartState>()(
               }),
             };
           }
-          
+
           return {
             items: [
               ...state.items,
@@ -74,7 +122,7 @@ export const useCartStore = create<CartState>()(
           };
         });
       },
-      
+
       removeItem: (productId, variantId) => {
         set((state) => ({
           items: state.items.filter((item) => {
@@ -85,13 +133,13 @@ export const useCartStore = create<CartState>()(
           }),
         }));
       },
-      
+
       updateQuantity: (productId, quantity, variantId) => {
         if (quantity <= 0) {
           get().removeItem(productId, variantId);
           return;
         }
-        
+
         set((state) => ({
           items: state.items.map((item) => {
             if (variantId) {
@@ -105,15 +153,15 @@ export const useCartStore = create<CartState>()(
           }),
         }));
       },
-      
+
       clearCart: () => {
-        set({ items: [] });
+        set({ items: [], appliedCoupon: null, shipping: getDefaultShippingInfo(0) });
       },
-      
+
       toggleCart: () => {
         set((state) => ({ isOpen: !state.isOpen }));
       },
-      
+
       getTotal: () => {
         const state = get();
         return state.items.reduce(
@@ -121,10 +169,116 @@ export const useCartStore = create<CartState>()(
           0
         );
       },
-      
+
       getItemCount: () => {
         const state = get();
         return state.items.reduce((count, item) => count + item.quantity, 0);
+      },
+
+      getSubtotal: () => {
+        return get().getTotal();
+      },
+
+      applyCoupon: async (code: string, userEmail?: string) => {
+        try {
+          console.log('🎫 Applying coupon:', { code, userEmail });
+          const subtotal = get().getSubtotal();
+
+          const response = await fetch(`/api/coupons/validate?code=${encodeURIComponent(code)}&cartTotal=${subtotal}&userEmail=${encodeURIComponent(userEmail || '')}`);
+          const data = await response.json();
+
+          console.log('📊 Coupon validation response:', data);
+
+          if (data.success) {
+            set({ appliedCoupon: data.coupon });
+
+            // If coupon includes free shipping, recalculate shipping
+            if (data.coupon.free_shipping || data.coupon.discount_amount >= subtotal) {
+              await get().calculateShipping();
+            }
+
+            return true;
+          } else {
+            console.log('❌ Coupon validation failed:', data.error);
+            return false;
+          }
+        } catch (error) {
+          console.error('❌ Error applying coupon:', error);
+          return false;
+        }
+      },
+
+      removeCoupon: () => {
+        set({ appliedCoupon: null });
+        // Recalculate shipping when coupon is removed
+        get().calculateShipping();
+      },
+
+      calculateShipping: async (location = 'Bogotá') => {
+        try {
+          console.log('📦 Calculating shipping:', { location, subtotal: get().getSubtotal() });
+          const subtotal = get().getSubtotal();
+
+          // Validate subtotal
+          if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal)) {
+            console.error('❌ Invalid subtotal for shipping calculation:', { subtotal });
+            set({ shipping: getDefaultShippingInfo(0) });
+            return;
+          }
+
+          const response = await fetch('/api/shipping/calculate', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              subtotal,
+              location
+            })
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log('📊 Shipping calculation response:', data);
+
+          if (data.success && data.shipping && typeof data.shipping === 'object') {
+            // Validate response structure
+            const shippingInfo: ShippingInfo = {
+              cost: typeof data.shipping.cost === 'number' && data.shipping.cost >= 0 ? data.shipping.cost : 7400,
+              freeShipping: Boolean(data.shipping.freeShipping),
+              freeShippingMin: typeof data.shipping.freeShippingMin === 'number' && data.shipping.freeShippingMin >= 0 ? data.shipping.freeShippingMin : 68900,
+              amountForFreeShipping: typeof data.shipping.amountForFreeShipping === 'number' && data.shipping.amountForFreeShipping >= 0 ? data.shipping.amountForFreeShipping : Math.max(0, 68900 - subtotal),
+              estimatedDays: typeof data.shipping.estimatedDays === 'number' && data.shipping.estimatedDays > 0 ? data.shipping.estimatedDays : 1,
+              message: typeof data.shipping.message === 'string' ? data.shipping.message : 'Envío: $7.400'
+            };
+
+            set({ shipping: shippingInfo });
+          } else {
+            console.error('❌ Shipping calculation failed:', data.error || 'Invalid response structure');
+            set({ shipping: getDefaultShippingInfo(subtotal) });
+          }
+        } catch (error) {
+          console.error('❌ Error calculating shipping:', error);
+          const subtotal = get().getSubtotal();
+          set({ shipping: getDefaultShippingInfo(subtotal) });
+        }
+      },
+
+      getTotals: () => {
+        const state = get();
+        const subtotal = state.getSubtotal();
+        const discount = state.appliedCoupon?.discount_amount || 0;
+        const shipping = state.shipping.cost;
+
+        return {
+          subtotal,
+          discount,
+          shipping,
+          total: Math.max(0, subtotal - discount + shipping)
+        };
       },
     }),
     {

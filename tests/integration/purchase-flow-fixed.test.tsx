@@ -318,7 +318,7 @@ describe('🛒 Flujo Completo de Compra - Integration Tests (Fixed)', () => {
         expect(screen.getByText('Resumen del Pedido')).toBeInTheDocument();
         expect(screen.getByText('Aguacate Hass Premium')).toBeInTheDocument();
         expect(screen.getByText('Cantidad: 2')).toBeInTheDocument();
-        expect(screen.getByText(//\$\s*9\.000//)).toBeInTheDocument(); // 2 * 4500
+        expect(screen.getByText(/\$\s*9\.000/)).toBeInTheDocument(); // 2 * 4500
       });
     });
 

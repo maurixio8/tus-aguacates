@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
+import BottomNavigation from "@/components/layout/BottomNavigation";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -16,6 +17,7 @@ export function ClientLayout({ children }: { children: React.ReactNode }) {
       <Footer />
       <CartDrawer />
       <ChatBot />
+      <BottomNavigation />
     </AuthProvider>
   );
 }

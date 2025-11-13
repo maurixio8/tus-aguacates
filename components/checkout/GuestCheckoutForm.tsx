@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
+import CouponInput from './CouponInput';
+import CheckoutSummary from './CheckoutSummary';
 
 interface GuestCheckoutFormProps {
   onSuccess: (orderId: string) => void;
@@ -13,8 +15,8 @@ type CheckoutStep = 'info' | 'payment' | 'payment-method' | 'processing';
 
 export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const router = useRouter();
-  const { items, getTotal, clearCart } = useCartStore();
-  const total = getTotal();
+  const { items, getTotal, clearCart, getTotals, calculateShipping } = useCartStore();
+  const totals = getTotals();
   
   const [step, setStep] = useState<CheckoutStep>('info');
   const [orderId, setOrderId] = useState<string>('');
@@ -34,6 +36,11 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Initialize shipping calculation when component mounts
+  useEffect(() => {
+    calculateShipping();
+  }, [calculateShipping]);
+
   const handleSubmitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -50,7 +57,12 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           quantity: item.quantity,
           price: item.price
         })),
-        total,
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        shipping: totals.shipping,
+        total: totals.total,
+        appliedCoupon: useCartStore.getState().appliedCoupon,
+        shippingInfo: useCartStore.getState().shipping,
         deliveryDate: formData.deliveryDate,
         deliveryTime: formData.deliveryTime
       };
@@ -63,7 +75,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           guest_phone: formData.phone,
           guest_address: formData.address,
           order_data: orderData,
-          total_amount: total,
+          total_amount: totals.total,
           status: 'pendiente',
           payment_status: 'pendiente',
           delivery_date: formData.deliveryDate || null
@@ -98,13 +110,18 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           quantity: item.quantity,
           price: item.price
         })),
-        total,
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        shipping: totals.shipping,
+        total: totals.total,
+        appliedCoupon: useCartStore.getState().appliedCoupon,
+        shippingInfo: useCartStore.getState().shipping,
         deliveryDate: formData.deliveryDate,
         deliveryTime: formData.deliveryTime
       };
 
       // Generar mensaje para WhatsApp (como si el cliente lo escribiera)
-      const mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
+      let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
 
 *Cliente:* ${formData.name}
 *Teléfono:* ${formData.phone}
@@ -112,9 +129,40 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 *Dirección:* ${formData.address}
 
 *Pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
-*Total:* $${total.toLocaleString('es-CO')} COP
+      // Add breakdown if there's discount or shipping
+      if (totals.discount > 0 || totals.shipping > 0) {
+        mensajeWhatsApp += `\n
+*Resumen:*
+• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
+
+        if (totals.discount > 0) {
+          mensajeWhatsApp += `\n• Descuento: -$${totals.discount.toLocaleString('es-CO')}`;
+        }
+
+        if (totals.shipping > 0) {
+          mensajeWhatsApp += `\n• Envío: $${totals.shipping.toLocaleString('es-CO')}`;
+        }
+
+        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')} COP*`;
+      } else {
+        mensajeWhatsApp += `\n
+*Total:* $${totals.total.toLocaleString('es-CO')} COP`;
+      }
+
+      // Add coupon information if applied
+      if (orderData.appliedCoupon) {
+        mensajeWhatsApp += `\n
+*Cupón Aplicado:* ${orderData.appliedCoupon.code}
+${orderData.appliedCoupon.description}
+*Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
+  ? `${orderData.appliedCoupon.discount_value}%`
+  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
+}`;
+      }
+
+      mensajeWhatsApp += `
 
 *Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
 
@@ -216,7 +264,12 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
           quantity: item.quantity,
           price: item.price
         })),
-        total,
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        shipping: totals.shipping,
+        total: totals.total,
+        appliedCoupon: useCartStore.getState().appliedCoupon,
+        shippingInfo: useCartStore.getState().shipping,
         deliveryDate: formData.deliveryDate,
         deliveryTime: formData.deliveryTime
       };
@@ -229,7 +282,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
           guest_phone: formData.phone,
           guest_address: formData.address,
           order_data: orderData,
-          total_amount: total,
+          total_amount: totals.total,
           status: 'pendiente_entrega',
           payment_status: 'pendiente_pago',
           payment_method: 'efectivo',
@@ -241,7 +294,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
       if (orderError) throw orderError;
 
       // 2. Generar mensaje de WhatsApp pre-formateado para pedido contra entrega
-      const mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
+      let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
 
 *Cliente:* ${formData.name}
 *Teléfono:* ${formData.phone}
@@ -249,9 +302,40 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
 *Dirección:* ${formData.address}
 
 *Pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
-*Total:* $${total.toLocaleString('es-CO')} COP
+      // Add breakdown if there's discount or shipping
+      if (totals.discount > 0 || totals.shipping > 0) {
+        mensajeWhatsApp += `\n
+*Resumen:*
+• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
+
+        if (totals.discount > 0) {
+          mensajeWhatsApp += `\n• Descuento: -$${totals.discount.toLocaleString('es-CO')}`;
+        }
+
+        if (totals.shipping > 0) {
+          mensajeWhatsApp += `\n• Envío: $${totals.shipping.toLocaleString('es-CO')}`;
+        }
+
+        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')} COP*`;
+      } else {
+        mensajeWhatsApp += `\n
+*Total:* $${totals.total.toLocaleString('es-CO')} COP`;
+      }
+
+      // Add coupon information if applied
+      if (orderData.appliedCoupon) {
+        mensajeWhatsApp += `\n
+*Cupón Aplicado:* ${orderData.appliedCoupon.code}
+${orderData.appliedCoupon.description}
+*Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
+  ? `${orderData.appliedCoupon.discount_value}%`
+  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
+}`;
+      }
+
+      mensajeWhatsApp += `
 
 *Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
 
@@ -290,7 +374,9 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
   // Paso 1: Información del cliente
   if (step === 'info') {
     return (
-      <form onSubmit={handleSubmitInfo} className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2">
+          <form onSubmit={handleSubmitInfo} className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold mb-4">Información de Contacto</h3>
           
@@ -429,14 +515,26 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
         <p className="text-sm text-gray-600 text-center">
           Entregas martes y viernes en Bogotá
         </p>
-      </form>
+          </form>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Coupon Input */}
+          <CouponInput userEmail={formData.email} />
+
+          {/* Order Summary */}
+          <CheckoutSummary />
+        </div>
+      </div>
     );
   }
 
   // Paso 2: Selección de método de pago
   if (step === 'payment-method') {
     return (
-      <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-6">
         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-purple-900 mb-2">💳 Método de Pago</h3>
           <p className="text-sm text-purple-700">
@@ -449,7 +547,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
             <div>
               <label className="block text-sm font-medium mb-2">Total a Pagar</label>
               <div className="text-3xl font-bold text-verde-bosque">
-                ${total.toLocaleString('es-CO')} COP
+                ${totals.total.toLocaleString('es-CO')} COP
               </div>
             </div>
 
@@ -563,6 +661,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
             💳 Pagos seguros y protegidos
           </p>
         </div>
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {/* Order Summary */}
+          <CheckoutSummary />
+        </div>
       </div>
     );
   }
@@ -583,7 +688,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
             <div>
               <label className="block text-sm font-medium mb-2">Total a Pagar</label>
               <div className="text-3xl font-bold text-verde-bosque">
-                ${total.toLocaleString('es-CO')} COP
+                ${totals.total.toLocaleString('es-CO')} COP
               </div>
             </div>
 
@@ -610,7 +715,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
           disabled={loading}
           className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
         >
-          {loading ? 'Procesando...' : `Simular Pago Exitoso - $${total.toLocaleString('es-CO')} COP`}
+          {loading ? 'Procesando...' : `Simular Pago Exitoso - $${totals.total.toLocaleString('es-CO')} COP`}
         </button>
 
         <button

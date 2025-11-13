@@ -2,20 +2,219 @@ import Link from 'next/link';
 import { ArrowRight, Leaf, Truck, Shield } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
+import ProductSwiper from '@/components/product/ProductSwiper';
 import Image from 'next/image';
+import PromotionSlider from '@/components/promotions/PromotionSlider';
+import CategoryScroll from '@/components/categories/CategoryScroll';
+import CategorySimpleScroll from '@/components/categories/CategorySimpleScroll';
 
 export const revalidate = 3600; // Revalidar cada hora
 
 async function getFeaturedProducts() {
-  const { data } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_active', true)
-    .eq('is_featured', true)
-    .order('created_at', { ascending: false })
-    .limit(8);
-  
-  return data || [];
+  try {
+    const { data } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .eq('is_featured', true)
+      .order('created_at', { ascending: false })
+      .limit(12);
+
+    // Si no hay productos suficientes, crear productos de ejemplo
+    if (!data || data.length < 8) {
+      const exampleProducts = [
+        {
+          id: 'example-1',
+          name: 'Aguacate Hass Premium',
+          price: 4500,
+          discount_price: 3900,
+          description: 'Aguacate de la mejor calidad, cremoso y delicioso',
+          category_id: 'aguacates',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-2',
+          name: 'Uchuvas Frescas',
+          price: 3500,
+          discount_price: null,
+          description: 'Uchuvas dulces y jugosas, directamente del campo',
+          category_id: 'frutas',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-3',
+          name: 'Papa Criolla',
+          price: 2500,
+          discount_price: 2000,
+          description: 'Papa criolla perfecta para tus platos típicos',
+          category_id: 'tuberculos',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-4',
+          name: 'Tomate Chonto',
+          price: 3200,
+          discount_price: null,
+          description: 'Tomates maduros y sabrosos para tus ensaladas',
+          category_id: 'verduras',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-5',
+          name: 'Limon Taití',
+          price: 1200,
+          discount_price: 1000,
+          description: 'Limones ácidos y jugosos, perfectos para bebidas',
+          category_id: 'frutas',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-6',
+          name: 'Cebolla Larga',
+          price: 1800,
+          discount_price: null,
+          description: 'Cebollas largas y dulces, ideales para cocinar',
+          category_id: 'verduras',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-7',
+          name: 'Zanahoria Orgánica',
+          price: 2100,
+          discount_price: 1800,
+          description: 'Zanahorias orgánicas dulces y nutritivas',
+          category_id: 'verduras',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-8',
+          name: 'Mango Tommy',
+          price: 5500,
+          discount_price: 4500,
+          description: 'Mango dulce y jugoso, directamente del árbol',
+          category_id: 'frutas',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-9',
+          name: 'Yuca Fresca',
+          price: 2800,
+          discount_price: null,
+          description: 'Yuca fresca y tierna, perfecta para freír',
+          category_id: 'tuberculos',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-10',
+          name: 'Pimentón Rojo',
+          price: 3200,
+          discount_price: 2800,
+          description: 'Pimentón rojo dulce y crujiente',
+          category_id: 'verduras',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-11',
+          name: 'Naranja Valencia',
+          price: 4500,
+          discount_price: 3800,
+          description: 'Naranjas jugosas y llenas de vitamina C',
+          category_id: 'frutas',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+        {
+          id: 'example-12',
+          name: 'Remolacha Orgánica',
+          price: 2700,
+          discount_price: 2200,
+          description: 'Remolacha orgánica dulce y nutritiva',
+          category_id: 'verduras',
+          main_image_url: null,
+          is_active: true,
+          is_featured: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          in_stock: true,
+          featured: false
+        },
+      ];
+
+      // Combinar productos reales con ejemplos
+      const allProducts = [...(data || []), ...exampleProducts].slice(0, 12);
+      return allProducts;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
 }
 
 async function getCategories() {
@@ -39,34 +238,40 @@ export default async function Home() {
     <div>
       {/* Hero Section */}
       <section className="relative text-white py-16 md:py-24 overflow-hidden">
+        {/* Imagen de fondo SIN overlays */}
         <div className="absolute inset-0">
-          <Image 
-            src="/images/hero-limpio.png" 
+          <Image
+            src="/images/hero-limpio.png"
             alt="Fondo hero"
             fill
             className="object-cover"
             priority
           />
         </div>
+
+        {/* Contenido */}
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
+            {/* Título según especificación del usuario */}
             <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              Del Corazón del Eje Cafetero
+              Del Corazón de Colombia
               <br />
-              <span className="text-verde-aguacate-200">a tu Mesa</span>
+              <span className="text-yellow-400">a tu Mesa</span>
             </h1>
+
+            {/* Subtítulo */}
             <p className="text-xl md:text-2xl mb-8 text-white/90">
               Frutas y verduras frescas, cultivadas con amor por familias campesinas colombianas
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/productos"
-                className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
-              >
-                Explorar Tienda
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-            </div>
+
+            {/* UN SOLO botón - diseño simple */}
+            <Link
+              href="/productos"
+              className="bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold px-8 py-4 rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-lg"
+            >
+              Explorar Tienda
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
         </div>
       </section>
@@ -106,18 +311,46 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Categorías */}
-      <section className="py-16">
+      {/* Categorías con imágenes */}
+      <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
               Explora por Categoría
             </h2>
-            <p className="text-gray-600 text-lg">
-              Encuentra los productos más frescos y de mejor calidad
+            <p className="text-gray-600 text-sm">
+              Sube tus imágenes a: /public/categories/
             </p>
           </div>
+          <CategorySimpleScroll />
+        </div>
+      </section>
 
+      {/* Promotion Slider */}
+      <section className="py-8">
+        <div className="container mx-auto px-4">
+          <PromotionSlider />
+        </div>
+      </section>
+
+      {/* Categories Scroll */}
+      <section>
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
+              Explora por Categoría
+            </h2>
+            <p className="text-gray-600">
+              Desliza para descubrir productos frescos
+            </p>
+          </div>
+          <CategoryScroll />
+        </div>
+      </section>
+
+      {/* Desktop Categories Grid (hidden on mobile) */}
+      <section className="py-8 hidden md:block">
+        <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {categories.map((category) => (
               <Link
@@ -146,43 +379,12 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Productos Destacados */}
-      <section className="py-16 bg-gradient-suave">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-12">
-            <div>
-              <h2 className="font-display font-bold text-3xl md:text-4xl mb-2">
-                Lo Más Fresco Esta Semana
-              </h2>
-              <p className="text-gray-600">
-                Productos seleccionados especialmente para ti
-              </p>
-            </div>
-            <Link
-              href="/productos"
-              className="hidden md:flex items-center gap-2 text-verde-bosque hover:text-verde-bosque-600 font-semibold transition-colors"
-            >
-              Ver todos
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-
-          <div className="text-center mt-8 md:hidden">
-            <Link
-              href="/productos"
-              className="inline-flex items-center gap-2 text-verde-bosque hover:text-verde-bosque-600 font-semibold transition-colors"
-            >
-              Ver todos los productos
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
+      {/* Productos Destacados con Swiper */}
+      <section className="py-4 bg-gray-50">
+        <ProductSwiper
+          products={featuredProducts}
+          title="Lo Más Fresco"
+        />
       </section>
 
       {/* CTA Final */}
@@ -197,7 +399,7 @@ export default async function Home() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/registro"
+              href="/auth/registro"
               className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
             >
               Crear Cuenta

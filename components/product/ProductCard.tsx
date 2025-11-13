@@ -9,6 +9,7 @@ import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
+import ProductModal from './ProductModal';
 
 interface ProductVariant {
   id: string;
@@ -26,6 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
@@ -43,35 +45,42 @@ export function ProductCard({ product }: ProductCardProps) {
       if (data && data.length > 0) {
         const variantsWithPrice = data.map(v => ({
           ...v,
-          price: product.price + v.price_adjustment
+          price: (product.discount_price || product.price) + v.price_adjustment
         }));
         setVariants(variantsWithPrice);
         setSelectedVariant(variantsWithPrice[0]); // Seleccionar primer variante por defecto
       }
     }
     loadVariants();
-  }, [product.id, product.price]);
+  }, [product.id, product.price, product.discount_price]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (variants.length > 0 && selectedVariant) {
-      addItem({
-        ...product,
-        variant: selectedVariant
-      });
+    if (variants.length > 0) {
+      // Si hay variantes, abrir el modal
+      setIsModalOpen(true);
     } else {
+      // Si no hay variantes, agregar directo al carrito
       addItem(product);
     }
   };
 
-  // Precio a mostrar (variante seleccionada o precio base)
-  const displayPrice = selectedVariant ? selectedVariant.price : product.price;
+  const handleImageClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsModalOpen(true);
+  };
+
+  // Precio a mostrar (variante seleccionada o precio base con descuento)
+  const displayPrice = selectedVariant ? selectedVariant.price : (product.discount_price || product.price);
 
   return (
-    <Link href={`/producto/${product.slug}`} className="group block">
+    <>
       <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1">
-        {/* Imagen con ProductImagePlaceholder */}
-        <div className="relative aspect-square overflow-hidden">
+        {/* Imagen con ProductImagePlaceholder - Clickable */}
+        <div
+          className="relative aspect-square overflow-hidden cursor-pointer"
+          onClick={handleImageClick}
+        >
           <ProductImagePlaceholder
             productName={product.name}
             price={displayPrice}
@@ -93,10 +102,17 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Botón Favorito */}
           <button
             className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all"
-            onClick={(e) => { e.preventDefault(); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
           >
             <Heart className="w-4 h-4 text-gray-600" />
           </button>
+
+          {/* Hover overlay */}
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+            <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+              Ver detalles
+            </div>
+          </div>
         </div>
 
         {/* Contenido */}
@@ -173,6 +189,13 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
       </div>
-    </Link>
+
+      {/* Product Modal */}
+      <ProductModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        product={product}
+      />
+    </>
   );
 }

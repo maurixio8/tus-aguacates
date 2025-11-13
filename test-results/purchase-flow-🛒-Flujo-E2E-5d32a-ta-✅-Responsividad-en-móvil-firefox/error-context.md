@@ -1,0 +1,86 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]
+  - contentinfo [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - heading "Tus Aguacates" [level=3] [ref=e10]
+          - paragraph [ref=e11]: Frutas y verduras frescas del Eje Cafetero directo a tu mesa. Apoyamos a los agricultores locales y garantizamos la mejor calidad.
+          - generic [ref=e12]:
+            - link [ref=e13] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e14]
+            - link [ref=e16] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e17]
+            - link [ref=e21] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e22]
+        - generic [ref=e24]:
+          - heading "Enlaces Rápidos" [level=3] [ref=e25]
+          - list [ref=e26]:
+            - listitem [ref=e27]:
+              - link "Todos los Productos" [ref=e28] [cursor=pointer]:
+                - /url: /productos/
+            - listitem [ref=e29]:
+              - link "Sobre Nosotros" [ref=e30] [cursor=pointer]:
+                - /url: /sobre-nosotros/
+            - listitem [ref=e31]:
+              - link "Contacto" [ref=e32] [cursor=pointer]:
+                - /url: /contacto/
+        - generic [ref=e33]:
+          - heading "Atención al Cliente" [level=3] [ref=e34]
+          - list [ref=e35]:
+            - listitem [ref=e36]:
+              - link "Mis Pedidos" [ref=e37] [cursor=pointer]:
+                - /url: /perfil/mis-pedidos/
+            - listitem [ref=e38]:
+              - link "Políticas de Envío" [ref=e39] [cursor=pointer]:
+                - /url: /politicas/
+            - listitem [ref=e40]:
+              - link "Devoluciones" [ref=e41] [cursor=pointer]:
+                - /url: /devoluciones/
+            - listitem [ref=e42]:
+              - link "Preguntas Frecuentes" [ref=e43] [cursor=pointer]:
+                - /url: /faq/
+        - generic [ref=e44]:
+          - heading "Contacto" [level=3] [ref=e45]
+          - list [ref=e46]:
+            - listitem [ref=e47]:
+              - img [ref=e48]
+              - generic [ref=e51]: Eje Cafetero, Colombia
+            - listitem [ref=e52]:
+              - img [ref=e53]
+              - generic [ref=e55]: +57 300 123 4567
+            - listitem [ref=e56]:
+              - img [ref=e57]
+              - generic [ref=e60]: info@tusaguacates.com
+      - generic [ref=e61]:
+        - paragraph [ref=e62]: 2025 Tus Aguacates. Todos los derechos reservados.
+        - paragraph [ref=e63]:
+          - link "Términos y Condiciones" [ref=e64] [cursor=pointer]:
+            - /url: /terminos/
+          - link "Política de Privacidad" [ref=e65] [cursor=pointer]:
+            - /url: /privacidad/
+  - button "Abrir chat" [ref=e66] [cursor=pointer]:
+    - img [ref=e67]
+  - generic [ref=e70]:
+    - button "Inicio" [ref=e71] [cursor=pointer]:
+      - img [ref=e73]
+      - generic [ref=e76]: Inicio
+    - button "Productos" [ref=e77] [cursor=pointer]:
+      - img [ref=e79]
+      - generic [ref=e82]: Productos
+    - button "Ofertas" [ref=e83] [cursor=pointer]:
+      - img [ref=e85]
+      - generic [ref=e88]: Ofertas
+    - button "Carrito" [ref=e89] [cursor=pointer]:
+      - img [ref=e91]
+      - generic [ref=e95]: Carrito
+    - button "Cuenta" [ref=e96] [cursor=pointer]:
+      - img [ref=e98]
+      - generic [ref=e101]: Cuenta
+```

@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  output: 'export', // Necesario para deployment estático
+  // output: 'export', // Incompatible con API routes dinámicas
   images: {
     unoptimized: true,
   },

@@ -1,0 +1,2860 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Tus Aguacates - Logo Tus Aguacates" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Tus Aguacates - Logo" [ref=e6]
+        - generic [ref=e7]: Tus Aguacates
+      - navigation [ref=e8]:
+        - link "Productos" [ref=e9] [cursor=pointer]:
+          - /url: /productos/
+        - link "Aguacates" [ref=e10] [cursor=pointer]:
+          - /url: /productos/?categoria=aguacates
+        - link "Frutas" [ref=e11] [cursor=pointer]:
+          - /url: /productos/?categoria=frutas-tropicales
+      - generic [ref=e12]:
+        - button [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+        - link [ref=e17] [cursor=pointer]:
+          - /url: /perfil/favoritos/
+          - img [ref=e18]
+        - link "Ingresar" [ref=e20] [cursor=pointer]:
+          - /url: /auth/login/
+          - img [ref=e21]
+          - generic [ref=e24]: Ingresar
+        - button [ref=e25] [cursor=pointer]:
+          - img [ref=e26]
+  - main [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e33]:
+        - button "🛒 Todos" [ref=e34] [cursor=pointer]:
+          - generic [ref=e36]: 🛒
+          - generic [ref=e37]: Todos
+        - button "Tuberculos Tuberculos" [ref=e38] [cursor=pointer]:
+          - img "Tuberculos" [ref=e40]
+          - generic [ref=e41]: Tuberculos
+        - button "Saludables Saludables" [ref=e42] [cursor=pointer]:
+          - img "Saludables" [ref=e44]
+          - generic [ref=e45]: Saludables
+        - button "Frutas Frutas" [ref=e46] [cursor=pointer]:
+          - img "Frutas" [ref=e48]
+          - generic [ref=e49]: Frutas
+        - button "Verduras Verduras" [ref=e50] [cursor=pointer]:
+          - img "Verduras" [ref=e52]
+          - generic [ref=e53]: Verduras
+        - button "Aguacates Aguacates" [ref=e54] [cursor=pointer]:
+          - img "Aguacates" [ref=e56]
+          - generic [ref=e57]: Aguacates
+        - button "Especias Especias" [ref=e58] [cursor=pointer]:
+          - img "Especias" [ref=e60]
+          - generic [ref=e61]: Especias
+        - button "Hierbas Aromáticas Hierbas Aromáticas" [ref=e62] [cursor=pointer]:
+          - img "Hierbas Aromáticas" [ref=e64]
+          - generic [ref=e65]: Hierbas Aromáticas
+        - button "Combos Combos" [ref=e66] [cursor=pointer]:
+          - img "Combos" [ref=e68]
+          - generic [ref=e69]: Combos
+        - button "Jugos Jugos" [ref=e70] [cursor=pointer]:
+          - img "Jugos" [ref=e72]
+          - generic [ref=e73]: Jugos
+        - button "Otros Otros" [ref=e74] [cursor=pointer]:
+          - img "Otros" [ref=e76]
+          - generic [ref=e77]: Otros
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "Todos los Productos" [level=1] [ref=e80]
+          - paragraph [ref=e81]: 143 productos disponibles
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e84] [cursor=pointer]:
+              - generic [ref=e89]:
+                - generic [ref=e90]: 🥑
+                - generic [ref=e91]: CB
+                - paragraph [ref=e93]: Col bruselas(repollitas)
+                - generic [ref=e94]: aguacates
+              - button [ref=e98]:
+                - img [ref=e99]
+              - generic [ref=e102]: Ver detalles
+            - generic [ref=e103]:
+              - heading "Col bruselas(repollitas)" [level=3] [ref=e104]
+              - paragraph [ref=e105]: Las coles de Bruselas están repletas de vitaminas, minerales y fibra. Usted puede confiar en que estas coles le brinden soporte a su sistema inmunitario, la salud de la sangre y los huesos, y más. Comer solo unas pocas coles de Bruselas le proporcionará mucha vitamina C y vitamina K.
+              - generic [ref=e107]:
+                - generic [ref=e108]: $ 7.500
+                - generic [ref=e109]: Por kg
+              - button "Agregar al Carrito" [ref=e110] [cursor=pointer]:
+                - img [ref=e111]
+                - text: Agregar al Carrito
+          - generic [ref=e115]:
+            - generic [ref=e116] [cursor=pointer]:
+              - generic [ref=e121]:
+                - generic [ref=e122]: 🥑
+                - generic [ref=e123]: FD
+                - paragraph [ref=e125]: Frijol desgranado
+                - generic [ref=e126]: aguacates
+              - button [ref=e130]:
+                - img [ref=e131]
+              - generic [ref=e134]: Ver detalles
+            - generic [ref=e135]:
+              - heading "Frijol desgranado" [level=3] [ref=e136]
+              - paragraph [ref=e137]: Frijol desgranado
+              - generic [ref=e139]:
+                - generic [ref=e140]: $ 8.100
+                - generic [ref=e141]: Por kg
+              - button "Agregar al Carrito" [ref=e142] [cursor=pointer]:
+                - img [ref=e143]
+                - text: Agregar al Carrito
+          - generic [ref=e147]:
+            - generic [ref=e148] [cursor=pointer]:
+              - generic [ref=e153]:
+                - generic [ref=e154]: 🥑
+                - generic [ref=e155]: AA
+                - paragraph [ref=e157]: Arveja Amarilla Ecómica
+                - generic [ref=e158]: aguacates
+              - button [ref=e162]:
+                - img [ref=e163]
+              - generic [ref=e166]: Ver detalles
+            - generic [ref=e167]:
+              - heading "Arveja Amarilla Ecómica" [level=3] [ref=e168]
+              - paragraph [ref=e169]: Arveja Amarilla Ecómica
+              - generic [ref=e171]:
+                - generic [ref=e172]: $ 9.500
+                - generic [ref=e173]: Por kg
+              - button "Agregar al Carrito" [ref=e174] [cursor=pointer]:
+                - img [ref=e175]
+                - text: Agregar al Carrito
+          - generic [ref=e179]:
+            - generic [ref=e180] [cursor=pointer]:
+              - generic [ref=e185]:
+                - generic [ref=e186]: 🥑
+                - generic [ref=e187]: MD
+                - paragraph [ref=e189]: Mazorca desgranada fresca
+                - generic [ref=e190]: aguacates
+              - button [ref=e194]:
+                - img [ref=e195]
+              - generic [ref=e198]: Ver detalles
+            - generic [ref=e199]:
+              - heading "Mazorca desgranada fresca" [level=3] [ref=e200]
+              - paragraph [ref=e201]: El maíz es fuente natural de fibra insoluble la cual previene el tránsito intestinal lento, estimulando los movimientos peristálticos del tracto digestivo, además contiene fibra soluble la cual tiene propiedades en cuanto a la disminución de azúcar y grasa en la sangre.
+              - generic [ref=e203]:
+                - generic [ref=e204]: $ 7.800
+                - generic [ref=e205]: Por kg
+              - button "Agregar al Carrito" [ref=e206] [cursor=pointer]:
+                - img [ref=e207]
+                - text: Agregar al Carrito
+          - generic [ref=e211]:
+            - generic [ref=e212] [cursor=pointer]:
+              - generic [ref=e217]:
+                - generic [ref=e218]: 🥑
+                - generic [ref=e219]: PV
+                - paragraph [ref=e221]: Platano verde x 4 Unidades
+                - generic [ref=e222]: aguacates
+              - button [ref=e226]:
+                - img [ref=e227]
+              - generic [ref=e230]: Ver detalles
+            - generic [ref=e231]:
+              - heading "Platano verde x 4 Unidades" [level=3] [ref=e232]
+              - paragraph [ref=e233]: Mejorar el funcionamiento del intestino. Prevenir la diabetes. Disminuir el colesterol LDL. Combatir la depresión. Prevenir enfermedades cardiovasculares. Ayudar en el proceso de pérdida de peso.
+              - generic [ref=e235]:
+                - generic [ref=e236]: $ 8.900
+                - generic [ref=e237]: Por kg
+              - button "Agregar al Carrito" [ref=e238] [cursor=pointer]:
+                - img [ref=e239]
+                - text: Agregar al Carrito
+          - generic [ref=e243]:
+            - generic [ref=e244] [cursor=pointer]:
+              - generic [ref=e249]:
+                - generic [ref=e250]: 🥑
+                - generic [ref=e251]: MB
+                - paragraph [ref=e253]: Mazorca baby
+                - generic [ref=e254]: aguacates
+              - button [ref=e258]:
+                - img [ref=e259]
+              - generic [ref=e262]: Ver detalles
+            - generic [ref=e263]:
+              - heading "Mazorca baby" [level=3] [ref=e264]
+              - paragraph [ref=e265]: Las mini-mazorcas son ricas en nutrientes y una porción de 12 taza cumple con el 4% del valor diario recomendado de vitamina A y hierro y con el 2% del valor diario de vitamina C. Como nutrientes esenciales para el sistema inmune, las vitaminas A y C ayudan a tu cuerpo a combatir infecciones
+              - generic [ref=e267]:
+                - generic [ref=e268]: $ 8.500
+                - generic [ref=e269]: Por kg
+              - button "Agregar al Carrito" [ref=e270] [cursor=pointer]:
+                - img [ref=e271]
+                - text: Agregar al Carrito
+          - generic [ref=e275]:
+            - generic [ref=e276] [cursor=pointer]:
+              - generic [ref=e281]:
+                - generic [ref=e282]: 🥑
+                - generic [ref=e283]: ZA
+                - paragraph [ref=e285]: Zucchini Amarillo
+                - generic [ref=e286]: aguacates
+              - button [ref=e290]:
+                - img [ref=e291]
+              - generic [ref=e294]: Ver detalles
+            - generic [ref=e295]:
+              - heading "Zucchini Amarillo" [level=3] [ref=e296]
+              - paragraph [ref=e297]: La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario.
+              - generic [ref=e299]:
+                - generic [ref=e300]: $ 4.900
+                - generic [ref=e301]: Por unit
+              - button "Agregar al Carrito" [ref=e302] [cursor=pointer]:
+                - img [ref=e303]
+                - text: Agregar al Carrito
+          - generic [ref=e307]:
+            - generic [ref=e308] [cursor=pointer]:
+              - generic [ref=e313]:
+                - generic [ref=e314]: 🥑
+                - generic [ref=e315]: ZV
+                - paragraph [ref=e317]: Zucchini verde
+                - generic [ref=e318]: aguacates
+              - button [ref=e322]:
+                - img [ref=e323]
+              - generic [ref=e326]: Ver detalles
+            - generic [ref=e327]:
+              - heading "Zucchini verde" [level=3] [ref=e328]
+              - paragraph [ref=e329]: La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario.
+              - generic [ref=e331]:
+                - generic [ref=e332]: $ 7.500
+                - generic [ref=e333]: Por kg
+              - button "Agregar al Carrito" [ref=e334] [cursor=pointer]:
+                - img [ref=e335]
+                - text: Agregar al Carrito
+          - generic [ref=e339]:
+            - generic [ref=e340] [cursor=pointer]:
+              - generic [ref=e345]:
+                - generic [ref=e346]: 🥑
+                - generic [ref=e347]: TL
+                - paragraph [ref=e349]: Tomate larga vida
+                - generic [ref=e350]: aguacates
+              - button [ref=e354]:
+                - img [ref=e355]
+              - generic [ref=e358]: Ver detalles
+            - generic [ref=e359]:
+              - heading "Tomate larga vida" [level=3] [ref=e360]
+              - paragraph [ref=e361]: Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ...
+              - generic [ref=e363]:
+                - generic [ref=e364]: $ 5.000
+                - generic [ref=e365]: Por unit
+              - button "Agregar al Carrito" [ref=e366] [cursor=pointer]:
+                - img [ref=e367]
+                - text: Agregar al Carrito
+          - generic [ref=e371]:
+            - generic [ref=e372] [cursor=pointer]:
+              - generic [ref=e377]:
+                - generic [ref=e378]: 🥑
+                - generic [ref=e379]: HD
+                - paragraph [ref=e381]: Habas desgranadas
+                - generic [ref=e382]: aguacates
+              - button [ref=e386]:
+                - img [ref=e387]
+              - generic [ref=e390]: Ver detalles
+            - generic [ref=e391]:
+              - heading "Habas desgranadas" [level=3] [ref=e392]
+              - paragraph
+              - generic [ref=e394]:
+                - generic [ref=e395]: $ 8.800
+                - generic [ref=e396]: Por kg
+              - button "Agregar al Carrito" [ref=e397] [cursor=pointer]:
+                - img [ref=e398]
+                - text: Agregar al Carrito
+          - generic [ref=e402]:
+            - generic [ref=e403] [cursor=pointer]:
+              - generic [ref=e408]:
+                - generic [ref=e409]: 🥑
+                - generic [ref=e410]: TU
+                - paragraph [ref=e412]: Tomate Uvalina
+                - generic [ref=e413]: aguacates
+              - button [ref=e417]:
+                - img [ref=e418]
+              - generic [ref=e421]: Ver detalles
+            - generic [ref=e422]:
+              - heading "Tomate Uvalina" [level=3] [ref=e423]
+              - paragraph [ref=e424]: Los tomates uva son más oblongos que los tomates cherry y se parecen más a las uvas en términos de su forma (de ahí el nombre de tomate uva!). También son más pequeños que los tomates cherry (aproximadamente la mitad del tamaño) y tienen una piel más gruesa. Los tomates uva tampoco son tan dulces como los tomates cherry y su carne es más carnosa y menos acuosa.
+              - generic [ref=e426]:
+                - generic [ref=e427]: $ 7.500
+                - generic [ref=e428]: Por kg
+              - button "Agregar al Carrito" [ref=e429] [cursor=pointer]:
+                - img [ref=e430]
+                - text: Agregar al Carrito
+          - generic [ref=e434]:
+            - generic [ref=e435] [cursor=pointer]:
+              - generic [ref=e440]:
+                - generic [ref=e441]: 🥑
+                - generic [ref=e442]: TC
+                - paragraph [ref=e444]: Tomate cherry
+                - generic [ref=e445]: aguacates
+              - button [ref=e449]:
+                - img [ref=e450]
+              - generic [ref=e453]: Ver detalles
+            - generic [ref=e454]:
+              - heading "Tomate cherry" [level=3] [ref=e455]
+              - paragraph [ref=e456]: "Fuente de vitamina A: contiene una cantidad importante de vitamina A, básicamente en forma de carotenoides, concretamente de licopeno. Estos pigmentos son, a su vez, responsables del color de esta verdura. La vitamina A es esencial para la piel y los dientes."
+              - generic [ref=e458]:
+                - generic [ref=e459]: $ 6.600
+                - generic [ref=e460]: Por kg
+              - button "Agregar al Carrito" [ref=e461] [cursor=pointer]:
+                - img [ref=e462]
+                - text: Agregar al Carrito
+          - generic [ref=e466]:
+            - generic [ref=e467] [cursor=pointer]:
+              - generic [ref=e472]:
+                - generic [ref=e473]: 🥑
+                - generic [ref=e474]: TC
+                - paragraph [ref=e476]: Tomate chonto tamaño mixto
+                - generic [ref=e477]: aguacates
+              - button [ref=e481]:
+                - img [ref=e482]
+              - generic [ref=e485]: Ver detalles
+            - generic [ref=e486]:
+              - heading "Tomate chonto tamaño mixto" [level=3] [ref=e487]
+              - paragraph [ref=e488]: Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ...
+              - generic [ref=e490]:
+                - generic [ref=e491]: $ 4.900
+                - generic [ref=e492]: Por unit
+              - button "Agregar al Carrito" [ref=e493] [cursor=pointer]:
+                - img [ref=e494]
+                - text: Agregar al Carrito
+          - generic [ref=e498]:
+            - generic [ref=e499] [cursor=pointer]:
+              - generic [ref=e504]:
+                - generic [ref=e505]: 🥑
+                - generic [ref=e506]: PI
+                - paragraph [ref=e508]: Pitaya
+                - generic [ref=e509]: aguacates
+              - button [ref=e513]:
+                - img [ref=e514]
+              - generic [ref=e517]: Ver detalles
+            - generic [ref=e518]:
+              - heading "Pitaya" [level=3] [ref=e519]
+              - paragraph [ref=e520]: La Pitaya Propiedades y beneficios Refuerza el sistema inmunológico. ... Posee efectos antiinflamatorios. ... Regula el tránsito intestinal. ... Reduce el nivel de azúcar en sangre. ... Evita la anemia ferropénica. ... Mejora el estado de huesos y articulaciones. ... Ayuda en las dietas de adelgazamiento. ... Retrasa el envejecimiento celular.
+              - generic [ref=e522]:
+                - generic [ref=e523]: $ 5.900
+                - generic [ref=e524]: Por unit
+              - button "Agregar al Carrito" [ref=e525] [cursor=pointer]:
+                - img [ref=e526]
+                - text: Agregar al Carrito
+          - generic [ref=e530]:
+            - generic [ref=e531] [cursor=pointer]:
+              - generic [ref=e536]:
+                - generic [ref=e537]: 🥑
+                - generic [ref=e538]: PI
+                - paragraph [ref=e540]: Pimentón
+                - generic [ref=e541]: aguacates
+              - button [ref=e545]:
+                - img [ref=e546]
+              - generic [ref=e549]: Ver detalles
+            - generic [ref=e550]:
+              - heading "Pimentón" [level=3] [ref=e551]
+              - paragraph [ref=e552]: "Recomendados para: Favorece la formación de colágeno, huesos y dientes. Favorece el crecimiento de: cabello, visión, uñas, mucosas. Sistema inmunológico. ... Transmisión y generación del impulso nervioso y muscular. Por su vitamina E como uno de los grandes antioxidantes aliados contra el cáncer."
+              - generic [ref=e554]:
+                - generic [ref=e555]: $ 4.900
+                - generic [ref=e556]: Por kg
+              - button "Agregar al Carrito" [ref=e557] [cursor=pointer]:
+                - img [ref=e558]
+                - text: Agregar al Carrito
+          - generic [ref=e562]:
+            - generic [ref=e563] [cursor=pointer]:
+              - generic [ref=e568]:
+                - generic [ref=e569]: 🥑
+                - generic [ref=e570]: JB
+                - paragraph [ref=e572]: Jalapeños bandeja
+                - generic [ref=e573]: aguacates
+              - button [ref=e577]:
+                - img [ref=e578]
+              - generic [ref=e581]: Ver detalles
+            - generic [ref=e582]:
+              - heading "Jalapeños bandeja" [level=3] [ref=e583]
+              - paragraph [ref=e584]: Fuente de Vitaminas. ... Quema de calorías. ... Mayor oxigenación. ... Sensación de Plenitud. ... Protector gástrico. ... Mejora al corazón. ... Efecto antioxidante. ... Combate el Acné
+              - generic [ref=e586]:
+                - generic [ref=e587]: $ 3.800
+                - generic [ref=e588]: Por unit
+              - button "Agregar al Carrito" [ref=e589] [cursor=pointer]:
+                - img [ref=e590]
+                - text: Agregar al Carrito
+          - generic [ref=e594]:
+            - generic [ref=e595] [cursor=pointer]:
+              - img "Carambolo" [ref=e598]
+              - button [ref=e599]:
+                - img [ref=e600]
+              - generic [ref=e603]: Ver detalles
+            - generic [ref=e604]:
+              - heading "Carambolo" [level=3] [ref=e605]
+              - paragraph [ref=e606]: Recomendada para diabetes, hipertensión y afecciones de corazón y vasos sanguíneos. Esta fruta se caracteriza por un bajo aporte en hidratos de carbono, lo que hace de ella un buen alimento para ser tomado por personas que padecen de diabetes, así como por ser rica en potasio
+              - generic [ref=e608]:
+                - generic [ref=e609]: $ 5.500
+                - generic [ref=e610]: Por unit
+              - button "Agregar al Carrito" [ref=e611] [cursor=pointer]:
+                - img [ref=e612]
+                - text: Agregar al Carrito
+          - generic [ref=e616]:
+            - generic [ref=e617] [cursor=pointer]:
+              - generic [ref=e622]:
+                - generic [ref=e623]: 🥑
+                - generic [ref=e624]: AD
+                - paragraph [ref=e626]: Arveja desgranada
+                - generic [ref=e627]: aguacates
+              - button [ref=e631]:
+                - img [ref=e632]
+              - generic [ref=e635]: Ver detalles
+            - generic [ref=e636]:
+              - heading "Arveja desgranada" [level=3] [ref=e637]
+              - paragraph [ref=e638]: Arveja desgranada
+              - generic [ref=e640]:
+                - generic [ref=e641]: $ 15.000
+                - generic [ref=e642]: Por kg
+              - button "Agregar al Carrito" [ref=e643] [cursor=pointer]:
+                - img [ref=e644]
+                - text: Agregar al Carrito
+          - generic [ref=e648]:
+            - generic [ref=e649] [cursor=pointer]:
+              - generic [ref=e654]:
+                - generic [ref=e655]: 🥑
+                - generic [ref=e656]: XG
+                - paragraph [ref=e658]: X500 grs(Ahorro)
+                - generic [ref=e659]: aguacates
+              - button [ref=e663]:
+                - img [ref=e664]
+              - generic [ref=e667]: Ver detalles
+            - generic [ref=e668]:
+              - heading "X500 grs(Ahorro)" [level=3] [ref=e669]
+              - paragraph
+              - generic [ref=e671]:
+                - generic [ref=e672]: $ 12.800
+                - generic [ref=e673]: Por kg
+              - button "Agregar al Carrito" [ref=e674] [cursor=pointer]:
+                - img [ref=e675]
+                - text: Agregar al Carrito
+          - generic [ref=e679]:
+            - generic [ref=e680] [cursor=pointer]:
+              - generic [ref=e685]:
+                - generic [ref=e686]: 🥑
+                - generic [ref=e687]: CH
+                - paragraph [ref=e689]: Chiles
+                - generic [ref=e690]: aguacates
+              - button [ref=e694]:
+                - img [ref=e695]
+              - generic [ref=e698]: Ver detalles
+            - generic [ref=e699]:
+              - heading "Chiles" [level=3] [ref=e700]
+              - paragraph [ref=e701]: Contiene vitaminas B y E, además de ser una buena fuente de hierro y potasio. Es rico en capsaicina que ayuda a quemar grasa durante el proceso digestivo. Acelera el metabolismo hasta en un 25%, reduce el apetito y limpia el estómago. El chile tiene efectos antiinflamatorios y es un anticoagulante natural.
+              - generic [ref=e703]:
+                - generic [ref=e704]: $ 3.800
+                - generic [ref=e705]: Por kg
+              - button "Agregar al Carrito" [ref=e706] [cursor=pointer]:
+                - img [ref=e707]
+                - text: Agregar al Carrito
+          - generic [ref=e711]:
+            - generic [ref=e712] [cursor=pointer]:
+              - generic [ref=e717]:
+                - generic [ref=e718]: 🥑
+                - generic [ref=e719]: RO
+                - paragraph [ref=e721]: Rambutan o lichi peludo
+                - generic [ref=e722]: aguacates
+              - button [ref=e726]:
+                - img [ref=e727]
+              - generic [ref=e730]: Ver detalles
+            - generic [ref=e731]:
+              - heading "Rambutan o lichi peludo" [level=3] [ref=e732]
+              - paragraph [ref=e733]: El rambután se compone de ácido gálico y una cantidad de antioxidantes, que ayudan a combatir el envejecimiento prematuro. Refuerza el sistema inmunológico. Debido a su contenido en vitamina C fortalece el sistema inmunológico. Fortalece huesos.
+              - generic [ref=e735]:
+                - generic [ref=e736]: $ 18.000
+                - generic [ref=e737]: Por unit
+              - button "Agregar al Carrito" [ref=e738] [cursor=pointer]:
+                - img [ref=e739]
+                - text: Agregar al Carrito
+          - generic [ref=e743]:
+            - generic [ref=e744] [cursor=pointer]:
+              - generic [ref=e749]:
+                - generic [ref=e750]: 🥑
+                - generic [ref=e751]: GU
+                - paragraph [ref=e753]: Gulupa
+                - generic [ref=e754]: aguacates
+              - button [ref=e758]:
+                - img [ref=e759]
+              - generic [ref=e762]: Ver detalles
+            - generic [ref=e763]:
+              - heading "Gulupa" [level=3] [ref=e764]
+              - paragraph [ref=e765]: GULUPA ES UNA ALTA FUENTE DE FIBRA. UNA ALTA FUENTE DE VITAMINA C. UNA ALTA FUENTE DE VITAMINA A. UNA BUENA FUENTE DE POTASIO. UNA FUENTE NATURAL DE HIERRO. UNA FUENTE NATURAL DE FÓSFORO. UNA FUENTE NATURAL DE MAGNESIO.
+              - generic [ref=e767]:
+                - generic [ref=e768]: $ 3.700
+                - generic [ref=e769]: Por kg
+              - button "Agregar al Carrito" [ref=e770] [cursor=pointer]:
+                - img [ref=e771]
+                - text: Agregar al Carrito
+          - generic [ref=e775]:
+            - generic [ref=e776] [cursor=pointer]:
+              - generic [ref=e781]:
+                - generic [ref=e782]: 🥑
+                - generic [ref=e783]: BB
+                - paragraph [ref=e785]: Banano bocadillo kilo
+                - generic [ref=e786]: aguacates
+              - button [ref=e790]:
+                - img [ref=e791]
+              - generic [ref=e794]: Ver detalles
+            - generic [ref=e795]:
+              - heading "Banano bocadillo kilo" [level=3] [ref=e796]
+              - paragraph [ref=e797]: Fuente de carbohidratos. Gran aporte de vitaminas. Fuente de minerales. Protege nuestro corazón. Reducen la fatiga y el cansancio. Previene la anemia. Estimula el sistema nervioso. Regula la función intestinal.
+              - generic [ref=e799]:
+                - generic [ref=e800]: $ 7.400
+                - generic [ref=e801]: Por kg
+              - button "Agregar al Carrito" [ref=e802] [cursor=pointer]:
+                - img [ref=e803]
+                - text: Agregar al Carrito
+          - generic [ref=e807]:
+            - generic [ref=e808] [cursor=pointer]:
+              - generic [ref=e813]:
+                - generic [ref=e814]: 🥑
+                - generic [ref=e815]: DU
+                - paragraph [ref=e817]: Duraznos
+                - generic [ref=e818]: aguacates
+              - button [ref=e822]:
+                - img [ref=e823]
+              - generic [ref=e826]: Ver detalles
+            - generic [ref=e827]:
+              - heading "Duraznos" [level=3] [ref=e828]
+              - paragraph [ref=e829]: "Durazno: es una buena fuente de betacaroteno, vitaminas del complejo B como B1, B2, vitamina C y vitamina K. Contiene magnesio, calcio, fósforo, también contiene luteína, bioflavonoides y antioxidantes que ayudan a estimular el sistema inmunológico"
+              - generic [ref=e831]:
+                - generic [ref=e832]: $ 5.200
+                - generic [ref=e833]: Por kg
+              - button "Agregar al Carrito" [ref=e834] [cursor=pointer]:
+                - img [ref=e835]
+                - text: Agregar al Carrito
+          - generic [ref=e839]:
+            - generic [ref=e840] [cursor=pointer]:
+              - generic [ref=e845]:
+                - generic [ref=e846]: 🥑
+                - generic [ref=e847]: RG
+                - paragraph [ref=e849]: Red globe nacional
+                - generic [ref=e850]: aguacates
+              - button [ref=e854]:
+                - img [ref=e855]
+              - generic [ref=e858]: Ver detalles
+            - generic [ref=e859]:
+              - heading "Red globe nacional" [level=3] [ref=e860]
+              - paragraph [ref=e861]: Uva red globe nacional
+              - generic [ref=e863]:
+                - generic [ref=e864]: $ 8.800
+                - generic [ref=e865]: Por kg
+              - button "Agregar al Carrito" [ref=e866] [cursor=pointer]:
+                - img [ref=e867]
+                - text: Agregar al Carrito
+          - generic [ref=e871]:
+            - generic [ref=e872] [cursor=pointer]:
+              - generic [ref=e877]:
+                - generic [ref=e878]: 🥑
+                - generic [ref=e879]: UC
+                - paragraph [ref=e881]: Uva chilena importada
+                - generic [ref=e882]: aguacates
+              - button [ref=e886]:
+                - img [ref=e887]
+              - generic [ref=e890]: Ver detalles
+            - generic [ref=e891]:
+              - heading "Uva chilena importada" [level=3] [ref=e892]
+              - paragraph [ref=e893]: Uva chilena importada Premium
+              - generic [ref=e895]:
+                - generic [ref=e896]: $ 16.300
+                - generic [ref=e897]: Por kg
+              - button "Agregar al Carrito" [ref=e898] [cursor=pointer]:
+                - img [ref=e899]
+                - text: Agregar al Carrito
+          - generic [ref=e903]:
+            - generic [ref=e904] [cursor=pointer]:
+              - generic [ref=e909]:
+                - generic [ref=e910]: 🥑
+                - generic [ref=e911]: TO
+                - paragraph [ref=e913]: Toronja
+                - generic [ref=e914]: aguacates
+              - button [ref=e918]:
+                - img [ref=e919]
+              - generic [ref=e922]: Ver detalles
+            - generic [ref=e923]:
+              - heading "Toronja" [level=3] [ref=e924]
+              - paragraph
+              - generic [ref=e926]:
+                - generic [ref=e927]: $ 8.800
+                - generic [ref=e928]: Por kg
+              - button "Agregar al Carrito" [ref=e929] [cursor=pointer]:
+                - img [ref=e930]
+                - text: Agregar al Carrito
+          - generic [ref=e934]:
+            - generic [ref=e935] [cursor=pointer]:
+              - generic [ref=e940]:
+                - generic [ref=e941]: 🥑
+                - generic [ref=e942]: GR
+                - paragraph [ref=e944]: Granada
+                - generic [ref=e945]: aguacates
+              - button [ref=e949]:
+                - img [ref=e950]
+              - generic [ref=e953]: Ver detalles
+            - generic [ref=e954]:
+              - heading "Granada" [level=3] [ref=e955]
+              - paragraph [ref=e956]: "La granada ofrece múltiples beneficios: mejora la salud gastrointestinal y sexual, favorece la salud cardíaca y cutánea, fortalece el sistema inmunitario, y contribuye a una buena salud neurológica y a la prevención de la pérdida de memoria."
+              - generic [ref=e958]:
+                - generic [ref=e959]: $ 17.000
+                - generic [ref=e960]: Por unit
+              - button "Agregar al Carrito" [ref=e961] [cursor=pointer]:
+                - img [ref=e962]
+                - text: Agregar al Carrito
+          - generic [ref=e966]:
+            - generic [ref=e967] [cursor=pointer]:
+              - generic [ref=e972]:
+                - generic [ref=e973]: 🥑
+                - generic [ref=e974]: PM
+                - paragraph [ref=e976]: Pitahaya morada kilo
+                - generic [ref=e977]: aguacates
+              - button [ref=e981]:
+                - img [ref=e982]
+              - generic [ref=e985]: Ver detalles
+            - generic [ref=e986]:
+              - heading "Pitahaya morada kilo" [level=3] [ref=e987]
+              - paragraph [ref=e988]: En Taiwán, utilizan su fruta para mejorar los niveles de azúcar en sangre en pacientes con hipoglucemia. Disminuye los niveles sanguíneos de triglicéridos, colesterol y lípidos de baja densidad.
+              - generic [ref=e990]:
+                - generic [ref=e991]: $ 15.500
+                - generic [ref=e992]: Por kg
+              - button "Agregar al Carrito" [ref=e993] [cursor=pointer]:
+                - img [ref=e994]
+                - text: Agregar al Carrito
+          - generic [ref=e998]:
+            - generic [ref=e999] [cursor=pointer]:
+              - generic [ref=e1004]:
+                - generic [ref=e1005]: 🥑
+                - generic [ref=e1006]: MC
+                - paragraph [ref=e1008]: Mango Comun
+                - generic [ref=e1009]: aguacates
+              - button [ref=e1013]:
+                - img [ref=e1014]
+              - generic [ref=e1017]: Ver detalles
+            - generic [ref=e1018]:
+              - heading "Mango Comun" [level=3] [ref=e1019]
+              - paragraph [ref=e1020]: El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,
+              - generic [ref=e1022]:
+                - generic [ref=e1023]: $ 6.900
+                - generic [ref=e1024]: Por kg
+              - button "Agregar al Carrito" [ref=e1025] [cursor=pointer]:
+                - img [ref=e1026]
+                - text: Agregar al Carrito
+          - generic [ref=e1030]:
+            - generic [ref=e1031] [cursor=pointer]:
+              - generic [ref=e1036]:
+                - generic [ref=e1037]: 🥑
+                - generic [ref=e1038]: CN
+                - paragraph [ref=e1040]: Ciruela nacional
+                - generic [ref=e1041]: aguacates
+              - button [ref=e1045]:
+                - img [ref=e1046]
+              - generic [ref=e1049]: Ver detalles
+            - generic [ref=e1050]:
+              - heading "Ciruela nacional" [level=3] [ref=e1051]
+              - paragraph [ref=e1052]: La ciruela es considerada una fruta cítrica que aporta vitamina C, entonces se ha visto que el poder antioxidante que tiene por contener antocianina y al ser una fruta de color rojo
+              - generic [ref=e1054]:
+                - generic [ref=e1055]: $ 4.200
+                - generic [ref=e1056]: Por kg
+              - button "Agregar al Carrito" [ref=e1057] [cursor=pointer]:
+                - img [ref=e1058]
+                - text: Agregar al Carrito
+          - generic [ref=e1062]:
+            - generic [ref=e1063] [cursor=pointer]:
+              - generic [ref=e1068]:
+                - generic [ref=e1069]: 🥑
+                - generic [ref=e1070]: PI
+                - paragraph [ref=e1072]: Pera importada
+                - generic [ref=e1073]: aguacates
+              - button [ref=e1077]:
+                - img [ref=e1078]
+              - generic [ref=e1081]: Ver detalles
+            - generic [ref=e1082]:
+              - heading "Pera importada" [level=3] [ref=e1083]
+              - paragraph [ref=e1084]: Las peras son ricas en sales minerales y en vitaminas C y A. La vitamina A es necesaria para el buen funcionamiento de la vista, para el crecimiento óseo
+              - generic [ref=e1086]:
+                - generic [ref=e1087]: $ 9.000
+                - generic [ref=e1088]: Por unit
+              - button "Agregar al Carrito" [ref=e1089] [cursor=pointer]:
+                - img [ref=e1090]
+                - text: Agregar al Carrito
+          - generic [ref=e1094]:
+            - generic [ref=e1095] [cursor=pointer]:
+              - generic [ref=e1100]:
+                - generic [ref=e1101]: 🥑
+                - generic [ref=e1102]: MD
+                - paragraph [ref=e1104]: Manzana de Agua
+                - generic [ref=e1105]: aguacates
+              - button [ref=e1109]:
+                - img [ref=e1110]
+              - generic [ref=e1113]: Ver detalles
+            - generic [ref=e1114]:
+              - heading "Manzana de Agua" [level=3] [ref=e1115]
+              - paragraph
+              - generic [ref=e1117]:
+                - generic [ref=e1118]: $ 4.500
+                - generic [ref=e1119]: Por kg
+              - button "Agregar al Carrito" [ref=e1120] [cursor=pointer]:
+                - img [ref=e1121]
+                - text: Agregar al Carrito
+          - generic [ref=e1125]:
+            - generic [ref=e1126] [cursor=pointer]:
+              - generic [ref=e1131]:
+                - generic [ref=e1132]: 🥑
+                - generic [ref=e1133]: MA
+                - paragraph [ref=e1135]: Mango Azúcar
+                - generic [ref=e1136]: aguacates
+              - button [ref=e1140]:
+                - img [ref=e1141]
+              - generic [ref=e1144]: Ver detalles
+            - generic [ref=e1145]:
+              - heading "Mango Azúcar" [level=3] [ref=e1146]
+              - paragraph [ref=e1147]: El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,
+              - generic [ref=e1149]:
+                - generic [ref=e1150]: $ 5.000
+                - generic [ref=e1151]: Por kg
+              - button "Agregar al Carrito" [ref=e1152] [cursor=pointer]:
+                - img [ref=e1153]
+                - text: Agregar al Carrito
+          - generic [ref=e1157]:
+            - generic [ref=e1158] [cursor=pointer]:
+              - generic [ref=e1163]:
+                - generic [ref=e1164]: 🥑
+                - generic [ref=e1165]: BC
+                - paragraph [ref=e1167]: Banano criollo Kilo
+                - generic [ref=e1168]: aguacates
+              - button [ref=e1172]:
+                - img [ref=e1173]
+              - generic [ref=e1176]: Ver detalles
+            - generic [ref=e1177]:
+              - heading "Banano criollo Kilo" [level=3] [ref=e1178]
+              - paragraph [ref=e1179]: Banano Fuente de carbohidratos. Gran aporte de vitaminas. Fuente de minerales. Protege nuestro corazón. Reducen la fatiga y el cansancio. Previene la anemia. Estimula el sistema nervioso. Regula la función intestinal.
+              - generic [ref=e1181]:
+                - generic [ref=e1182]: $ 7.500
+                - generic [ref=e1183]: Por kg
+              - button "Agregar al Carrito" [ref=e1184] [cursor=pointer]:
+                - img [ref=e1185]
+                - text: Agregar al Carrito
+          - generic [ref=e1189]:
+            - generic [ref=e1190] [cursor=pointer]:
+              - generic [ref=e1195]:
+                - generic [ref=e1196]: 🥑
+                - generic [ref=e1197]: MA
+                - paragraph [ref=e1199]: Mandarina
+                - generic [ref=e1200]: aguacates
+              - button [ref=e1204]:
+                - img [ref=e1205]
+              - generic [ref=e1208]: Ver detalles
+            - generic [ref=e1209]:
+              - heading "Mandarina" [level=3] [ref=e1210]
+              - paragraph [ref=e1211]: Mandarina el alto nivel de nutrientes de la mandarina nos protege contra problemas cardíacos, infecciones, anemias, alergias, diabetes y varios tipos de cáncer. Asimismo, contribuye a combatir el colesterol, estreñimiento, presión arterial, deshidratación, obesidad y estrés.
+              - generic [ref=e1213]:
+                - generic [ref=e1214]: $ 4.600
+                - generic [ref=e1215]: Por kg
+              - button "Agregar al Carrito" [ref=e1216] [cursor=pointer]:
+                - img [ref=e1217]
+                - text: Agregar al Carrito
+          - generic [ref=e1221]:
+            - generic [ref=e1222] [cursor=pointer]:
+              - generic [ref=e1227]:
+                - generic [ref=e1228]: 🥑
+                - generic [ref=e1229]: TA
+                - paragraph [ref=e1231]: Tamarindo
+                - generic [ref=e1232]: aguacates
+              - button [ref=e1236]:
+                - img [ref=e1237]
+              - generic [ref=e1240]: Ver detalles
+            - generic [ref=e1241]:
+              - heading "Tamarindo" [level=3] [ref=e1242]
+              - paragraph [ref=e1243]: El Tamarindo Tiene un alto contenido de vitamina C, E y B1. Posee minerales como el calcio, zinc, potasio, hierro, fósforo y magnesio. Favorece el transporte de oxígeno en el sistema circulatorio. Regula el nivel de colesterol en la sangre
+              - generic [ref=e1245]:
+                - generic [ref=e1246]: $ 5.500
+                - generic [ref=e1247]: Por kg
+              - button "Agregar al Carrito" [ref=e1248] [cursor=pointer]:
+                - img [ref=e1249]
+                - text: Agregar al Carrito
+          - generic [ref=e1253]:
+            - generic [ref=e1254] [cursor=pointer]:
+              - generic [ref=e1259]:
+                - generic [ref=e1260]: 🥑
+                - generic [ref=e1261]: CO
+                - paragraph [ref=e1263]: Coco
+                - generic [ref=e1264]: aguacates
+              - button [ref=e1268]:
+                - img [ref=e1269]
+              - generic [ref=e1272]: Ver detalles
+            - generic [ref=e1273]:
+              - heading "Coco" [level=3] [ref=e1274]
+              - paragraph [ref=e1275]: Los beneficios del coco para la salud Se ha estimado que el 50 % de la grasa del coco es ácido láurico, un tipo de lípido que aumenta los niveles de colesterol bueno y reduce el riesgo de padecer enfermedades cardiovasculares. Además, este ácido posee tiene propiedades antibacterianas, antifúngicas y antivirales.
+              - generic [ref=e1277]:
+                - generic [ref=e1278]: $ 9.990
+                - generic [ref=e1279]: Por unit
+              - button "Agregar al Carrito" [ref=e1280] [cursor=pointer]:
+                - img [ref=e1281]
+                - text: Agregar al Carrito
+          - generic [ref=e1285]:
+            - generic [ref=e1286] [cursor=pointer]:
+              - generic [ref=e1291]:
+                - generic [ref=e1292]: 🥑
+                - generic [ref=e1293]: NV
+                - paragraph [ref=e1295]: Naranja valencia
+                - generic [ref=e1296]: aguacates
+              - button [ref=e1300]:
+                - img [ref=e1301]
+              - generic [ref=e1304]: Ver detalles
+            - generic [ref=e1305]:
+              - heading "Naranja valencia" [level=3] [ref=e1306]
+              - paragraph [ref=e1307]: Las Naranjas Son ricas en calcio, que protege los huesos y dientes, manteniéndolos sanos. Su consumo ayuda a reducir la absorción de grasas y a bajar el colesterol y la tensión. Tiene propiedades antiinflamatorias, por lo que es beneficiosa para las personas con artritis.
+              - generic [ref=e1309]:
+                - generic [ref=e1310]: $ 6.300
+                - generic [ref=e1311]: Por kg
+              - button "Agregar al Carrito" [ref=e1312] [cursor=pointer]:
+                - img [ref=e1313]
+                - text: Agregar al Carrito
+          - generic [ref=e1317]:
+            - generic [ref=e1318] [cursor=pointer]:
+              - generic [ref=e1323]:
+                - generic [ref=e1324]: 🥑
+                - generic [ref=e1325]: BM
+                - paragraph [ref=e1327]: Borojo maya
+                - generic [ref=e1328]: aguacates
+              - button [ref=e1332]:
+                - img [ref=e1333]
+              - generic [ref=e1336]: Ver detalles
+            - generic [ref=e1337]:
+              - heading "Borojo maya" [level=3] [ref=e1338]
+              - paragraph [ref=e1339]: Disminuye la fatiga durante el ejercicio. Aporta una buena porción de fibra dietética. Fortalece huesos, dientes y encías. El Borojo Es una fuente de fósforo. Mejora el funcionamiento del corazón, sistema nervioso y digestivo. Es rica en vitamina C y antioxidantes.
+              - generic [ref=e1341]:
+                - generic [ref=e1342]: $ 3.500
+                - generic [ref=e1343]: Por kg
+              - button "Agregar al Carrito" [ref=e1344] [cursor=pointer]:
+                - img [ref=e1345]
+                - text: Agregar al Carrito
+          - generic [ref=e1349]:
+            - generic [ref=e1350] [cursor=pointer]:
+              - generic [ref=e1355]:
+                - generic [ref=e1356]: 🥑
+                - generic [ref=e1357]: LT
+                - paragraph [ref=e1359]: Limón tahiti
+                - generic [ref=e1360]: aguacates
+              - button [ref=e1364]:
+                - img [ref=e1365]
+              - generic [ref=e1368]: Ver detalles
+            - generic [ref=e1369]:
+              - heading "Limón tahiti" [level=3] [ref=e1370]
+              - paragraph [ref=e1371]: Los limones contienen vitamina C, un poderoso antioxidante, y son una fuente de compuestos vegetales llamados flavonoides, que tienen efectos antioxidantes y antiinflamatorios. Los antioxidantes son compuestos que ayudan a proteger las células del cuerpo del daño.
+              - generic [ref=e1373]:
+                - generic [ref=e1374]: $ 3.700
+                - generic [ref=e1375]: Por kg
+              - button "Agregar al Carrito" [ref=e1376] [cursor=pointer]:
+                - img [ref=e1377]
+                - text: Agregar al Carrito
+          - generic [ref=e1381]:
+            - generic [ref=e1382] [cursor=pointer]:
+              - generic [ref=e1387]:
+                - generic [ref=e1388]: 🥑
+                - generic [ref=e1389]: PN
+                - paragraph [ref=e1391]: Pera Nacional
+                - generic [ref=e1392]: aguacates
+              - button [ref=e1396]:
+                - img [ref=e1397]
+              - generic [ref=e1400]: Ver detalles
+            - generic [ref=e1401]:
+              - heading "Pera Nacional" [level=3] [ref=e1402]
+              - paragraph [ref=e1403]: Por su bajo contenido en sodio e hidratos de carbono,
+              - generic [ref=e1405]:
+                - generic [ref=e1406]: $ 7.500
+                - generic [ref=e1407]: Por unit
+              - button "Agregar al Carrito" [ref=e1408] [cursor=pointer]:
+                - img [ref=e1409]
+                - text: Agregar al Carrito
+          - generic [ref=e1413]:
+            - generic [ref=e1414] [cursor=pointer]:
+              - generic [ref=e1419]:
+                - generic [ref=e1420]: 🥑
+                - generic [ref=e1421]: MB
+                - paragraph [ref=e1423]: Manzana bandj combinada
+                - generic [ref=e1424]: aguacates
+              - button [ref=e1428]:
+                - img [ref=e1429]
+              - generic [ref=e1432]: Ver detalles
+            - generic [ref=e1433]:
+              - heading "Manzana bandj combinada" [level=3] [ref=e1434]
+              - paragraph [ref=e1435]: Previene el estreñimiento. Su alto contenido en fibra favorece el tránsito intestinal y ayuda a la digestión de las grasas. Poder antioxidante. ... Mejora el sistema inmune. ... Favorece el bienestar. ... Perfecto para hacer dieta. ... Es muy nutritiva. ... Disminuye la fatiga. ... Buena para los dientes.
+              - generic [ref=e1437]:
+                - generic [ref=e1438]: $ 9.500
+                - generic [ref=e1439]: Por unit
+              - button "Agregar al Carrito" [ref=e1440] [cursor=pointer]:
+                - img [ref=e1441]
+                - text: Agregar al Carrito
+          - generic [ref=e1445]:
+            - generic [ref=e1446] [cursor=pointer]:
+              - generic [ref=e1451]:
+                - generic [ref=e1452]: 🥑
+                - generic [ref=e1453]: TD
+                - paragraph [ref=e1455]: Tomate de Árbol
+                - generic [ref=e1456]: aguacates
+              - button [ref=e1460]:
+                - img [ref=e1461]
+              - generic [ref=e1464]: Ver detalles
+            - generic [ref=e1465]:
+              - heading "Tomate de Árbol" [level=3] [ref=e1466]
+              - paragraph [ref=e1467]: El Tomate de Árbol Además de polifenoles, el tomate de árbol es rico en licopeno, carotenoide conocido por su alto poder antioxidante; se ha demostrado que el consumo de frutas ricas en carotenoides ejerce un efecto protectivo hacia el desarrollo de hiperglicemia.
+              - generic [ref=e1469]:
+                - generic [ref=e1470]: $ 4.500
+                - generic [ref=e1471]: Por kg
+              - button "Agregar al Carrito" [ref=e1472] [cursor=pointer]:
+                - img [ref=e1473]
+                - text: Agregar al Carrito
+          - generic [ref=e1477]:
+            - generic [ref=e1478] [cursor=pointer]:
+              - generic [ref=e1483]:
+                - generic [ref=e1484]: 🥑
+                - generic [ref=e1485]: CA
+                - paragraph [ref=e1487]: Calendula
+                - generic [ref=e1488]: aguacates
+              - button [ref=e1492]:
+                - img [ref=e1493]
+              - generic [ref=e1496]: Ver detalles
+            - generic [ref=e1497]:
+              - heading "Calendula" [level=3] [ref=e1498]
+              - paragraph [ref=e1499]: La caléndula es antiinflamatorio y cicatrizante, ayuda a problemas digestivos y menstruales, entre otros usos.
+              - generic [ref=e1501]:
+                - generic [ref=e1502]: $ 3.000
+                - generic [ref=e1503]: Por kg
+              - button "Agregar al Carrito" [ref=e1504] [cursor=pointer]:
+                - img [ref=e1505]
+                - text: Agregar al Carrito
+          - generic [ref=e1509]:
+            - generic [ref=e1510] [cursor=pointer]:
+              - generic [ref=e1515]:
+                - generic [ref=e1516]: 🥑
+                - generic [ref=e1517]: MV
+                - paragraph [ref=e1519]: Manzana verde Bandeja
+                - generic [ref=e1520]: aguacates
+              - button [ref=e1524]:
+                - img [ref=e1525]
+              - generic [ref=e1528]: Ver detalles
+            - generic [ref=e1529]:
+              - heading "Manzana verde Bandeja" [level=3] [ref=e1530]
+              - paragraph [ref=e1531]: La manzana verde es uno de los mejores alimentos para diabéticos, ya que gracias a su alto contenido en fibra ayuda a regular la presencia de glucosa en sangre. También ayuda a todos aquellos que estén en fase de prediabetes a retrasar el desarrollo de esta enfermedad
+              - generic [ref=e1533]:
+                - generic [ref=e1534]: $ 11.000
+                - generic [ref=e1535]: Por unit
+              - button "Agregar al Carrito" [ref=e1536] [cursor=pointer]:
+                - img [ref=e1537]
+                - text: Agregar al Carrito
+          - generic [ref=e1541]:
+            - generic [ref=e1542] [cursor=pointer]:
+              - generic [ref=e1547]:
+                - generic [ref=e1548]: 🥑
+                - generic [ref=e1549]: MR
+                - paragraph [ref=e1551]: Manzana roja Bandeja
+                - generic [ref=e1552]: aguacates
+              - button [ref=e1556]:
+                - img [ref=e1557]
+              - generic [ref=e1560]: Ver detalles
+            - generic [ref=e1561]:
+              - heading "Manzana roja Bandeja" [level=3] [ref=e1562]
+              - paragraph [ref=e1563]: Ayudan a purificar la sangre, a limpiar el intestino y favorecen la salud del hígado. Tienen un alto contenido en hierro, mineral que combate la anemia y su jugo es ideal para tratar la fiebre
+              - generic [ref=e1565]:
+                - generic [ref=e1566]: $ 9.500
+                - generic [ref=e1567]: Por unit
+              - button "Agregar al Carrito" [ref=e1568] [cursor=pointer]:
+                - img [ref=e1569]
+                - text: Agregar al Carrito
+          - generic [ref=e1573]:
+            - generic [ref=e1574] [cursor=pointer]:
+              - generic [ref=e1579]:
+                - generic [ref=e1580]: 🥑
+                - generic [ref=e1581]: FR
+                - paragraph [ref=e1583]: Frambuesas Rojas
+                - generic [ref=e1584]: aguacates
+              - button [ref=e1588]:
+                - img [ref=e1589]
+              - generic [ref=e1592]: Ver detalles
+            - generic [ref=e1593]:
+              - heading "Frambuesas Rojas" [level=3] [ref=e1594]
+              - paragraph
+              - generic [ref=e1596]:
+                - generic [ref=e1597]: $ 15.000
+                - generic [ref=e1598]: Por kg
+              - button "Agregar al Carrito" [ref=e1599] [cursor=pointer]:
+                - img [ref=e1600]
+                - text: Agregar al Carrito
+          - generic [ref=e1604]:
+            - generic [ref=e1605] [cursor=pointer]:
+              - generic [ref=e1610]:
+                - generic [ref=e1611]: 🥑
+                - generic [ref=e1612]: GR
+                - paragraph [ref=e1614]: Granadillas
+                - generic [ref=e1615]: aguacates
+              - button [ref=e1619]:
+                - img [ref=e1620]
+              - generic [ref=e1623]: Ver detalles
+            - generic [ref=e1624]:
+              - heading "Granadillas" [level=3] [ref=e1625]
+              - paragraph [ref=e1626]: La granadilla te puede ayudar a prevenir el estreñimiento, los malestares de la gastritis y la acidez. Además, si la consumes con sus semillas le brinda a tu cuerpo un alto contenido de fibra, potasio, calcio, fósforo, hierro, vitaminas, proteínas y carbohidratos.
+              - generic [ref=e1628]:
+                - generic [ref=e1629]: $ 7.400
+                - generic [ref=e1630]: Por unit
+              - button "Agregar al Carrito" [ref=e1631] [cursor=pointer]:
+                - img [ref=e1632]
+                - text: Agregar al Carrito
+          - generic [ref=e1636]:
+            - generic [ref=e1637] [cursor=pointer]:
+              - generic [ref=e1642]:
+                - generic [ref=e1643]: 🥑
+                - generic [ref=e1644]: UV
+                - paragraph [ref=e1646]: Uva verde importada sin semilla
+                - generic [ref=e1647]: aguacates
+              - button [ref=e1651]:
+                - img [ref=e1652]
+              - generic [ref=e1655]: Ver detalles
+            - generic [ref=e1656]:
+              - heading "Uva verde importada sin semilla" [level=3] [ref=e1657]
+              - paragraph [ref=e1658]: Uva verde importada sin semilla
+              - generic [ref=e1660]:
+                - generic [ref=e1661]: $ 20.000
+                - generic [ref=e1662]: Por kg
+              - button "Agregar al Carrito" [ref=e1663] [cursor=pointer]:
+                - img [ref=e1664]
+                - text: Agregar al Carrito
+          - generic [ref=e1668]:
+            - generic [ref=e1669] [cursor=pointer]:
+              - generic [ref=e1674]:
+                - generic [ref=e1675]: 🥑
+                - generic [ref=e1676]: CE
+                - paragraph [ref=e1678]: Cerezas
+                - generic [ref=e1679]: aguacates
+              - button [ref=e1683]:
+                - img [ref=e1684]
+              - generic [ref=e1687]: Ver detalles
+            - generic [ref=e1688]:
+              - heading "Cerezas" [level=3] [ref=e1689]
+              - paragraph [ref=e1690]: Las cerezas son una fruta rica en antioxidantes como las antocianinas y el ácido ascórbico, es decir, vitamina C. Estos antioxidantes combaten los radicales libres en nuestro cuerpo, ayudando a proteger nuestras células del estrés oxidativo y previniendo enfermedades crónicas. Además, contienen compuestos antiinflamatorios naturales, como las antocianinas y los flavonoides, que pueden ayudar a reducir la inflamación en el cuerpo
+              - generic [ref=e1692]:
+                - generic [ref=e1693]: $ 10.900
+                - generic [ref=e1694]: Por kg
+              - button "Agregar al Carrito" [ref=e1695] [cursor=pointer]:
+                - img [ref=e1696]
+                - text: Agregar al Carrito
+          - generic [ref=e1700]:
+            - generic [ref=e1701] [cursor=pointer]:
+              - generic [ref=e1706]:
+                - generic [ref=e1707]: 🥑
+                - generic [ref=e1708]: FA
+                - paragraph [ref=e1710]: Frambuesas Amarillas
+                - generic [ref=e1711]: aguacates
+              - button [ref=e1715]:
+                - img [ref=e1716]
+              - generic [ref=e1719]: Ver detalles
+            - generic [ref=e1720]:
+              - heading "Frambuesas Amarillas" [level=3] [ref=e1721]
+              - paragraph
+              - generic [ref=e1723]:
+                - generic [ref=e1724]: $ 12.000
+                - generic [ref=e1725]: Por unit
+              - button "Agregar al Carrito" [ref=e1726] [cursor=pointer]:
+                - img [ref=e1727]
+                - text: Agregar al Carrito
+          - generic [ref=e1731]:
+            - generic [ref=e1732] [cursor=pointer]:
+              - generic [ref=e1737]:
+                - generic [ref=e1738]: 🥑
+                - generic [ref=e1739]: FS
+                - paragraph [ref=e1741]: Frambuesas silvestres Org
+                - generic [ref=e1742]: aguacates
+              - button [ref=e1746]:
+                - img [ref=e1747]
+              - generic [ref=e1750]: Ver detalles
+            - generic [ref=e1751]:
+              - heading "Frambuesas silvestres Org" [level=3] [ref=e1752]
+              - paragraph [ref=e1753]: Su ciclo de vida es muy corto 1-2 días Las frambuesas son ricas en calcio, potasio, vitamina B9 (ácido fólico) y vitamina C. Sus fitonutrientes disminuyen el estrés oxidativo y la inflamación de las células. Favorece la salud ocular y de la piel.
+              - generic [ref=e1755]:
+                - generic [ref=e1756]: $ 8.500
+                - generic [ref=e1757]: Por kg
+              - button "Agregar al Carrito" [ref=e1758] [cursor=pointer]:
+                - img [ref=e1759]
+                - text: Agregar al Carrito
+          - generic [ref=e1763]:
+            - generic [ref=e1764] [cursor=pointer]:
+              - generic [ref=e1769]:
+                - generic [ref=e1770]: 🥑
+                - generic [ref=e1771]: UI
+                - paragraph [ref=e1773]: Uva isabelina
+                - generic [ref=e1774]: aguacates
+              - button [ref=e1778]:
+                - img [ref=e1779]
+              - generic [ref=e1782]: Ver detalles
+            - generic [ref=e1783]:
+              - heading "Uva isabelina" [level=3] [ref=e1784]
+              - paragraph [ref=e1785]: Las uvas, una fruta que te ayudará a controlar los niveles de azúcar en sangre y la presión arterial Es un alimento rico en antioxidantes, también es diurética, antiinflamatoria y ayuda a cuidar la vista El consumo de uvas podría ser beneficioso para la microbiota, según un nuevo estudio.
+              - generic [ref=e1787]:
+                - generic [ref=e1788]: $ 4.000
+                - generic [ref=e1789]: Por kg
+              - button "Agregar al Carrito" [ref=e1790] [cursor=pointer]:
+                - img [ref=e1791]
+                - text: Agregar al Carrito
+          - generic [ref=e1795]:
+            - generic [ref=e1796] [cursor=pointer]:
+              - generic [ref=e1801]:
+                - generic [ref=e1802]: 🥑
+                - generic [ref=e1803]: FE
+                - paragraph [ref=e1805]: Fresa Económica
+                - generic [ref=e1806]: aguacates
+              - button [ref=e1810]:
+                - img [ref=e1811]
+              - generic [ref=e1814]: Ver detalles
+            - generic [ref=e1815]:
+              - heading "Fresa Económica" [level=3] [ref=e1816]
+              - paragraph
+              - generic [ref=e1818]:
+                - generic [ref=e1819]: $ 15.500
+                - generic [ref=e1820]: Por unit
+              - button "Agregar al Carrito" [ref=e1821] [cursor=pointer]:
+                - img [ref=e1822]
+                - text: Agregar al Carrito
+          - generic [ref=e1826]:
+            - generic [ref=e1827] [cursor=pointer]:
+              - generic [ref=e1832]:
+                - generic [ref=e1833]: 🥑
+                - generic [ref=e1834]: FP
+                - paragraph [ref=e1836]: Fresas premium
+                - generic [ref=e1837]: aguacates
+              - button [ref=e1841]:
+                - img [ref=e1842]
+              - generic [ref=e1845]: Ver detalles
+            - generic [ref=e1846]:
+              - heading "Fresas premium" [level=3] [ref=e1847]
+              - paragraph [ref=e1848]: La fresa es una abundante fuente de vitamina C, que es un antioxidante y previene los resfriados, infecciones y también fortalece los huesos y los dientes. Cuenta con antocianinas (sustancia química que da su color) y ayuda a prevenir el envejecimiento prematuro de la piel y la arteriosclerosis.
+              - generic [ref=e1850]:
+                - generic [ref=e1851]: $ 8.500
+                - generic [ref=e1852]: Por unit
+              - button "Agregar al Carrito" [ref=e1853] [cursor=pointer]:
+                - img [ref=e1854]
+                - text: Agregar al Carrito
+          - generic [ref=e1858]:
+            - generic [ref=e1859] [cursor=pointer]:
+              - generic [ref=e1864]:
+                - generic [ref=e1865]: 🥑
+                - generic [ref=e1866]: MR
+                - paragraph [ref=e1868]: Mora Real norteamericana
+                - generic [ref=e1869]: aguacates
+              - button [ref=e1873]:
+                - img [ref=e1874]
+              - generic [ref=e1877]: Ver detalles
+            - generic [ref=e1878]:
+              - heading "Mora Real norteamericana" [level=3] [ref=e1879]
+              - paragraph [ref=e1880]: Es una gran fuente de fibra y de vitamina C Y por la presencia de las vitaminas C y A contribuyen a nutrir los huesos, los dientes, la piel, la generación de colágeno o la absorción de hierro.
+              - generic [ref=e1882]:
+                - generic [ref=e1883]: $ 11.000
+                - generic [ref=e1884]: Por kg
+              - button "Agregar al Carrito" [ref=e1885] [cursor=pointer]:
+                - img [ref=e1886]
+                - text: Agregar al Carrito
+          - generic [ref=e1890]:
+            - generic [ref=e1891] [cursor=pointer]:
+              - generic [ref=e1896]:
+                - generic [ref=e1897]: 🥑
+                - generic [ref=e1898]: AG
+                - paragraph [ref=e1900]: Agraz
+                - generic [ref=e1901]: aguacates
+              - button [ref=e1905]:
+                - img [ref=e1906]
+              - generic [ref=e1909]: Ver detalles
+            - generic [ref=e1910]:
+              - heading "Agraz" [level=3] [ref=e1911]
+              - paragraph [ref=e1912]: El agraz ayuda a desintoxicar el cuerpo, por lo que es ideal para prevenir infecciones urinarias, también ayuda a aliviar los síntomas del estreñimiento y otras enfermedades del sistema digestivo.
+              - generic [ref=e1914]:
+                - generic [ref=e1915]: $ 5.500
+                - generic [ref=e1916]: Por kg
+              - button "Agregar al Carrito" [ref=e1917] [cursor=pointer]:
+                - img [ref=e1918]
+                - text: Agregar al Carrito
+          - generic [ref=e1922]:
+            - generic [ref=e1923] [cursor=pointer]:
+              - generic [ref=e1928]:
+                - generic [ref=e1929]: 🥑
+                - generic [ref=e1930]: FS
+                - paragraph [ref=e1932]: Frambuesas silvestres Org
+                - generic [ref=e1933]: aguacates
+              - button [ref=e1937]:
+                - img [ref=e1938]
+              - generic [ref=e1941]: Ver detalles
+            - generic [ref=e1942]:
+              - heading "Frambuesas silvestres Org" [level=3] [ref=e1943]
+              - paragraph [ref=e1944]: Su ciclo de vida es muy corto 1-2 días Las frambuesas son ricas en calcio, potasio, vitamina B9 (ácido fólico) y vitamina C. Sus fitonutrientes disminuyen el estrés oxidativo y la inflamación de las células. Favorece la salud ocular y de la piel.
+              - generic [ref=e1946]:
+                - generic [ref=e1947]: $ 8.500
+                - generic [ref=e1948]: Por kg
+              - button "Agregar al Carrito" [ref=e1949] [cursor=pointer]:
+                - img [ref=e1950]
+                - text: Agregar al Carrito
+          - generic [ref=e1954]:
+            - generic [ref=e1955] [cursor=pointer]:
+              - generic [ref=e1960]:
+                - generic [ref=e1961]: 🥑
+                - generic [ref=e1962]: AO
+                - paragraph [ref=e1964]: Arándanos Orgánicos
+                - generic [ref=e1965]: aguacates
+              - button [ref=e1969]:
+                - img [ref=e1970]
+              - generic [ref=e1973]: Ver detalles
+            - generic [ref=e1974]:
+              - heading "Arándanos Orgánicos" [level=3] [ref=e1975]
+              - paragraph [ref=e1976]: "-Protege el corazón -Posee acción antiinflamatoria -Previene la diabetes -Mejora la memoria - Es adecuado ante las infecciones de orina -Tiene efectos beneficiosos sobre la visión - Perfectos para dietas de adelgazamiento"
+              - generic [ref=e1978]:
+                - generic [ref=e1979]: $ 7.900
+                - generic [ref=e1980]: Por kg
+              - button "Agregar al Carrito" [ref=e1981] [cursor=pointer]:
+                - img [ref=e1982]
+                - text: Agregar al Carrito
+          - generic [ref=e1986]:
+            - generic [ref=e1987] [cursor=pointer]:
+              - generic [ref=e1992]:
+                - generic [ref=e1993]: 🥑
+                - generic [ref=e1994]: SH
+                - paragraph [ref=e1996]: Sábila hoja mediana
+                - generic [ref=e1997]: aguacates
+              - button [ref=e2001]:
+                - img [ref=e2002]
+              - generic [ref=e2005]: Ver detalles
+            - generic [ref=e2006]:
+              - heading "Sábila hoja mediana" [level=3] [ref=e2007]
+              - paragraph [ref=e2008]: La sábila es útil para afecciones de la piel y quemaduras, sirve como hidratante para las pieles secas y atenuar las arrugas, laxante o depurativo(favorece el tránsito intestinal).
+              - generic [ref=e2010]:
+                - generic [ref=e2011]: $ 4.000
+                - generic [ref=e2012]: Por unit
+              - button "Agregar al Carrito" [ref=e2013] [cursor=pointer]:
+                - img [ref=e2014]
+                - text: Agregar al Carrito
+          - generic [ref=e2018]:
+            - generic [ref=e2019] [cursor=pointer]:
+              - generic [ref=e2024]:
+                - generic [ref=e2025]: 🥑
+                - generic [ref=e2026]: ME
+                - paragraph [ref=e2028]: Menta
+                - generic [ref=e2029]: aguacates
+              - button [ref=e2033]:
+                - img [ref=e2034]
+              - generic [ref=e2037]: Ver detalles
+            - generic [ref=e2038]:
+              - heading "Menta" [level=3] [ref=e2039]
+              - paragraph [ref=e2040]: La menta es una planta vital para los problemas digestivos y respiratorios, también combate los dolores de cabeza fuertes y sirve como antiparasitario muy efectivo.
+              - generic [ref=e2042]:
+                - generic [ref=e2043]: $ 3.800
+                - generic [ref=e2044]: Por kg
+              - button "Agregar al Carrito" [ref=e2045] [cursor=pointer]:
+                - img [ref=e2046]
+                - text: Agregar al Carrito
+          - generic [ref=e2050]:
+            - generic [ref=e2051] [cursor=pointer]:
+              - generic [ref=e2056]:
+                - generic [ref=e2057]: 🥑
+                - generic [ref=e2058]: TO
+                - paragraph [ref=e2060]: Tomillo
+                - generic [ref=e2061]: aguacates
+              - button [ref=e2065]:
+                - img [ref=e2066]
+              - generic [ref=e2069]: Ver detalles
+            - generic [ref=e2070]:
+              - heading "Tomillo" [level=3] [ref=e2071]
+              - paragraph [ref=e2072]: El tomillo es una planta aromática que se usa como condimento y medicina natural para combatir cólicos, dolores de estómago o gases.
+              - generic [ref=e2074]:
+                - generic [ref=e2075]: $ 4.000
+                - generic [ref=e2076]: Por kg
+              - button "Agregar al Carrito" [ref=e2077] [cursor=pointer]:
+                - img [ref=e2078]
+                - text: Agregar al Carrito
+          - generic [ref=e2082]:
+            - generic [ref=e2083] [cursor=pointer]:
+              - generic [ref=e2088]:
+                - generic [ref=e2089]: 🥑
+                - generic [ref=e2090]: EU
+                - paragraph [ref=e2092]: Eucalipto
+                - generic [ref=e2093]: aguacates
+              - button [ref=e2097]:
+                - img [ref=e2098]
+              - generic [ref=e2101]: Ver detalles
+            - generic [ref=e2102]:
+              - heading "Eucalipto" [level=3] [ref=e2103]
+              - paragraph [ref=e2104]: El eucalipto sirve para tratar enfermedades respiratorias y antiséptico natural. Revisar contraindicaciones por su médico.
+              - generic [ref=e2106]:
+                - generic [ref=e2107]: $ 3.000
+                - generic [ref=e2108]: Por kg
+              - button "Agregar al Carrito" [ref=e2109] [cursor=pointer]:
+                - img [ref=e2110]
+                - text: Agregar al Carrito
+          - generic [ref=e2114]:
+            - generic [ref=e2115] [cursor=pointer]:
+              - generic [ref=e2120]:
+                - generic [ref=e2121]: 🥑
+                - generic [ref=e2122]: DD
+                - paragraph [ref=e2124]: Diente de león
+                - generic [ref=e2125]: aguacates
+              - button [ref=e2129]:
+                - img [ref=e2130]
+              - generic [ref=e2133]: Ver detalles
+            - generic [ref=e2134]:
+              - heading "Diente de león" [level=3] [ref=e2135]
+              - paragraph [ref=e2136]: El diente de león sirve para problemas digestivos leves y para limpiar las vías urinarias y los riñones.
+              - generic [ref=e2138]:
+                - generic [ref=e2139]: $ 3.800
+                - generic [ref=e2140]: Por kg
+              - button "Agregar al Carrito" [ref=e2141] [cursor=pointer]:
+                - img [ref=e2142]
+                - text: Agregar al Carrito
+          - generic [ref=e2146]:
+            - generic [ref=e2147] [cursor=pointer]:
+              - generic [ref=e2152]:
+                - generic [ref=e2153]: 🥑
+                - generic [ref=e2154]: HI
+                - paragraph [ref=e2156]: Hierbabuena
+                - generic [ref=e2157]: aguacates
+              - button [ref=e2161]:
+                - img [ref=e2162]
+              - generic [ref=e2165]: Ver detalles
+            - generic [ref=e2166]:
+              - heading "Hierbabuena" [level=3] [ref=e2167]
+              - paragraph [ref=e2168]: La hierbabuena se usa para varios propósitos como la memoria, la digestión, la osteoartritis, las náuseas y los vómitos después de una cirugía.
+              - generic [ref=e2170]:
+                - generic [ref=e2171]: $ 3.000
+                - generic [ref=e2172]: Por kg
+              - button "Agregar al Carrito" [ref=e2173] [cursor=pointer]:
+                - img [ref=e2174]
+                - text: Agregar al Carrito
+          - generic [ref=e2178]:
+            - generic [ref=e2179] [cursor=pointer]:
+              - generic [ref=e2184]:
+                - generic [ref=e2185]: 🥑
+                - generic [ref=e2186]: AL
+                - paragraph [ref=e2188]: Albahaca
+                - generic [ref=e2189]: aguacates
+              - button [ref=e2193]:
+                - img [ref=e2194]
+              - generic [ref=e2197]: Ver detalles
+            - generic [ref=e2198]:
+              - heading "Albahaca" [level=3] [ref=e2199]
+              - paragraph [ref=e2200]: La albahaca favorece la digestión de los alimentos y ayuda a atenuar los espasmos gástricos
+              - generic [ref=e2202]:
+                - generic [ref=e2203]: $ 3.900
+                - generic [ref=e2204]: Por kg
+              - button "Agregar al Carrito" [ref=e2205] [cursor=pointer]:
+                - img [ref=e2206]
+                - text: Agregar al Carrito
+          - generic [ref=e2210]:
+            - generic [ref=e2211] [cursor=pointer]:
+              - generic [ref=e2216]:
+                - generic [ref=e2217]: 🥑
+                - generic [ref=e2218]: LA
+                - paragraph [ref=e2220]: Laurel
+                - generic [ref=e2221]: aguacates
+              - button [ref=e2225]:
+                - img [ref=e2226]
+              - generic [ref=e2229]: Ver detalles
+            - generic [ref=e2230]:
+              - heading "Laurel" [level=3] [ref=e2231]
+              - paragraph [ref=e2232]: El laurel tiene beneficios respiratorios, especialmente para la congestión nasal y la tos.
+              - generic [ref=e2234]:
+                - generic [ref=e2235]: $ 3.000
+                - generic [ref=e2236]: Por kg
+              - button "Agregar al Carrito" [ref=e2237] [cursor=pointer]:
+                - img [ref=e2238]
+                - text: Agregar al Carrito
+          - generic [ref=e2242]:
+            - generic [ref=e2243] [cursor=pointer]:
+              - generic [ref=e2248]:
+                - generic [ref=e2249]: 🥑
+                - generic [ref=e2250]: OR
+                - paragraph [ref=e2252]: Orégano
+                - generic [ref=e2253]: aguacates
+              - button [ref=e2257]:
+                - img [ref=e2258]
+              - generic [ref=e2261]: Ver detalles
+            - generic [ref=e2262]:
+              - heading "Orégano" [level=3] [ref=e2263]
+              - paragraph [ref=e2264]: El orégano es conocido por ser antioxidante y ayudar a combatir bacterias, virus y hongos
+              - generic [ref=e2266]:
+                - generic [ref=e2267]: $ 6.000
+                - generic [ref=e2268]: Por kg
+              - button "Agregar al Carrito" [ref=e2269] [cursor=pointer]:
+                - img [ref=e2270]
+                - text: Agregar al Carrito
+          - generic [ref=e2274]:
+            - generic [ref=e2275] [cursor=pointer]:
+              - generic [ref=e2280]:
+                - generic [ref=e2281]: 🥑
+                - generic [ref=e2282]: RO
+                - paragraph [ref=e2284]: Romero
+                - generic [ref=e2285]: aguacates
+              - button [ref=e2289]:
+                - img [ref=e2290]
+              - generic [ref=e2293]: Ver detalles
+            - generic [ref=e2294]:
+              - heading "Romero" [level=3] [ref=e2295]
+              - paragraph [ref=e2296]: El romero tiene propiedades antinflamatorias y antiespasmódicas, pues es tratamiento para el estreñimiento y la digestión de alimentos.
+              - generic [ref=e2298]:
+                - generic [ref=e2299]: $ 3.000
+                - generic [ref=e2300]: Por kg
+              - button "Agregar al Carrito" [ref=e2301] [cursor=pointer]:
+                - img [ref=e2302]
+                - text: Agregar al Carrito
+          - generic [ref=e2306]:
+            - generic [ref=e2307] [cursor=pointer]:
+              - generic [ref=e2312]:
+                - generic [ref=e2313]: 🥑
+                - generic [ref=e2314]: CD
+                - paragraph [ref=e2316]: Caja de 35 unidades hass baby
+                - generic [ref=e2317]: aguacates
+              - button [ref=e2321]:
+                - img [ref=e2322]
+              - generic [ref=e2325]: Ver detalles
+            - generic [ref=e2326]:
+              - heading "Caja de 35 unidades hass baby" [level=3] [ref=e2327]
+              - paragraph [ref=e2328]: La caja viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL. Caja de 35 unidades *Baby* en 3 diferentes estados de maduración para toda la semana
+              - generic [ref=e2330]:
+                - generic [ref=e2331]: $ 15.900
+                - generic [ref=e2332]: Por box
+              - button "Agregar al Carrito" [ref=e2333] [cursor=pointer]:
+                - img [ref=e2334]
+                - text: Agregar al Carrito
+          - generic [ref=e2338]:
+            - generic [ref=e2339] [cursor=pointer]:
+              - generic [ref=e2344]:
+                - generic [ref=e2345]: 🥑
+                - generic [ref=e2346]: CD
+                - paragraph [ref=e2348]: Caja de 12 unidades Premium
+                - generic [ref=e2349]: aguacates
+              - button [ref=e2353]:
+                - img [ref=e2354]
+              - generic [ref=e2357]: Ver detalles
+            - generic [ref=e2358]:
+              - heading "Caja de 12 unidades Premium" [level=3] [ref=e2359]
+              - paragraph [ref=e2360]: caja En tres estados de maduraciónUnidad sale a $1658 El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL. Caja de 12 unidades *Premium* en 3 diferentes estados de maduracion para toda la semana
+              - generic [ref=e2362]:
+                - generic [ref=e2363]: $ 24.700
+                - generic [ref=e2364]: Por box
+              - button "Agregar al Carrito" [ref=e2365] [cursor=pointer]:
+                - img [ref=e2366]
+                - text: Agregar al Carrito
+          - generic [ref=e2370]:
+            - generic [ref=e2371] [cursor=pointer]:
+              - generic [ref=e2376]:
+                - generic [ref=e2377]: 🥑
+                - generic [ref=e2378]: CP
+                - paragraph [ref=e2380]: Caja promoción del día
+                - generic [ref=e2381]: aguacates
+              - button [ref=e2385]:
+                - img [ref=e2386]
+              - generic [ref=e2389]: Ver detalles
+            - generic [ref=e2390]:
+              - heading "Caja promoción del día" [level=3] [ref=e2391]
+              - paragraph [ref=e2392]: 6-8 unidades Aguacate criollo o injerto tamaño pequeño calidad segunda.
+              - generic [ref=e2394]:
+                - generic [ref=e2395]: $ 14.900
+                - generic [ref=e2396]: Por box
+              - button "Agregar al Carrito" [ref=e2397] [cursor=pointer]:
+                - img [ref=e2398]
+                - text: Agregar al Carrito
+          - generic [ref=e2402]:
+            - generic [ref=e2403] [cursor=pointer]:
+              - generic [ref=e2408]:
+                - generic [ref=e2409]: 🥑
+                - generic [ref=e2410]: MI
+                - paragraph [ref=e2412]: Maya injerto promoción
+                - generic [ref=e2413]: aguacates
+              - button [ref=e2417]:
+                - img [ref=e2418]
+              - generic [ref=e2421]: Ver detalles
+            - generic [ref=e2422]:
+              - heading "Maya injerto promoción" [level=3] [ref=e2423]
+              - paragraph [ref=e2424]: 3 unidades variedad injerto en tres estados de maduración. Aproximadamente 1.5 kilos
+              - generic [ref=e2426]:
+                - generic [ref=e2427]: $ 7.500
+                - generic [ref=e2428]: Por kg
+              - button "Agregar al Carrito" [ref=e2429] [cursor=pointer]:
+                - img [ref=e2430]
+                - text: Agregar al Carrito
+          - generic [ref=e2434]:
+            - generic [ref=e2435] [cursor=pointer]:
+              - generic [ref=e2440]:
+                - generic [ref=e2441]: 🥑
+                - generic [ref=e2442]: CA
+                - paragraph [ref=e2444]: "Combo Ahorro #2+"
+                - generic [ref=e2445]: aguacates
+              - button [ref=e2449]:
+                - img [ref=e2450]
+              - generic [ref=e2453]: Ver detalles
+            - generic [ref=e2454]:
+              - 'heading "Combo Ahorro #2+" [level=3] [ref=e2455]'
+              - paragraph [ref=e2456]: Combo 1 caja de aguacates x 24 unidades + Arándanos x 250 grs Orgánicos
+              - generic [ref=e2458]:
+                - generic [ref=e2459]: $ 29.900
+                - generic [ref=e2460]: Por box
+              - button "Agregar al Carrito" [ref=e2461] [cursor=pointer]:
+                - img [ref=e2462]
+                - text: Agregar al Carrito
+          - generic [ref=e2466]:
+            - generic [ref=e2467] [cursor=pointer]:
+              - generic [ref=e2472]:
+                - generic [ref=e2473]: 🥑
+                - generic [ref=e2474]: CA
+                - paragraph [ref=e2476]: "Combo Ahorro #1"
+                - generic [ref=e2477]: aguacates
+              - button [ref=e2481]:
+                - img [ref=e2482]
+              - generic [ref=e2485]: Ver detalles
+            - generic [ref=e2486]:
+              - 'heading "Combo Ahorro #1" [level=3] [ref=e2487]'
+              - paragraph [ref=e2488]: Combo#1 1.000gr de fresas premium + 900gr de kiwis premium de la mejor calidad frescos y listo para disfrutar
+              - generic [ref=e2490]:
+                - generic [ref=e2491]: $ 34.100
+                - generic [ref=e2492]: Por kg
+              - button "Agregar al Carrito" [ref=e2493] [cursor=pointer]:
+                - img [ref=e2494]
+                - text: Agregar al Carrito
+          - generic [ref=e2498]:
+            - generic [ref=e2499] [cursor=pointer]:
+              - generic [ref=e2504]:
+                - generic [ref=e2505]: 🥑
+                - generic [ref=e2506]: CA
+                - paragraph [ref=e2508]: "Combo Ahorro #3"
+                - generic [ref=e2509]: aguacates
+              - button [ref=e2513]:
+                - img [ref=e2514]
+              - generic [ref=e2517]: Ver detalles
+            - generic [ref=e2518]:
+              - 'heading "Combo Ahorro #3" [level=3] [ref=e2519]'
+              - paragraph [ref=e2520]: Fresas premium X 500grs Arándanos x 250 Paquete X 4 Unidades PREMIUM en tres estados de maduración Arándanos Orgánicos x 250 grs Fresas x 500 gr
+              - generic [ref=e2522]:
+                - generic [ref=e2523]: $ 26.600
+                - generic [ref=e2524]: Por kg
+              - button "Agregar al Carrito" [ref=e2525] [cursor=pointer]:
+                - img [ref=e2526]
+                - text: Agregar al Carrito
+          - generic [ref=e2530]:
+            - generic [ref=e2531] [cursor=pointer]:
+              - generic [ref=e2536]:
+                - generic [ref=e2537]: 🥑
+                - generic [ref=e2538]: NC
+                - paragraph [ref=e2540]: Nuevo combo 4
+                - generic [ref=e2541]: aguacates
+              - button [ref=e2545]:
+                - img [ref=e2546]
+              - generic [ref=e2549]: Ver detalles
+            - generic [ref=e2550]:
+              - heading "Nuevo combo 4" [level=3] [ref=e2551]
+              - paragraph [ref=e2552]: Arándanos x 250 grs Fresas 1000gr Caja de 24 unidades* aguacate
+              - generic [ref=e2554]:
+                - generic [ref=e2555]: $ 40.500
+                - generic [ref=e2556]: Por box
+              - button "Agregar al Carrito" [ref=e2557] [cursor=pointer]:
+                - img [ref=e2558]
+                - text: Agregar al Carrito
+          - generic [ref=e2562]:
+            - generic [ref=e2563] [cursor=pointer]:
+              - generic [ref=e2568]:
+                - generic [ref=e2569]: 🥑
+                - generic [ref=e2570]: CM
+                - paragraph [ref=e2572]: Combo Mercado Semanal Completo
+                - generic [ref=e2573]: aguacates
+              - button [ref=e2577]:
+                - img [ref=e2578]
+              - generic [ref=e2581]: Ver detalles
+            - generic [ref=e2582]:
+              - heading "Combo Mercado Semanal Completo" [level=3] [ref=e2583]
+              - paragraph [ref=e2584]: "Qué Incluye: Envío gratis Caja de 24 aguacates hass mediano Fresas premium (500 gr) Banano criollo (1 Kilo) Tomate Chonto (500 gr) Cebolla Cabezona (500 gr) Papa Sabanera (500 gr) Zanahoria (500 gr) Pasta de Ajo (100 gr) Arándanos Orgánicos (125 gr) Uva isabelina (Bandeja 400 gr) Duraznos (500 gr) Limón Tahiti (1000 gr)"
+              - generic [ref=e2586]:
+                - generic [ref=e2587]: $ 68.900
+                - generic [ref=e2588]: Por box
+              - button "Agregar al Carrito" [ref=e2589] [cursor=pointer]:
+                - img [ref=e2590]
+                - text: Agregar al Carrito
+          - generic [ref=e2594]:
+            - generic [ref=e2595] [cursor=pointer]:
+              - generic [ref=e2600]:
+                - generic [ref=e2601]: 🥑
+                - generic [ref=e2602]: PX
+                - paragraph [ref=e2604]: Paquete X 12 Unidades baby
+                - generic [ref=e2605]: aguacates
+              - button [ref=e2609]:
+                - img [ref=e2610]
+              - generic [ref=e2613]: Ver detalles
+            - generic [ref=e2614]:
+              - heading "Paquete X 12 Unidades baby" [level=3] [ref=e2615]
+              - paragraph [ref=e2616]: El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.
+              - generic [ref=e2618]:
+                - generic [ref=e2619]: $ 7.900
+                - generic [ref=e2620]: Por unit
+              - button "Agregar al Carrito" [ref=e2621] [cursor=pointer]:
+                - img [ref=e2622]
+                - text: Agregar al Carrito
+          - generic [ref=e2626]:
+            - generic [ref=e2627] [cursor=pointer]:
+              - generic [ref=e2632]:
+                - generic [ref=e2633]: 🥑
+                - generic [ref=e2634]: PX
+                - paragraph [ref=e2636]: Paquete x 8 unidades mediano
+                - generic [ref=e2637]: aguacates
+              - button [ref=e2641]:
+                - img [ref=e2642]
+              - generic [ref=e2645]: Ver detalles
+            - generic [ref=e2646]:
+              - heading "Paquete x 8 unidades mediano" [level=3] [ref=e2647]
+              - paragraph [ref=e2648]: El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.
+              - generic [ref=e2650]:
+                - generic [ref=e2651]: $ 8.900
+                - generic [ref=e2652]: Por unit
+              - button "Agregar al Carrito" [ref=e2653] [cursor=pointer]:
+                - img [ref=e2654]
+                - text: Agregar al Carrito
+          - generic [ref=e2658]:
+            - generic [ref=e2659] [cursor=pointer]:
+              - generic [ref=e2664]:
+                - generic [ref=e2665]: 🥑
+                - generic [ref=e2666]: PX
+                - paragraph [ref=e2668]: Paquete x4 unidades premium
+                - generic [ref=e2669]: aguacates
+              - button [ref=e2673]:
+                - img [ref=e2674]
+              - generic [ref=e2677]: Ver detalles
+            - generic [ref=e2678]:
+              - heading "Paquete x4 unidades premium" [level=3] [ref=e2679]
+              - paragraph [ref=e2680]: El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.
+              - generic [ref=e2682]:
+                - generic [ref=e2683]: $ 9.900
+                - generic [ref=e2684]: Por unit
+              - button "Agregar al Carrito" [ref=e2685] [cursor=pointer]:
+                - img [ref=e2686]
+                - text: Agregar al Carrito
+          - generic [ref=e2690]:
+            - generic [ref=e2691] [cursor=pointer]:
+              - generic [ref=e2696]:
+                - generic [ref=e2697]: 🥑
+                - generic [ref=e2698]: P4
+                - paragraph [ref=e2700]: paquete 4 Unidades(injerto)
+                - generic [ref=e2701]: aguacates
+              - button [ref=e2705]:
+                - img [ref=e2706]
+              - generic [ref=e2709]: Ver detalles
+            - generic [ref=e2710]:
+              - heading "paquete 4 Unidades(injerto)" [level=3] [ref=e2711]
+              - paragraph [ref=e2712]: El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.
+              - generic [ref=e2714]:
+                - generic [ref=e2715]: $ 10.400
+                - generic [ref=e2716]: Por unit
+              - button "Agregar al Carrito" [ref=e2717] [cursor=pointer]:
+                - img [ref=e2718]
+                - text: Agregar al Carrito
+          - generic [ref=e2722]:
+            - generic [ref=e2723] [cursor=pointer]:
+              - generic [ref=e2728]:
+                - generic [ref=e2729]: 🥑
+                - generic [ref=e2730]: MP
+                - paragraph [ref=e2732]: Manzanilla paquete
+                - generic [ref=e2733]: aguacates
+              - button [ref=e2737]:
+                - img [ref=e2738]
+              - generic [ref=e2741]: Ver detalles
+            - generic [ref=e2742]:
+              - heading "Manzanilla paquete" [level=3] [ref=e2743]
+              - paragraph [ref=e2744]: La manzanilla se usa como remedio para dolores estomacales, tratamiento de úlceras gástricas y gastritis.
+              - generic [ref=e2746]:
+                - generic [ref=e2747]: $ 3.000
+                - generic [ref=e2748]: Por kg
+              - button "Agregar al Carrito" [ref=e2749] [cursor=pointer]:
+                - img [ref=e2750]
+                - text: Agregar al Carrito
+          - generic [ref=e2754]:
+            - generic [ref=e2755] [cursor=pointer]:
+              - generic [ref=e2760]:
+                - generic [ref=e2761]: 🥑
+                - generic [ref=e2762]: CD
+                - paragraph [ref=e2764]: Caja de 24 unidades hass mediano
+                - generic [ref=e2765]: aguacates
+              - button [ref=e2769]:
+                - img [ref=e2770]
+              - generic [ref=e2773]: Ver detalles
+            - generic [ref=e2774]:
+              - heading "Caja de 24 unidades hass mediano" [level=3] [ref=e2775]
+              - paragraph [ref=e2776]: caja En tres estados de maduración Unidad sale a $608 El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL. Caja de 24 unidades *mediano* en 3 diferentes estados de maduracion para toda la semana
+              - generic [ref=e2778]:
+                - generic [ref=e2779]: $ 16.600
+                - generic [ref=e2780]: Por box
+              - button "Agregar al Carrito" [ref=e2781] [cursor=pointer]:
+                - img [ref=e2782]
+                - text: Agregar al Carrito
+          - generic [ref=e2786]:
+            - generic [ref=e2787] [cursor=pointer]:
+              - generic [ref=e2792]:
+                - generic [ref=e2793]: 🥑
+                - generic [ref=e2794]: CD
+                - paragraph [ref=e2796]: Caja de 7 unidades injerto
+                - generic [ref=e2797]: aguacates
+              - button [ref=e2801]:
+                - img [ref=e2802]
+              - generic [ref=e2805]: Ver detalles
+            - generic [ref=e2806]:
+              - heading "Caja de 7 unidades injerto" [level=3] [ref=e2807]
+              - paragraph [ref=e2808]: caja En tres estados de maduración para que tengas fruta toda la semana puede ir en la caja cualquier variedad semil o papelillo según disponibilidad El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL. Caja de 7 unidades injerto *mediano*
+              - generic [ref=e2810]:
+                - generic [ref=e2811]: $ 24.000
+                - generic [ref=e2812]: Por box
+              - button "Agregar al Carrito" [ref=e2813] [cursor=pointer]:
+                - img [ref=e2814]
+                - text: Agregar al Carrito
+          - generic [ref=e2818]:
+            - generic [ref=e2819] [cursor=pointer]:
+              - generic [ref=e2824]:
+                - generic [ref=e2825]: 🥑
+                - generic [ref=e2826]: AG
+                - paragraph [ref=e2828]: Ají guajillo x50 g
+                - generic [ref=e2829]: aguacates
+              - button [ref=e2833]:
+                - img [ref=e2834]
+              - generic [ref=e2837]: Ver detalles
+            - generic [ref=e2838]:
+              - heading "Ají guajillo x50 g" [level=3] [ref=e2839]
+              - paragraph [ref=e2840]: El ají guajillo aporta vitaminas y antioxidantes, tiene propiedades antiinflamatorias, mejora la circulación, acelera el metabolismo y facilita la digestión.
+              - generic [ref=e2842]:
+                - generic [ref=e2843]: $ 9.000
+                - generic [ref=e2844]: Por unit
+              - button "Agregar al Carrito" [ref=e2845] [cursor=pointer]:
+                - img [ref=e2846]
+                - text: Agregar al Carrito
+          - generic [ref=e2850]:
+            - generic [ref=e2851] [cursor=pointer]:
+              - generic [ref=e2856]:
+                - generic [ref=e2857]: 🥑
+                - generic [ref=e2858]: PP
+                - paragraph [ref=e2860]: Picados para sopa
+                - generic [ref=e2861]: aguacates
+              - button [ref=e2865]:
+                - img [ref=e2866]
+              - generic [ref=e2869]: Ver detalles
+            - generic [ref=e2870]:
+              - heading "Picados para sopa" [level=3] [ref=e2871]
+              - paragraph [ref=e2872]: Zanahoria frijol alverja y varios
+              - generic [ref=e2874]:
+                - generic [ref=e2875]: $ 3.600
+                - generic [ref=e2876]: Por unit
+              - button "Agregar al Carrito" [ref=e2877] [cursor=pointer]:
+                - img [ref=e2878]
+                - text: Agregar al Carrito
+          - generic [ref=e2882]:
+            - generic [ref=e2883] [cursor=pointer]:
+              - generic [ref=e2888]:
+                - generic [ref=e2889]: 🥑
+                - generic [ref=e2890]: PO
+                - paragraph [ref=e2892]: Polen
+                - generic [ref=e2893]: aguacates
+              - button [ref=e2897]:
+                - img [ref=e2898]
+              - generic [ref=e2901]: Ver detalles
+            - generic [ref=e2902]:
+              - heading "Polen" [level=3] [ref=e2903]
+              - paragraph [ref=e2904]: Polen
+              - generic [ref=e2906]:
+                - generic [ref=e2907]: $ 22.900
+                - generic [ref=e2908]: Por unit
+              - button "Agregar al Carrito" [ref=e2909] [cursor=pointer]:
+                - img [ref=e2910]
+                - text: Agregar al Carrito
+          - generic [ref=e2914]:
+            - generic [ref=e2915] [cursor=pointer]:
+              - generic [ref=e2920]:
+                - generic [ref=e2921]: 🥑
+                - generic [ref=e2922]: AA
+                - paragraph [ref=e2924]: Ají ancho
+                - generic [ref=e2925]: aguacates
+              - button [ref=e2929]:
+                - img [ref=e2930]
+              - generic [ref=e2933]: Ver detalles
+            - generic [ref=e2934]:
+              - heading "Ají ancho" [level=3] [ref=e2935]
+              - paragraph [ref=e2936]: El ají ancho es rico en vitaminas A y C, mejora la digestión, acelera el metabolismo, tiene propiedades antiinflamatorias y ayuda a proteger el sistema inmunológico.
+              - generic [ref=e2938]:
+                - generic [ref=e2939]: $ 9.000
+                - generic [ref=e2940]: Por unit
+              - button "Agregar al Carrito" [ref=e2941] [cursor=pointer]:
+                - img [ref=e2942]
+                - text: Agregar al Carrito
+          - generic [ref=e2946]:
+            - generic [ref=e2947] [cursor=pointer]:
+              - generic [ref=e2952]:
+                - generic [ref=e2953]: 🥑
+                - generic [ref=e2954]: AC
+                - paragraph [ref=e2956]: Ají chipotle
+                - generic [ref=e2957]: aguacates
+              - button [ref=e2961]:
+                - img [ref=e2962]
+              - generic [ref=e2965]: Ver detalles
+            - generic [ref=e2966]:
+              - heading "Ají chipotle" [level=3] [ref=e2967]
+              - paragraph [ref=e2968]: El ají chipotle ayuda a aliviar el dolor, mejora la circulación, acelera el metabolismo, fortalece el sistema inmunológico y favorece la respiración. Además, aporta vitaminas y antioxidantes.
+              - generic [ref=e2970]:
+                - generic [ref=e2971]: $ 9.000
+                - generic [ref=e2972]: Por unit
+              - button "Agregar al Carrito" [ref=e2973] [cursor=pointer]:
+                - img [ref=e2974]
+                - text: Agregar al Carrito
+          - generic [ref=e2978]:
+            - generic [ref=e2979] [cursor=pointer]:
+              - generic [ref=e2984]:
+                - generic [ref=e2985]: 🥑
+                - generic [ref=e2986]: MD
+                - paragraph [ref=e2988]: Maíz dulce
+                - generic [ref=e2989]: aguacates
+              - button [ref=e2993]:
+                - img [ref=e2994]
+              - generic [ref=e2997]: Ver detalles
+            - generic [ref=e2998]:
+              - heading "Maíz dulce" [level=3] [ref=e2999]
+              - paragraph [ref=e3000]: El maíz dulce es rico en fibra, vitaminas (A, C y del grupo B) y minerales como potasio y hierro. Ayuda a mejorar la digestión, controlar el azúcar en sangre, proteger el corazón y la vista gracias a sus antioxidantes. Además, es un alimento energético y sin gluten, ideal para una dieta saludable.
+              - generic [ref=e3002]:
+                - generic [ref=e3003]: $ 7.500
+                - generic [ref=e3004]: Por unit
+              - button "Agregar al Carrito" [ref=e3005] [cursor=pointer]:
+                - img [ref=e3006]
+                - text: Agregar al Carrito
+          - generic [ref=e3010]:
+            - generic [ref=e3011] [cursor=pointer]:
+              - generic [ref=e3016]:
+                - generic [ref=e3017]: 🥑
+                - generic [ref=e3018]: VY
+                - paragraph [ref=e3020]: Vino y galletas
+                - generic [ref=e3021]: aguacates
+              - button [ref=e3025]:
+                - img [ref=e3026]
+              - generic [ref=e3029]: Ver detalles
+            - generic [ref=e3030]:
+              - heading "Vino y galletas" [level=3] [ref=e3031]
+              - paragraph [ref=e3032]: Vino siboney y galletas navideñas
+              - generic [ref=e3034]:
+                - generic [ref=e3035]: $ 11.900
+                - generic [ref=e3036]: Por unit
+              - button "Agregar al Carrito" [ref=e3037] [cursor=pointer]:
+                - img [ref=e3038]
+                - text: Agregar al Carrito
+          - generic [ref=e3042]:
+            - generic [ref=e3043] [cursor=pointer]:
+              - generic [ref=e3048]:
+                - generic [ref=e3049]: 🥑
+                - generic [ref=e3050]: AG
+                - paragraph [ref=e3052]: Aguacate
+                - generic [ref=e3053]: aguacates
+              - button [ref=e3057]:
+                - img [ref=e3058]
+              - generic [ref=e3061]: Ver detalles
+            - generic [ref=e3062]:
+              - heading "Aguacate" [level=3] [ref=e3063]
+              - paragraph
+              - generic [ref=e3065]:
+                - generic [ref=e3066]: $ 39.300
+                - generic [ref=e3067]: Por unit
+              - button "Agregar al Carrito" [ref=e3068] [cursor=pointer]:
+                - img [ref=e3069]
+                - text: Agregar al Carrito
+          - generic [ref=e3073]:
+            - generic [ref=e3074] [cursor=pointer]:
+              - generic [ref=e3079]:
+                - generic [ref=e3080]: 🥑
+                - generic [ref=e3081]: AJ
+                - paragraph [ref=e3083]: Ají Jalapeño
+                - generic [ref=e3084]: aguacates
+              - button [ref=e3088]:
+                - img [ref=e3089]
+              - generic [ref=e3092]: Ver detalles
+            - generic [ref=e3093]:
+              - heading "Ají Jalapeño" [level=3] [ref=e3094]
+              - paragraph
+              - generic [ref=e3096]:
+                - generic [ref=e3097]: $ 8.900
+                - generic [ref=e3098]: Por unit
+              - button "Agregar al Carrito" [ref=e3099] [cursor=pointer]:
+                - img [ref=e3100]
+                - text: Agregar al Carrito
+          - generic [ref=e3104]:
+            - generic [ref=e3105] [cursor=pointer]:
+              - generic [ref=e3110]:
+                - generic [ref=e3111]: 🥑
+                - generic [ref=e3112]: AN
+                - paragraph [ref=e3114]: Ajo Negro Artesanal
+                - generic [ref=e3115]: aguacates
+              - button [ref=e3119]:
+                - img [ref=e3120]
+              - generic [ref=e3123]: Ver detalles
+            - generic [ref=e3124]:
+              - heading "Ajo Negro Artesanal" [level=3] [ref=e3125]
+              - paragraph [ref=e3126]: Ajo Negro Artesanal
+              - generic [ref=e3128]:
+                - generic [ref=e3129]: $ 28.800
+                - generic [ref=e3130]: Por unit
+              - button "Agregar al Carrito" [ref=e3131] [cursor=pointer]:
+                - img [ref=e3132]
+                - text: Agregar al Carrito
+          - generic [ref=e3136]:
+            - generic [ref=e3137] [cursor=pointer]:
+              - generic [ref=e3142]:
+                - generic [ref=e3143]: 🥑
+                - generic [ref=e3144]: AB
+                - paragraph [ref=e3146]: Abichuelin
+                - generic [ref=e3147]: aguacates
+              - button [ref=e3151]:
+                - img [ref=e3152]
+              - generic [ref=e3155]: Ver detalles
+            - generic [ref=e3156]:
+              - heading "Abichuelin" [level=3] [ref=e3157]
+              - paragraph [ref=e3158]: El abichuelín es nutritivo, ayuda a controlar el azúcar y el colesterol, mejora la digestión y protege el corazón.
+              - generic [ref=e3160]:
+                - generic [ref=e3161]: $ 3.200
+                - generic [ref=e3162]: Por unit
+              - button "Agregar al Carrito" [ref=e3163] [cursor=pointer]:
+                - img [ref=e3164]
+                - text: Agregar al Carrito
+          - generic [ref=e3168]:
+            - generic [ref=e3169] [cursor=pointer]:
+              - generic [ref=e3174]:
+                - generic [ref=e3175]: 🥑
+                - generic [ref=e3176]: PA
+                - paragraph [ref=e3178]: Pimenton amarillo
+                - generic [ref=e3179]: aguacates
+              - button [ref=e3183]:
+                - img [ref=e3184]
+              - generic [ref=e3187]: Ver detalles
+            - generic [ref=e3188]:
+              - heading "Pimenton amarillo" [level=3] [ref=e3189]
+              - paragraph [ref=e3190]: El pimentón amarillo es rico en vitamina C, antioxidantes y fibra, lo que fortalece el sistema inmunológico, protege la vista, mejora la digestión y ayuda en el control de peso. Además, aporta minerales esenciales y tiene propiedades antiinflamatorias.
+              - generic [ref=e3192]:
+                - generic [ref=e3193]: $ 4.500
+                - generic [ref=e3194]: Por unit
+              - button "Agregar al Carrito" [ref=e3195] [cursor=pointer]:
+                - img [ref=e3196]
+                - text: Agregar al Carrito
+          - generic [ref=e3200]:
+            - generic [ref=e3201] [cursor=pointer]:
+              - generic [ref=e3206]:
+                - generic [ref=e3207]: 🥑
+                - generic [ref=e3208]: SB
+                - paragraph [ref=e3210]: Sandía Baby
+                - generic [ref=e3211]: aguacates
+              - button [ref=e3215]:
+                - img [ref=e3216]
+              - generic [ref=e3219]: Ver detalles
+            - generic [ref=e3220]:
+              - heading "Sandía Baby" [level=3] [ref=e3221]
+              - paragraph [ref=e3222]: La sandía baby es una excelente fuente de hidratación debido a su alto contenido de agua. También aporta vitaminas A y C, potasio y magnesio, que son esenciales para el crecimiento.
+              - generic [ref=e3224]:
+                - generic [ref=e3225]: $ 7.800
+                - generic [ref=e3226]: Por unit
+              - button "Agregar al Carrito" [ref=e3227] [cursor=pointer]:
+                - img [ref=e3228]
+                - text: Agregar al Carrito
+          - generic [ref=e3232]:
+            - generic [ref=e3233] [cursor=pointer]:
+              - generic [ref=e3238]:
+                - generic [ref=e3239]: 🥑
+                - generic [ref=e3240]: CI
+                - paragraph [ref=e3242]: Ciruela importada bandeja
+                - generic [ref=e3243]: aguacates
+              - button [ref=e3247]:
+                - img [ref=e3248]
+              - generic [ref=e3251]: Ver detalles
+            - generic [ref=e3252]:
+              - heading "Ciruela importada bandeja" [level=3] [ref=e3253]
+              - paragraph [ref=e3254]: La ciruelas son una fruta ricas en fibra, poseen gran cantidad de agua y evitan la retención de líquidos. Son poco calóricas y contienen vitaminas del grupo B, A, E y K; fósforo, sodio, magnesio, calcio, cobre, boro y zinc.
+              - generic [ref=e3256]:
+                - generic [ref=e3257]: $ 10.000
+                - generic [ref=e3258]: Por unit
+              - button "Agregar al Carrito" [ref=e3259] [cursor=pointer]:
+                - img [ref=e3260]
+                - text: Agregar al Carrito
+          - generic [ref=e3264]:
+            - generic [ref=e3265] [cursor=pointer]:
+              - generic [ref=e3270]:
+                - generic [ref=e3271]: 🥑
+                - generic [ref=e3272]: LM
+                - paragraph [ref=e3274]: Lechuga morada
+                - generic [ref=e3275]: aguacates
+              - button [ref=e3279]:
+                - img [ref=e3280]
+              - generic [ref=e3283]: Ver detalles
+            - generic [ref=e3284]:
+              - heading "Lechuga morada" [level=3] [ref=e3285]
+              - paragraph [ref=e3286]: La lechuga morada es baja en sodio y en calorías, y por lo general es más saludable que la lechuga verde. Proporciona mucha vitamina A, vitamina K y potasio. La vitamina A tiene muchas funciones
+              - generic [ref=e3288]:
+                - generic [ref=e3289]: $ 5.600
+                - generic [ref=e3290]: Por unit
+              - button "Agregar al Carrito" [ref=e3291] [cursor=pointer]:
+                - img [ref=e3292]
+                - text: Agregar al Carrito
+          - generic [ref=e3296]:
+            - generic [ref=e3297] [cursor=pointer]:
+              - generic [ref=e3302]:
+                - generic [ref=e3303]: 🥑
+                - generic [ref=e3304]: DA
+                - paragraph [ref=e3306]: Datiles
+                - generic [ref=e3307]: aguacates
+              - button [ref=e3311]:
+                - img [ref=e3312]
+              - generic [ref=e3315]: Ver detalles
+            - generic [ref=e3316]:
+              - heading "Datiles" [level=3] [ref=e3317]
+              - paragraph [ref=e3318]: Los dátiles son una fruta sabrosa y saludable, y aportan una buena dosis de energía gracias a sus múltiples propiedades beneficiosas
+              - generic [ref=e3320]:
+                - generic [ref=e3321]: $ 13.900
+                - generic [ref=e3322]: Por kg
+              - button "Agregar al Carrito" [ref=e3323] [cursor=pointer]:
+                - img [ref=e3324]
+                - text: Agregar al Carrito
+          - generic [ref=e3328]:
+            - generic [ref=e3329] [cursor=pointer]:
+              - generic [ref=e3334]:
+                - generic [ref=e3335]: 🥑
+                - generic [ref=e3336]: ZC
+                - paragraph [ref=e3338]: ZumoNaranja concentr
+                - generic [ref=e3339]: aguacates
+              - button [ref=e3343]:
+                - img [ref=e3344]
+              - generic [ref=e3347]: Ver detalles
+            - generic [ref=e3348]:
+              - heading "ZumoNaranja concentr" [level=3] [ref=e3349]
+              - paragraph [ref=e3350]: Concentrado líquido para preparar bebidas sabor a Naranja
+              - generic [ref=e3352]:
+                - generic [ref=e3353]: $ 4.600
+                - generic [ref=e3354]: Por unit
+              - button "Agregar al Carrito" [ref=e3355] [cursor=pointer]:
+                - img [ref=e3356]
+                - text: Agregar al Carrito
+          - generic [ref=e3360]:
+            - generic [ref=e3361] [cursor=pointer]:
+              - generic [ref=e3366]:
+                - generic [ref=e3367]: 🥑
+                - generic [ref=e3368]: ZC
+                - paragraph [ref=e3370]: Zumomaracuya concentr
+                - generic [ref=e3371]: aguacates
+              - button [ref=e3375]:
+                - img [ref=e3376]
+              - generic [ref=e3379]: Ver detalles
+            - generic [ref=e3380]:
+              - heading "Zumomaracuya concentr" [level=3] [ref=e3381]
+              - paragraph [ref=e3382]: Concentrado líquido para preparar bebidas sabor a Maracuya
+              - generic [ref=e3384]:
+                - generic [ref=e3385]: $ 4.600
+                - generic [ref=e3386]: Por unit
+              - button "Agregar al Carrito" [ref=e3387] [cursor=pointer]:
+                - img [ref=e3388]
+                - text: Agregar al Carrito
+          - generic [ref=e3392]:
+            - generic [ref=e3393] [cursor=pointer]:
+              - generic [ref=e3398]:
+                - generic [ref=e3399]: 🥑
+                - generic [ref=e3400]: ZC
+                - paragraph [ref=e3402]: Zumocereza concentrado
+                - generic [ref=e3403]: aguacates
+              - button [ref=e3407]:
+                - img [ref=e3408]
+              - generic [ref=e3411]: Ver detalles
+            - generic [ref=e3412]:
+              - heading "Zumocereza concentrado" [level=3] [ref=e3413]
+              - paragraph [ref=e3414]: Concentrado líquido para preparar bebidas sabor a cereza
+              - generic [ref=e3416]:
+                - generic [ref=e3417]: $ 9.000
+                - generic [ref=e3418]: Por unit
+              - button "Agregar al Carrito" [ref=e3419] [cursor=pointer]:
+                - img [ref=e3420]
+                - text: Agregar al Carrito
+          - generic [ref=e3424]:
+            - generic [ref=e3425] [cursor=pointer]:
+              - generic [ref=e3430]:
+                - generic [ref=e3431]: 🥑
+                - generic [ref=e3432]: CI
+                - paragraph [ref=e3434]: Cidra
+                - generic [ref=e3435]: aguacates
+              - button [ref=e3439]:
+                - img [ref=e3440]
+              - generic [ref=e3443]: Ver detalles
+            - generic [ref=e3444]:
+              - heading "Cidra" [level=3] [ref=e3445]
+              - paragraph [ref=e3446]: La cidra es una fruta baja en calorías y rica en fibra, vitaminas y minerales. Ayuda a mejorar la salud cardiovascular, controlar la diabetes, fortalecer el sistema inmunológico y favorecer la digestión. Además, tiene propiedades antioxidantes y antiinflamatorias.
+              - generic [ref=e3448]:
+                - generic [ref=e3449]: $ 2.000
+                - generic [ref=e3450]: Por unit
+              - button "Agregar al Carrito" [ref=e3451] [cursor=pointer]:
+                - img [ref=e3452]
+                - text: Agregar al Carrito
+          - generic [ref=e3456]:
+            - generic [ref=e3457] [cursor=pointer]:
+              - generic [ref=e3462]:
+                - generic [ref=e3463]: 🥑
+                - generic [ref=e3464]: CO
+                - paragraph [ref=e3466]: Cebolla Ocañera
+                - generic [ref=e3467]: aguacates
+              - button [ref=e3471]:
+                - img [ref=e3472]
+              - generic [ref=e3475]: Ver detalles
+            - generic [ref=e3476]:
+              - heading "Cebolla Ocañera" [level=3] [ref=e3477]
+              - paragraph
+              - generic [ref=e3479]:
+                - generic [ref=e3480]: $ 12.800
+                - generic [ref=e3481]: Por kg
+              - button "Agregar al Carrito" [ref=e3482] [cursor=pointer]:
+                - img [ref=e3483]
+                - text: Agregar al Carrito
+          - generic [ref=e3487]:
+            - generic [ref=e3488] [cursor=pointer]:
+              - generic [ref=e3493]:
+                - generic [ref=e3494]: 🥑
+                - generic [ref=e3495]: PC
+                - paragraph [ref=e3497]: Papa criolla
+                - generic [ref=e3498]: aguacates
+              - button [ref=e3502]:
+                - img [ref=e3503]
+              - generic [ref=e3506]: Ver detalles
+            - generic [ref=e3507]:
+              - heading "Papa criolla" [level=3] [ref=e3508]
+              - paragraph [ref=e3509]: La papa criolla cruda es antiinflamatoria, desintoxicante y rica en vitaminas y minerales que fortalecen la salud digestiva, inmunológica y cardiovascular.
+              - generic [ref=e3511]:
+                - generic [ref=e3512]: $ 3.500
+                - generic [ref=e3513]: Por kg
+              - button "Agregar al Carrito" [ref=e3514] [cursor=pointer]:
+                - img [ref=e3515]
+                - text: Agregar al Carrito
+          - generic [ref=e3519]:
+            - generic [ref=e3520] [cursor=pointer]:
+              - generic [ref=e3525]:
+                - generic [ref=e3526]: 🥑
+                - generic [ref=e3527]: CU
+                - paragraph [ref=e3529]: Cubios
+                - generic [ref=e3530]: aguacates
+              - button [ref=e3534]:
+                - img [ref=e3535]
+              - generic [ref=e3538]: Ver detalles
+            - generic [ref=e3539]:
+              - heading "Cubios" [level=3] [ref=e3540]
+              - paragraph [ref=e3541]: Los cubios son un tubérculo nutritivo que fortalece el sistema inmunológico, mejora la salud renal y cardiovascular, ayuda en la digestión y tiene propiedades antiinflamatorias y antimicrobianas.
+              - generic [ref=e3543]:
+                - generic [ref=e3544]: $ 3.600
+                - generic [ref=e3545]: Por kg
+              - button "Agregar al Carrito" [ref=e3546] [cursor=pointer]:
+                - img [ref=e3547]
+                - text: Agregar al Carrito
+          - generic [ref=e3551]:
+            - generic [ref=e3552] [cursor=pointer]:
+              - generic [ref=e3557]:
+                - generic [ref=e3558]: 🥑
+                - generic [ref=e3559]: GB
+                - paragraph [ref=e3561]: Guisantes Bandeja
+                - generic [ref=e3562]: aguacates
+              - button [ref=e3566]:
+                - img [ref=e3567]
+              - generic [ref=e3570]: Ver detalles
+            - generic [ref=e3571]:
+              - heading "Guisantes Bandeja" [level=3] [ref=e3572]
+              - paragraph
+              - generic [ref=e3574]:
+                - generic [ref=e3575]: $ 12.300
+                - generic [ref=e3576]: Por kg
+              - button "Agregar al Carrito" [ref=e3577] [cursor=pointer]:
+                - img [ref=e3578]
+                - text: Agregar al Carrito
+          - generic [ref=e3582]:
+            - generic [ref=e3583] [cursor=pointer]:
+              - generic [ref=e3588]:
+                - generic [ref=e3589]: 🥑
+                - generic [ref=e3590]: PI
+                - paragraph [ref=e3592]: Pistachos
+                - generic [ref=e3593]: aguacates
+              - button [ref=e3597]:
+                - img [ref=e3598]
+              - generic [ref=e3601]: Ver detalles
+            - generic [ref=e3602]:
+              - heading "Pistachos" [level=3] [ref=e3603]
+              - paragraph [ref=e3604]: Los pistachos son nutritivos y benefician la salud cardiovascular, regulan el azúcar en sangre, aportan antioxidantes, mejoran el ánimo y la digestión.
+              - generic [ref=e3606]:
+                - generic [ref=e3607]: $ 11.500
+                - generic [ref=e3608]: Por kg
+              - button "Agregar al Carrito" [ref=e3609] [cursor=pointer]:
+                - img [ref=e3610]
+                - text: Agregar al Carrito
+          - generic [ref=e3614]:
+            - generic [ref=e3615] [cursor=pointer]:
+              - generic [ref=e3620]:
+                - generic [ref=e3621]: 🥑
+                - generic [ref=e3622]: ZC
+                - paragraph [ref=e3624]: Zumo concentrado
+                - generic [ref=e3625]: aguacates
+              - button [ref=e3629]:
+                - img [ref=e3630]
+              - generic [ref=e3633]: Ver detalles
+            - generic [ref=e3634]:
+              - heading "Zumo concentrado" [level=3] [ref=e3635]
+              - paragraph [ref=e3636]: Concentrado líquido para preparar bebidas sabor a coco
+              - generic [ref=e3638]:
+                - generic [ref=e3639]: $ 7.900
+                - generic [ref=e3640]: Por unit
+              - button "Agregar al Carrito" [ref=e3641] [cursor=pointer]:
+                - img [ref=e3642]
+                - text: Agregar al Carrito
+          - generic [ref=e3646]:
+            - generic [ref=e3647] [cursor=pointer]:
+              - generic [ref=e3652]:
+                - generic [ref=e3653]: 🥑
+                - generic [ref=e3654]: MS
+                - paragraph [ref=e3656]: Mazorca sabanera x3 uni
+                - generic [ref=e3657]: aguacates
+              - button [ref=e3661]:
+                - img [ref=e3662]
+              - generic [ref=e3665]: Ver detalles
+            - generic [ref=e3666]:
+              - heading "Mazorca sabanera x3 uni" [level=3] [ref=e3667]
+              - paragraph [ref=e3668]: "Antioxidantes: El maíz es fuente de antioxidantes que combaten los radicales libres y el envejecimiento celular. Saciante: Rico en fibra e hidratos de carbono el maíz es saciante y ayuda a controlar nuestro apetito."
+              - generic [ref=e3670]:
+                - generic [ref=e3671]: $ 5.000
+                - generic [ref=e3672]: Por unit
+              - button "Agregar al Carrito" [ref=e3673] [cursor=pointer]:
+                - img [ref=e3674]
+                - text: Agregar al Carrito
+          - generic [ref=e3678]:
+            - generic [ref=e3679] [cursor=pointer]:
+              - generic [ref=e3684]:
+                - generic [ref=e3685]: 🥑
+                - generic [ref=e3686]: BA
+                - paragraph [ref=e3688]: Bandeja
+                - generic [ref=e3689]: aguacates
+              - button [ref=e3693]:
+                - img [ref=e3694]
+              - generic [ref=e3697]: Ver detalles
+            - generic [ref=e3698]:
+              - heading "Bandeja" [level=3] [ref=e3699]
+              - paragraph
+              - generic [ref=e3701]:
+                - generic [ref=e3702]: $ 6.400
+                - generic [ref=e3703]: Por kg
+              - button "Agregar al Carrito" [ref=e3704] [cursor=pointer]:
+                - img [ref=e3705]
+                - text: Agregar al Carrito
+          - generic [ref=e3709]:
+            - generic [ref=e3710] [cursor=pointer]:
+              - generic [ref=e3715]:
+                - generic [ref=e3716]: 🥑
+                - generic [ref=e3717]: UC
+                - paragraph [ref=e3719]: Uchuvas
+                - generic [ref=e3720]: aguacates
+              - button [ref=e3724]:
+                - img [ref=e3725]
+              - generic [ref=e3728]: Ver detalles
+            - generic [ref=e3729]:
+              - heading "Uchuvas" [level=3] [ref=e3730]
+              - paragraph [ref=e3731]: La uchuva no solo ayuda a regular el tránsito intestinal, también posee propiedades diuréticas que contribuyen a eliminar toxinas acumuladas en el organismo previniendo además problemas de retención de líquidos. Su poder depurativo hace que también sea recomendable para mantener la salud renal.
+              - generic [ref=e3733]:
+                - generic [ref=e3734]: $ 4.500
+                - generic [ref=e3735]: Por kg
+              - button "Agregar al Carrito" [ref=e3736] [cursor=pointer]:
+                - img [ref=e3737]
+                - text: Agregar al Carrito
+          - generic [ref=e3741]:
+            - generic [ref=e3742] [cursor=pointer]:
+              - generic [ref=e3747]:
+                - generic [ref=e3748]: 🥑
+                - generic [ref=e3749]: RE
+                - paragraph [ref=e3751]: Repollo
+                - generic [ref=e3752]: aguacates
+              - button [ref=e3756]:
+                - img [ref=e3757]
+              - generic [ref=e3760]: Ver detalles
+            - generic [ref=e3761]:
+              - heading "Repollo" [level=3] [ref=e3762]
+              - paragraph [ref=e3763]: Germinados de Repollo
+              - generic [ref=e3765]:
+                - generic [ref=e3766]: $ 6.700
+                - generic [ref=e3767]: Por unit
+              - button "Agregar al Carrito" [ref=e3768] [cursor=pointer]:
+                - img [ref=e3769]
+                - text: Agregar al Carrito
+          - generic [ref=e3773]:
+            - generic [ref=e3774] [cursor=pointer]:
+              - generic [ref=e3779]:
+                - generic [ref=e3780]: 🥑
+                - generic [ref=e3781]: RE
+                - paragraph [ref=e3783]: Remolacha
+                - generic [ref=e3784]: aguacates
+              - button [ref=e3788]:
+                - img [ref=e3789]
+              - generic [ref=e3792]: Ver detalles
+            - generic [ref=e3793]:
+              - heading "Remolacha" [level=3] [ref=e3794]
+              - paragraph [ref=e3795]: Germinados de Remolacha
+              - generic [ref=e3797]:
+                - generic [ref=e3798]: $ 6.700
+                - generic [ref=e3799]: Por unit
+              - button "Agregar al Carrito" [ref=e3800] [cursor=pointer]:
+                - img [ref=e3801]
+                - text: Agregar al Carrito
+          - generic [ref=e3805]:
+            - generic [ref=e3806] [cursor=pointer]:
+              - generic [ref=e3811]:
+                - generic [ref=e3812]: 🥑
+                - generic [ref=e3813]: RÁ
+                - paragraph [ref=e3815]: Rábano
+                - generic [ref=e3816]: aguacates
+              - button [ref=e3820]:
+                - img [ref=e3821]
+              - generic [ref=e3824]: Ver detalles
+            - generic [ref=e3825]:
+              - heading "Rábano" [level=3] [ref=e3826]
+              - paragraph [ref=e3827]: Germinados de Rábano
+              - generic [ref=e3829]:
+                - generic [ref=e3830]: $ 6.700
+                - generic [ref=e3831]: Por unit
+              - button "Agregar al Carrito" [ref=e3832] [cursor=pointer]:
+                - img [ref=e3833]
+                - text: Agregar al Carrito
+          - generic [ref=e3837]:
+            - generic [ref=e3838] [cursor=pointer]:
+              - generic [ref=e3843]:
+                - generic [ref=e3844]: 🥑
+                - generic [ref=e3845]: AL
+                - paragraph [ref=e3847]: Alfalfa
+                - generic [ref=e3848]: aguacates
+              - button [ref=e3852]:
+                - img [ref=e3853]
+              - generic [ref=e3856]: Ver detalles
+            - generic [ref=e3857]:
+              - heading "Alfalfa" [level=3] [ref=e3858]
+              - paragraph [ref=e3859]: Germinados de Alfalfa
+              - generic [ref=e3861]:
+                - generic [ref=e3862]: $ 6.700
+                - generic [ref=e3863]: Por unit
+              - button "Agregar al Carrito" [ref=e3864] [cursor=pointer]:
+                - img [ref=e3865]
+                - text: Agregar al Carrito
+          - generic [ref=e3869]:
+            - generic [ref=e3870] [cursor=pointer]:
+              - generic [ref=e3875]:
+                - generic [ref=e3876]: 🥑
+                - generic [ref=e3877]: CI
+                - paragraph [ref=e3879]: Cilantro
+                - generic [ref=e3880]: aguacates
+              - button [ref=e3884]:
+                - img [ref=e3885]
+              - generic [ref=e3888]: Ver detalles
+            - generic [ref=e3889]:
+              - heading "Cilantro" [level=3] [ref=e3890]
+              - paragraph [ref=e3891]: Germinados de Cilantro
+              - generic [ref=e3893]:
+                - generic [ref=e3894]: $ 6.700
+                - generic [ref=e3895]: Por unit
+              - button "Agregar al Carrito" [ref=e3896] [cursor=pointer]:
+                - img [ref=e3897]
+                - text: Agregar al Carrito
+          - generic [ref=e3901]:
+            - generic [ref=e3902] [cursor=pointer]:
+              - generic [ref=e3907]:
+                - generic [ref=e3908]: 🥑
+                - generic [ref=e3909]: MA
+                - paragraph [ref=e3911]: Mangostinos
+                - generic [ref=e3912]: aguacates
+              - button [ref=e3916]:
+                - img [ref=e3917]
+              - generic [ref=e3920]: Ver detalles
+            - generic [ref=e3921]:
+              - heading "Mangostinos" [level=3] [ref=e3922]
+              - paragraph [ref=e3923]: El mangostino Fortalece el sistema inmune, muy necesario en los tiempos actuales. Al ser un poderoso antioxidante te ayudará a neutralizar los radicales libres y así proteger la integridad celular
+              - generic [ref=e3925]:
+                - generic [ref=e3926]: $ 19.000
+                - generic [ref=e3927]: Por kg
+              - button "Agregar al Carrito" [ref=e3928] [cursor=pointer]:
+                - img [ref=e3929]
+                - text: Agregar al Carrito
+          - generic [ref=e3933]:
+            - generic [ref=e3934] [cursor=pointer]:
+              - generic [ref=e3939]:
+                - generic [ref=e3940]: 🥑
+                - generic [ref=e3941]: LU
+                - paragraph [ref=e3943]: Lulos
+                - generic [ref=e3944]: aguacates
+              - button [ref=e3948]:
+                - img [ref=e3949]
+              - generic [ref=e3952]: Ver detalles
+            - generic [ref=e3953]:
+              - heading "Lulos" [level=3] [ref=e3954]
+              - paragraph [ref=e3955]: Tiene propiedades diuréticas Aumenta cantidad y calidad de formación de cabello y uñas Fortalece los huesos Disminuye colesterol malo Facilita eliminación del ácido úrico Fortalece las defensas Ayuda a mejorar enfermedades nerviosas
+              - generic [ref=e3957]:
+                - generic [ref=e3958]: $ 4.900
+                - generic [ref=e3959]: Por kg
+              - button "Agregar al Carrito" [ref=e3960] [cursor=pointer]:
+                - img [ref=e3961]
+                - text: Agregar al Carrito
+          - generic [ref=e3965]:
+            - generic [ref=e3966] [cursor=pointer]:
+              - generic [ref=e3971]:
+                - generic [ref=e3972]: 🥑
+                - generic [ref=e3973]: KI
+                - paragraph [ref=e3975]: Kiwis
+                - generic [ref=e3976]: aguacates
+              - button [ref=e3980]:
+                - img [ref=e3981]
+              - generic [ref=e3984]: Ver detalles
+            - generic [ref=e3985]:
+              - heading "Kiwis" [level=3] [ref=e3986]
+              - paragraph [ref=e3987]: Bandeja de 400 -450 grs Beneficios del consumo de kiwi Entre los analizados se encuentra su papel beneficioso como antioxidante y para mejorar la función inmunitaria, la mejora de la función del tracto digestivo y respiratorio, y la mejora del estado de ánimo. Kiwis premium x
+              - generic [ref=e3989]:
+                - generic [ref=e3990]: $ 11.000
+                - generic [ref=e3991]: Por kg
+              - button "Agregar al Carrito" [ref=e3992] [cursor=pointer]:
+                - img [ref=e3993]
+                - text: Agregar al Carrito
+          - generic [ref=e3997]:
+            - generic [ref=e3998] [cursor=pointer]:
+              - generic [ref=e4003]:
+                - generic [ref=e4004]: 🥑
+                - generic [ref=e4005]: CI
+                - paragraph [ref=e4007]: Ciruela Importada
+                - generic [ref=e4008]: aguacates
+              - button [ref=e4012]:
+                - img [ref=e4013]
+              - generic [ref=e4016]: Ver detalles
+            - generic [ref=e4017]:
+              - heading "Ciruela Importada" [level=3] [ref=e4018]
+              - paragraph [ref=e4019]: Esta fruta es un alimento energético, alcalinizante, depurativo, tonificante y capaz de estimular el sistema nervioso. Además, tiene un bajo contenido calórico por lo que es recomendable consumirla en caso de querer bajar de peso.
+              - generic [ref=e4021]:
+                - generic [ref=e4022]: $ 5.000
+                - generic [ref=e4023]: Por unit
+              - button "Agregar al Carrito" [ref=e4024] [cursor=pointer]:
+                - img [ref=e4025]
+                - text: Agregar al Carrito
+          - generic [ref=e4029]:
+            - generic [ref=e4030] [cursor=pointer]:
+              - generic [ref=e4035]:
+                - generic [ref=e4036]: 🥑
+                - generic [ref=e4037]: AN
+                - paragraph [ref=e4039]: Anón
+                - generic [ref=e4040]: aguacates
+              - button [ref=e4044]:
+                - img [ref=e4045]
+              - generic [ref=e4048]: Ver detalles
+            - generic [ref=e4049]:
+              - heading "Anón" [level=3] [ref=e4050]
+              - paragraph [ref=e4051]: Es una fruta rica en antioxidantes, vitaminas y minerales que ayudan a combatir la inflamación, aumentar las defensas del organismo y controlar los niveles de azúcar en sangre
+              - generic [ref=e4053]:
+                - generic [ref=e4054]: $ 10.000
+                - generic [ref=e4055]: Por unit
+              - button "Agregar al Carrito" [ref=e4056] [cursor=pointer]:
+                - img [ref=e4057]
+                - text: Agregar al Carrito
+          - generic [ref=e4061]:
+            - generic [ref=e4062] [cursor=pointer]:
+              - generic [ref=e4067]:
+                - generic [ref=e4068]: 🥑
+                - generic [ref=e4069]: ZM
+                - paragraph [ref=e4071]: Zumo mango concentrado
+                - generic [ref=e4072]: aguacates
+              - button [ref=e4076]:
+                - img [ref=e4077]
+              - generic [ref=e4080]: Ver detalles
+            - generic [ref=e4081]:
+              - heading "Zumo mango concentrado" [level=3] [ref=e4082]
+              - paragraph [ref=e4083]: Concentrado líquido para preparar bebidas sabor a mango
+              - generic [ref=e4085]:
+                - generic [ref=e4086]: $ 3.600
+                - generic [ref=e4087]: Por unit
+              - button "Agregar al Carrito" [ref=e4088] [cursor=pointer]:
+                - img [ref=e4089]
+                - text: Agregar al Carrito
+          - generic [ref=e4093]:
+            - generic [ref=e4094] [cursor=pointer]:
+              - generic [ref=e4099]:
+                - generic [ref=e4100]: 🥑
+                - generic [ref=e4101]: ZL
+                - paragraph [ref=e4103]: Zumo Limón concentrado
+                - generic [ref=e4104]: aguacates
+              - button [ref=e4108]:
+                - img [ref=e4109]
+              - generic [ref=e4112]: Ver detalles
+            - generic [ref=e4113]:
+              - heading "Zumo Limón concentrado" [level=3] [ref=e4114]
+              - paragraph [ref=e4115]: Concentrado líquido para preparar bebidas sabor a limón
+              - generic [ref=e4117]:
+                - generic [ref=e4118]: $ 3.800
+                - generic [ref=e4119]: Por unit
+              - button "Agregar al Carrito" [ref=e4120] [cursor=pointer]:
+                - img [ref=e4121]
+                - text: Agregar al Carrito
+          - generic [ref=e4125]:
+            - generic [ref=e4126] [cursor=pointer]:
+              - generic [ref=e4131]:
+                - generic [ref=e4132]: 🥑
+                - generic [ref=e4133]: RC
+                - paragraph [ref=e4135]: Raíces chinas
+                - generic [ref=e4136]: aguacates
+              - button [ref=e4140]:
+                - img [ref=e4141]
+              - generic [ref=e4144]: Ver detalles
+            - generic [ref=e4145]:
+              - heading "Raíces chinas" [level=3] [ref=e4146]
+              - paragraph [ref=e4147]: Raíz china en bandeja
+              - generic [ref=e4149]:
+                - generic [ref=e4150]: $ 5.900
+                - generic [ref=e4151]: Por unit
+              - button "Agregar al Carrito" [ref=e4152] [cursor=pointer]:
+                - img [ref=e4153]
+                - text: Agregar al Carrito
+          - generic [ref=e4157]:
+            - generic [ref=e4158] [cursor=pointer]:
+              - generic [ref=e4163]:
+                - generic [ref=e4164]: 🥑
+                - generic [ref=e4165]: TO
+                - paragraph [ref=e4167]: Toronja
+                - generic [ref=e4168]: aguacates
+              - button [ref=e4172]:
+                - img [ref=e4173]
+              - generic [ref=e4176]: Ver detalles
+            - generic [ref=e4177]:
+              - heading "Toronja" [level=3] [ref=e4178]
+              - paragraph [ref=e4179]: x1kilo
+              - generic [ref=e4181]:
+                - generic [ref=e4182]: $ 8.800
+                - generic [ref=e4183]: Por kg
+              - button "Agregar al Carrito" [ref=e4184] [cursor=pointer]:
+                - img [ref=e4185]
+                - text: Agregar al Carrito
+          - generic [ref=e4189]:
+            - generic [ref=e4190] [cursor=pointer]:
+              - generic [ref=e4195]:
+                - generic [ref=e4196]: 🥑
+                - generic [ref=e4197]: CT
+                - paragraph [ref=e4199]: Champiñones tajados bandeja
+                - generic [ref=e4200]: aguacates
+              - button [ref=e4204]:
+                - img [ref=e4205]
+              - generic [ref=e4208]: Ver detalles
+            - generic [ref=e4209]:
+              - heading "Champiñones tajados bandeja" [level=3] [ref=e4210]
+              - paragraph [ref=e4211]: el champiñón es fuente de vitaminas del Grupo B y D además de minerales como el potasio, el fósforo y el hierro, entre otros. Esta composición lo convierte en un posible aliado en la prevención de enfermedades como el cáncer, la diabetes o el deterioro cognitivo.
+              - generic [ref=e4213]:
+                - generic [ref=e4214]: $ 3.500
+                - generic [ref=e4215]: Por kg
+              - button "Agregar al Carrito" [ref=e4216] [cursor=pointer]:
+                - img [ref=e4217]
+                - text: Agregar al Carrito
+          - generic [ref=e4221]:
+            - generic [ref=e4222] [cursor=pointer]:
+              - generic [ref=e4227]:
+                - generic [ref=e4228]: 🥑
+                - generic [ref=e4229]: CE
+                - paragraph [ref=e4231]: Champiñones enteros
+                - generic [ref=e4232]: aguacates
+              - button [ref=e4236]:
+                - img [ref=e4237]
+              - generic [ref=e4240]: Ver detalles
+            - generic [ref=e4241]:
+              - heading "Champiñones enteros" [level=3] [ref=e4242]
+              - paragraph [ref=e4243]: Enteros frescos blancos de la mejor calidad
+              - generic [ref=e4245]:
+                - generic [ref=e4246]: $ 6.000
+                - generic [ref=e4247]: Por kg
+              - button "Agregar al Carrito" [ref=e4248] [cursor=pointer]:
+                - img [ref=e4249]
+                - text: Agregar al Carrito
+          - generic [ref=e4253]:
+            - generic [ref=e4254] [cursor=pointer]:
+              - generic [ref=e4259]:
+                - generic [ref=e4260]: 🥑
+                - generic [ref=e4261]: CO
+                - paragraph [ref=e4263]: Corozo
+                - generic [ref=e4264]: aguacates
+              - button [ref=e4268]:
+                - img [ref=e4269]
+              - generic [ref=e4272]: Ver detalles
+            - generic [ref=e4273]:
+              - heading "Corozo" [level=3] [ref=e4274]
+              - paragraph [ref=e4275]: El corozo es una fruta rica en vitaminas A y C, minerales como magnesio e hierro, y antioxidantes que benefician la salud visual, el sistema inmunológico y el corazón. Además, ayuda a controlar el colesterol, el azúcar en sangre y puede aumentar la hemoglobina, siendo un aliado para la salud integral.
+              - generic [ref=e4277]:
+                - generic [ref=e4278]: $ 8.500
+                - generic [ref=e4279]: Por kg
+              - button "Agregar al Carrito" [ref=e4280] [cursor=pointer]:
+                - img [ref=e4281]
+                - text: Agregar al Carrito
+          - generic [ref=e4285]:
+            - generic [ref=e4286] [cursor=pointer]:
+              - generic [ref=e4291]:
+                - generic [ref=e4292]: 🥑
+                - generic [ref=e4293]: PS
+                - paragraph [ref=e4295]: Papa sabanera
+                - generic [ref=e4296]: aguacates
+              - button [ref=e4300]:
+                - img [ref=e4301]
+              - generic [ref=e4304]: Ver detalles
+            - generic [ref=e4305]:
+              - heading "Papa sabanera" [level=3] [ref=e4306]
+              - paragraph [ref=e4307]: La papa sabanera es fuente de energía (carbohidratos), vitaminas C y B6, potasio y fibra. Beneficia el sistema inmune, la digestión y la salud cardiovascular.
+              - generic [ref=e4309]:
+                - generic [ref=e4310]: $ 3.500
+                - generic [ref=e4311]: Por kg
+              - button "Agregar al Carrito" [ref=e4312] [cursor=pointer]:
+                - img [ref=e4313]
+                - text: Agregar al Carrito
+          - generic [ref=e4317]:
+            - generic [ref=e4318] [cursor=pointer]:
+              - generic [ref=e4323]:
+                - generic [ref=e4324]: 🥑
+                - generic [ref=e4325]: HA
+                - paragraph [ref=e4327]: Habichuela
+                - generic [ref=e4328]: aguacates
+              - button [ref=e4332]:
+                - img [ref=e4333]
+              - generic [ref=e4336]: Ver detalles
+            - generic [ref=e4337]:
+              - heading "Habichuela" [level=3] [ref=e4338]
+              - paragraph [ref=e4339]: Las habichuelas son legumbres indispensables
+              - generic [ref=e4341]:
+                - generic [ref=e4342]: $ 4.500
+                - generic [ref=e4343]: Por unit
+              - button "Agregar al Carrito" [ref=e4344] [cursor=pointer]:
+                - img [ref=e4345]
+                - text: Agregar al Carrito
+          - generic [ref=e4349]:
+            - generic [ref=e4350] [cursor=pointer]:
+              - generic [ref=e4355]:
+                - generic [ref=e4356]: 🥑
+                - generic [ref=e4357]: AD
+                - paragraph [ref=e4359]: Aceite de coco
+                - generic [ref=e4360]: aguacates
+              - button [ref=e4364]:
+                - img [ref=e4365]
+              - generic [ref=e4368]: Ver detalles
+            - generic [ref=e4369]:
+              - heading "Aceite de coco" [level=3] [ref=e4370]
+              - paragraph [ref=e4371]: El aceite de coco es beneficioso
+              - generic [ref=e4373]:
+                - generic [ref=e4374]: $ 56.000
+                - generic [ref=e4375]: Por unit
+              - button "Agregar al Carrito" [ref=e4376] [cursor=pointer]:
+                - img [ref=e4377]
+                - text: Agregar al Carrito
+          - generic [ref=e4381]:
+            - generic [ref=e4382] [cursor=pointer]:
+              - generic [ref=e4387]:
+                - generic [ref=e4388]: 🥑
+                - generic [ref=e4389]: AE
+                - paragraph [ref=e4391]: Arveja en vaina
+                - generic [ref=e4392]: aguacates
+              - button [ref=e4396]:
+                - img [ref=e4397]
+              - generic [ref=e4400]: Ver detalles
+            - generic [ref=e4401]:
+              - heading "Arveja en vaina" [level=3] [ref=e4402]
+              - paragraph [ref=e4403]: Las arvejas son ricas en proteínas
+              - generic [ref=e4405]:
+                - generic [ref=e4406]: $ 10.000
+                - generic [ref=e4407]: Por unit
+              - button "Agregar al Carrito" [ref=e4408] [cursor=pointer]:
+                - img [ref=e4409]
+                - text: Agregar al Carrito
+          - generic [ref=e4413]:
+            - generic [ref=e4414] [cursor=pointer]:
+              - generic [ref=e4419]:
+                - generic [ref=e4420]: 🥑
+                - generic [ref=e4421]: CÚ
+                - paragraph [ref=e4423]: Cúrcuma
+                - generic [ref=e4424]: aguacates
+              - button [ref=e4428]:
+                - img [ref=e4429]
+              - generic [ref=e4432]: Ver detalles
+            - generic [ref=e4433]:
+              - heading "Cúrcuma" [level=3] [ref=e4434]
+              - paragraph [ref=e4435]: La Cúrcuma es un potente antiinflamatorio
+              - generic [ref=e4437]:
+                - generic [ref=e4438]: $ 3.500
+                - generic [ref=e4439]: Por unit
+              - button "Agregar al Carrito" [ref=e4440] [cursor=pointer]:
+                - img [ref=e4441]
+                - text: Agregar al Carrito
+          - generic [ref=e4445]:
+            - generic [ref=e4446] [cursor=pointer]:
+              - generic [ref=e4451]:
+                - generic [ref=e4452]: 🥑
+                - generic [ref=e4453]: YB
+                - paragraph [ref=e4455]: Yacon bandeja.
+                - generic [ref=e4456]: aguacates
+              - button [ref=e4460]:
+                - img [ref=e4461]
+              - generic [ref=e4464]: Ver detalles
+            - generic [ref=e4465]:
+              - heading "Yacon bandeja." [level=3] [ref=e4466]
+              - paragraph
+              - generic [ref=e4468]:
+                - generic [ref=e4469]: $ 7.900
+                - generic [ref=e4470]: Por kg
+              - button "Agregar al Carrito" [ref=e4471] [cursor=pointer]:
+                - img [ref=e4472]
+                - text: Agregar al Carrito
+          - generic [ref=e4476]:
+            - generic [ref=e4477] [cursor=pointer]:
+              - generic [ref=e4482]:
+                - generic [ref=e4483]: 🥑
+                - generic [ref=e4484]: NM
+                - paragraph [ref=e4486]: Nueva Maya paquete x 8 Mediano
+                - generic [ref=e4487]: aguacates
+              - button [ref=e4491]:
+                - img [ref=e4492]
+              - generic [ref=e4495]: Ver detalles
+            - generic [ref=e4496]:
+              - heading "Nueva Maya paquete x 8 Mediano" [level=3] [ref=e4497]
+              - paragraph [ref=e4498]: aguacate hass en tres estados de maduracion medianos para consumo programado
+              - generic [ref=e4500]:
+                - generic [ref=e4501]: $ 8.400
+                - generic [ref=e4502]: Por unit
+              - button "Agregar al Carrito" [ref=e4503] [cursor=pointer]:
+                - img [ref=e4504]
+                - text: Agregar al Carrito
+          - generic [ref=e4508]:
+            - generic [ref=e4509] [cursor=pointer]:
+              - generic [ref=e4514]:
+                - generic [ref=e4515]: 🥑
+                - generic [ref=e4516]: PP
+                - paragraph [ref=e4518]: Promo paga 2 lleva tres
+                - generic [ref=e4519]: aguacates
+              - button [ref=e4523]:
+                - img [ref=e4524]
+              - generic [ref=e4527]: Ver detalles
+            - generic [ref=e4528]:
+              - heading "Promo paga 2 lleva tres" [level=3] [ref=e4529]
+              - paragraph [ref=e4530]: Caja de 12 unidades Premium pagas dos llevas tres Pinton y maduro
+              - generic [ref=e4532]:
+                - generic [ref=e4533]: $ 48.000
+                - generic [ref=e4534]: Por box
+              - button "Agregar al Carrito" [ref=e4535] [cursor=pointer]:
+                - img [ref=e4536]
+                - text: Agregar al Carrito
+          - generic [ref=e4540]:
+            - generic [ref=e4541] [cursor=pointer]:
+              - generic [ref=e4546]:
+                - generic [ref=e4547]: 🥑
+                - generic [ref=e4548]: NM
+                - paragraph [ref=e4550]: Nueva Maya paquete x 7 premium
+                - generic [ref=e4551]: aguacates
+              - button [ref=e4555]:
+                - img [ref=e4556]
+              - generic [ref=e4559]: Ver detalles
+            - generic [ref=e4560]:
+              - heading "Nueva Maya paquete x 7 premium" [level=3] [ref=e4561]
+              - paragraph [ref=e4562]: aguacate hass en tres estados de maduracion medianos para consumo programado
+              - generic [ref=e4564]:
+                - generic [ref=e4565]: $ 12.800
+                - generic [ref=e4566]: Por unit
+              - button "Agregar al Carrito" [ref=e4567] [cursor=pointer]:
+                - img [ref=e4568]
+                - text: Agregar al Carrito
+          - generic [ref=e4572]:
+            - generic [ref=e4573] [cursor=pointer]:
+              - generic [ref=e4578]:
+                - generic [ref=e4579]: 🥑
+                - generic [ref=e4580]: FD
+                - paragraph [ref=e4582]: Flor de Jamaica.
+                - generic [ref=e4583]: aguacates
+              - button [ref=e4587]:
+                - img [ref=e4588]
+              - generic [ref=e4591]: Ver detalles
+            - generic [ref=e4592]:
+              - heading "Flor de Jamaica." [level=3] [ref=e4593]
+              - paragraph [ref=e4594]: Los usos tradicionales de esta planta son muy variados e incluyen las flores para el tratamiento de diversos problemas incluyendo los siguientes. Sistema circulatorio. Alta presión sanguínea. Niveles altos de grasa en la sangre. Contra la diabetes. Obesidad. El té sin azúcar se usa en México contra la tos.
+              - generic [ref=e4596]:
+                - generic [ref=e4597]: $ 25.800
+                - generic [ref=e4598]: Por kg
+              - button "Agregar al Carrito" [ref=e4599] [cursor=pointer]:
+                - img [ref=e4600]
+                - text: Agregar al Carrito
+          - generic [ref=e4604]:
+            - generic [ref=e4605] [cursor=pointer]:
+              - generic [ref=e4610]:
+                - generic [ref=e4611]: 🥑
+                - generic [ref=e4612]: PD
+                - paragraph [ref=e4614]: Pasta de Ajo
+                - generic [ref=e4615]: aguacates
+              - button [ref=e4619]:
+                - img [ref=e4620]
+              - generic [ref=e4623]: Ver detalles
+            - generic [ref=e4624]:
+              - heading "Pasta de Ajo" [level=3] [ref=e4625]
+              - paragraph [ref=e4626]: El ajo es un antibiótico natural, mejora la circulación, ayuda al cuidado de la piel, sirve como un anticancerígeno, purifica la sangre en las arterias, dolores de garganta,
+              - generic [ref=e4628]:
+                - generic [ref=e4629]: $ 1.500
+                - generic [ref=e4630]: Por unit
+              - button "Agregar al Carrito" [ref=e4631] [cursor=pointer]:
+                - img [ref=e4632]
+                - text: Agregar al Carrito
+  - contentinfo [ref=e4636]:
+    - generic [ref=e4637]:
+      - generic [ref=e4638]:
+        - generic [ref=e4639]:
+          - heading "Tus Aguacates" [level=3] [ref=e4640]
+          - paragraph [ref=e4641]: Frutas y verduras frescas del Eje Cafetero directo a tu mesa. Apoyamos a los agricultores locales y garantizamos la mejor calidad.
+          - generic [ref=e4642]:
+            - link [ref=e4643] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e4644]
+            - link [ref=e4646] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e4647]
+            - link [ref=e4650] [cursor=pointer]:
+              - /url: "#"
+              - img [ref=e4651]
+        - generic [ref=e4653]:
+          - heading "Enlaces Rápidos" [level=3] [ref=e4654]
+          - list [ref=e4655]:
+            - listitem [ref=e4656]:
+              - link "Todos los Productos" [ref=e4657] [cursor=pointer]:
+                - /url: /productos/
+            - listitem [ref=e4658]:
+              - link "Sobre Nosotros" [ref=e4659] [cursor=pointer]:
+                - /url: /sobre-nosotros/
+            - listitem [ref=e4660]:
+              - link "Contacto" [ref=e4661] [cursor=pointer]:
+                - /url: /contacto/
+        - generic [ref=e4662]:
+          - heading "Atención al Cliente" [level=3] [ref=e4663]
+          - list [ref=e4664]:
+            - listitem [ref=e4665]:
+              - link "Mis Pedidos" [ref=e4666] [cursor=pointer]:
+                - /url: /perfil/mis-pedidos/
+            - listitem [ref=e4667]:
+              - link "Políticas de Envío" [ref=e4668] [cursor=pointer]:
+                - /url: /politicas/
+            - listitem [ref=e4669]:
+              - link "Devoluciones" [ref=e4670] [cursor=pointer]:
+                - /url: /devoluciones/
+            - listitem [ref=e4671]:
+              - link "Preguntas Frecuentes" [ref=e4672] [cursor=pointer]:
+                - /url: /faq/
+        - generic [ref=e4673]:
+          - heading "Contacto" [level=3] [ref=e4674]
+          - list [ref=e4675]:
+            - listitem [ref=e4676]:
+              - img [ref=e4677]
+              - generic [ref=e4680]: Eje Cafetero, Colombia
+            - listitem [ref=e4681]:
+              - img [ref=e4682]
+              - generic [ref=e4684]: +57 300 123 4567
+            - listitem [ref=e4685]:
+              - img [ref=e4686]
+              - generic [ref=e4689]: info@tusaguacates.com
+      - generic [ref=e4690]:
+        - paragraph [ref=e4691]: 2025 Tus Aguacates. Todos los derechos reservados.
+        - paragraph [ref=e4692]:
+          - link "Términos y Condiciones" [ref=e4693] [cursor=pointer]:
+            - /url: /terminos/
+          - link "Política de Privacidad" [ref=e4694] [cursor=pointer]:
+            - /url: /privacidad/
+  - generic [ref=e4696]:
+    - generic [ref=e4697]:
+      - heading "Mi Carrito (0)" [level=2] [ref=e4698]
+      - button [ref=e4699] [cursor=pointer]:
+        - img [ref=e4700]
+    - generic [ref=e4704]:
+      - img [ref=e4705]
+      - paragraph [ref=e4708]: Tu carrito está vacío
+      - button "Comenzar a comprar" [ref=e4709] [cursor=pointer]
+  - button "Abrir chat" [ref=e4710] [cursor=pointer]:
+    - img [ref=e4711]
+  - button "Open Next.js Dev Tools" [ref=e4718] [cursor=pointer]:
+    - img [ref=e4719]
+  - alert [ref=e4722]
+```
