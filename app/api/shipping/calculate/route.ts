@@ -79,13 +79,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate environment variables
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      console.error('❌ API: Missing Supabase environment variables');
+      return NextResponse.json(
+        { success: false, error: 'Configuración de base de datos incompleta' },
+        { status: 500 }
+      );
+    }
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     );
 
     // Get active shipping rules for the location
-    const { data: shippingRules, error: rulesError } = await supabase
+    let shippingRules: any[] | null = null;
+    const { data: rulesData, error: rulesError } = await supabase
       .from('shipping_rules')
       .select('*')
       .eq('is_active', true)
@@ -94,10 +104,18 @@ export async function POST(request: NextRequest) {
 
     if (rulesError) {
       console.error('❌ API: Error fetching shipping rules:', rulesError);
-      return NextResponse.json(
-        { success: false, error: 'Error al calcular envío' },
-        { status: 500 }
-      );
+      console.error('❌ API: Supabase error details:', {
+        message: rulesError.message,
+        details: rulesError.details,
+        hint: rulesError.hint,
+        code: rulesError.code
+      });
+
+      // Don't return 500 immediately, fallback to default rules
+      console.log('📋 Using default shipping rules due to database error');
+      shippingRules = null;
+    } else {
+      shippingRules = rulesData;
     }
 
     console.log('📋 Shipping rules found:', shippingRules?.length || 0);

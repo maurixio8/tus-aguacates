@@ -16,6 +16,20 @@ export default function CheckoutSummary() {
   const totals = getTotals();
   const itemCount = getItemCount();
 
+  // Debug logs for shipping calculation
+  console.log('🚚 CheckoutSummary Debug:', {
+    subtotal: totals.subtotal,
+    shipping: {
+      cost: shipping?.cost,
+      freeShipping: shipping?.freeShipping,
+      freeShippingMin: shipping?.freeShippingMin,
+      amountForFreeShipping: shipping?.amountForFreeShipping,
+      message: shipping?.message
+    },
+    total: totals.total,
+    itemCount
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',

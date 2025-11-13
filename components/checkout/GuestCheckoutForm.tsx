@@ -370,12 +370,12 @@ ${orderData.appliedCoupon.description}
       <div className="min-h-screen bg-gray-50">
         {/* Logo Header */}
         <div className="bg-white border-b border-gray-200 py-4">
-          <div className="max-w-md mx-auto flex justify-center">
+          <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/images/logo-animated.gif"
+              src="/logo-white.png"
               alt="Tus Aguacates"
-              width={180}
-              height={60}
+              width={200}
+              height={70}
               priority
             />
           </div>

@@ -277,6 +277,7 @@ export const useCartStore = create<CartState>()(
         } catch (error) {
           console.error('❌ Error calculating shipping:', error);
           const subtotal = get().getSubtotal();
+          console.log('🚚 Falling back to default shipping with subtotal:', subtotal);
           set({ shipping: getDefaultShippingInfo(subtotal) });
         }
       },
