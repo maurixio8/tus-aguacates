@@ -56,18 +56,30 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (variants.length > 0) {
-      // Si hay variantes, abrir el modal
-      setIsModalOpen(true);
-    } else {
-      // Si no hay variantes, agregar directo al carrito
-      addItem(product);
+    e.stopPropagation();
+
+    const itemToAdd = {
+      ...product,
+      quantity: 1,
+      variant: selectedVariant
+    };
+
+    console.log('🛒 Adding to cart:', itemToAdd);
+
+    if (variants.length > 0 && !selectedVariant) {
+      console.log('⚠️ No variant selected, using first variant');
+      return;
     }
+
+    addItem(itemToAdd);
+    console.log('✅ Product added to cart successfully');
   };
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsModalOpen(true);
+    e.stopPropagation();
+    // Navegar a la página de producto usando window.location
+    window.location.href = `/productos/${product.id}`;
   };
 
   // Precio a mostrar (variante seleccionada o precio base con descuento)
