@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
           logout_time: new Date().toISOString(),
           email: adminUser.email
         },
-        request.ip || 'unknown',
+        request.headers.get('x-forwarded-for')?.split(',')?.[0]?.trim() || request.headers.get('x-real-ip') || 'unknown',
         request.headers.get('user-agent') || 'unknown'
       );
     }
