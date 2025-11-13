@@ -6,14 +6,75 @@ export const dynamic = 'force-dynamic';
 // POST - Calculate shipping costs
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    console.log('📦 API: Shipping request received');
+
+    // Validate request body
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      console.error('❌ API: JSON parse error:', parseError);
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Request body inválido',
+          details: 'El formato JSON es incorrecto o vacío'
+        },
+        { status: 400 }
+      );
+    }
+
     const { subtotal, location = 'Bogotá' } = body;
 
-    console.log('📦 API: Calculating shipping:', { subtotal, location });
+    console.log('📦 API: Calculating shipping:', {
+      subtotal,
+      location,
+      bodyKeys: Object.keys(body),
+      subtotalType: typeof subtotal,
+      locationType: typeof location
+    });
 
-    if (typeof subtotal !== 'number' || subtotal < 0) {
+    // Enhanced validation
+    if (subtotal === undefined || subtotal === null) {
       return NextResponse.json(
-        { success: false, error: 'Subtotal inválido' },
+        {
+          success: false,
+          error: 'Subtotal es requerido',
+          details: 'El campo subtotal es obligatorio'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (typeof subtotal !== 'number' || isNaN(subtotal)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Subtotal debe ser un número',
+          details: `Recibido: ${typeof subtotal} (${subtotal})`
+        },
+        { status: 400 }
+      );
+    }
+
+    if (subtotal < 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Subtotal no puede ser negativo',
+          details: `Subtotal mínimo: 0, recibido: ${subtotal}`
+        },
+        { status: 400 }
+      );
+    }
+
+    if (subtotal > 999999999) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Subtotal excede el máximo permitido',
+          details: `Máximo: 999,999,999, recibido: ${subtotal}`
+        },
         { status: 400 }
       );
     }
@@ -100,9 +161,55 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('❌ API: Unexpected error calculating shipping:', error);
+    console.error('❌ API: Unexpected error calculating shipping:', {
+      error: error.message,
+      stack: error.stack,
+      requestInfo: {
+        body: { subtotal, location },
+        headers: Object.fromEntries(request.headers)
+      }
+    });
+
+    // Handle specific error types
+    if (error.message?.includes('invalid JSON')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Request body inválido',
+          details: 'El formato JSON es incorrecto'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (error.message?.includes('Supabase') || error.message?.includes('database')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Error de base de datos temporal',
+          details: 'Intente nuevamente en unos momentos'
+        },
+        { status: 503 }
+      );
+    }
+
+    if (error.message?.includes('fetch') || error.message?.includes('network')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Error de conexión con base de datos',
+          details: 'Verifique su conexión y reintente'
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { success: false, error: 'Error interno del servidor' },
+      {
+        success: false,
+        error: 'Error interno del servidor',
+        details: process.env.NODE_ENV === 'development' ? error.message : 'Contacte al soporte'
+      },
       { status: 500 }
     );
   }
