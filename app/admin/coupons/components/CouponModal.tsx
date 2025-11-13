@@ -123,7 +123,7 @@ export default function CouponModal({
       newErrors.discount_value = 'El valor del descuento debe ser mayor que 0';
     }
 
-    if (formData.discount_type === 'percentage' && formData.discount_value > 100) {
+    if (formData.discount_type === 'percentage' && formData.discount_value && formData.discount_value > 100) {
       newErrors.discount_value = 'El descuento porcentual no puede ser mayor a 100%';
     }
 
