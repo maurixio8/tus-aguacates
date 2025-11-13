@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       error: errorMessage,
       stack: errorStack,
       requestInfo: {
-        body: { subtotal, location },
+        body: 'Request body not available in error context',
         headers: Object.fromEntries(request.headers)
       }
     });
