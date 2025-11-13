@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import ProductModal from './components/ProductModal';
+// import ProductModal from './components/ProductModal'; // Temporarily disabled
 import {
   Package,
   Plus,
@@ -761,15 +761,15 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* Product Modal */}
-        <ProductModal
+        {/* Product Modal - Temporarily disabled */}
+        {/* <ProductModal
           isOpen={showCreateModal}
           onClose={closeModal}
           onSave={saveProduct}
           editingProduct={editingProduct}
           categories={categories}
           loading={savingProduct}
-        />
+        /> */}
       </div>
     </div>
   );

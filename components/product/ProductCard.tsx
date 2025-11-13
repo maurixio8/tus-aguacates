@@ -9,7 +9,7 @@ import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
-import ProductModal from './ProductModal';
+// import ProductModal from './ProductModal'; // Temporarily disabled
 
 interface ProductVariant {
   id: string;
@@ -190,12 +190,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </div>
 
-      {/* Product Modal */}
-      <ProductModal
+      {/* Product Modal - Temporarily disabled */}
+      {/* <ProductModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         product={product}
-      />
+      /> */}
     </>
   );
 }
