@@ -40,7 +40,7 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
 // GET - Get single coupon by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -52,7 +52,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     console.log('🔍 API: Fetching single coupon:', id);
 
     const supabase = createSupabaseClient();
@@ -106,7 +106,7 @@ export async function GET(
 // PUT - Update coupon by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -118,7 +118,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     console.log('📝 API: Updating coupon:', { id, body });
@@ -237,7 +237,7 @@ export async function PUT(
 // DELETE - Delete coupon by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -249,7 +249,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     console.log('🗑️ API: Deleting coupon:', id);
 
     const supabase = createSupabaseClient();

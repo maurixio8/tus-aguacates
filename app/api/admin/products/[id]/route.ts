@@ -41,7 +41,7 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
 // GET - Get single product by ID
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -53,7 +53,7 @@ export async function GET(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     console.log('🔍 API: Fetching single product:', id);
 
     const supabase = createSupabaseClient();
@@ -113,7 +113,7 @@ export async function GET(
 // PUT - Update product by ID
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -125,7 +125,7 @@ export async function PUT(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     console.log('📝 API: Updating product:', { id, body });
@@ -242,7 +242,7 @@ export async function PUT(
 // DELETE - Delete product by ID
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verify admin authentication
@@ -254,7 +254,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
     console.log('🗑️ API: Deleting product:', id);
 
     const supabase = createSupabaseClient();
