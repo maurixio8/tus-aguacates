@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
@@ -366,7 +367,23 @@ ${orderData.appliedCoupon.description}
   // Paso 1: Información del cliente
   if (step === 'info') {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="min-h-screen bg-gray-50">
+        {/* Logo Header */}
+        <div className="bg-white border-b border-gray-200 py-4">
+          <div className="max-w-md mx-auto flex justify-center">
+            <Image
+              src="/images/logo-animated.gif"
+              alt="Tus Aguacates"
+              width={180}
+              height={60}
+              priority
+            />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2">
           <form onSubmit={handleSubmitInfo} className="space-y-6">
         <div>
@@ -489,9 +506,8 @@ ${orderData.appliedCoupon.description}
         <div className="space-y-6">
           {/* Coupon Input */}
           <CouponInput userEmail={formData.email} />
-
-          {/* Order Summary */}
-          <CheckoutSummary />
+        </div>
+          </div>
         </div>
       </div>
     );
