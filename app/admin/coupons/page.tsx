@@ -494,14 +494,14 @@ export default function CouponsPage() {
                       </td>
                       <td className="px-6 py-4">
                         <p className="font-medium">
-                          {formatCurrency(coupon.min_purchase)}
+                          {formatCurrency(coupon.min_purchase ?? 0)}
                         </p>
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm">
                           <p className="font-medium">{coupon.times_used}</p>
                           {coupon.remaining_uses !== null && (
-                            <p className="text-gray-500">/{coupon.remaining_uses + coupon.times_used}</p>
+                            <p className="text-gray-500">/{(coupon.remaining_uses ?? 0) + coupon.times_used}</p>
                           )}
                         </div>
                       </td>
