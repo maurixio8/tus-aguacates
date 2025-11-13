@@ -127,7 +127,7 @@ export default function CouponModal({
       newErrors.discount_value = 'El descuento porcentual no puede ser mayor a 100%';
     }
 
-    if (formData.discount_type === 'fixed' && formData.discount_value > 999999) {
+    if (formData.discount_type === 'fixed' && formData.discount_value && formData.discount_value > 999999) {
       newErrors.discount_value = 'El descuento fijo no puede ser mayor a $999,999';
     }
 
