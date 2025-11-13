@@ -72,7 +72,7 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
 
     try {
       const itemToAdd = {
-        product: product,
+        ...product,
         quantity: quantity,
         price: selectedVariant ? selectedVariant.price : (product.discount_price || product.price),
         variant: selectedVariant || undefined
