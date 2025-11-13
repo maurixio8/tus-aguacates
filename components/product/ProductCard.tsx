@@ -28,6 +28,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showToast, setShowToast] = useState(false);
   
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
@@ -73,6 +74,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
     addItem(itemToAdd);
     console.log('✅ Product added to cart successfully');
+
+    // Mostrar toast de éxito
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
   };
 
   const handleImageClick = (e: React.MouseEvent) => {
@@ -201,6 +206,14 @@ export function ProductCard({ product }: ProductCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {showToast && (
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
+          <span className="text-lg">🛒</span>
+          <span className="font-medium">¡Agregado al carrito!</span>
+        </div>
+      )}
 
       {/* Product Modal - Temporarily disabled */}
       {/* <ProductModal

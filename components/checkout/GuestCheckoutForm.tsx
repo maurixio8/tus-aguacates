@@ -26,9 +26,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     email: '',
     phone: '',
     address: '',
-    deliveryDate: '',
-    deliveryTime: 'mañana',
-    createAccount: false,
+        createAccount: false,
     password: '',
     paymentMethod: 'daviplata'
   });
@@ -63,9 +61,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-        deliveryDate: formData.deliveryDate,
-        deliveryTime: formData.deliveryTime
-      };
+              };
 
       const { data: guestOrder, error: orderError } = await supabase
         .from('guest_orders')
@@ -116,9 +112,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-        deliveryDate: formData.deliveryDate,
-        deliveryTime: formData.deliveryTime
-      };
+              };
 
       // Generar mensaje para WhatsApp (como si el cliente lo escribiera)
       let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
@@ -164,7 +158,7 @@ ${orderData.appliedCoupon.description}
 
       mensajeWhatsApp += `
 
-*Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
+*Entrega:* Por coordinar
 
 *Método de pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
 
@@ -270,9 +264,7 @@ ${orderData.appliedCoupon.description}
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-        deliveryDate: formData.deliveryDate,
-        deliveryTime: formData.deliveryTime
-      };
+              };
 
       const { data: guestOrder, error: orderError } = await supabase
         .from('guest_orders')
@@ -337,7 +329,7 @@ ${orderData.appliedCoupon.description}
 
       mensajeWhatsApp += `
 
-*Entrega:* ${formData.deliveryDate || 'Por coordinar'} (${formData.deliveryTime})
+*Entrega:* Por coordinar
 
 *Método de pago:* Efectivo contra entrega
 
@@ -424,31 +416,6 @@ ${orderData.appliedCoupon.description}
                 rows={3}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Fecha de Entrega</label>
-                <input
-                  type="date"
-                  value={formData.deliveryDate}
-                  onChange={(e) => setFormData({ ...formData, deliveryDate: e.target.value })}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Horario Preferido</label>
-                <select
-                  value={formData.deliveryTime}
-                  onChange={(e) => setFormData({ ...formData, deliveryTime: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-                >
-                  <option value="mañana">Mañana (8am - 12pm)</option>
-                  <option value="tarde">Tarde (2pm - 6pm)</option>
-                </select>
-              </div>
             </div>
           </div>
         </div>
