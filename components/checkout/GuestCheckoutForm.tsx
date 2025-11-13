@@ -214,7 +214,7 @@ ${orderData.appliedCoupon.description}
             // Migrar pedido de invitado a pedido de usuario
             await supabase.from('orders').insert({
               user_id: authData.user.id,
-              total: total,
+              total: totals.total,
               status: 'pagado',
               shipping_address: formData.address,
               created_from_guest: true,
