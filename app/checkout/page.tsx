@@ -58,84 +58,22 @@ export default function CheckoutPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Formulario */}
-            <div className="md:col-span-2">
-              <div className="bg-white rounded-2xl shadow-soft p-6">
-                {!user ? (
-                  <GuestCheckoutForm onSuccess={handleOrderSuccess} />
-                ) : (
-                  <div className="text-center py-12">
-                    <p className="text-gray-600 mb-4">
-                      Funcionalidad de checkout para usuarios registrados en desarrollo
-                    </p>
-                    <button
-                      onClick={() => router.push('/productos')}
-                      className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
-                    >
-                      Volver a Productos
-                    </button>
-                  </div>
-                )}
+          <div className="max-w-4xl mx-auto">
+            {!user ? (
+              <GuestCheckoutForm onSuccess={handleOrderSuccess} />
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-gray-600 mb-4">
+                  Funcionalidad de checkout para usuarios registrados en desarrollo
+                </p>
+                <button
+                  onClick={() => router.push('/productos')}
+                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
+                >
+                  Volver a Productos
+                </button>
               </div>
-            </div>
-
-            {/* Resumen del Pedido */}
-            <div className="md:col-span-1">
-              <div className="bg-white rounded-2xl shadow-soft p-6 sticky top-4">
-                <h2 className="font-bold text-lg mb-4">Resumen del Pedido</h2>
-                
-                <div className="space-y-3 mb-4">
-                  {items.map((item) => {
-                    const itemKey = item.variant 
-                      ? `${item.product.id}-${item.variant.id}`
-                      : item.product.id;
-                    
-                    return (
-                      <div key={itemKey} className="flex justify-between text-sm">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.product.name}</p>
-                          {item.variant && (
-                            <p className="text-xs text-gray-600">{item.variant.variant_value}</p>
-                          )}
-                          <p className="text-gray-600">Cantidad: {item.quantity}</p>
-                        </div>
-                        <div className="font-bold text-verde-bosque">
-                          ${(item.price * item.quantity).toLocaleString('es-CO')}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex justify-between mb-2">
-                    <span>Subtotal</span>
-                    <span className="font-bold">${total.toLocaleString('es-CO')}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span>Envío</span>
-                    <span className="text-green-600 font-semibold">GRATIS</span>
-                  </div>
-                  <div className="border-t mt-3 pt-3 flex justify-between text-lg">
-                    <span className="font-bold">TOTAL</span>
-                    <span className="font-bold text-verde-bosque text-2xl">
-                      ${total.toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-6 p-4 bg-green-50 rounded-lg">
-                  <div className="flex items-start gap-2">
-                    <ShoppingBag className="w-5 h-5 text-green-600 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-semibold text-green-800">Envío Gratis</p>
-                      <p className="text-green-700">Entregas martes y viernes en Bogotá</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
