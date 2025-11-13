@@ -5,14 +5,28 @@ import type { Product } from './supabase';
 /**
  * Default shipping information fallback
  */
-const getDefaultShippingInfo = (subtotal: number = 0): ShippingInfo => ({
-  cost: 7400,
-  freeShipping: false,
-  freeShippingMin: 68900,
-  amountForFreeShipping: Math.max(0, 68900 - subtotal),
-  estimatedDays: 1,
-  message: 'Envío: $7.400'
-});
+const getDefaultShippingInfo = (subtotal: number = 0): ShippingInfo => {
+  const freeShippingMin = 68900;
+  const shippingCost = 7400;
+  const freeShipping = subtotal > freeShippingMin; // Changed from >= to >
+
+  console.log('🚚 getDefaultShippingInfo:', {
+    subtotal,
+    freeShippingMin,
+    shippingCost,
+    freeShipping,
+    comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
+  });
+
+  return {
+    cost: freeShipping ? 0 : shippingCost,
+    freeShipping,
+    freeShippingMin,
+    amountForFreeShipping: freeShipping ? 0 : Math.max(0, freeShippingMin - subtotal),
+    estimatedDays: freeShipping ? 2 : 1,
+    message: freeShipping ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400'
+  };
+};
 
 export interface ProductVariant {
   id: string;

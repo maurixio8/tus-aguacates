@@ -52,22 +52,29 @@ export async function POST(request: NextRequest) {
       shippingCost = rule.shipping_cost;
 
       // Check if shipping is free
-      freeShipping = subtotal >= freeShippingMin;
+      freeShipping = subtotal > freeShippingMin;
 
       console.log('🚚 Applied shipping rule:', {
         rule: rule.name,
         freeShippingMin,
         shippingCost,
         subtotal,
-        freeShipping
+        freeShipping,
+        comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
       });
     } else {
       // Default rule for Bogotá if no rules found
       freeShippingMin = 68900; // $68.900
       shippingCost = 7400; // $7.400
-      freeShipping = subtotal >= freeShippingMin;
+      freeShipping = subtotal > freeShippingMin;
 
-      console.log('🚚 Applied default shipping rule');
+      console.log('🚚 Applied default shipping rule:', {
+        freeShippingMin,
+        shippingCost,
+        subtotal,
+        freeShipping,
+        comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
+      });
     }
 
     // Calculate amount needed for free shipping
