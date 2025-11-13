@@ -161,9 +161,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
 
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : 'No stack available';
+
     console.error('❌ API: Unexpected error calculating shipping:', {
-      error: error.message,
-      stack: error.stack,
+      error: errorMessage,
+      stack: errorStack,
       requestInfo: {
         body: { subtotal, location },
         headers: Object.fromEntries(request.headers)
@@ -171,7 +174,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Handle specific error types
-    if (error.message?.includes('invalid JSON')) {
+    if (errorMessage?.includes('invalid JSON')) {
       return NextResponse.json(
         {
           success: false,
@@ -182,7 +185,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error.message?.includes('Supabase') || error.message?.includes('database')) {
+    if (errorMessage?.includes('Supabase') || errorMessage?.includes('database')) {
       return NextResponse.json(
         {
           success: false,
@@ -193,7 +196,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (error.message?.includes('fetch') || error.message?.includes('network')) {
+    if (errorMessage?.includes('fetch') || errorMessage?.includes('network')) {
       return NextResponse.json(
         {
           success: false,
@@ -208,7 +211,7 @@ export async function POST(request: NextRequest) {
       {
         success: false,
         error: 'Error interno del servidor',
-        details: process.env.NODE_ENV === 'development' ? error.message : 'Contacte al soporte'
+        details: process.env.NODE_ENV === 'development' ? errorMessage : 'Contacte al soporte'
       },
       { status: 500 }
     );
