@@ -159,24 +159,6 @@ export default function ProductModal({ isOpen, onClose, product }: ProductModalP
                   />
                 )}
               </div>
-
-              {/* Image Gallery */}
-              {product.gallery_images && product.gallery_images.length > 0 && (
-                <div className="grid grid-cols-4 gap-2 mt-4">
-                  {[product.main_image_url, ...product.gallery_images].map((img, index) => (
-                    <div key={index} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                      {img && (
-                        <Image
-                          src={img}
-                          alt={`${product.name} ${index + 1}`}
-                          fill
-                          className="object-cover hover:scale-105 transition-transform cursor-pointer"
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
             {/* Product Info */}
