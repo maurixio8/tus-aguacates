@@ -510,6 +510,7 @@ ${orderData.appliedCoupon.description}
           </div>
         </div>
       </div>
+      </div>
     );
   }
 
