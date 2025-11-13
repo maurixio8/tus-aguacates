@@ -372,11 +372,12 @@ ${orderData.appliedCoupon.description}
         <div className="bg-white border-b border-gray-200 py-4">
           <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/logo-white.png"
-              alt="Tus Aguacates"
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
+              alt="Tus Aguacates - Logo"
               width={200}
               height={70}
               priority
+              className="object-contain"
             />
           </div>
         </div>

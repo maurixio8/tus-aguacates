@@ -124,37 +124,20 @@ export async function POST(request: NextRequest) {
     let freeShippingMin = 0;
     let freeShipping = false;
 
-    // Apply shipping rules (use first matching rule, ordered by priority)
-    if (shippingRules && shippingRules.length > 0) {
-      const rule = shippingRules[0]; // Use highest priority rule
-      freeShippingMin = rule.free_shipping_min;
-      shippingCost = rule.shipping_cost;
+    // Always use default rule to ensure consistency
+    // Ignore database rules to avoid configuration conflicts
+    freeShippingMin = 68900; // $68.900
+    shippingCost = 7400; // $7.400
+    freeShipping = subtotal > freeShippingMin;
 
-      // Check if shipping is free
-      freeShipping = subtotal > freeShippingMin;
-
-      console.log('🚚 Applied shipping rule:', {
-        rule: rule.name,
-        freeShippingMin,
-        shippingCost,
-        subtotal,
-        freeShipping,
-        comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
-      });
-    } else {
-      // Default rule for Bogotá if no rules found
-      freeShippingMin = 68900; // $68.900
-      shippingCost = 7400; // $7.400
-      freeShipping = subtotal > freeShippingMin;
-
-      console.log('🚚 Applied default shipping rule:', {
-        freeShippingMin,
-        shippingCost,
-        subtotal,
-        freeShipping,
-        comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
-      });
-    }
+    console.log('🚚 Applied default shipping rule (hardcoded):', {
+      freeShippingMin,
+      shippingCost,
+      subtotal,
+      freeShipping,
+      comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`,
+      note: 'Database rules ignored to prevent configuration conflicts'
+    });
 
     // Calculate amount needed for free shipping
     const amountForFreeShipping = freeShipping ? 0 : Math.max(0, freeShippingMin - subtotal);
