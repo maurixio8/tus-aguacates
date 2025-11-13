@@ -61,7 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
     const itemToAdd = {
       ...product,
       quantity: 1,
-      variant: selectedVariant
+      variant: selectedVariant ?? undefined
     };
 
     console.log('🛒 Adding to cart:', itemToAdd);
