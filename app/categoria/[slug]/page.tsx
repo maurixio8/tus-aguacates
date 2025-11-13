@@ -3,9 +3,9 @@ import { ProductCard } from '@/components/product/ProductCard';
 import { notFound } from 'next/navigation';
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 async function getCategory(slug: string) {
@@ -30,7 +30,8 @@ async function getProductsByCategory(categoryId: string) {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const category = await getCategory(params.slug);
+  const { slug } = await params;
+  const category = await getCategory(slug);
 
   if (!category) {
     notFound();
