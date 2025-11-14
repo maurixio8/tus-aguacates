@@ -215,11 +215,11 @@ export default async function TiendaPage() {
   const featuredProducts = await getFeaturedProducts();
 
   const categories = [
-    { name: 'Aguacates', emoji: '🥑', slug: 'aguacates', color: 'from-green-500 to-green-700' },
     { name: 'Frutas', emoji: '🍓', slug: 'frutas', color: 'from-red-500 to-pink-600' },
     { name: 'Verduras', emoji: '🥬', slug: 'verduras', color: 'from-lime-500 to-green-600' },
-    { name: 'Tubérculos', emoji: '🥔', slug: 'tuberculos', color: 'from-yellow-500 to-orange-600' },
-    { name: 'Saludables', emoji: '🥗', slug: 'saludables', color: 'from-emerald-500 to-teal-600' },
+    { name: 'Aguacates', emoji: '🥑', slug: 'aguacates', color: 'from-green-500 to-green-700' },
+    { name: 'Especias', emoji: '🌶️', slug: 'especias', color: 'from-yellow-500 to-orange-600' },
+    { name: 'Hierbas Aromáticas', emoji: '🌿', slug: 'hierbas-aromaticas', color: 'from-emerald-500 to-teal-600' },
     { name: 'Combos', emoji: '📦', slug: 'combos', color: 'from-purple-500 to-indigo-600' },
   ];
 

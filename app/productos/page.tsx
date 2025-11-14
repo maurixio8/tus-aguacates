@@ -26,7 +26,16 @@ function ProductsContent() {
       .eq('is_active', true);
 
     if (categoria) {
-      query = query.eq('category_id', categoria);
+      // First get the category by slug to get its ID
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', categoria)
+        .single();
+
+      if (categoryData) {
+        query = query.eq('category_id', categoryData.id);
+      }
     }
 
     const { data } = await query.order('created_at', { ascending: false });
@@ -39,10 +48,14 @@ function ProductsContent() {
 
   const getCategoryName = () => {
     switch (categoria) {
-      case 'aguacates': return 'Aguacates';
-      case 'frutas-tropicales': return 'Frutas Tropicales';
+      case 'frutas': return 'Frutas';
       case 'verduras': return 'Verduras';
-      case 'organicos': return 'Orgánicos';
+      case 'aguacates': return 'Aguacates';
+      case 'especias': return 'Especias';
+      case 'hierbas-aromaticas': return 'Hierbas Aromáticas';
+      case 'combos': return 'Combos';
+      case 'jugos': return 'Jugos';
+      case 'otros': return 'Otros';
       default: return categoria || 'Todos los Productos';
     }
   };
