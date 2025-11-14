@@ -266,7 +266,7 @@ export default async function Home() {
 
             {/* UN SOLO botón - diseño simple */}
             <Link
-              href="/productos"
+              href="/tienda"
               className="bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold px-8 py-4 rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-lg"
             >
               Explorar Tienda
