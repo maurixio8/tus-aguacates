@@ -6,11 +6,13 @@ import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
 import branding from '@/lib/config/branding';
+import { SearchModal } from '../search/SearchModal';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const itemCount = getItemCount();
 
   useEffect(() => {
@@ -59,7 +61,11 @@ export function Header() {
 
           {/* Acciones */}
           <div className="flex items-center space-x-4">
-            <button className="hover:text-verde-aguacate-200 transition-colors">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="hover:text-verde-aguacate-200 transition-colors"
+              aria-label="Buscar productos"
+            >
               <Search className="w-5 h-5" />
             </button>
 
@@ -101,6 +107,12 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {/* Search Modal */}
+      <SearchModal
+        isOpen={searchOpen}
+        onClose={() => setSearchOpen(false)}
+      />
     </header>
   );
 }
