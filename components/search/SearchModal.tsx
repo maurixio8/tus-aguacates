@@ -5,6 +5,7 @@ import { Search, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { Product } from '@/lib/supabase';
 import { ProductCard } from '../product/ProductCard';
+import { ProductQuickViewModal } from '../product/ProductQuickViewModal';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -15,12 +16,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   // Resetear query cuando se abre/cierra
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
       setResults([]);
+      setSelectedProduct(null);
     }
   }, [isOpen]);
 
@@ -82,8 +85,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20">
-      <div className="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl max-h-[80vh] flex flex-col">
+    <div
+      className="fixed inset-0 bg-black/50 z-50 flex items-start justify-center pt-20"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-4xl mx-4 shadow-2xl max-h-[80vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="p-6 border-b flex items-center gap-4">
           <Search className="w-6 h-6 text-gray-400" />
@@ -92,7 +101,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             placeholder="Buscar productos..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1 text-lg outline-none placeholder-gray-400"
+            className="flex-1 text-lg text-gray-900 outline-none placeholder-gray-400"
             autoFocus
           />
           <button
@@ -100,7 +109,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             aria-label="Cerrar búsqueda"
           >
-            <X className="w-6 h-6" />
+            <X className="w-6 h-6 text-gray-600 hover:text-gray-900" />
           </button>
         </div>
 
@@ -122,7 +131,11 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {results.map((product) => (
-                  <div key={product.id} onClick={onClose}>
+                  <div
+                    key={product.id}
+                    onClick={() => setSelectedProduct(product)}
+                    className="cursor-pointer hover:scale-105 transition-transform duration-200"
+                  >
                     <ProductCard product={product} />
                   </div>
                 ))}
@@ -157,6 +170,15 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           )}
         </div>
       </div>
+
+      {/* Product Quick View Modal */}
+      {selectedProduct && (
+        <ProductQuickViewModal
+          isOpen={true}
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }
