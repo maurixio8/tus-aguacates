@@ -185,12 +185,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
                 {/* Badges */}
                 <div className="flex gap-2">
-                  {product.is_organic && (
+                  {product.is_organic === true && (
                     <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
                       🌿 Orgánico
                     </span>
                   )}
-                  {product.is_featured && (
+                  {product.is_featured === true && (
                     <span className="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
                       ⭐ Destacado
                     </span>
