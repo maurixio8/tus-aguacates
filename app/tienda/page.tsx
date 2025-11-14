@@ -240,7 +240,7 @@ export default async function TiendaPage() {
         {categories.map((category) => (
           <Link
             key={category.slug}
-            href={`/productos?categoria=${category.slug}`}
+            href={`/tienda/${category.slug}`}
             className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl"
           >
             <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-90`} />

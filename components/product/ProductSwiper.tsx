@@ -22,7 +22,7 @@ export default function ProductSwiper({
   products,
   title = "Productos",
   showViewAll = false,
-  viewAllHref = "/productos"
+  viewAllHref = "/tienda"
 }: ProductSwiperProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   if (!products || products.length === 0) {

@@ -46,13 +46,13 @@ export function Header() {
 
           {/* Navegación Desktop */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/productos" className="hover:text-verde-aguacate-200 transition-colors">
+            <Link href="/tienda" className="hover:text-verde-aguacate-200 transition-colors">
               Productos
             </Link>
-            <Link href="/productos?categoria=aguacates" className="hover:text-verde-aguacate-200 transition-colors">
+            <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
               Aguacates
             </Link>
-            <Link href="/productos?categoria=frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
+            <Link href="/tienda/frutas" className="hover:text-verde-aguacate-200 transition-colors">
               Frutas
             </Link>
           </nav>

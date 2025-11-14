@@ -38,7 +38,7 @@ export default function PromotionSlider({
       title: 'Aguacates Frescos',
       description: 'Directamente del campo a tu mesa',
       image_url: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&h=400&fit=crop',
-      link: '/productos?categoria=aguacates',
+      link: '/tienda/aguacates',
       sort_order: 1
     },
     {
@@ -46,7 +46,7 @@ export default function PromotionSlider({
       title: 'Frutas Tropicales',
       description: 'El sabor exótico que buscas',
       image_url: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&h=400&fit=crop',
-      link: '/productos?categoria=frutas-tropicales',
+      link: '/tienda/frutas',
       sort_order: 2
     },
     {
@@ -54,7 +54,7 @@ export default function PromotionSlider({
       title: 'Envío Gratis',
       description: 'En pedidos mayores a $68.900',
       image_url: 'https://images.unsplash.com/photo-1604386494523-d60f124d0a65?w=1200&h=400&fit=crop',
-      link: '/productos',
+      link: '/tienda',
       sort_order: 3
     }
   ];
