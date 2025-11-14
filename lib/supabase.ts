@@ -21,6 +21,7 @@ export interface Product {
   stock: number;
   reserved_stock: number;
   is_featured: boolean;
+  is_organic?: boolean;
   is_active: boolean;
   benefits?: string[];
   rating: number;
