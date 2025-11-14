@@ -1,218 +1,84 @@
+'use client';
+
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
+import { SearchTrigger } from '@/components/tienda/SearchTrigger';
+import { useState, useEffect } from 'react';
 
-export const revalidate = 3600; // Revalidar cada hora
+// Estado para manejar refresh de productos
+let productsCache: any[] | null = null;
+let lastFetchTime = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
 
-async function getFeaturedProducts() {
-  try {
-    const { data } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .eq('is_featured', true)
-      .order('created_at', { ascending: false })
-      .limit(12);
+export default function TiendaPage() {
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-    // Si no hay productos suficientes, crear productos de ejemplo
-    if (!data || data.length < 12) {
-      const exampleProducts = [
-        {
-          id: 'example-1',
-          name: 'Aguacate Hass Premium',
-          price: 4500,
-          discount_price: 3900,
-          description: 'Aguacate de la mejor calidad, cremoso y delicioso',
-          category_id: 'aguacates',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-2',
-          name: 'Uchuvas Frescas',
-          price: 3500,
-          discount_price: null,
-          description: 'Uchuvas dulces y jugosas, directamente del campo',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-3',
-          name: 'Papa Criolla',
-          price: 2500,
-          discount_price: 2000,
-          description: 'Papa criolla perfecta para tus platos típicos',
-          category_id: 'tuberculos',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-4',
-          name: 'Tomate Chonto',
-          price: 3200,
-          discount_price: null,
-          description: 'Tomates maduros y sabrosos para tus ensaladas',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-5',
-          name: 'Limon Taití',
-          price: 1200,
-          discount_price: 1000,
-          description: 'Limones ácidos y jugosos, perfectos para bebidas',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-6',
-          name: 'Cebolla Larga',
-          price: 1800,
-          discount_price: null,
-          description: 'Cebollas largas y dulces, ideales para cocinar',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-7',
-          name: 'Zanahoria Orgánica',
-          price: 2100,
-          discount_price: 1800,
-          description: 'Zanahorias orgánicas dulces y nutritivas',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-8',
-          name: 'Mango Tommy',
-          price: 5500,
-          discount_price: 4500,
-          description: 'Mango dulce y jugoso, directamente del árbol',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-9',
-          name: 'Yuca Fresca',
-          price: 2800,
-          discount_price: null,
-          description: 'Yuca fresca y tierna, perfecta para freír',
-          category_id: 'tuberculos',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-10',
-          name: 'Pimentón Rojo',
-          price: 3200,
-          discount_price: 2800,
-          description: 'Pimentón rojo dulce y crujiente',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-11',
-          name: 'Naranja Valencia',
-          price: 4500,
-          discount_price: 3800,
-          description: 'Naranjas jugosas y llenas de vitamina C',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-12',
-          name: 'Remolacha Orgánica',
-          price: 2700,
-          discount_price: 2200,
-          description: 'Remolacha orgánica dulce y nutritiva',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-      ];
+  useEffect(() => {
+    async function loadProducts() {
+      try {
+        setLoading(true);
 
-      // Combinar productos reales con ejemplos
-      const allProducts = [...(data || []), ...exampleProducts].slice(0, 12);
-      return allProducts;
+        // Cache duration check
+        const now = Date.now();
+        const cachedValid = productsCache && (now - lastFetchTime) < CACHE_DURATION;
+
+        if (cachedValid && productsCache && productsCache.length > 0) {
+          setFeaturedProducts(productsCache);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch real products
+        let products: any[] = [];
+
+        // First try featured products
+        const { data: featuredData, error: featuredError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .eq('is_featured', true)
+          .order('created_at', { ascending: false })
+          .limit(12);
+
+        if (featuredError) {
+          console.error('Error fetching featured products:', featuredError);
+        }
+
+        // If no featured products, get most recent
+        if (!featuredData || featuredData.length === 0) {
+          const { data: recentData, error: recentError } = await supabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(12);
+
+          if (recentError) {
+            console.error('Error fetching recent products:', recentError);
+          } else {
+            products = recentData || [];
+          }
+        } else {
+          products = featuredData;
+        }
+
+        // Update cache
+        productsCache = products;
+        lastFetchTime = now;
+        setFeaturedProducts(products);
+
+      } catch (error) {
+        console.error('Error loading products:', error);
+        setFeaturedProducts([]);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-}
-
-export default async function TiendaPage() {
-  const featuredProducts = await getFeaturedProducts();
+    loadProducts();
+  }, []);
 
   const categories = [
     { name: 'Frutas', emoji: '🍓', slug: 'frutas', color: 'from-red-500 to-pink-600' },
@@ -237,7 +103,7 @@ export default async function TiendaPage() {
       </div>
 
       {/* Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-16">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
         {categories.map((category) => (
           <Link
             key={category.slug}
@@ -257,6 +123,11 @@ export default async function TiendaPage() {
         ))}
       </div>
 
+      {/* Mobile Search Section - Added between categories and featured products */}
+      <div className="mb-12 md:hidden">
+        <SearchTrigger />
+      </div>
+
       {/* Featured Products Section */}
       <div className="mb-16">
         <div className="text-center mb-8">
@@ -268,11 +139,29 @@ export default async function TiendaPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-200 rounded-xl h-48 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {featuredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+
+        {!loading && featuredProducts.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 text-lg">No hay productos destacados disponibles en este momento.</p>
+          </div>
+        )}
       </div>
 
       {/* CTA Section */}

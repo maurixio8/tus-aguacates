@@ -12,7 +12,8 @@ export const revalidate = 3600; // Revalidar cada hora
 
 async function getFeaturedProducts() {
   try {
-    const { data } = await supabase
+    // Primero intentar obtener productos destacados
+    const { data: featuredData, error: featuredError } = await supabase
       .from('products')
       .select('*')
       .eq('is_active', true)
@@ -20,197 +21,29 @@ async function getFeaturedProducts() {
       .order('created_at', { ascending: false })
       .limit(12);
 
-    // Si no hay productos suficientes, crear productos de ejemplo
-    if (!data || data.length < 8) {
-      const exampleProducts = [
-        {
-          id: 'example-1',
-          name: 'Aguacate Hass Premium',
-          price: 4500,
-          discount_price: 3900,
-          description: 'Aguacate de la mejor calidad, cremoso y delicioso',
-          category_id: 'aguacates',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-2',
-          name: 'Uchuvas Frescas',
-          price: 3500,
-          discount_price: null,
-          description: 'Uchuvas dulces y jugosas, directamente del campo',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-3',
-          name: 'Papa Criolla',
-          price: 2500,
-          discount_price: 2000,
-          description: 'Papa criolla perfecta para tus platos típicos',
-          category_id: 'tuberculos',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-4',
-          name: 'Tomate Chonto',
-          price: 3200,
-          discount_price: null,
-          description: 'Tomates maduros y sabrosos para tus ensaladas',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-5',
-          name: 'Limon Taití',
-          price: 1200,
-          discount_price: 1000,
-          description: 'Limones ácidos y jugosos, perfectos para bebidas',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-6',
-          name: 'Cebolla Larga',
-          price: 1800,
-          discount_price: null,
-          description: 'Cebollas largas y dulces, ideales para cocinar',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-7',
-          name: 'Zanahoria Orgánica',
-          price: 2100,
-          discount_price: 1800,
-          description: 'Zanahorias orgánicas dulces y nutritivas',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-8',
-          name: 'Mango Tommy',
-          price: 5500,
-          discount_price: 4500,
-          description: 'Mango dulce y jugoso, directamente del árbol',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-9',
-          name: 'Yuca Fresca',
-          price: 2800,
-          discount_price: null,
-          description: 'Yuca fresca y tierna, perfecta para freír',
-          category_id: 'tuberculos',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-10',
-          name: 'Pimentón Rojo',
-          price: 3200,
-          discount_price: 2800,
-          description: 'Pimentón rojo dulce y crujiente',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-11',
-          name: 'Naranja Valencia',
-          price: 4500,
-          discount_price: 3800,
-          description: 'Naranjas jugosas y llenas de vitamina C',
-          category_id: 'frutas',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-        {
-          id: 'example-12',
-          name: 'Remolacha Orgánica',
-          price: 2700,
-          discount_price: 2200,
-          description: 'Remolacha orgánica dulce y nutritiva',
-          category_id: 'verduras',
-          main_image_url: null,
-          is_active: true,
-          is_featured: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          in_stock: true,
-          featured: false
-        },
-      ];
-
-      // Combinar productos reales con ejemplos
-      const allProducts = [...(data || []), ...exampleProducts].slice(0, 12);
-      return allProducts;
+    if (featuredError) {
+      console.error('Error fetching featured products:', featuredError);
     }
 
-    return data || [];
+    // Si hay productos destacados, devolverlos
+    if (featuredData && featuredData.length > 0) {
+      return featuredData;
+    }
+
+    // Si no hay productos destacados, obtener los más recientes
+    const { data: recentData, error: recentError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false })
+      .limit(12);
+
+    if (recentError) {
+      console.error('Error fetching recent products:', recentError);
+    }
+
+    return recentData || [];
+
   } catch (error) {
     console.error('Error fetching products:', error);
     return [];
