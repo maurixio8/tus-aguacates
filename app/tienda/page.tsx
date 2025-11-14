@@ -221,6 +221,7 @@ export default async function TiendaPage() {
     { name: 'Especias', emoji: '🌶️', slug: 'especias', color: 'from-yellow-500 to-orange-600' },
     { name: 'Hierbas Aromáticas', emoji: '🌿', slug: 'hierbas-aromaticas', color: 'from-emerald-500 to-teal-600' },
     { name: 'Combos', emoji: '📦', slug: 'combos', color: 'from-purple-500 to-indigo-600' },
+    { name: 'Saludables', emoji: '🥗', slug: 'saludables', color: 'from-emerald-500 to-teal-600' },
   ];
 
   return (
@@ -283,7 +284,7 @@ export default async function TiendaPage() {
           Explora nuestro catálogo completo y descubre la calidad que nos caracteriza
         </p>
         <Link
-          href="/productos"
+          href="/tienda/todos"
           className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           Ver Todos los Productos

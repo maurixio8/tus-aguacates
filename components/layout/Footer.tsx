@@ -31,7 +31,7 @@ export function Footer() {
             <h3 className="font-display font-bold text-lg mb-4">Enlaces Rápidos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/productos" className="hover:text-verde-aguacate-200 transition-colors">
+                <Link href="/tienda/todos" className="hover:text-verde-aguacate-200 transition-colors">
                   Todos los Productos
                 </Link>
               </li>

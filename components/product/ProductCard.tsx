@@ -84,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     // Navegar a la página de producto usando window.location
-    window.location.href = `/productos/${product.id}`;
+    window.location.href = `/tienda`;
   };
 
   // Precio a mostrar (variante seleccionada o precio base con descuento)
