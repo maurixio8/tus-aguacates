@@ -5,6 +5,10 @@ import { CategoryProducts } from './CategoryProducts';
 import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 
+type Props = {
+  params: Promise<{ categoria: string }>;
+};
+
 function CategoryHeader({ categoria }: { categoria: string }) {
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-24">
@@ -33,12 +37,8 @@ function CategoryHeader({ categoria }: { categoria: string }) {
   );
 }
 
-export default async function CategoriaPage({
-  params
-}: {
-  params: { categoria: string }
-}) {
-  const categoria = params.categoria;
+export default async function CategoriaPage({ params }: Props) {
+  const { categoria } = await params;
 
   // Verificar que la categoría exista
   const { data: categoryData } = await supabase
