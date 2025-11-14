@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { X, ShoppingCart } from 'lucide-react';
-import type { Product, ProductVariant } from '@/lib/supabase';
+import type { Product } from '@/lib/supabase';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
-import { ProductVariantSelector } from './ProductVariantSelector';
 
 interface ProductQuickViewModalProps {
   product: Product;
@@ -18,31 +17,16 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const { addItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
-  // Calcular precio basado en la variante seleccionada
-  const basePrice = product.discount_price || product.price;
-  const priceModifier = selectedVariant?.price_modifier || 0;
-  const finalPrice = basePrice + priceModifier;
-
+  // Precio simple sin variantes
+  const finalPrice = product.discount_price || product.price;
   const hasDiscount = product.discount_price && product.discount_price < product.price;
-
-  // Logs para debugging
-  console.log('Product from DB:', product);
-  console.log('Product variants:', product.variants);
-  console.log('Selected variant:', selectedVariant);
-  console.log('Final price:', finalPrice);
 
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
       quantity,
-      selectedVariant,
-      finalPrice,
-      variantName: selectedVariant ? `${selectedVariant.variant_name}: ${selectedVariant.variant_value}` : null,
     };
-
-    console.log('Adding to cart:', itemToAdd); // Debug log
 
     addItem(itemToAdd);
     setShowToast(true);
@@ -118,19 +102,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </p>
                 )}
 
-                {/* Selector de Variantes */}
-                {product.variants && product.variants.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Presentación:
-                    </label>
-                    <ProductVariantSelector
-                      variants={product.variants}
-                      onVariantChange={(variant) => setSelectedVariant(variant)}
-                    />
-                  </div>
-                )}
-
+  
                 {/* Precio */}
                 <div className="flex items-center gap-3">
                   <span className="text-3xl font-bold text-green-600">
@@ -139,7 +111,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
                   {hasDiscount && (
                     <span className="text-lg text-gray-400 line-through">
-                      {formatPrice(product.price! + priceModifier)}
+                      {formatPrice(product.price)}
                     </span>
                   )}
                 </div>
@@ -147,41 +119,11 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Badge de descuento */}
                 {hasDiscount && (
                   <div className="inline-block bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full">
-                    AHORRA {formatPrice((product.price! + priceModifier) - finalPrice)}
+                    AHORRA {formatPrice(product.price - finalPrice)}
                   </div>
                 )}
 
-                {/* Badge de variante seleccionada */}
-                {selectedVariant && (
-                  <div className="inline-block bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">
-                    {selectedVariant.variant_name}: {selectedVariant.variant_value}
-                  </div>
-                )}
-
-                {/* Metadatos */}
-                <div className="grid grid-cols-2 gap-4 py-4 border-t border-b border-gray-200">
-                  <div>
-                    <span className="text-sm text-gray-500">Unidad</span>
-                    <p className="font-semibold">{product.unit || 'unidad'}</p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-500">Stock</span>
-                    <p className="font-semibold">
-                      {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-500">Peso</span>
-                    <p className="font-semibold">
-                      {product.weight ? `${product.weight}g` : (product.unit || 'unidad')}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-sm text-gray-500">Mínimo</span>
-                    <p className="font-semibold">{product.min_quantity || 1}</p>
-                  </div>
-                </div>
-
+  
                 {/* Selector de cantidad */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -220,13 +162,13 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </div>
                 </div>
 
-                {/* Botón agregar al carrito */}
+                {/* Botón agregar al carrito - mismo estilo que ProductCard */}
                 <button
                   onClick={handleAddToCart}
                   disabled={product.stock === 0}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
+                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <ShoppingCart className="w-4 h-4" />
                   {product.stock > 0 ? 'Agregar al Carrito' : 'Agotado'}
                 </button>
 
