@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import type { Product } from '@/lib/supabase';
+import type { Product, ProductVariant } from '@/lib/supabase';
 import { ProductCard } from '../product/ProductCard';
 import { ProductQuickViewModal } from '../product/ProductQuickViewModal';
 
@@ -39,7 +39,20 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         setLoading(true);
         const { data, error } = await supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            product_variants (
+              id,
+              product_id,
+              variant_name,
+              variant_value,
+              price_modifier,
+              stock_quantity,
+              is_active,
+              created_at,
+              updated_at
+            )
+          `)
           .ilike('name', `%${query}%`)
           .eq('is_active', true)
           .limit(8)
@@ -133,7 +146,10 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 {results.map((product) => (
                   <div
                     key={product.id}
-                    onClick={() => setSelectedProduct(product)}
+                    onClick={() => {
+                      console.log('SearchModal: Clicked product:', product.name, 'Variants:', product.variants);
+                      setSelectedProduct(product);
+                    }}
                     className="cursor-pointer hover:scale-105 transition-transform duration-200"
                   >
                     <ProductCard product={product} />

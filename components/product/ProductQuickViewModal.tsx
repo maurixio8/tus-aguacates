@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { X, ShoppingCart } from 'lucide-react';
-import type { Product } from '@/lib/supabase';
+import type { Product, ProductVariant } from '@/lib/supabase';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { ProductVariantSelector } from './ProductVariantSelector';
 
 interface ProductQuickViewModalProps {
   product: Product;
@@ -17,15 +18,31 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const { addItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
-  const price = product.discount_price || product.price;
+  // Calcular precio basado en la variante seleccionada
+  const basePrice = product.discount_price || product.price;
+  const priceModifier = selectedVariant?.price_modifier || 0;
+  const finalPrice = basePrice + priceModifier;
+
   const hasDiscount = product.discount_price && product.discount_price < product.price;
+
+  // Logs para debugging
+  console.log('Product from DB:', product);
+  console.log('Product variants:', product.variants);
+  console.log('Selected variant:', selectedVariant);
+  console.log('Final price:', finalPrice);
 
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
       quantity,
+      selectedVariant,
+      finalPrice,
+      variantName: selectedVariant ? `${selectedVariant.variant_name}: ${selectedVariant.variant_value}` : null,
     };
+
+    console.log('Adding to cart:', itemToAdd); // Debug log
 
     addItem(itemToAdd);
     setShowToast(true);
@@ -48,7 +65,13 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div
+          className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          onClick={(e) => {
+            console.log('ProductQuickViewModal: Modal content clicked, preventing propagation');
+            e.stopPropagation();
+          }}
+        >
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-start">
             <h2 className="text-xl font-bold text-gray-900">
@@ -95,15 +118,28 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </p>
                 )}
 
+                {/* Selector de Variantes */}
+                {product.variants && product.variants.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Presentación:
+                    </label>
+                    <ProductVariantSelector
+                      variants={product.variants}
+                      onVariantChange={(variant) => setSelectedVariant(variant)}
+                    />
+                  </div>
+                )}
+
                 {/* Precio */}
                 <div className="flex items-center gap-3">
                   <span className="text-3xl font-bold text-green-600">
-                    {formatPrice(price)}
+                    {formatPrice(finalPrice)}
                   </span>
 
                   {hasDiscount && (
                     <span className="text-lg text-gray-400 line-through">
-                      {formatPrice(product.price!)}
+                      {formatPrice(product.price! + priceModifier)}
                     </span>
                   )}
                 </div>
@@ -111,7 +147,14 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Badge de descuento */}
                 {hasDiscount && (
                   <div className="inline-block bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full">
-                    AHORRA {formatPrice(product.price! - price)}
+                    AHORRA {formatPrice((product.price! + priceModifier) - finalPrice)}
+                  </div>
+                )}
+
+                {/* Badge de variante seleccionada */}
+                {selectedVariant && (
+                  <div className="inline-block bg-blue-100 text-blue-800 text-sm font-bold px-3 py-1 rounded-full">
+                    {selectedVariant.variant_name}: {selectedVariant.variant_value}
                   </div>
                 )}
 
@@ -172,7 +215,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-600">Total:</span>
                     <span className="text-2xl font-bold text-gray-900">
-                      {formatPrice(price * quantity)}
+                      {formatPrice(finalPrice * quantity)}
                     </span>
                   </div>
                 </div>

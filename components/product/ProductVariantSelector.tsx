@@ -1,15 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-
-interface ProductVariant {
-  id: string;
-  variant_name: string;
-  variant_value: string;
-  price_modifier: number;
-  stock_quantity: number;
-  is_active: boolean;
-}
+import type { ProductVariant } from '@/lib/supabase';
 
 interface ProductVariantSelectorProps {
   variants: ProductVariant[];

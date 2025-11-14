@@ -6,6 +6,18 @@ const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // Types
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  variant_name: string;
+  variant_value: string;
+  price_modifier: number;
+  stock_quantity: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -30,6 +42,7 @@ export interface Product {
   sku?: string;
   created_at: string;
   updated_at: string;
+  variants?: ProductVariant[];
 }
 
 export interface Category {
