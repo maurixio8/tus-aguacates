@@ -39,30 +39,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         setLoading(true);
         const { data, error } = await supabase
           .from('products')
-          .select(`
-            id,
-            name,
-            price,
-            discount_price,
-            main_image_url,
-            category_id,
-            stock,
-            is_active,
-            description,
-            unit,
-            weight,
-            min_quantity,
-            reserved_stock,
-            is_featured,
-            is_organic,
-            benefits,
-            rating,
-            review_count,
-            slug,
-            sku,
-            created_at,
-            updated_at
-          `)
+          .select('*')
           .ilike('name', `%${query}%`)
           .eq('is_active', true)
           .limit(8)
