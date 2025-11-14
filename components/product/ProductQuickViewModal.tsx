@@ -123,11 +123,15 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </div>
                   <div>
                     <span className="text-sm text-gray-500">Stock</span>
-                    <p className="font-semibold">{product.stock || 'Disponible'}</p>
+                    <p className="font-semibold">
+                      {product.stock > 0 ? `${product.stock} disponibles` : 'Agotado'}
+                    </p>
                   </div>
                   <div>
                     <span className="text-sm text-gray-500">Peso</span>
-                    <p className="font-semibold">{product.weight || 'N/A'}</p>
+                    <p className="font-semibold">
+                      {product.weight ? `${product.weight}g` : (product.unit || 'unidad')}
+                    </p>
                   </div>
                   <div>
                     <span className="text-sm text-gray-500">Mínimo</span>

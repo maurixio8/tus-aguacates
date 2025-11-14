@@ -319,7 +319,7 @@ export default async function Home() {
               Explora por Categoría
             </h2>
             <p className="text-gray-600 text-sm">
-              Sube tus imágenes a: /public/categories/
+              Explora nuestras categorías de productos frescos
             </p>
           </div>
           <CategorySimpleScroll />
