@@ -13,7 +13,7 @@ import {
 export default function BottomNavigation() {
   const router = useRouter();
   const pathname = usePathname();
-  const { getTotal, getItemCount } = useCartStore();
+  const { getTotal, getItemCount, toggleCart } = useCartStore();
   const total = getTotal();
   const itemCount = getItemCount();
 
@@ -41,7 +41,8 @@ export default function BottomNavigation() {
       icon: ShoppingCart,
       path: '/cart',
       active: pathname === '/cart',
-      badge: itemCount > 0 ? itemCount.toString() : undefined
+      badge: itemCount > 0 ? itemCount.toString() : undefined,
+      isCart: true
     },
     {
       label: 'Cuenta',
@@ -72,7 +73,13 @@ export default function BottomNavigation() {
             return (
               <button
                 key={item.path}
-                onClick={() => router.push(item.path)}
+                onClick={() => {
+                  if (item.isCart) {
+                    toggleCart(); // Open cart drawer instead of navigating
+                  } else {
+                    router.push(item.path);
+                  }
+                }}
                 className={`flex flex-col items-center justify-center py-2 px-1 rounded-lg transition-all min-w-[60px] ${
                   isActive
                     ? 'text-green-700 bg-green-50'
