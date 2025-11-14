@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, FreeMode } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import { ProductCardSlider } from './ProductCardSlider';
+import { ProductQuickViewModal } from './ProductQuickViewModal';
 import type { Product } from '@/lib/supabase';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
@@ -22,6 +24,7 @@ export default function ProductSwiper({
   showViewAll = false,
   viewAllHref = "/productos"
 }: ProductSwiperProps) {
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   if (!products || products.length === 0) {
     return null;
   }
@@ -68,7 +71,10 @@ export default function ProductSwiper({
       >
         {products.map((product) => (
           <SwiperSlide key={product.id}>
-            <ProductCardSlider product={product} />
+            <ProductCardSlider
+              product={product}
+              onProductClick={setSelectedProduct}
+            />
           </SwiperSlide>
         ))}
       </Swiper>
@@ -80,6 +86,15 @@ export default function ProductSwiper({
       <button className="swiper-button-next-custom hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50">
         <ChevronRight className="w-6 h-6" />
       </button>
+
+      {/* Product Quick View Modal */}
+      {selectedProduct && (
+        <ProductQuickViewModal
+          product={selectedProduct}
+          isOpen={!!selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+        />
+      )}
     </div>
   );
 }

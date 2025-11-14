@@ -1,22 +1,29 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
 import { formatPrice } from '@/lib/utils';
 import type { Product } from '@/lib/supabase';
 
 interface ProductCardSliderProps {
   product: Product;
+  onProductClick?: (product: Product) => void;
 }
 
-export function ProductCardSlider({ product }: ProductCardSliderProps) {
+export function ProductCardSlider({ product, onProductClick }: ProductCardSliderProps) {
   const price = product.discount_price || product.price;
   const hasDiscount = product.discount_price && product.discount_price < product.price;
 
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (onProductClick) {
+      onProductClick(product);
+    }
+  };
+
   return (
-    <Link
-      href={`/producto/${product.id}`}
-      className="block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all group"
+    <div
+      onClick={handleClick}
+      className="block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all group cursor-pointer"
     >
       {/* Imagen del producto */}
       <div className="relative aspect-square bg-gray-100">
@@ -66,6 +73,6 @@ export function ProductCardSlider({ product }: ProductCardSliderProps) {
           Toca para ver detalles →
         </p>
       </div>
-    </Link>
+    </div>
   );
 }

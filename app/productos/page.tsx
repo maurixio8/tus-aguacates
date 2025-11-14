@@ -1,27 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import ProductSwiper from '@/components/product/ProductSwiper';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ChevronLeft } from 'lucide-react';
 import type { Product } from '@/lib/supabase';
 
-export default function ProductsPage() {
+function ProductsContent() {
+  const searchParams = useSearchParams();
+  const categoria = searchParams.get('categoria');
   const [showAll, setShowAll] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [categoria]);
 
   async function fetchProducts() {
-    const { data } = await supabase
+    let query = supabase
       .from('products')
       .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
+      .eq('is_active', true);
+
+    if (categoria) {
+      query = query.eq('category_id', categoria);
+    }
+
+    const { data } = await query.order('created_at', { ascending: false });
 
     setProducts(data || []);
     setLoading(false);
@@ -29,16 +37,33 @@ export default function ProductsPage() {
 
   const first12 = products.slice(0, 12);
 
+  const getCategoryName = () => {
+    switch (categoria) {
+      case 'aguacates': return 'Aguacates';
+      case 'frutas-tropicales': return 'Frutas Tropicales';
+      case 'verduras': return 'Verduras';
+      case 'organicos': return 'Orgánicos';
+      default: return categoria || 'Todos los Productos';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-24">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-display font-bold mb-2">
-            Todos los Productos
+            {getCategoryName()}
           </h1>
           <p className="text-gray-600">
             {products.length} productos disponibles
+            {categoria && (
+              <span className="ml-2">
+                <a href="/productos" className="text-green-600 hover:text-green-700 underline">
+                  Ver todos los productos
+                </a>
+              </span>
+            )}
           </p>
         </div>
 
@@ -103,5 +128,20 @@ export default function ProductsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 pt-20 pb-24 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p>Cargando productos...</p>
+        </div>
+      </div>
+    }>
+      <ProductsContent />
+    </Suspense>
   );
 }
