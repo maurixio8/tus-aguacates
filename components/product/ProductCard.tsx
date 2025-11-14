@@ -163,6 +163,7 @@ export function ProductCard({ product }: ProductCardProps) {
                   const variant = variants.find(v => v.id === e.target.value);
                   setSelectedVariant(variant || null);
                 }}
+                onClick={(e) => e.stopPropagation()}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white"
               >
                 {variants.map((variant) => (

@@ -17,15 +17,20 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const { addItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState<any>(null);
 
-  // Precio simple sin variantes
-  const finalPrice = product.discount_price || product.price;
+  // Calcular precio base y con variante
+  const basePrice = product.discount_price || product.price;
+  const variantPrice = selectedVariant?.price_modifier || 0;
+  const finalPrice = basePrice + variantPrice;
   const hasDiscount = product.discount_price && product.discount_price < product.price;
 
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
       quantity,
+      selectedVariant,
+      finalPrice,
     };
 
     addItem(itemToAdd);
@@ -102,28 +107,31 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </p>
                 )}
 
-  
-                {/* Precio */}
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-bold text-green-600">
-                    {formatPrice(finalPrice)}
-                  </span>
-
-                  {hasDiscount && (
-                    <span className="text-lg text-gray-400 line-through">
-                      {formatPrice(product.price)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Badge de descuento */}
-                {hasDiscount && (
-                  <div className="inline-block bg-red-100 text-red-800 text-sm font-bold px-3 py-1 rounded-full">
-                    AHORRA {formatPrice(product.price - finalPrice)}
+                {/* Selector de presentaciones */}
+                {product.variants && product.variants.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Presentación:
+                    </label>
+                    <select
+                      value={selectedVariant?.id || ''}
+                      onChange={(e) => {
+                        const variantId = e.target.value;
+                        const variant = product.variants?.find((v: any) => v.id === variantId);
+                        setSelectedVariant(variant || null);
+                      }}
+                      className="w-full border-2 border-gray-300 px-3 py-2 rounded-lg focus:border-green-600 focus:outline-none"
+                    >
+                      <option value="">Selecciona una presentación</option>
+                      {product.variants?.map((variant: any) => (
+                        <option key={variant.id} value={variant.id}>
+                          {variant.variant_name}: {variant.variant_value}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 )}
 
-  
                 {/* Selector de cantidad */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
@@ -152,14 +160,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </div>
                 </div>
 
-                {/* Total calculado */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600">Total:</span>
-                    <span className="text-2xl font-bold text-gray-900">
-                      {formatPrice(finalPrice * quantity)}
-                    </span>
-                  </div>
+                {/* Total final */}
+                <div className="flex justify-between items-center py-2 border-t border-b border-gray-200">
+                  <span className="text-lg font-semibold">Total:</span>
+                  <span className="text-2xl font-bold text-green-600">
+                    {formatPrice(finalPrice * quantity)}
+                  </span>
                 </div>
 
                 {/* Botón agregar al carrito - mismo estilo que ProductCard */}
