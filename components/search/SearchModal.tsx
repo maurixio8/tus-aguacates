@@ -40,8 +40,29 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         const { data, error } = await supabase
           .from('products')
           .select(`
-            *,
-            product_variants (
+            id,
+            name,
+            price,
+            discount_price,
+            main_image_url,
+            category_id,
+            stock,
+            is_active,
+            description,
+            unit,
+            weight,
+            min_quantity,
+            reserved_stock,
+            is_featured,
+            is_organic,
+            benefits,
+            rating,
+            review_count,
+            slug,
+            sku,
+            created_at,
+            updated_at,
+            variants:product_variants(
               id,
               product_id,
               variant_name,
