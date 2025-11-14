@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, ShoppingCart } from 'lucide-react';
-import type { Product } from '@/lib/supabase';
+import type { Product, ProductVariant } from '@/lib/supabase';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
 interface ProductQuickViewModalProps {
   product: Product;
@@ -17,13 +18,45 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const { addItem } = useCartStore();
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
-  const [selectedVariant, setSelectedVariant] = useState<any>(null);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
 
-  // Calcular precio base y con variante
+  // Cargar variantes del producto
+  useEffect(() => {
+    async function loadVariants() {
+      try {
+        const { data, error } = await supabase
+          .from('product_variants')
+          .select('*')
+          .eq('product_id', product.id)
+          .eq('is_active', true)
+          .order('price_modifier', { ascending: true });
+
+        if (error) {
+          console.error('Error loading variants:', error);
+          setVariants([]);
+        } else {
+          setVariants(data || []);
+          // Auto-seleccionar primera variante si hay disponibles
+          if (data && data.length > 0) {
+            setSelectedVariant(data[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error in variant loading:', error);
+        setVariants([]);
+      }
+    }
+
+    if (isOpen && product.id) {
+      loadVariants();
+    }
+  }, [product.id, isOpen]);
+
+  // Calcular precio final
   const basePrice = product.discount_price || product.price;
   const variantPrice = selectedVariant?.price_modifier || 0;
   const finalPrice = basePrice + variantPrice;
-  const hasDiscount = product.discount_price && product.discount_price < product.price;
 
   const handleAddToCart = () => {
     const itemToAdd = {
@@ -108,7 +141,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 )}
 
                 {/* Selector de presentaciones */}
-                {product.variants && product.variants.length > 0 && (
+                {variants.length > 0 && (
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">
                       Presentación:
@@ -116,16 +149,17 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                     <select
                       value={selectedVariant?.id || ''}
                       onChange={(e) => {
-                        const variantId = e.target.value;
-                        const variant = product.variants?.find((v: any) => v.id === variantId);
+                        const variant = variants.find(v => v.id === e.target.value);
                         setSelectedVariant(variant || null);
                       }}
                       className="w-full border-2 border-gray-300 px-3 py-2 rounded-lg focus:border-green-600 focus:outline-none"
                     >
-                      <option value="">Selecciona una presentación</option>
-                      {product.variants?.map((variant: any) => (
+                      {variants.map((variant) => (
                         <option key={variant.id} value={variant.id}>
                           {variant.variant_name}: {variant.variant_value}
+                          {variant.price_modifier !== 0 &&
+                            ` (${variant.price_modifier > 0 ? '+' : ''}$${variant.price_modifier.toFixed(2)})`
+                          }
                         </option>
                       ))}
                     </select>
