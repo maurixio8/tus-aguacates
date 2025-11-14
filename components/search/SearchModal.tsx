@@ -61,23 +61,19 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             slug,
             sku,
             created_at,
-            updated_at,
-            variants:product_variants(
-              id,
-              product_id,
-              variant_name,
-              variant_value,
-              price_modifier,
-              stock_quantity,
-              is_active,
-              created_at,
-              updated_at
-            )
+            updated_at
           `)
           .ilike('name', `%${query}%`)
           .eq('is_active', true)
           .limit(8)
           .order('created_at', { ascending: false });
+
+        // Add empty variants array for compatibility
+        if (data) {
+          data.forEach(product => {
+            (product as any).variants = [];
+          });
+        }
 
         if (error) {
           console.error('Error searching products:', error);
