@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 import ProductSwiper from '@/components/product/ProductSwiper';
 import { ProductCard } from '@/components/product/ProductCard';
-import type { Product } from '@/lib/supabase';
+import { getProductsByCategory, slugToCategory } from '@/lib/productStorage';
+import type { Product } from '@/lib/productStorage';
 
 export function CategoryProducts({ categoria }: { categoria: string }) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -15,35 +15,20 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
     fetchProducts();
   }, [categoria]);
 
-  async function fetchProducts() {
+  function fetchProducts() {
     try {
-      // Buscar category por slug para obtener su ID
-      const { data: categoryData, error: categoryError } = await supabase
-        .from('categories')
-        .select('id')
-        .eq('slug', categoria)
-        .single();
+      setLoading(true);
 
-      if (categoryError || !categoryData) {
-        console.error('Category not found:', categoryError);
-        setLoading(false);
-        return;
-      }
+      // Convertir slug a nombre de categoría
+      const categoryName = slugToCategory(categoria);
+      console.log(`🔍 Buscando productos para categoría: ${categoria} -> ${categoryName}`);
 
-      // Filtrar productos por category_id
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('is_active', true)
-        .eq('category_id', categoryData.id)
-        .order('created_at', { ascending: false });
+      // Obtener productos del localStorage compartido
+      const productsData = getProductsByCategory(categoryName);
 
-      if (productsError) {
-        console.error('Error fetching products:', productsError);
-        setProducts([]);
-      } else {
-        setProducts(productsData || []);
-      }
+      console.log(`✅ Encontrados ${productsData.length} productos para ${categoryName}`);
+      setProducts(productsData);
+
     } catch (error) {
       console.error('Error in fetchProducts:', error);
       setProducts([]);

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
+import { getProducts, saveProducts, getDefaultProducts } from '@/lib/productStorage';
 
 interface Product {
   id: string;
@@ -45,28 +46,17 @@ export default function ProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
 
-  // CARGAR productos del localStorage AL INICIAR
+  // CARGAR productos del sistema compartido AL INICIAR
   useEffect(() => {
-    const savedProducts = localStorage.getItem('tus_aguacates_products');
-    if (savedProducts) {
-      try {
-        const loaded = JSON.parse(savedProducts);
-        setProducts(loaded);
-        console.log('✅ Productos cargados del localStorage:', loaded.length);
-      } catch (e) {
-        console.log('⚠️ No hay productos guardados, usando ejemplos');
-        setProducts(SAMPLE_PRODUCTS);
-      }
-    } else {
-      setProducts(SAMPLE_PRODUCTS);
-    }
+    const loaded = getProducts();
+    setProducts(loaded);
+    console.log('✅ Productos cargados desde sistema compartido:', loaded.length);
   }, []);
 
-  // GUARDAR en localStorage cuando cambien
+  // GUARDAR usando sistema compartido cuando cambien
   useEffect(() => {
     if (products.length > 0) {
-      localStorage.setItem('tus_aguacates_products', JSON.stringify(products));
-      console.log('💾 Productos guardados en localStorage');
+      saveProducts(products);
     }
   }, [products]);
 
