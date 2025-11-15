@@ -1,7 +1,7 @@
 // ✅ COMPARTIDO entre admin y tienda
 // Sistema unificado de almacenamiento de productos
 
-interface Product {
+export interface Product {
   id: string;
   name: string;
   description: string;
