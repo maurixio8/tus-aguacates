@@ -144,11 +144,11 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
 
           {/* Rating */}
-          {product.review_count && product.review_count > 0 && (
+          {(product.review_count ?? 0) > 0 && (
             <div className="flex items-center gap-1 mb-3">
               <span className="text-yellow-500">★</span>
-              <span className="text-sm font-medium">{(product.rating || 0).toFixed(1)}</span>
-              <span className="text-xs text-gray-500">({product.review_count})</span>
+              <span className="text-sm font-medium">{(product.rating ?? 0).toFixed(1)}</span>
+              <span className="text-xs text-gray-500">({product.review_count ?? 0})</span>
             </div>
           )}
 
