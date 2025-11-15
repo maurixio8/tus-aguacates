@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import type { Product, ProductVariant } from '@/lib/supabase';
+import { initializeProducts, getProductsByCategory } from '@/lib/productStorage';
+import type { Product } from '@/lib/productStorage';
 import { ProductCard } from '../product/ProductCard';
 import { ProductQuickViewModal } from '../product/ProductQuickViewModal';
 
@@ -27,7 +27,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Búsqueda con debounce
+  // Búsqueda con debounce usando localStorage
   useEffect(() => {
     if (!query || query.length < 2) {
       setResults([]);
@@ -37,27 +37,25 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .ilike('name', `%${query}%`)
-          .eq('is_active', true)
-          .limit(8)
-          .order('created_at', { ascending: false });
 
-        // Add empty variants array for compatibility
-        if (data) {
-          data.forEach(product => {
-            (product as any).variants = [];
-          });
-        }
+        // Asegurar que los productos están sincronizados
+        await initializeProducts();
 
-        if (error) {
-          console.error('Error searching products:', error);
-          setResults([]);
-        } else {
-          setResults(data || []);
-        }
+        // Obtener todos los productos de localStorage
+        const allProducts = getProductsByCategory('todos');
+
+        // Filtrar productos que coincidan con la búsqueda
+        const searchResults = allProducts
+          .filter(product => product.is_active !== false)
+          .filter(product =>
+            product.name.toLowerCase().includes(query.toLowerCase()) ||
+            product.description?.toLowerCase().includes(query.toLowerCase()) ||
+            product.category?.toLowerCase().includes(query.toLowerCase())
+          )
+          .slice(0, 8); // Limitar a 8 resultados
+
+        setResults(searchResults);
+
       } catch (error) {
         console.error('Error in search:', error);
         setResults([]);

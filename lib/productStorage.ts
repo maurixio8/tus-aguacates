@@ -1,6 +1,8 @@
 // ✅ COMPARTIDO entre admin y tienda
 // Sistema unificado de almacenamiento de productos
 
+import { supabase } from './supabase';
+
 export interface ProductVariant {
   id: string;
   product_id: string;
@@ -146,4 +148,101 @@ export const slugToCategory = (slug: string): string => {
     'panaderia': 'Panadería'
   };
   return categories[slug] || slug;
+};
+
+// 🔧 FUNCIÓN DE SINCRONIZACIÓN - OPCIÓN B
+// Sincroniza datos de Supabase a localStorage como única fuente de verdad
+export const syncSupabaseToLocal = async (): Promise<boolean> => {
+  try {
+    console.log('🔄 Starting Supabase to localStorage sync...');
+
+    // 1. Obtener datos de Supabase
+    const { data: supabaseProducts, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true);
+
+    if (error) {
+      console.error('❌ Error fetching from Supabase:', error);
+      return false;
+    }
+
+    console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
+
+    // 2. Obtener datos actuales de localStorage
+    const localProducts = getProducts();
+    console.log(`📦 Found ${localProducts.length} products in localStorage`);
+
+    // 3. Mapear y combinar datos
+    let mergedProducts: Product[] = [];
+
+    if (supabaseProducts && supabaseProducts.length > 0) {
+      // Convertir productos de Supabase al formato local
+      const convertedProducts: Product[] = supabaseProducts.map(sp => ({
+        id: sp.id,
+        name: sp.name,
+        description: sp.description,
+        price: sp.price,
+        // Mapear campos importantes
+        image: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
+        main_image_url: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
+        category: sp.category || localProducts.find(lp => lp.id === sp.id)?.category,
+        category_id: sp.category_id,
+        discount_price: sp.discount_price,
+        unit: sp.unit,
+        weight: sp.weight,
+        min_quantity: sp.min_quantity,
+        stock: sp.stock,
+        reserved_stock: sp.reserved_stock,
+        is_featured: sp.is_featured,
+        is_organic: sp.is_organic,
+        is_active: sp.is_active,
+        benefits: sp.benefits,
+        rating: sp.rating,
+        review_count: sp.review_count,
+        slug: sp.slug,
+        sku: sp.sku,
+        created_at: sp.created_at,
+        updated_at: sp.updated_at,
+        variants: sp.variants
+      }));
+
+      // 4. Combinar con productos locales que no están en Supabase
+      const supabaseIds = new Set(convertedProducts.map(p => p.id));
+      const localOnly = localProducts.filter(lp => !supabaseIds.has(lp.id));
+
+      mergedProducts = [...convertedProducts, ...localOnly];
+
+      console.log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
+    } else {
+      // Si no hay datos en Supabase, usar solo datos locales
+      mergedProducts = localProducts;
+      console.log('⚠️ No Supabase data, using localStorage only');
+    }
+
+    // 5. Guardar en localStorage
+    saveProducts(mergedProducts);
+
+    console.log(`✅ Sync completed: ${mergedProducts.length} total products saved to localStorage`);
+    return true;
+
+  } catch (error) {
+    console.error('❌ Sync failed:', error);
+    return false;
+  }
+};
+
+// Función de inicialización que asegura la sincronización
+export const initializeProducts = async (): Promise<Product[]> => {
+  // Intentar sincronizar primero
+  const syncSuccess = await syncSupabaseToLocal();
+
+  if (syncSuccess) {
+    console.log('🎉 Products initialized from Supabase sync');
+  } else {
+    console.log('⚠️ Products initialized from localStorage (fallback)');
+  }
+
+  // Retornar productos actualizados
+  return getProducts();
 };

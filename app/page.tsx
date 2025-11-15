@@ -1,71 +1,49 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowRight, Leaf, Truck, Shield } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import ProductSwiper from '@/components/product/ProductSwiper';
 import Image from 'next/image';
 import PromotionSlider from '@/components/promotions/PromotionSlider';
 import CategoryScroll from '@/components/categories/CategoryScroll';
 import CategorySimpleScroll from '@/components/categories/CategorySimpleScroll';
+import { useState, useEffect } from 'react';
+import { initializeProducts, getProductsByCategory } from '@/lib/productStorage';
+import type { Product } from '@/lib/productStorage';
 
-export const revalidate = 3600; // Revalidar cada hora
+export default function Home() {
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-async function getFeaturedProducts() {
-  try {
-    // Primero intentar obtener productos destacados
-    const { data: featuredData, error: featuredError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .eq('is_featured', true)
-      .order('created_at', { ascending: false })
-      .limit(12);
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true);
 
-    if (featuredError) {
-      console.error('Error fetching featured products:', featuredError);
-    }
+        // Inicializar productos (sincronizar si es necesario)
+        await initializeProducts();
 
-    // Si hay productos destacados, devolverlos
-    if (featuredData && featuredData.length > 0) {
-      return featuredData;
-    }
+        // Obtener productos destacados o los más recientes
+        const allProducts = getProductsByCategory('todos');
 
-    // Si no hay productos destacados, obtener los más recientes
-    const { data: recentData, error: recentError } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
-      .limit(12);
+        // Prioridad: productos destacados > productos recientes
+        const featured = allProducts
+          .filter(p => p.is_active !== false)
+          .filter(p => p.is_featured || true) // Si no hay destacados, usar todos
+          .slice(0, 12);
 
-    if (recentError) {
-      console.error('Error fetching recent products:', recentError);
-    }
+        setFeaturedProducts(featured);
 
-    return recentData || [];
+      } catch (error) {
+        console.error('Error loading products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return [];
-  }
-}
-
-async function getCategories() {
-  const { data } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('is_active', true)
-    .order('sort_order', { ascending: true })
-    .limit(6);
-  
-  return data || [];
-}
-
-export default async function Home() {
-  const [featuredProducts, categories] = await Promise.all([
-    getFeaturedProducts(),
-    getCategories(),
-  ]);
+    loadProducts();
+  }, []);
 
   return (
     <div>
@@ -181,43 +159,21 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Desktop Categories Grid (hidden on mobile) */}
-      <section className="py-8 hidden md:block">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {categories.map((category) => (
-              <Link
-                key={category.id}
-                href={`/tienda/${category.slug}`}
-                className="group"
-              >
-                <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-strong transition-all duration-300 p-4 text-center transform hover:scale-105 hover:-translate-y-2 hover:border-2 hover:border-yellow-500">
-                  {category.image_url && (
-                    <div className="relative w-full aspect-square mb-3 rounded-xl overflow-hidden bg-gray-100">
-                      <Image
-                        src={category.image_url}
-                        alt={category.name}
-                        fill
-                        className="object-cover group-hover:scale-125 transition-transform duration-500 group-hover:rotate-2"
-                      />
-                    </div>
-                  )}
-                  <h3 className="font-semibold text-sm group-hover:text-yellow-700 transition-colors duration-300 group-hover:font-bold">
-                    {category.name}
-                  </h3>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* Productos Destacados con Swiper */}
       <section className="py-4 bg-gray-50">
-        <ProductSwiper
-          products={featuredProducts}
-          title="Lo Más Fresco"
-        />
+        {loading ? (
+          <div className="container mx-auto px-4">
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-verde-bosque"></div>
+              <p className="mt-2 text-gray-600">Cargando productos frescos...</p>
+            </div>
+          </div>
+        ) : (
+          <ProductSwiper
+            products={featuredProducts}
+            title="Lo Más Fresco"
+          />
+        )}
       </section>
 
       {/* CTA Final */}
