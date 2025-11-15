@@ -14,7 +14,8 @@
       "Bash(npx tsc:*)",
       "Bash(ls:*)",
       "Bash(dir:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "ask": []
