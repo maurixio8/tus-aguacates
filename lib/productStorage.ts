@@ -13,11 +13,15 @@ export interface ProductVariant {
 }
 
 export interface Product {
+  // ✅ REQUERIDOS (mínimo necesario):
   id: string;
   name: string;
   description: string;
-  category_id?: string;
   price: number;
+
+  // ✅ OPCIONALES (todos con '?'):
+  category?: string;
+  category_id?: string;
   discount_price?: number;
   unit?: string;
   weight?: number;
@@ -30,7 +34,6 @@ export interface Product {
   is_featured?: boolean;
   is_organic?: boolean;
   is_active?: boolean;
-  category?: string;
   benefits?: string[];
   rating?: number;
   review_count?: number;
