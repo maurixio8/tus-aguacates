@@ -226,21 +226,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Warning banner for sample data */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-amber-200 rounded-full flex items-center justify-center">
-              <span className="text-amber-700">⚠️</span>
-            </div>
-            <div>
-              <h3 className="font-semibold text-amber-800">Modo Demostración</h3>
-              <p className="text-sm text-amber-700">
-                El dashboard está mostrando datos de ejemplo. Para ver pedidos reales, configura la base de datos.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+              </div>
 
         {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
