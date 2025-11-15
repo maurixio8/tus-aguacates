@@ -30,7 +30,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           .select('*')
           .eq('product_id', product.id)
           .eq('is_active', true)
-          .order('price_modifier', { ascending: true });
+          .order('price_adjustment', { ascending: true });
 
         if (error) {
           console.error('Error loading variants:', error);
@@ -56,7 +56,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
   // Calcular precio final
   const basePrice = product.discount_price || product.price;
-  const variantPrice = selectedVariant?.price_modifier || 0;
+  const variantPrice = selectedVariant?.price_adjustment || 0;
   const finalPrice = basePrice + variantPrice;
 
   const handleAddToCart = () => {
@@ -87,9 +87,9 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
       />
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-center justify-center p-2 md:p-4">
         <div
-          className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[85vh] md:max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-md md:max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] md:max-h-[85vh] overflow-y-auto"
           onClick={(e) => {
             console.log('ProductQuickViewModal: Modal content clicked, preventing propagation');
             e.stopPropagation();
@@ -108,10 +108,10 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
             </button>
           </div>
 
-          <div className="p-6">
-            <div className="grid md:grid-cols-2 gap-8">
+          <div className="p-4 md:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
               {/* Imagen */}
-              <div className="aspect-square bg-gray-100 rounded-xl overflow-hidden">
+              <div className="aspect-square md:aspect-square bg-gray-100 rounded-xl overflow-hidden max-h-64 md:max-h-none">
                 {product.main_image_url ? (
                   <Image
                     src={product.main_image_url}
@@ -158,8 +158,8 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                       {variants.map((variant) => (
                         <option key={variant.id} value={variant.id}>
                           {variant.variant_name}: {variant.variant_value}
-                          {variant.price_modifier !== 0 &&
-                            ` (${variant.price_modifier > 0 ? '+' : ''}$${variant.price_modifier.toFixed(2)})`
+                          {variant.price_adjustment !== 0 &&
+                            ` (${variant.price_adjustment > 0 ? '+' : ''}$${variant.price_adjustment.toFixed(2)})`
                           }
                         </option>
                       ))}

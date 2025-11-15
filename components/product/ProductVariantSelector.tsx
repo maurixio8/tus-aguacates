@@ -53,10 +53,10 @@ export function ProductVariantSelector({ variants, onVariantChange }: ProductVar
                 }`}
               >
                 <span className="block">{option.variant_value}</span>
-                {option.price_modifier !== 0 && (
+                {option.price_adjustment !== 0 && (
                   <span className="block text-xs mt-1">
-                    {option.price_modifier > 0 ? '+' : ''}
-                    ${option.price_modifier.toFixed(2)}
+                    {option.price_adjustment > 0 ? '+' : ''}
+                    ${option.price_adjustment.toFixed(2)}
                   </span>
                 )}
                 {option.stock_quantity === 0 && (

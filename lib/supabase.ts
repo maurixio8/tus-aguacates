@@ -11,7 +11,7 @@ export interface ProductVariant {
   product_id: string;
   variant_name: string;
   variant_value: string;
-  price_modifier: number;
+  price_adjustment: number;
   stock_quantity: number;
   is_active: boolean;
   created_at: string;
