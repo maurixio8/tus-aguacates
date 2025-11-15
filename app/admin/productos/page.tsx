@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
+import { CSVImporter } from '@/components/admin/CSVImporter';
 import { getProducts, saveProducts, getDefaultProducts } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
 
@@ -111,9 +112,7 @@ export default function ProductsPage() {
             <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2">
               ➕ Nuevo Producto
             </button>
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2">
-              📥 Importar CSV
-            </button>
+            <CSVImporter />
             <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2">
               🔄 Sincronizar con Tienda
             </button>

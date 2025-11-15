@@ -246,3 +246,51 @@ export const initializeProducts = async (): Promise<Product[]> => {
   // Retornar productos actualizados
   return getProducts();
 };
+
+// 🚀 FUNCIÓN DE IMPORTACIÓN CSV
+export async function importProductsFromCSV(file: File): Promise<Product[]> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = (e) => {
+      try {
+        const csv = e.target?.result as string;
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+
+        const products: Product[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          if (!lines[i].trim()) continue;
+
+          const values = lines[i].split(',').map(v => v.trim());
+          const product: Product = {
+            id: values[headers.indexOf('id')] || `prod-${Date.now()}-${i}`,
+            name: values[headers.indexOf('name')] || 'Producto sin nombre',
+            description: values[headers.indexOf('description')] || '',
+            price: parseFloat(values[headers.indexOf('price')]) || 0,
+            category: values[headers.indexOf('category')] || 'general',
+            image: values[headers.indexOf('image')] || '',
+            main_image_url: values[headers.indexOf('image')] || '',
+            is_active: true
+          };
+
+          products.push(product);
+        }
+
+        if (products.length === 0) {
+          reject('No se encontraron productos en el CSV');
+          return;
+        }
+
+        localStorage.setItem('tus_aguacates_products', JSON.stringify(products));
+        resolve(products);
+      } catch (error) {
+        reject(`Error al procesar CSV: ${error}`);
+      }
+    };
+
+    reader.onerror = () => reject('Error leyendo archivo');
+    reader.readAsText(file);
+  });
+}
