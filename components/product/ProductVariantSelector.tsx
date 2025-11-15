@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { ProductVariant } from '@/lib/supabase';
+import type { ProductVariant } from '@/lib/productStorage';
 
 interface ProductVariantSelectorProps {
   variants: ProductVariant[];

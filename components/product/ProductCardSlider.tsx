@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { formatPrice } from '@/lib/utils';
-import type { Product } from '@/lib/supabase';
+import type { Product } from '@/lib/productStorage';
 
 interface ProductCardSliderProps {
   product: Product;

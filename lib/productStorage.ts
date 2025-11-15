@@ -1,6 +1,17 @@
 // ✅ COMPARTIDO entre admin y tienda
 // Sistema unificado de almacenamiento de productos
 
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  variant_name: string;
+  variant_value: string;
+  price_adjustment: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -27,7 +38,7 @@ export interface Product {
   sku?: string;
   created_at?: string;
   updated_at?: string;
-  variants?: any[];
+  variants?: ProductVariant[];
 }
 
 // Productos por defecto si no hay datos guardados

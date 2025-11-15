@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, ShoppingCart } from 'lucide-react';
-import type { Product, ProductVariant } from '@/lib/supabase';
+import type { Product, ProductVariant } from '@/lib/productStorage';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
