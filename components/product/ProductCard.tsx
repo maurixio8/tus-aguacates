@@ -61,6 +61,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
     const itemToAdd = {
       ...product,
+      category_id: product.category_id || product.category || 'general',
       quantity: 1,
       variant: selectedVariant ?? undefined
     };
