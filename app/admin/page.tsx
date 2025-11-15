@@ -431,8 +431,8 @@ export default function AdminDashboard() {
                 Pedidos
               </button>
               <button
-                onClick={() => router.push('/admin/products')}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gray-100 text-gray-700 hover:bg-gray-200"
+                onClick={() => router.push('/admin/productos')}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all bg-gradient-to-r from-blue-400 to-blue-600 text-white hover:from-blue-500 hover:to-blue-700 border-2 border-blue-700"
               >
                 <Box className="w-5 h-5" />
                 Productos
