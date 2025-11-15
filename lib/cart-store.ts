@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Product } from './supabase';
+import type { Product } from './productStorage';
 
 /**
  * Default shipping information fallback
