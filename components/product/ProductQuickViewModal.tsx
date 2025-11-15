@@ -16,7 +16,6 @@ interface ProductQuickViewModalProps {
 
 export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuickViewModalProps) {
   const { addItem } = useCartStore();
-  const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -61,7 +60,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
-      quantity,
+      quantity: 1,
       selectedVariant,
       finalPrice,
     };
@@ -166,39 +165,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </div>
                 )}
 
-                {/* Selector de cantidad */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Cantidad
-                  </label>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      value={quantity}
-                      onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                      className="w-20 text-center border border-gray-300 rounded-lg px-3 py-2"
-                    />
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-10 h-10 rounded-lg border border-gray-300 flex items-center justify-center hover:bg-gray-50"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
+  
                 {/* Total final */}
                 <div className="flex justify-between items-center py-2 border-t border-b border-gray-200">
                   <span className="text-lg font-semibold">Total:</span>
                   <span className="text-2xl font-bold text-green-600">
-                    {formatPrice(finalPrice * quantity)}
+                    {formatPrice(finalPrice)}
                   </span>
                 </div>
 
@@ -237,7 +209,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           <span className="text-xl">🛒</span>
           <div>
             <p className="font-bold">¡Agregado al carrito!</p>
-            <p className="text-sm">{quantity} × {product.name}</p>
+            <p className="text-sm">1 × {product.name}</p>
           </div>
         </div>
       )}
