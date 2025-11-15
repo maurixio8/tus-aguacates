@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import {
   ShoppingBag,
   Users,
@@ -63,14 +62,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
-  // Modal and UI state
-  const [selectedOrder, setSelectedOrder] = useState<GuestOrder | null>(null);
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
-  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
-  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null);
-
+  
   useEffect(() => {
     checkAuth();
   }, []);
@@ -112,38 +104,7 @@ export default function AdminDashboard() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      // PRIMERO: Intentar cargar desde la tabla guest_orders
-      try {
-        let query = supabase
-          .from('guest_orders')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (selectedStatus !== 'all') {
-          query = query.eq('status', selectedStatus);
-        }
-
-        const { data, error } = await query;
-
-        if (!error && data) {
-          setOrders(data);
-
-          // Calcular estadísticas
-          setStats({
-            total: data.length,
-            pending: data.filter(o => o.status === 'pendiente').length,
-            completed: data.filter(o => o.status === 'completado').length,
-            revenue: data
-              .filter(o => o.status === 'completado')
-              .reduce((sum, o) => sum + Number(o.total_amount), 0)
-          });
-          return;
-        }
-      } catch (tableError) {
-        console.log('⚠️ Tabla guest_orders no existe, usando datos de ejemplo');
-      }
-
-      // FALLBACK: Datos de ejemplo mientras las tablas se crean
+      // Usar datos de ejemplo para el dashboard demo
       const sampleOrders: GuestOrder[] = [
         {
           id: 'sample-1',
@@ -187,7 +148,7 @@ export default function AdminDashboard() {
 
       setOrders(filteredOrders);
 
-      // Calcular estadísticas
+      // Calcular estadísticas basadas en todos los pedidos
       const allOrders = sampleOrders;
       setStats({
         total: allOrders.length,
@@ -207,155 +168,7 @@ export default function AdminDashboard() {
     }
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    console.log('🔄 updateOrderStatus called:', { orderId, newStatus });
-    setUpdatingOrderId(orderId);
-
-    try {
-      console.log('📊 Updating order in database...');
-      const { data, error, status: dbStatus } = await supabase
-        .from('guest_orders')
-        .update({
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select();
-
-      console.log('💾 Database response:', { data, error, dbStatus });
-
-      if (error) {
-        console.error('❌ Database error:', error);
-        throw error;
-      }
-
-      console.log('✅ Order updated successfully, refreshing data...');
-      await loadOrders();
-
-      console.log('✅ Orders refreshed successfully');
-      alert(`Pedido ${newStatus === 'completado' ? 'completado' : 'cancelado'} con éxito`);
-
-    } catch (error) {
-      console.error('❌ Error updating order:', error);
-      alert(`Error al actualizar el pedido: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setUpdatingOrderId(null);
-    }
-  };
-
-  const openOrderDetails = (order: GuestOrder) => {
-    setSelectedOrder(order);
-    setShowOrderModal(true);
-    setIsEditingOrder(false);
-    setEditedOrder({});
-  };
-
-  const closeOrderModal = () => {
-    setSelectedOrder(null);
-    setShowOrderModal(false);
-    setIsEditingOrder(false);
-    setEditedOrder({});
-  };
-
-  const startEditingOrder = () => {
-    if (selectedOrder) {
-      setIsEditingOrder(true);
-      setEditedOrder({
-        guest_name: selectedOrder.guest_name,
-        guest_email: selectedOrder.guest_email,
-        guest_phone: selectedOrder.guest_phone,
-        guest_address: selectedOrder.guest_address
-      });
-    }
-  };
-
-  const cancelEditingOrder = () => {
-    setIsEditingOrder(false);
-    setEditedOrder({});
-  };
-
-  const saveOrderChanges = async () => {
-    if (!selectedOrder || !editedOrder) return;
-
-    setSavingOrderId(selectedOrder.id);
-    try {
-      console.log('💾 Saving order changes:', editedOrder);
-
-      const { data, error, status: dbStatus } = await supabase
-        .from('guest_orders')
-        .update({
-          guest_name: editedOrder.guest_name || selectedOrder.guest_name,
-          guest_email: editedOrder.guest_email || selectedOrder.guest_email,
-          guest_phone: editedOrder.guest_phone || selectedOrder.guest_phone,
-          guest_address: editedOrder.guest_address || selectedOrder.guest_address,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedOrder.id)
-        .select();
-
-      console.log('💾 Save response:', { data, error, dbStatus });
-
-      if (error) {
-        console.error('❌ Error saving order:', error);
-        throw error;
-      }
-
-      console.log('✅ Order saved successfully');
-      alert('Pedido actualizado con éxito');
-
-      // Update selected order with new data
-      if (data && data[0]) {
-        setSelectedOrder(data[0]);
-      }
-
-      // Refresh the orders list
-      await loadOrders();
-
-      // Exit editing mode
-      setIsEditingOrder(false);
-      setEditedOrder({});
-
-    } catch (error) {
-      console.error('❌ Error saving order:', error);
-      alert(`Error al guardar el pedido: ${error instanceof Error ? error.message : 'Error desconocido'}`);
-    } finally {
-      setSavingOrderId(null);
-    }
-  };
-
-  const confirmDelete = (orderId: string) => {
-    setOrderToDelete(orderId);
-    setShowDeleteConfirm(true);
-  };
-
-  const cancelDelete = () => {
-    setOrderToDelete(null);
-    setShowDeleteConfirm(false);
-  };
-
-  const deleteOrder = async () => {
-    if (!orderToDelete) return;
-
-    setDeletingOrderId(orderToDelete);
-    try {
-      const { error } = await supabase
-        .from('guest_orders')
-        .delete()
-        .eq('id', orderToDelete);
-
-      if (error) throw error;
-
-      await loadOrders();
-      setShowDeleteConfirm(false);
-      setOrderToDelete(null);
-    } catch (error) {
-      console.error('Error deleting order:', error);
-      alert('Error al eliminar el pedido');
-    } finally {
-      setDeletingOrderId(null);
-    }
-  };
-
+  
   const exportToCSV = () => {
     const csvContent = [
       ['Fecha', 'Cliente', 'Email', 'Telefono', 'Total', 'Estado'].join(','),
@@ -388,46 +201,9 @@ export default function AdminDashboard() {
     );
   }
 
-  // Sample data for demo
-  const sampleOrders: GuestOrder[] = [
-    {
-      id: 'sample-1',
-      guest_name: 'Juan Pérez',
-      guest_email: 'juan@email.com',
-      guest_phone: '3011234567',
-      guest_address: 'Calle 123 #45-67, Bogotá',
-      order_data: {
-        items: [
-          { productName: 'Aguacate Hass', quantity: 2, price: 5000 },
-          { productName: 'Aguacate Criollo', quantity: 1, price: 3000 }
-        ]
-      },
-      total_amount: 13000,
-      status: 'pendiente',
-      delivery_date: null,
-      created_at: new Date().toISOString()
-    },
-    {
-      id: 'sample-2',
-      guest_name: 'María García',
-      guest_email: 'maria@email.com',
-      guest_phone: '3109876543',
-      guest_address: 'Av. Principal #89-12, Medellín',
-      order_data: {
-        items: [
-          { productName: 'Aguacate Hass Premium', quantity: 3, price: 7000 }
-        ]
-      },
-      total_amount: 21000,
-      status: 'completado',
-      delivery_date: new Date().toISOString().split('T')[0],
-      created_at: new Date(Date.now() - 86400000).toISOString()
-    }
-  ];
-
   const filteredOrders = selectedStatus === 'all'
-    ? sampleOrders
-    : sampleOrders.filter(o => o.status === selectedStatus);
+    ? orders
+    : orders.filter(o => o.status === selectedStatus);
 
   return (
     <div>
@@ -591,8 +367,7 @@ export default function AdminDashboard() {
                 filteredOrders.map((order) => (
                   <tr
                     key={order.id}
-                    className="border-b hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => openOrderDetails(order)}
+                    className="border-b hover:bg-gray-50 transition-colors"
                   >
                     <td className="px-6 py-4 text-sm">
                       {new Date(order.created_at).toLocaleDateString('es-CO')}
@@ -646,13 +421,7 @@ export default function AdminDashboard() {
                           📄 Ver
                         </button>
                         {order.status === 'pendiente' && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle completion
-                            }}
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 font-medium"
-                          >
+                          <button className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 font-medium">
                             ✅ Completar
                           </button>
                         )}
