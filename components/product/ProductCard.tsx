@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
-import type { Product } from '@/lib/supabase';
+import type { Product } from '@/lib/productStorage';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';

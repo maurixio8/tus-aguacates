@@ -7,7 +7,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import { ProductCardSlider } from './ProductCardSlider';
 import { ProductQuickViewModal } from './ProductQuickViewModal';
-import type { Product } from '@/lib/supabase';
+import type { Product } from '@/lib/productStorage';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 

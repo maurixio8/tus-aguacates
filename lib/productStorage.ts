@@ -5,33 +5,50 @@ export interface Product {
   id: string;
   name: string;
   description: string;
+  category_id?: string;
   price: number;
+  discount_price?: number;
+  unit?: string;
+  weight?: number;
+  min_quantity?: number;
+  main_image_url?: string;
   image?: string;
-  category: string;
+  images?: string[];
   stock?: number;
+  reserved_stock?: number;
+  is_featured?: boolean;
+  is_organic?: boolean;
   is_active?: boolean;
+  category?: string;
+  benefits?: string[];
+  rating?: number;
+  review_count?: number;
+  slug?: string;
+  sku?: string;
   created_at?: string;
+  updated_at?: string;
+  variants?: any[];
 }
 
 // Productos por defecto si no hay datos guardados
 const DEFAULT_PRODUCTS: Product[] = [
   // Aguacates
-  { id: '1', name: 'Aguacate Hass Premium', description: 'Variedad premium de alta calidad', price: 6500, category: 'Aguacates', stock: 150, is_active: true },
-  { id: '2', name: 'Aguacate Criollo', description: 'Variedad colombiana tradicional', price: 3500, category: 'Aguacates', stock: 200, is_active: true },
-  { id: '3', name: 'Aguacate Orgánico', description: 'Cultivado sin pesticidas', price: 8500, category: 'Aguacates', stock: 75, is_active: true },
-  { id: '4', name: 'Aguacate Jumbo', description: 'Tamaño extra grande', price: 5500, category: 'Aguacates', stock: 100, is_active: true },
+  { id: '1', name: 'Aguacate Hass Premium', description: 'Variedad premium de alta calidad', price: 6500, category: 'Aguacates', stock: 150, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '2', name: 'Aguacate Criollo', description: 'Variedad colombiana tradicional', price: 3500, category: 'Aguacates', stock: 200, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '3', name: 'Aguacate Orgánico', description: 'Cultivado sin pesticidas', price: 8500, category: 'Aguacates', stock: 75, is_active: true, unit: 'unidad', min_quantity: 1, is_organic: true },
+  { id: '4', name: 'Aguacate Jumbo', description: 'Tamaño extra grande', price: 5500, category: 'Aguacates', stock: 100, is_active: true, unit: 'unidad', min_quantity: 1 },
 
   // Frutas
-  { id: '5', name: 'Limón Tahití', description: 'Ácido y jugoso', price: 3700, category: 'Frutas', stock: 300, is_active: true },
-  { id: '6', name: 'Naranja Valencia', description: 'Dulce y jugosa', price: 2500, category: 'Frutas', stock: 250, is_active: true },
-  { id: '7', name: 'Mango Ataulfo', description: 'Dulce y aromático', price: 4500, category: 'Frutas', stock: 180, is_active: true },
-  { id: '8', name: 'Fresa Fresca', description: 'Fresa fresca y dulce', price: 8500, category: 'Frutas', stock: 120, is_active: true },
+  { id: '5', name: 'Limón Tahití', description: 'Ácido y jugoso', price: 3700, category: 'Frutas', stock: 300, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '6', name: 'Naranja Valencia', description: 'Dulce y jugosa', price: 2500, category: 'Frutas', stock: 250, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '7', name: 'Mango Ataulfo', description: 'Dulce y aromático', price: 4500, category: 'Frutas', stock: 180, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '8', name: 'Fresa Fresca', description: 'Fresa fresca y dulce', price: 8500, category: 'Frutas', stock: 120, is_active: true, unit: 'unidad', min_quantity: 1 },
 
   // Verduras
-  { id: '9', name: 'Tomate Rojo', description: 'Tomate maduro y jugoso', price: 2000, category: 'Verduras', stock: 400, is_active: true },
-  { id: '10', name: 'Lechuga Crespa', description: 'Lechuga fresca y crujiente', price: 1500, category: 'Verduras', stock: 350, is_active: true },
-  { id: '11', name: 'Cilantro Fresco', description: 'Cilantro orgánico fresco', price: 800, category: 'Verduras', stock: 500, is_active: true },
-  { id: '12', name: 'Pimentón Rojo', description: 'Pimentón rojo fresco', price: 2200, category: 'Verduras', stock: 280, is_active: true },
+  { id: '9', name: 'Tomate Rojo', description: 'Tomate maduro y jugoso', price: 2000, category: 'Verduras', stock: 400, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '10', name: 'Lechuga Crespa', description: 'Lechuga fresca y crujiente', price: 1500, category: 'Verduras', stock: 350, is_active: true, unit: 'unidad', min_quantity: 1 },
+  { id: '11', name: 'Cilantro Fresco', description: 'Cilantro orgánico fresco', price: 800, category: 'Verduras', stock: 500, is_active: true, unit: 'unidad', min_quantity: 1, is_organic: true },
+  { id: '12', name: 'Pimentón Rojo', description: 'Pimentón rojo fresco', price: 2200, category: 'Verduras', stock: 280, is_active: true, unit: 'unidad', min_quantity: 1 },
 ];
 
 export const getDefaultProducts = (): Product[] => {
@@ -80,11 +97,17 @@ export const updateProductImage = (productId: string, imageData: string): Produc
 export const getProductsByCategory = (category: string): Product[] => {
   const allProducts = getProducts();
   if (category === 'todos' || category === 'Todos') {
-    return allProducts.filter(p => p.is_active !== false);
+    return allProducts.filter(p => p.is_active !== false).map(product => ({
+      ...product,
+      main_image_url: product.image || product.main_image_url
+    }));
   }
   return allProducts.filter(p =>
     p.category === category && p.is_active !== false
-  );
+  ).map(product => ({
+    ...product,
+    main_image_url: product.image || product.main_image_url
+  }));
 };
 
 // Mapeo de categorías para URLs

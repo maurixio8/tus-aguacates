@@ -3,18 +3,7 @@
 import { useState, useEffect } from 'react';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
 import { getProducts, saveProducts, getDefaultProducts } from '@/lib/productStorage';
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image?: string;
-  category: string;
-  stock?: number;
-  is_active?: boolean;
-  created_at?: string;
-}
+import type { Product } from '@/lib/productStorage';
 
 const CATEGORIES = ['Todos', 'Aguacates', 'Frutas', 'Verduras', 'Lácteos', 'Panadería'];
 
