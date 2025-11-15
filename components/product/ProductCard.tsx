@@ -144,10 +144,10 @@ export function ProductCard({ product }: ProductCardProps) {
           </p>
 
           {/* Rating */}
-          {product.review_count > 0 && (
+          {product.review_count && product.review_count > 0 && (
             <div className="flex items-center gap-1 mb-3">
               <span className="text-yellow-500">★</span>
-              <span className="text-sm font-medium">{product.rating.toFixed(1)}</span>
+              <span className="text-sm font-medium">{(product.rating || 0).toFixed(1)}</span>
               <span className="text-xs text-gray-500">({product.review_count})</span>
             </div>
           )}
@@ -200,11 +200,11 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Botón Agregar al Carrito */}
           <button
             onClick={handleAddToCart}
-            disabled={product.stock === 0}
+            disabled={(product.stock || 0) === 0}
             className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400"
           >
             <ShoppingCart className="w-4 h-4" />
-            {product.stock > 0 ? 'Agregar al Carrito' : 'Agotado'}
+            {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
           </button>
         </div>
       </div>

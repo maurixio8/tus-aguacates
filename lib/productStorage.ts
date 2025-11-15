@@ -8,6 +8,7 @@ export interface ProductVariant {
   variant_value: string;
   price_adjustment: number;
   is_active: boolean;
+  stock_quantity?: number;
   created_at?: string;
   updated_at?: string;
 }

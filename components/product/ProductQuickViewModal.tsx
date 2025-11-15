@@ -179,11 +179,11 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Botón agregar al carrito - mismo estilo que ProductCard */}
                 <button
                   onClick={handleAddToCart}
-                  disabled={product.stock === 0}
+                  disabled={(product.stock || 0) === 0}
                   className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  {product.stock > 0 ? 'Agregar al Carrito' : 'Agotado'}
+                  {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
                 </button>
 
                 {/* Badges */}
