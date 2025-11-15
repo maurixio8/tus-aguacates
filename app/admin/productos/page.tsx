@@ -38,12 +38,37 @@ const SAMPLE_PRODUCTS: Product[] = [
 ];
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>(SAMPLE_PRODUCTS);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(SAMPLE_PRODUCTS);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
+
+  // CARGAR productos del localStorage AL INICIAR
+  useEffect(() => {
+    const savedProducts = localStorage.getItem('tus_aguacates_products');
+    if (savedProducts) {
+      try {
+        const loaded = JSON.parse(savedProducts);
+        setProducts(loaded);
+        console.log('✅ Productos cargados del localStorage:', loaded.length);
+      } catch (e) {
+        console.log('⚠️ No hay productos guardados, usando ejemplos');
+        setProducts(SAMPLE_PRODUCTS);
+      }
+    } else {
+      setProducts(SAMPLE_PRODUCTS);
+    }
+  }, []);
+
+  // GUARDAR en localStorage cuando cambien
+  useEffect(() => {
+    if (products.length > 0) {
+      localStorage.setItem('tus_aguacates_products', JSON.stringify(products));
+      console.log('💾 Productos guardados en localStorage');
+    }
+  }, [products]);
 
   // Filtrar productos
   useEffect(() => {
@@ -71,9 +96,12 @@ export default function ProductsPage() {
       image: imageData
     };
 
+    // Actualizar array y localStorage se actualiza automáticamente por useEffect
     setProducts(products.map(p => p.id === selectedProduct.id ? updated : p));
     setSelectedProduct(null);
     setShowImageUpload(false);
+
+    console.log('✅ Imagen guardada para:', selectedProduct.name);
   };
 
   const handleDelete = (productId: string) => {
