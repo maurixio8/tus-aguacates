@@ -124,23 +124,83 @@ export default function AdminDashboard() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      let query = supabase
-        .from('guest_orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // PRIMERO: Intentar cargar desde la tabla guest_orders
+      try {
+        let query = supabase
+          .from('guest_orders')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (selectedStatus !== 'all') {
-        query = query.eq('status', selectedStatus);
+        if (selectedStatus !== 'all') {
+          query = query.eq('status', selectedStatus);
+        }
+
+        const { data, error } = await query;
+
+        if (!error && data) {
+          setOrders(data);
+
+          // Calcular estadísticas
+          setStats({
+            total: data.length,
+            pending: data.filter(o => o.status === 'pendiente').length,
+            completed: data.filter(o => o.status === 'completado').length,
+            revenue: data
+              .filter(o => o.status === 'completado')
+              .reduce((sum, o) => sum + Number(o.total_amount), 0)
+          });
+          return;
+        }
+      } catch (tableError) {
+        console.log('⚠️ Tabla guest_orders no existe, usando datos de ejemplo');
       }
 
-      const { data, error } = await query;
+      // FALLBACK: Datos de ejemplo mientras las tablas se crean
+      const sampleOrders: GuestOrder[] = [
+        {
+          id: 'sample-1',
+          guest_name: 'Juan Pérez',
+          guest_email: 'juan@email.com',
+          guest_phone: '3011234567',
+          guest_address: 'Calle 123 #45-67, Bogotá',
+          order_data: {
+            items: [
+              { productName: 'Aguacate Hass', quantity: 2, price: 5000 },
+              { productName: 'Aguacate Criollo', quantity: 1, price: 3000 }
+            ]
+          },
+          total_amount: 13000,
+          status: 'pendiente',
+          delivery_date: null,
+          created_at: new Date().toISOString()
+        },
+        {
+          id: 'sample-2',
+          guest_name: 'María García',
+          guest_email: 'maria@email.com',
+          guest_phone: '3109876543',
+          guest_address: 'Av. Principal #89-12, Medellín',
+          order_data: {
+            items: [
+              { productName: 'Aguacate Hass Premium', quantity: 3, price: 7000 }
+            ]
+          },
+          total_amount: 21000,
+          status: 'completado',
+          delivery_date: new Date().toISOString().split('T')[0],
+          created_at: new Date(Date.now() - 86400000).toISOString()
+        }
+      ];
 
-      if (error) throw error;
+      // Filtrar por status si es necesario
+      const filteredOrders = selectedStatus === 'all'
+        ? sampleOrders
+        : sampleOrders.filter(o => o.status === selectedStatus);
 
-      setOrders(data || []);
+      setOrders(filteredOrders);
 
       // Calcular estadísticas
-      const allOrders = data || [];
+      const allOrders = sampleOrders;
       setStats({
         total: allOrders.length,
         pending: allOrders.filter(o => o.status === 'pendiente').length,
@@ -152,6 +212,8 @@ export default function AdminDashboard() {
 
     } catch (error) {
       console.error('Error loading orders:', error);
+      setOrders([]);
+      setStats({ total: 0, pending: 0, completed: 0, revenue: 0 });
     } finally {
       setLoading(false);
     }
@@ -343,6 +405,22 @@ export default function AdminDashboard() {
       <div className="container mx-auto px-4">
         {/* Header with Navigation */}
         <div className="mb-8">
+          {/* Warning banner for sample data */}
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center">
+                <span className="text-amber-700">⚠️</span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-amber-800">Modo Configuración</h3>
+                <p className="text-sm text-amber-700">
+                  El dashboard está usando datos de ejemplo. Para ver pedidos reales,
+                  ejecuta el script SQL <code>supabase/admin-setup.sql</code> en tu panel de Supabase.
+                </p>
+              </div>
+            </div>
+          </div>
+
           {/* Navigation Bar */}
           <div className="bg-white rounded-2xl shadow-soft p-4 mb-6">
             <nav className="flex flex-wrap items-center gap-4">
