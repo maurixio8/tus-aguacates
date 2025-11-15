@@ -202,6 +202,8 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
               </div>
             </div>
           </div>
+          {/* Extra bottom padding on mobile to avoid bottom nav overlap */}
+          <div className="md:hidden h-24"></div>
         </div>
       </div>
 
