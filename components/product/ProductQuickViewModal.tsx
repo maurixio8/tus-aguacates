@@ -135,7 +135,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
                 {/* Descripción */}
                 {product.description && (
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 line-clamp-3">
                     {product.description}
                   </p>
                 )}
