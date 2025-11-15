@@ -24,6 +24,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   useEffect(() => {
     async function loadVariants() {
       try {
+        console.log('Loading variants for product:', product.id);
         const { data, error } = await supabase
           .from('product_variants')
           .select('*')
@@ -35,6 +36,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           console.error('Error loading variants:', error);
           setVariants([]);
         } else {
+          console.log('Variants loaded:', data?.length || 0, 'variants');
           setVariants(data || []);
           // Auto-seleccionar primera variante si hay disponibles
           if (data && data.length > 0) {
@@ -87,7 +89,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
       {/* Modal */}
       <div className="flex min-h-full items-center justify-center p-4">
         <div
-          className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto"
+          className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl max-h-[85vh] md:max-h-[90vh] overflow-y-auto"
           onClick={(e) => {
             console.log('ProductQuickViewModal: Modal content clicked, preventing propagation');
             e.stopPropagation();
