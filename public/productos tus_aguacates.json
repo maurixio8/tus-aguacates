@@ -1,0 +1,3047 @@
+{
+  "categories": [
+    {
+      "name": "PRODUCTOS NUEVOS",
+      "products": [
+        {
+          "name": "Nueva Maya",
+          "description": "aguacate hass en tres estados de maduracion medianos para consumo programado",
+          "variants": [
+            {
+              "name": "paquete x 8 Mediano",
+              "price": 8400
+            },
+            {
+              "name": "paquete x 7 premium",
+              "price": 12800
+            }
+          ]
+        },
+        {
+          "name": "Caja de 12 unidades Premium",
+          "description": "Aguacate Pinton y maduro",
+          "variants": [
+            {
+              "name": "Promo paga 2 lleva tres",
+              "price": 48000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos",
+      "products": [
+        {
+          "name": "Pasta de Ajo",
+          "description": "El ajo es un antibiótico natural, mejora la circulación, ayuda al cuidado de la piel, sirve como un anticancerígeno, purifica la sangre en las arterias, dolores de garganta.",
+          "variants": [
+            {
+              "name": "x100 gr",
+              "price": 1500
+            },
+            {
+              "name": "x50gr",
+              "price": 800
+            },
+            {
+              "name": "Grande x500gr",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "Flor de Jamaica",
+          "description": "Los usos tradicionales de esta planta son muy variados e incluyen las flores para el tratamiento de diversos problemas incluyendo los siguientes. Sistema circulatorio. Alta presión sanguínea. Niveles altos de grasa en la sangre. Contra la diabetes. Obesidad. El té sin azúcar se usa en México contra la tos.",
+          "variants": [
+            {
+              "name": "X125grs",
+              "price": 25800
+            },
+            {
+              "name": "X50 grs",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Yacon bandeja",
+          "description": "",
+          "variants": [
+            {
+              "name": "X500 grs",
+              "price": 7900
+            },
+            {
+              "name": "Dos bandejas 1000gr (Ahorro)",
+              "price": 13900
+            }
+          ]
+        },
+        {
+          "name": "Granada",
+          "description": "La granada ofrece múltiples beneficios: mejora la salud gastrointestinal y sexual, favorece la salud cardíaca y cutánea, fortalece el sistema inmunitario, y contribuye a una buena salud neurológica y a la prevención de la pérdida de memoria.",
+          "variants": []
+        },
+        {
+          "name": "Bandeja",
+          "description": "",
+          "variants": [
+            {
+              "name": "x 125 grs",
+              "price": 6400
+            }
+          ]
+        },
+        {
+          "name": "ZumoLimón concentrado",
+          "description": "Concentrado líquido para preparar bebidas sabor a limón",
+          "variants": [
+            {
+              "name": "X500 ml",
+              "price": 3800
+            },
+            {
+              "name": "X1000ml",
+              "price": 6900
+            }
+          ]
+        },
+        {
+          "name": "Zumo mango concentrado",
+          "description": "Concentrado líquido para preparar bebidas sabor a mango",
+          "variants": [
+            {
+              "name": "X500 ml",
+              "price": 3600
+            },
+            {
+              "name": "X1000ml",
+              "price": 6900
+            }
+          ]
+        },
+        {
+          "name": "Zumo concentrado",
+          "description": "Concentrado líquido para preparar bebidas sabor a coco",
+          "variants": [
+            {
+              "name": "X1000ml",
+              "price": 7900
+            },
+            {
+              "name": "X500 ml",
+              "price": 3600
+            }
+          ]
+        },
+        {
+          "name": "Zumo lulo concentrado",
+          "description": "Concentrado líquido para preparar bebidas sabor a lulo",
+          "variants": []
+        },
+        {
+          "name": "Datiles",
+          "description": "Los dátiles son una fruta sabrosa y saludable, y aportan una buena dosis de energía gracias a sus múltiples propiedades beneficiosas",
+          "variants": [
+            {
+              "name": "X125grs",
+              "price": 13900
+            },
+            {
+              "name": "X250grs",
+              "price": 25900
+            },
+            {
+              "name": "Mediano",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Lechuga morada",
+          "description": "La lechuga morada es baja en sodio y en calorías, y por lo general es más saludable que la lechuga verde. Proporciona mucha vitamina A, vitamina K y potasio. La vitamina A tiene muchas funciones",
+          "variants": [
+            {
+              "name": "X1 Unidad",
+              "price": 5600
+            },
+            {
+              "name": "X 2 unidades",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Ciruela importada bandeja",
+          "description": "La ciruelas son una fruta ricas en fibra, poseen gran cantidad de agua y evitan la retención de líquidos. Son poco calóricas y contienen vitaminas del grupo B, A, E y K; fósforo, sodio, magnesio, calcio, cobre, boro y zinc.",
+          "variants": [
+            {
+              "name": "Bandeja",
+              "price": 10000
+            }
+          ]
+        },
+        {
+          "name": "Adobo",
+          "description": "El adobo es un super alido en la cocina ya que permite que las carnes tengan una fibra más tierna y jugosa, con un aroma apetitoso y una textura blanda.",
+          "variants": [
+            {
+              "name": "Pequeño x100 gr",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Papa criolla",
+          "description": "La papa criolla cruda es antiinflamatoria, desintoxicante y rica en vitaminas y minerales que fortalecen la salud digestiva, inmunológica y cardiovascular.",
+          "variants": [
+            {
+              "name": "X 500 grs",
+              "price": 3500
+            },
+            {
+              "name": "X 1000 grs",
+              "price": 5800
+            }
+          ]
+        },
+        {
+          "name": "Papa sabanera",
+          "description": "La papa sabanera es fuente de energía (carbohidratos), vitaminas C y B6, potasio y fibra. Beneficia el sistema inmune, la digestión y la salud cardiovascular.",
+          "variants": [
+            {
+              "name": "X 500 grs",
+              "price": 3500
+            },
+            {
+              "name": "X 1000 grs",
+              "price": 5800
+            }
+          ]
+        },
+        {
+          "name": "Pistachos",
+          "description": "Los pistachos son nutritivos y benefician la salud cardiovascular, regulan el azúcar en sangre, aportan antioxidantes, mejoran el ánimo y la digestión.",
+          "variants": [
+            {
+              "name": "X 90 grs",
+              "price": 11500
+            },
+            {
+              "name": "X 250 grs",
+              "price": 25000
+            }
+          ]
+        },
+        {
+          "name": "Cidra",
+          "description": "La cidra es una fruta baja en calorías y rica en fibra, vitaminas y minerales. Ayuda a mejorar la salud cardiovascular, controlar la diabetes, fortalecer el sistema inmunológico y favorecer la digestión. Además, tiene propiedades antioxidantes y antiinflamatorias.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Ajo Nacional",
+          "description": "El Ajo tiene entre sus propiedades medicinales naturales la peculiaridad de combatir infecciones respiratorias, dilata los bronquios, fluidifica las mucosas, estimula el sistema inmunológico",
+          "variants": [
+            {
+              "name": "X 1000gr Ahorro",
+              "price": 6500
+            },
+            {
+              "name": "X 200grs",
+              "price": 4200
+            },
+            {
+              "name": "X 400gr(Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Pepino Europeo",
+          "description": "Pepino Europeo",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 9000
+            },
+            {
+              "name": "X 1000gr",
+              "price": 17500
+            }
+          ]
+        },
+        {
+          "name": "Berenjena",
+          "description": "Es buena para el corazón. Ayuda a mantener un peso ideal. Ayuda a controlar el azúcar. Elimina virus y parásitos.",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 6500
+            },
+            {
+              "name": "X 1000gr",
+              "price": 11800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos Varios",
+      "products": [
+        {
+          "name": "Artículo Genérico",
+          "description": "",
+          "variants": [
+            {
+              "name": "X5 unidades",
+              "price": 79900
+            },
+            {
+              "name": "X1 Unidad",
+              "price": 17000
+            }
+          ]
+        },
+        {
+          "name": "Toronja",
+          "description": "",
+          "variants": [
+            {
+              "name": "x1kilo",
+              "price": 8800
+            }
+          ]
+        },
+        {
+          "name": "Cebolla Ocañera",
+          "description": "",
+          "variants": [
+            {
+              "name": "Bandeja x 1000 grs",
+              "price": 12800
+            },
+            {
+              "name": "Bandeja x 500 grs",
+              "price": 6500
+            }
+          ]
+        },
+        {
+          "name": "Raíces chinas",
+          "description": "Raíz china en bandeja",
+          "variants": [
+            {
+              "name": "(2)bandejas 500g",
+              "price": 5900
+            },
+            {
+              "name": "Bandeja x 250g",
+              "price": 3500
+            }
+          ]
+        },
+        {
+          "name": "Guisantes Bandeja",
+          "description": "",
+          "variants": [
+            {
+              "name": "2 Bandejas x125gr c/u (Ahorro)",
+              "price": 12300
+            }
+          ]
+        },
+        {
+          "name": "Aceite de coco",
+          "description": "El aceite de coco es beneficioso por sus propiedades antimicrobianas, mejora la salud cardiovascular, ayuda a quemar grasa, hidrata piel y cabello, y apoya la función cerebral. Es un aliado natural para la salud y el cuidado personal.",
+          "variants": [
+            {
+              "name": "X 1000 ml",
+              "price": 56000
+            },
+            {
+              "name": "X 500 ml",
+              "price": 30000
+            },
+            {
+              "name": "X 250 ml",
+              "price": 20500
+            },
+            {
+              "name": "X 105 ml",
+              "price": 15000
+            }
+          ]
+        },
+        {
+          "name": "Corozo",
+          "description": "El corozo es una fruta rica en vitaminas A y C, minerales como magnesio e hierro, y antioxidantes que benefician la salud visual, el sistema inmunológico y el corazón. Además, ayuda a controlar el colesterol, el azúcar en sangre y puede aumentar la hemoglobina, siendo un aliado para la salud integral.",
+          "variants": [
+            {
+              "name": "X500 grs",
+              "price": 8500
+            },
+            {
+              "name": "X1000 grs",
+              "price": 15000
+            }
+          ]
+        },
+        {
+          "name": "Cubios",
+          "description": "Los cubios son un tubérculo nutritivo que fortalece el sistema inmunológico, mejora la salud renal y cardiovascular, ayuda en la digestión y tiene propiedades antiinflamatorias y antimicrobianas.",
+          "variants": [
+            {
+              "name": "X 500 grs",
+              "price": 3600
+            },
+            {
+              "name": "X 1000 grs",
+              "price": 6900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Concentrados",
+      "products": [
+        {
+          "name": "Zumocereza concentrado",
+          "description": "Concentrado líquido para preparar bebidas sabor a cereza",
+          "variants": [
+            {
+              "name": "X500 ml",
+              "price": 4600
+            },
+            {
+              "name": "X1000ml",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Zumomaracuya concentr",
+          "description": "Concentrado líquido para preparar bebidas sabor a Maracuya",
+          "variants": [
+            {
+              "name": "X1000ml",
+              "price": 9000
+            },
+            {
+              "name": "X500 ml",
+              "price": 4500
+            }
+          ]
+        },
+        {
+          "name": "ZumoNaranja concentr",
+          "description": "Concentrado líquido para preparar bebidas sabor a Naranja",
+          "variants": [
+            {
+              "name": "X500 ml",
+              "price": 4600
+            },
+            {
+              "name": "X1000ml",
+              "price": 7900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Frutas Frescas",
+      "products": [
+        {
+          "name": "Aguacate",
+          "description": "Selección de aguacates frescos de alta calidad.",
+          "variants": [
+            {
+              "name": "Mediano x250gr",
+              "price": 0
+            },
+            {
+              "name": "Grande x500gr",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Sandía Baby",
+          "description": "La sandía baby es una excelente fuente de hidratación debido a su alto contenido de agua. También aporta vitaminas A y C, potasio y magnesio, que son esenciales para el crecimiento.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "Anón",
+          "description": "Es una fruta rica en antioxidantes, vitaminas y minerales que ayudan a combatir la inflamación, aumentar las defensas del organismo y controlar los niveles de azúcar en sangre",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 10000
+            }
+          ]
+        },
+        {
+          "name": "Feijoa",
+          "description": "Es una planta originaria de América del Sur que es conocida por sus grandes beneficios nutricionales que ayudan para tratamientos complementarios de algunas enfermedades.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Ciruela Importada",
+          "description": "Esta fruta es un alimento energético, alcalinizante, depurativo, tonificante y capaz de estimular el sistema nervioso. Además, tiene un bajo contenido calórico por lo que es recomendable consumirla en caso de querer bajar de peso.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 5000
+            }
+          ]
+        },
+        {
+          "name": "Durazno Importado",
+          "description": "El durazno es una fruta de múltiples propiedades medicinales. con piel aterciopelada, sabor dulce y delicado, el durazno es una fruta con múltiples beneficios para la salud.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Frambuesas Rojas",
+          "description": "No description provided.",
+          "variants": [
+            {
+              "name": "x125grs",
+              "price": 15000
+            },
+            {
+              "name": "x250grs (Ahorro)",
+              "price": 28000
+            }
+          ]
+        },
+        {
+          "name": "Frambuesas Amarillas",
+          "description": "No description provided.",
+          "variants": [
+            {
+              "name": "x125",
+              "price": 12000
+            },
+            {
+              "name": "x250 Ahorro",
+              "price": 21900
+            }
+          ]
+        },
+        {
+          "name": "Cerezas",
+          "description": "Las cerezas son una fruta rica en antioxidantes como las antocianinas y el ácido ascórbico, es decir, vitamina C. Estos antioxidantes combaten los radicales libres en nuestro cuerpo, ayudando a proteger nuestras células del estrés oxidativo y previniendo enfermedades crónicas. Además, contienen compuestos antiinflamatorios naturales, como las antocianinas y los flavonoides, que pueden ayudar a reducir la inflamación en el cuerpo",
+          "variants": [
+            {
+              "name": "X125 grs",
+              "price": 10900
+            },
+            {
+              "name": "X 250grs",
+              "price": 19900
+            }
+          ]
+        },
+        {
+          "name": "Uva verde importada sin semilla",
+          "description": "Uva verde importada sin semilla",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 20000
+            },
+            {
+              "name": "X1000 grs (Ahorro)",
+              "price": 38500
+            }
+          ]
+        },
+        {
+          "name": "Kiwis",
+          "description": "Beneficios del consumo de kiwi Entre los analizados se encuentra su papel beneficioso como antioxidante y para mejorar la función inmunitaria, la mejora de la función del tracto digestivo y respiratorio, y la mejora del estado de ánimo.",
+          "variants": [
+            {
+              "name": "Kiwis premium x bandeja x450grs",
+              "price": 11000
+            },
+            {
+              "name": "x2 bandejas x900grs (Ahorro)",
+              "price": 20500
+            }
+          ]
+        },
+        {
+          "name": "Lulos",
+          "description": "Tiene propiedades diuréticas Aumenta cantidad y calidad de formación de cabello y uñas Fortalece los huesos Disminuye colesterol malo Facilita eliminación del ácido úrico Fortalece las defensas Ayuda a mejorar enfermedades nerviosas",
+          "variants": [
+            {
+              "name": "Lulos premium x 500 gr",
+              "price": 3900
+            },
+            {
+              "name": "x500grs",
+              "price": 4900
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Uchuvas",
+          "description": "La uchuva no solo ayuda a regular el tránsito intestinal, también posee propiedades diuréticas que contribuyen a eliminar toxinas acumuladas en el organismo previniendo además problemas de retención de líquidos. Su poder depurativo hace que también sea recomendable para mantener la salud renal.",
+          "variants": [
+            {
+              "name": "x250grs",
+              "price": 4500
+            },
+            {
+              "name": "x500grs (Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Mangostinos",
+          "description": "El mangostino Fortalece el sistema inmune, muy necesario en los tiempos actuales. Al ser un poderoso antioxidante te ayudará a neutralizar los radicales libres y así proteger la integridad celular",
+          "variants": [
+            {
+              "name": "kilo",
+              "price": 19000
+            }
+          ]
+        },
+        {
+          "name": "Mango Comun",
+          "description": "El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,",
+          "variants": [
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 6900
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 6000
+            },
+            {
+              "name": "x500grs",
+              "price": 3700
+            }
+          ]
+        },
+        {
+          "name": "Pitahaya morada",
+          "description": "En Taiwán, utilizan su fruta para mejorar los niveles de azúcar en sangre en pacientes con hipoglucemia. Disminuye los niveles sanguíneos de triglicéridos, colesterol y lípidos de baja densidad.",
+          "variants": [
+            {
+              "name": "X 1kilo",
+              "price": 15500
+            },
+            {
+              "name": "X2 kilos",
+              "price": 28500
+            }
+          ]
+        },
+        {
+          "name": "Granada",
+          "description": "La granada ofrece múltiples beneficios: mejora la salud gastrointestinal y sexual, favorece la salud cardíaca y cutánea, fortalece el sistema inmunitario, y contribuye a una buena salud neurológica y a la prevención de la pérdida de memoria.",
+          "variants": [
+            {
+              "name": "X1 Unidad",
+              "price": 17000
+            },
+            {
+              "name": "X5 unidades",
+              "price": 79900
+            }
+          ]
+        },
+        {
+          "name": "Toronja",
+          "description": "",
+          "variants": [
+            {
+              "name": "x1000 grs",
+              "price": 8800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos Variados",
+      "products": [
+        {
+          "name": "Aloe Vera",
+          "description": "El Aloe Vera generar propiedades astringentes ayudan a eliminar la suciedad y la grasa acumulada en los poros. Aporta hidratación a la piel sin dar grasa. Regenera la piel y favorece la eliminación de los granitos",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Zarzamora",
+          "description": "Las zarzamoras ademas de ser una fruta rica en propiedades tambien se caracteriza porque aporta diversos beneficios para la salud, ayudando a prevenir enfermedades, como la diabetes, presión alta, etc, debido a sus propiedades antiinflamatorias y antioxidantes.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Cúrcuma",
+          "description": "La Cúrcuma es un potente antiinflamatorio es útil para tratar el dolor y las enfermedades inflamatorias como artritis, artrosis, etc. Previene el parkinson y el alzhéimer. Ademas de darle un excelente sabor a las comidad.",
+          "variants": [
+            {
+              "name": "Bandeja",
+              "price": 3500
+            },
+            {
+              "name": "Kilo",
+              "price": 6800
+            }
+          ]
+        },
+        {
+          "name": "Arveja en vaina",
+          "description": "Las arvejas son ricas en proteínas y carbohidratos, bajas en grasa y constituyen una buena fuente de fibra, vitaminas A, B y C; cuando se consumen frescas o refrigeradas, suministran tiamina y hierro.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 10000
+            }
+          ]
+        },
+        {
+          "name": "Habichuela",
+          "description": "Las habichuelas son legumbres que pertenecen a un grupo de alimentos indispensables dentro de una dieta equilibrada, gracias sobretodo a los diferentes beneficios y propiedades nutricionales que aportan.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 4500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Germinados",
+      "products": [
+        {
+          "name": "Cilantro",
+          "description": "Germinados de Cilantro",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 6700
+            }
+          ]
+        },
+        {
+          "name": "Remolacha",
+          "description": "Germinados de Remolacha",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 6700
+            }
+          ]
+        },
+        {
+          "name": "Alfalfa",
+          "description": "Germinados de Alfalfa",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 6700
+            }
+          ]
+        },
+        {
+          "name": "Repollo",
+          "description": "Germinados de Repollo",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 6700
+            }
+          ]
+        },
+        {
+          "name": "Rábano",
+          "description": "Germinados de Rábano",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 6700
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Picados para sopa",
+      "products": [
+        {
+          "name": "Zanahoria, frijol, alverja y varios",
+          "description": "Mezcla de zanahoria, frijol, alverja y otros vegetales listos para sopa.",
+          "variants": [
+            {
+              "name": "Paquete",
+              "price": 3600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Otros Productos",
+      "products": [
+        {
+          "name": "Polen",
+          "description": "",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 22900
+            }
+          ]
+        },
+        {
+          "name": "Ajo Negro Artesanal",
+          "description": "",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 28800
+            }
+          ]
+        },
+        {
+          "name": "Miel de Abejas 100% Natural",
+          "description": "La miel es buena para la salud porque es rica en energía, antioxidantes, vitaminas y minerales. También ayuda a fortalecer el sistema inmunológico y tiene propiedades antiinflamatorias y antibacterianas.",
+          "variants": [
+            {
+              "name": "x120 grs",
+              "price": 5500
+            },
+            {
+              "name": "x240 grs(Ahorro)",
+              "price": 9900
+            },
+            {
+              "name": "Frasco Grande",
+              "price": 49200
+            }
+          ]
+        },
+        {
+          "name": "Jenjibre",
+          "description": "Jengibre También se utiliza para los vértigos, náuseas y mareos de viaje, trastornos circulatorios y del riego sanguíneo, dolores y espasmos musculares, así como para los trastornos gástricos y digestivos. Desde la Antigüedad, el jengibre también se considera un afrodisíaco",
+          "variants": [
+            {
+              "name": "X 140 grs",
+              "price": 4900
+            },
+            {
+              "name": "X250gr",
+              "price": 8900
+            }
+          ]
+        },
+        {
+          "name": "Flor de Jamaica",
+          "description": "Los usos tradicionales de esta planta son muy variados e incluyen las flores para el tratamiento de diversos problemas incluyendo los siguientes. Sistema circulatorio. Alta presión sanguínea. Niveles altos de grasa en la sangre. Contra la diabetes. Obesidad. El té sin azúcar se usa en México contra la tos.",
+          "variants": [
+            {
+              "name": "X50 grs",
+              "price": 7900
+            },
+            {
+              "name": "X250grs",
+              "price": 25800
+            },
+            {
+              "name": "X500grs",
+              "price": 50900
+            }
+          ]
+        },
+        {
+          "name": "Pasta de Ajo",
+          "description": "El ajo es un antibiótico natural, mejora la circulación, ayuda al cuidado de la piel, sirve como un anticancerígeno, purifica la sangre en las arterias, dolores de garganta,",
+          "variants": [
+            {
+              "name": "x100 gr",
+              "price": 1500
+            },
+            {
+              "name": "x50gr",
+              "price": 800
+            },
+            {
+              "name": "Grande x500gr",
+              "price": 6000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Vegetales",
+      "products": [
+        {
+          "name": "Abichuelin",
+          "description": "El abichuelín es nutritivo, ayuda a controlar el azúcar y el colesterol, mejora la digestión y protege el corazón.",
+          "variants": [
+            {
+              "name": "X 1 bandeja",
+              "price": 3200
+            },
+            {
+              "name": "X 2 bandejas",
+              "price": 6200
+            }
+          ]
+        },
+        {
+          "name": "Maíz dulce",
+          "description": "El maíz dulce es rico en fibra, vitaminas (A, C y del grupo B) y minerales como potasio y hierro. Ayuda a mejorar la digestión, controlar el azúcar en sangre, proteger el corazón y la vista gracias a sus antioxidantes. Además, es un alimento energético y sin gluten, ideal para una dieta saludable.",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Pimenton amarillo",
+          "description": "El pimentón amarillo es rico en vitamina C, antioxidantes y fibra, lo que fortalece el sistema inmunológico, protege la vista, mejora la digestión y ayuda en el control de peso. Además, aporta minerales esenciales y tiene propiedades antiinflamatorias.",
+          "variants": [
+            {
+              "name": "X 1 bandeja",
+              "price": 4500
+            },
+            {
+              "name": "X 2 Bandejas",
+              "price": 8000
+            }
+          ]
+        },
+        {
+          "name": "Ají guajillo x50 g",
+          "description": "El ají guajillo aporta vitaminas y antioxidantes, tiene propiedades antiinflamatorias, mejora la circulación, acelera el metabolismo y facilita la digestión.",
+          "variants": [
+            {
+              "name": "Paquete",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "Tomate larga vida",
+          "description": "Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ...",
+          "variants": [
+            {
+              "name": "X500 grs(Ahorro)",
+              "price": 12800
+            },
+            {
+              "name": "x 500gr",
+              "price": 5000
+            },
+            {
+              "name": "x1000gr Ahorro",
+              "price": 9500
+            }
+          ]
+        },
+        {
+          "name": "Tomate chonto tamaño mixto",
+          "description": "Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ...",
+          "variants": [
+            {
+              "name": "X 500 gr",
+              "price": 4900
+            },
+            {
+              "name": "X 1000gr Ahorro",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Pimentón",
+          "description": "Recomendados para: Favorece la formación de colágeno, huesos y dientes. Favorece el crecimiento de: cabello, visión, uñas, mucosas. Sistema inmunológico. ... Transmisión y generación del impulso nervioso y muscular. Por su vitamina E como uno de los grandes antioxidantes aliados contra el cáncer.",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 4900
+            },
+            {
+              "name": "X 1000gr (Ahorro)",
+              "price": 8900
+            }
+          ]
+        },
+        {
+          "name": "Lechuga Hidroponica",
+          "description": "",
+          "variants": [
+            {
+              "name": "X1Unidad",
+              "price": 6500
+            },
+            {
+              "name": "X2 unidades (Ahorro)",
+              "price": 11500
+            },
+            {
+              "name": "X1 Unidad",
+              "price": 4800
+            },
+            {
+              "name": "X2 unidades (Ahorro)",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Lechuga Romana",
+          "description": "La lechuga romana es rica en vitaminas y minerales, como la vitamina A, C, K, B1, B2 y B3. Además, en lo que respecta a los minerales",
+          "variants": [
+            {
+              "name": "X2 unidades (Ahorro)",
+              "price": 7900
+            },
+            {
+              "name": "X1 Unidad",
+              "price": 4700
+            }
+          ]
+        },
+        {
+          "name": "Cebolla Puerro",
+          "description": "Se ha usado para aliviar la tos, el resfrío, el catarro y el asma. Pero más recientemente sus propiedades curativas han sido atribuidas a un componente llamado sulfuro de propilo, que se cree tiene un efecto similar al de la insulina",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 4500
+            },
+            {
+              "name": "X1000grs",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "Batata Rosada",
+          "description": "Batata Rosada",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 10900
+            }
+          ]
+        },
+        {
+          "name": "Zanahoria baby",
+          "description": "Zanahoria baby bandeja",
+          "variants": [
+            {
+              "name": "X200",
+              "price": 6800
+            },
+            {
+              "name": "X400grs (Ahorro)",
+              "price": 11900
+            }
+          ]
+        },
+        {
+          "name": "Lechuga Batavia",
+          "description": "Lechuga Batavia unidad x 700 grs",
+          "variants": [
+            {
+              "name": "Una unidad",
+              "price": 4500
+            },
+            {
+              "name": "Dos unidades (Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Auyama sakata",
+          "description": "Auyama sakata x kilo (1-2) Unidades",
+          "variants": [
+            {
+              "name": "1 kilo",
+              "price": 4000
+            },
+            {
+              "name": "2 kilos (Ahorro)",
+              "price": 7700
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Chiles y Ajíes",
+      "products": [
+        {
+          "name": "Ají chipotle",
+          "description": "El ají chipotle ayuda a aliviar el dolor, mejora la circulación, acelera el metabolismo, fortalece el sistema inmunológico y favorece la respiración. Además, aporta vitaminas y antioxidantes.",
+          "variants": [
+            {
+              "name": "x 50 g",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "Ají ancho",
+          "description": "El ají ancho es rico en vitaminas A y C, mejora la digestión, acelera el metabolismo, tiene propiedades antiinflamatorias y ayuda a proteger el sistema inmunológico.",
+          "variants": [
+            {
+              "name": "x 50g",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "Ají Jalapeño",
+          "description": "",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 8900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Navidad",
+      "products": [
+        {
+          "name": "Vino y galletas",
+          "description": "Vino siboney y galletas navideñas",
+          "variants": [
+            {
+              "name": "X1",
+              "price": 11900
+            },
+            {
+              "name": "X6",
+              "price": 69900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aguacates",
+      "products": [
+        {
+          "name": "Aguacate Individual",
+          "description": "Aguacates seleccionados para consumo individual o en pequeña cantidad, de alta calidad.",
+          "variants": [
+            {
+              "name": "X1 Unidad",
+              "price": 39300
+            },
+            {
+              "name": "X3 unidades domi gratis ahorro",
+              "price": 114900
+            }
+          ]
+        },
+        {
+          "name": "Caja de 24 unidades hass mediano",
+          "description": "Caja de aguacates Hass de tamaño mediano (24 unidades), en tres estados de maduración para toda la semana. La unidad sale a $608. El aguacate tiene numerosas propiedades y beneficios para la salud, destacando su beneficio para el corazón por su contenido de ácido oleico que reduce el colesterol malo y aumenta el bueno.",
+          "variants": [
+            {
+              "name": "Caja de 24 unidades *mediano* en 3 diferentes estados de maduracion para toda la semana",
+              "price": 16600
+            }
+          ]
+        },
+        {
+          "name": "Caja de 12 unidades Premium",
+          "description": "Caja de aguacates Premium (12 unidades), en tres estados de maduración para toda la semana. La unidad sale a $1658. El aguacate tiene numerosas propiedades y beneficios para la salud, destacando su beneficio para el corazón por su contenido de ácido oleico que reduce el colesterol malo y aumenta el bueno.",
+          "variants": [
+            {
+              "name": "Caja de 12 unidades *Premium* en 3 diferentes estados de maduracion para toda la semana",
+              "price": 24700
+            }
+          ]
+        },
+        {
+          "name": "Caja de 7 unidades injerto",
+          "description": "Caja de aguacates de injerto (7 unidades), en tres estados de maduración para tener fruta toda la semana. Puede incluir cualquier variedad semil o papelillo según disponibilidad. El aguacate tiene numerosas propiedades y beneficios para la salud, destacando su beneficio para el corazón por su contenido de ácido oleico que reduce el colesterol malo y aumenta el bueno.",
+          "variants": [
+            {
+              "name": "Caja de 7 unidades injerto *mediano*",
+              "price": 24000
+            }
+          ]
+        },
+        {
+          "name": "Paquete X 12 Unidades baby",
+          "description": "El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.",
+          "variants": [
+            {
+              "name": "Paquete X 12 Unidades baby",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Paquete x 8 unidades mediano",
+          "description": "El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.",
+          "variants": [
+            {
+              "name": "Paquete x 8 unidades mediano",
+              "price": 8900
+            }
+          ]
+        },
+        {
+          "name": "Paquete x4 unidades premium",
+          "description": "El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.",
+          "variants": [
+            {
+              "name": "Paquete x4 unidades premium",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Paquete 4 Unidades(injerto)",
+          "description": "El paquete viene En tres estados de maduración para que tengas fruta toda la semana El aguacate tiene numerosas propiedades y beneficios para la salud. Pero, sin duda, la más destacable es lo saludable que es para el corazón. Esto es debido a que contiene ácido oleico. Esta grasa monoinsaturada logra reducir el colesterol malo o LDL y aumentar el bueno o HDL.",
+          "variants": [
+            {
+              "name": "Paquete 4 Unidades(injerto) mediano",
+              "price": 10400
+            },
+            {
+              "name": "Paquete 4 Unidades(injerto)",
+              "price": 14400
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Promociones del Día",
+      "products": [
+        {
+          "name": "Caja promoción del día",
+          "description": "Aguacate criollo o injerto tamaño pequeño calidad segunda.",
+          "variants": [
+            {
+              "name": "Caja (6-8 unidades)",
+              "price": 14900
+            }
+          ]
+        },
+        {
+          "name": "Caja de 35 unidades hass baby",
+          "description": "La caja viene en tres estados de maduración para que tengas fruta toda la semana. El aguacate tiene numerosas propiedades y beneficios para la salud, siendo la más destacable lo saludable que es para el corazón, debido a su contenido de ácido oleico que reduce el colesterol malo (LDL) y aumenta el bueno (HDL).",
+          "variants": [
+            {
+              "name": "Caja Baby (35 unidades, 3 estados maduración)",
+              "price": 11000
+            },
+            {
+              "name": "Caja (35 unidades)",
+              "price": 15900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ofertas Ahorro",
+      "products": [
+        {
+          "name": "Maya injerto promoción",
+          "description": "3 unidades variedad injerto en tres estados de maduración. Aproximadamente 1.5 kilos",
+          "variants": [
+            {
+              "name": "3 unidades (aprox. 1.5 kilos)",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Combo Ahorro #2+",
+          "description": "Combo 1 caja de aguacates x 24 unidades + Arándanos x 250 grs Orgánicos",
+          "variants": [
+            {
+              "name": "Combo (1 caja x 24 unidades + Arándanos x 250 grs)",
+              "price": 29900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Combos y Ofertas",
+      "products": [
+        {
+          "name": "Combo Ahorro #1",
+          "description": "Combo#1 1.000gr de fresas premium + 900gr de kiwis premium de la mejor calidad frescos y listo para disfrutar",
+          "variants": [
+            {
+              "name": "Precio oferta",
+              "price": 30000
+            },
+            {
+              "name": "Precio regular",
+              "price": 34100
+            }
+          ]
+        },
+        {
+          "name": "Combo Ahorro #3",
+          "description": "Fresas premium X 500grs Arándanos x 250 Paquete X 4 Unidades PREMIUM en tres estados de maduración Arándanos Orgánicos x 250 grs Fresas x 500 gr",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 26600
+            }
+          ]
+        },
+        {
+          "name": "Nuevo combo 4",
+          "description": "Arándanos x 250 grs Fresas 1000gr Caja de 24 unidades* aguacate",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 40500
+            }
+          ]
+        },
+        {
+          "name": "Combo Mercado Semanal Completo",
+          "description": "Qué Incluye: Envío gratis Caja de 24 aguacates hass mediano Fresas premium (500 gr) Banano criollo (1 Kilo) Tomate Chonto (500 gr) Cebolla Cabezona (500 gr) Papa Sabanera (500 gr) Zanahoria (500 gr) Pasta de Ajo (100 gr) Arándanos Orgánicos (125 gr) Uva isabelina (Bandeja 400 gr) Duraznos (500 gr) Limón Tahiti (1000 gr)",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 68900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Aromáticas y Zumos",
+      "products": []
+    },
+    {
+      "name": "Hierbas",
+      "products": [
+        {
+          "name": "Manzanilla paquete",
+          "description": "La manzanilla se usa como remedio para dolores estomacales, tratamiento de úlceras gástricas y gastritis.",
+          "variants": [
+            {
+              "name": "Manzanilla Paquete 100grs pequeño",
+              "price": 3000
+            },
+            {
+              "name": "200grs mediano",
+              "price": 3700
+            }
+          ]
+        },
+        {
+          "name": "Hierbabuena",
+          "description": "La hierbabuena se usa para varios propósitos como la memoria, la digestión, la osteoartritis, las náuseas y los vómitos después de una cirugía.",
+          "variants": [
+            {
+              "name": "Hierbabuena Paquete x200grs",
+              "price": 3000
+            }
+          ]
+        },
+        {
+          "name": "Albahaca",
+          "description": "La albahaca favorece la digestión de los alimentos y ayuda a atenuar los espasmos gástricos",
+          "variants": [
+            {
+              "name": "Albahaca Paquete x100grs",
+              "price": 3900
+            }
+          ]
+        },
+        {
+          "name": "Laurel",
+          "description": "El laurel tiene beneficios respiratorios, especialmente para la congestión nasal y la tos.",
+          "variants": [
+            {
+              "name": "Laurel Paquete 200grs",
+              "price": 3000
+            }
+          ]
+        },
+        {
+          "name": "Orégano",
+          "description": "El orégano es conocido por ser antioxidante y ayudar a combatir bacterias, virus y hongos",
+          "variants": [
+            {
+              "name": "Orégano Paquete X100grs",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "Calendula",
+          "description": "La caléndula es antiinflamatorio y cicatrizante, ayuda a problemas digestivos y menstruales, entre otros usos.",
+          "variants": [
+            {
+              "name": "Paquete x200grs",
+              "price": 3000
+            }
+          ]
+        },
+        {
+          "name": "Diente de león",
+          "description": "El diente de león sirve para problemas digestivos leves y para limpiar las vías urinarias y los riñones.",
+          "variants": [
+            {
+              "name": "Paquete x100grs",
+              "price": 3800
+            }
+          ]
+        },
+        {
+          "name": "Limonaria",
+          "description": "",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hierbas Aromáticas y Medicinales",
+      "products": [
+        {
+          "name": "Romero",
+          "description": "El romero tiene propiedades antinflamatorias y antiespasmódicas, pues es tratamiento para el estreñimiento y la digestión de alimentos.",
+          "variants": [
+            {
+              "name": "Paquete x200grs",
+              "price": 3000
+            }
+          ]
+        },
+        {
+          "name": "Eucalipto",
+          "description": "El eucalipto sirve para tratar enfermedades respiratorias y antiséptico natural. Revisar contraindicaciones por su médico.",
+          "variants": [
+            {
+              "name": "Paquete x200grs",
+              "price": 3000
+            }
+          ]
+        },
+        {
+          "name": "Tomillo",
+          "description": "El tomillo es una planta aromática que se usa como condimento y medicina natural para combatir cólicos, dolores de estómago o gases.",
+          "variants": [
+            {
+              "name": "Paquete x100grs",
+              "price": 4000
+            }
+          ]
+        },
+        {
+          "name": "Menta",
+          "description": "La menta es una planta vital para los problemas digestivos y respiratorios, también combate los dolores de cabeza fuertes y sirve como antiparasitario muy efectivo.",
+          "variants": [
+            {
+              "name": "Paquete x100grs",
+              "price": 3800
+            }
+          ]
+        },
+        {
+          "name": "Sábila",
+          "description": "La sábila es útil para afecciones de la piel y quemaduras, sirve como hidratante para las pieles secas y atenuar las arrugas, laxante o depurativo(favorece el tránsito intestinal).",
+          "variants": [
+            {
+              "name": "Hoja mediana",
+              "price": 4000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Frutos rojos",
+      "products": [
+        {
+          "name": "Arándanos Orgánicos",
+          "description": "-Protege el corazón -Posee acción antiinflamatoria -Previene la diabetes -Mejora la memoria - Es adecuado ante las infecciones de orina -Tiene efectos beneficiosos sobre la visión - Perfectos para dietas de adelgazamiento",
+          "variants": [
+            {
+              "name": "X125grs",
+              "price": 7900
+            },
+            {
+              "name": "X250grs (Ahorro)",
+              "price": 14300
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Frutos Rojos",
+      "products": [
+        {
+          "name": "Frambuesas silvestres Org",
+          "description": "Su ciclo de vida es muy corto 1-2 días Las frambuesas son ricas en calcio, potasio, vitamina B9 (ácido fólico) y vitamina C. Sus fitonutrientes disminuyen el estrés oxidativo y la inflamación de las células. Favorece la salud ocular y de la piel.",
+          "variants": [
+            {
+              "name": "x125 grs",
+              "price": 8500
+            },
+            {
+              "name": "x250 grs (Ahorro)",
+              "price": 16000
+            }
+          ]
+        },
+        {
+          "name": "Agraz",
+          "description": "El agraz ayuda a desintoxicar el cuerpo, por lo que es ideal para prevenir infecciones urinarias, también ayuda a aliviar los síntomas del estreñimiento y otras enfermedades del sistema digestivo.",
+          "variants": [
+            {
+              "name": "x120 grs",
+              "price": 5500
+            },
+            {
+              "name": "x 240 grs (Ahorro)",
+              "price": 9500
+            }
+          ]
+        },
+        {
+          "name": "Mora Real norteamericana",
+          "description": "Es una gran fuente de fibra y de vitamina C Y por la presencia de las vitaminas C y A contribuyen a nutrir los huesos, los dientes, la piel, la generación de colágeno o la absorción de hierro.",
+          "variants": [
+            {
+              "name": "x125 grs",
+              "price": 11000
+            },
+            {
+              "name": "x250 grs (Ahorro)",
+              "price": 19900
+            }
+          ]
+        },
+        {
+          "name": "Fresas premium",
+          "description": "La fresa es una abundante fuente de vitamina C, que es un antioxidante y previene los resfriados, infecciones y también fortalece los huesos y los dientes. Cuenta con antocianinas (sustancia química que da su color) y ayuda a prevenir el envejecimiento prematuro de la piel y la arteriosclerosis.",
+          "variants": [
+            {
+              "name": "X500 gr",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Fresa Económica",
+          "description": "",
+          "variants": [
+            {
+              "name": "X 1000 gr",
+              "price": 15500
+            },
+            {
+              "name": "Unidad",
+              "price": 4300
+            },
+            {
+              "name": "X500grs",
+              "price": 6300
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 10500
+            }
+          ]
+        },
+        {
+          "name": "Uva isabelina",
+          "description": "Las uvas, una fruta que te ayudará a controlar los niveles de azúcar en sangre y la presión arterial Es un alimento rico en antioxidantes, también es diurética, antiinflamatoria y ayuda a cuidar la vista El consumo de uvas podría ser beneficioso para la microbiota, según un nuevo estudio.",
+          "variants": [
+            {
+              "name": "Bandeja x 400grs",
+              "price": 4000
+            },
+            {
+              "name": "Bandeja x800grs (Ahorro)",
+              "price": 6900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Uvas",
+      "products": [
+        {
+          "name": "Uva chilena importada",
+          "description": "Uva chilena importada Premium",
+          "variants": [
+            {
+              "name": "X500 grs",
+              "price": 16300
+            },
+            {
+              "name": "X1000grs (Ahorro)",
+              "price": 31000
+            }
+          ]
+        },
+        {
+          "name": "Red globe nacional",
+          "description": "Uva red globe nacional",
+          "variants": [
+            {
+              "name": "Bandeja x 400grs",
+              "price": 8800
+            },
+            {
+              "name": "X 800grs (Ahorro)",
+              "price": 16500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Tropicales",
+      "products": [
+        {
+          "name": "Duraznos",
+          "description": "Durazno: es una buena fuente de betacaroteno, vitaminas del complejo B como B1, B2, vitamina C y vitamina K. Contiene magnesio, calcio, fósforo, también contiene luteína, bioflavonoides y antioxidantes que ayudan a estimular el sistema inmunológico",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 5200
+            },
+            {
+              "name": "X1000grs (Ahorro)",
+              "price": 9900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Frutas",
+      "products": [
+        {
+          "name": "Granadillas",
+          "description": "La granadilla te puede ayudar a prevenir el estreñimiento, los malestares de la gastritis y la acidez. Además, si la consumes con sus semillas le brinda a tu cuerpo un alto contenido de fibra, potasio, calcio, fósforo, hierro, vitaminas, proteínas y carbohidratos.",
+          "variants": [
+            {
+              "name": "Bandeja (4 a 5 unidades)",
+              "price": 7400
+            },
+            {
+              "name": "2 Bandejas (Ahorro)",
+              "price": 13000
+            }
+          ]
+        },
+        {
+          "name": "Manzana roja Bandeja",
+          "description": "Ayudan a purificar la sangre, a limpiar el intestino y favorecen la salud del hígado. Tienen un alto contenido en hierro, mineral que combate la anemia y su jugo es ideal para tratar la fiebre",
+          "variants": [
+            {
+              "name": "x1 Bandeja (6 unidades)",
+              "price": 9500
+            },
+            {
+              "name": "x2 bandejas (Ahorro)",
+              "price": 17000
+            }
+          ]
+        },
+        {
+          "name": "Manzana verde Bandeja",
+          "description": "La manzana verde es uno de los mejores alimentos para diabéticos, ya que gracias a su alto contenido en fibra ayuda a regular la presencia de glucosa en sangre. También ayuda a todos aquellos que estén en fase de prediabetes a retrasar el desarrollo de esta enfermedad",
+          "variants": [
+            {
+              "name": "x1 Bandeja (6 unidades)",
+              "price": 11000
+            },
+            {
+              "name": "x2 Bandejas (Ahorro)",
+              "price": 19900
+            }
+          ]
+        },
+        {
+          "name": "Manzana bandj combinada",
+          "description": "Previene el estreñimiento. Su alto contenido en fibra favorece el tránsito intestinal y ayuda a la digestión de las grasas. Poder antioxidante. ... Mejora el sistema inmune. ... Favorece el bienestar. ... Perfecto para hacer dieta. ... Es muy nutritiva. ... Disminuye la fatiga. ... Buena para los dientes.",
+          "variants": [
+            {
+              "name": "X1 Bandeja (6 unidades)",
+              "price": 9500
+            }
+          ]
+        },
+        {
+          "name": "Rambutan o lichi peludo",
+          "description": "El rambután se compone de ácido gálico y una cantidad de antioxidantes, que ayudan a combatir el envejecimiento prematuro. Refuerza el sistema inmunológico. Debido a su contenido en vitamina C fortalece el sistema inmunológico. Fortalece huesos.",
+          "variants": [
+            {
+              "name": "x2 Bandejas (Ahorro)",
+              "price": 18000
+            },
+            {
+              "name": "x250 grs",
+              "price": 12500
+            },
+            {
+              "name": "x500grs",
+              "price": 24000
+            }
+          ]
+        },
+        {
+          "name": "Pera Nacional",
+          "description": "Por su bajo contenido en sodio e hidratos de carbono,",
+          "variants": [
+            {
+              "name": "x1 Bandeja (4-5 unidades)",
+              "price": 7500
+            },
+            {
+              "name": "x2 Bandeja (Ahorro)",
+              "price": 13500
+            }
+          ]
+        },
+        {
+          "name": "Limón tahiti",
+          "description": "Los limones contienen vitamina C, un poderoso antioxidante, y son una fuente de compuestos vegetales llamados flavonoides, que tienen efectos antioxidantes y antiinflamatorios. Los antioxidantes son compuestos que ayudan a proteger las células del cuerpo del daño.",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 3700
+            },
+            {
+              "name": "x1000grs",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "Tomate de Árbol",
+          "description": "El Tomate de Árbol Además de polifenoles, el tomate de árbol es rico en licopeno, carotenoide conocido por su alto poder antioxidante; se ha demostrado que el consumo de frutas ricas en carotenoides ejerce un efecto protectivo hacia el desarrollo de hiperglicemia.",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 3300
+            },
+            {
+              "name": "X1000gr",
+              "price": 5400
+            },
+            {
+              "name": "x500grs",
+              "price": 4500
+            },
+            {
+              "name": "x1000grs Ahorro",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Borojo maya",
+          "description": "Disminuye la fatiga durante el ejercicio. Aporta una buena porción de fibra dietética. Fortalece huesos, dientes y encías. El Borojo Es una fuente de fósforo. Mejora el funcionamiento del corazón, sistema nervioso y digestivo. Es rica en vitamina C y antioxidantes.",
+          "variants": [
+            {
+              "name": "x1 (160grs)",
+              "price": 3500
+            },
+            {
+              "name": "x2 (320grs)(Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Naranja valencia",
+          "description": "Las Naranjas Son ricas en calcio, que protege los huesos y dientes, manteniéndolos sanos. Su consumo ayuda a reducir la absorción de grasas y a bajar el colesterol y la tensión. Tiene propiedades antiinflamatorias, por lo que es beneficiosa para las personas con artritis.",
+          "variants": [
+            {
+              "name": "X2000grs maya",
+              "price": 6300
+            },
+            {
+              "name": "X4000grs (Ahorro)",
+              "price": 11400
+            }
+          ]
+        },
+        {
+          "name": "Banano bocadillo",
+          "description": "Fuente de carbohidratos. Gran aporte de vitaminas. Fuente de minerales. Protege nuestro corazón. Reducen la fatiga y el cansancio. Previene la anemia. Estimula el sistema nervioso. Regula la función intestinal.",
+          "variants": [
+            {
+              "name": "Kilo",
+              "price": 7400
+            }
+          ]
+        },
+        {
+          "name": "Gulupa",
+          "description": "GULUPA ES UNA ALTA FUENTE DE FIBRA. UNA ALTA FUENTE DE VITAMINA C. UNA ALTA FUENTE DE VITAMINA A. UNA BUENA FUENTE DE POTASIO. UNA FUENTE NATURAL DE HIERRO. UNA FUENTE NATURAL DE FÓSFORO. UNA FUENTE NATURAL DE MAGNESIO.",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 3700
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Pitaya",
+          "description": "La Pitaya Propiedades y beneficios Refuerza el sistema inmunológico. ... Posee efectos antiinflamatorios. ... Regula el tránsito intestinal. ... Reduce el nivel de azúcar en sangre. ... Evita la anemia ferropénica. ... Mejora el estado de huesos y articulaciones. ... Ayuda en las dietas de adelgazamiento. ... Retrasa el envejecimiento celular.",
+          "variants": [
+            {
+              "name": "x1 Bandeja",
+              "price": 5900
+            },
+            {
+              "name": "x2 Bandejas (Ahorro)",
+              "price": 10500
+            }
+          ]
+        },
+        {
+          "name": "Carambolo",
+          "description": "Recomendada para diabetes, hipertensión y afecciones de corazón y vasos sanguíneos. Esta fruta se caracteriza por un bajo aporte en hidratos de carbono, lo que hace de ella un buen alimento para ser tomado por personas que padecen de diabetes, así como por ser rica en potasio",
+          "variants": [
+            {
+              "name": "x1 Bandeja",
+              "price": 5500
+            },
+            {
+              "name": "x2 Bandejas (Ahorro)",
+              "price": 10000
+            }
+          ]
+        },
+        {
+          "name": "Mango Azúcar",
+          "description": "El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 5000
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Manzana de Agua",
+          "description": "",
+          "variants": [
+            {
+              "name": "x1 Bandeja 400grs",
+              "price": 4500
+            },
+            {
+              "name": "x2 Bandejas 800grs",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Pera importada",
+          "description": "Las peras son ricas en sales minerales y en vitaminas C y A. La vitamina A es necesaria para el buen funcionamiento de la vista, para el crecimiento óseo",
+          "variants": [
+            {
+              "name": "x1 Bandeja",
+              "price": 9000
+            },
+            {
+              "name": "x2 Bandejas (Ahorro)",
+              "price": 17500
+            }
+          ]
+        },
+        {
+          "name": "Ciruela nacional",
+          "description": "La ciruela es considerada una fruta cítrica que aporta vitamina C, entonces se ha visto que el poder antioxidante que tiene por contener antocianina y al ser una fruta de color rojo",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 4200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fruits",
+      "products": [
+        {
+          "name": "Coco",
+          "description": "Los beneficios del coco para la salud Se ha estimado que el 50 % de la grasa del coco es ácido láurico, un tipo de lípido que aumenta los niveles de colesterol bueno y reduce el riesgo de padecer enfermedades cardiovasculares. Además, este ácido posee tiene propiedades antibacterianas, antifúngicas y antivirales.",
+          "variants": [
+            {
+              "name": "x1 Unidad mediano",
+              "price": 9990
+            },
+            {
+              "name": "x2 cocos (Ahorro)",
+              "price": 17000
+            }
+          ]
+        },
+        {
+          "name": "Tamarindo",
+          "description": "El Tamarindo Tiene un alto contenido de vitamina C, E y B1. Posee minerales como el calcio, zinc, potasio, hierro, fósforo y magnesio. Favorece el transporte de oxígeno en el sistema circulatorio. Regula el nivel de colesterol en la sangre",
+          "variants": [
+            {
+              "name": "x1 Unidad 165grs",
+              "price": 5500
+            },
+            {
+              "name": "x2 Unidades (Ahorro)",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Mandarina",
+          "description": "Mandarina el alto nivel de nutrientes de la mandarina nos protege contra problemas cardíacos, infecciones, anemias, alergias, diabetes y varios tipos de cáncer. Asimismo, contribuye a combatir el colesterol, estreñimiento, presión arterial, deshidratación, obesidad y estrés.",
+          "variants": [
+            {
+              "name": "x500grs",
+              "price": 4600
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Banano criollo Kilo",
+          "description": "Banano Fuente de carbohidratos. Gran aporte de vitaminas. Fuente de minerales. Protege nuestro corazón. Reducen la fatiga y el cansancio. Previene la anemia. Estimula el sistema nervioso. Regula la función intestinal.",
+          "variants": [
+            {
+              "name": "Kilo",
+              "price": 7500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Desgranados",
+      "products": [
+        {
+          "name": "Arveja desgranada",
+          "description": "Arveja desgranada",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 15000
+            },
+            {
+              "name": "X1000grs",
+              "price": 28000
+            }
+          ]
+        },
+        {
+          "name": "Frijol desgranado",
+          "description": "Frijol desgranado",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 8100
+            },
+            {
+              "name": "X1000gr",
+              "price": 15900
+            }
+          ]
+        },
+        {
+          "name": "Arveja Amarila Ecómica",
+          "description": "Arveja Amarila Ecómica",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 9500
+            },
+            {
+              "name": "X1000grs",
+              "price": 17500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Fresh Produce",
+      "products": [
+        {
+          "name": "Mazorca desgranada fresca",
+          "description": "El maíz es fuente natural de fibra insoluble la cual previene el tránsito intestinal lento, estimulando los movimientos peristálticos del tracto digestivo, además contiene fibra soluble la cual tiene propiedades en cuanto a la disminución de azúcar y grasa en la sangre",
+          "variants": [
+            {
+              "name": "X500 grs",
+              "price": 7800
+            },
+            {
+              "name": "X 1000 grs",
+              "price": 13800
+            }
+          ]
+        },
+        {
+          "name": "Habas desgranadas",
+          "description": "",
+          "variants": [
+            {
+              "name": "X500 grs",
+              "price": 8800
+            },
+            {
+              "name": "X1000 grs (Ahorro)",
+              "price": 15800
+            }
+          ]
+        },
+        {
+          "name": "Yacon",
+          "description": "",
+          "variants": [
+            {
+              "name": "bandeja X500 grs",
+              "price": 7900
+            },
+            {
+              "name": "Dos bandejas 1000gr (Ahorro)",
+              "price": 13900
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Gourmet",
+      "products": [
+        {
+          "name": "Platano verde",
+          "description": "Mejorar el funcionamiento del intestino. ... Prevenir la diabetes. ... Disminuir el colesterol LDL. ... Combatir la depresión. ... Prevenir enfermedades cardiovasculares. ... Ayudar en el proceso de pérdida de peso.",
+          "variants": [
+            {
+              "name": "Platano Paquete x 4 Unidades",
+              "price": 6800
+            },
+            {
+              "name": "4uni 1500 grs",
+              "price": 8900
+            },
+            {
+              "name": "8uni 3000grs",
+              "price": 16700
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Vegetables",
+      "products": [
+        {
+          "name": "Mazorca baby",
+          "description": "Las mini-mazorcas son ricas en nutrientes y una porción de 12 taza cumple con el 4% del valor diario recomendado de vitamina A y hierro y con el 2% del valor diario de vitamina C. Como nutrientes esenciales para el sistema inmune, las vitaminas A y C ayudan a tu cuerpo a combatir infecciones",
+          "variants": [
+            {
+              "name": "X 250grs",
+              "price": 8500
+            },
+            {
+              "name": "X500grs",
+              "price": 16000
+            }
+          ]
+        },
+        {
+          "name": "Col bruselas(repollitas)",
+          "description": "Las coles de Bruselas están repletas de vitaminas, minerales y fibra. Usted puede confiar en que estas coles le brinden soporte a su sistema inmunitario, la salud de la sangre y los huesos, y más. Comer solo unas pocas coles de Bruselas le proporcionará mucha vitamina C y vitamina K.",
+          "variants": [
+            {
+              "name": "X 250grs",
+              "price": 5500
+            },
+            {
+              "name": "X 250grs",
+              "price": 7500
+            },
+            {
+              "name": "X500grs(Ahorro)",
+              "price": 13800
+            }
+          ]
+        },
+        {
+          "name": "Jalapeños bandeja",
+          "description": "Fuente de Vitaminas. ... Quema de calorías. ... Mayor oxigenación. ... Sensación de Plenitud. ... Protector gástrico. ... Mejora al corazón. ... Efecto antioxidante. ... Combate el Acné",
+          "variants": [
+            {
+              "name": "bandeja pequeña",
+              "price": 2800
+            },
+            {
+              "name": "bandeja 140g",
+              "price": 3800
+            },
+            {
+              "name": "bandeja 300g",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "Chiles",
+          "description": "Contiene vitaminas B y E, además de ser una buena fuente de hierro y potasio. Es rico en capsaicina que ayuda a quemar grasa durante el proceso digestivo. Acelera el metabolismo hasta en un 25%, reduce el apetito y limpia el estómago. El chile tiene efectos antiinflamatorios y es un anticoagulante natural.",
+          "variants": [
+            {
+              "name": "x125 grs",
+              "price": 2800
+            },
+            {
+              "name": "x125 grs",
+              "price": 3800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hongos y Maíz",
+      "products": [
+        {
+          "name": "Champiñones enteros",
+          "description": "Enteros frescos blancos de la mejor calidad",
+          "variants": [
+            {
+              "name": "x250 grs(Ahorro)",
+              "price": 6000
+            },
+            {
+              "name": "X250 grs",
+              "price": 10000
+            },
+            {
+              "name": "X500grs",
+              "price": 18500
+            },
+            {
+              "name": "X1000grs",
+              "price": 27900
+            }
+          ]
+        },
+        {
+          "name": "Champiñones tajados bandeja",
+          "description": "el champiñón es fuente de vitaminas del Grupo B y D además de minerales como el potasio, el fósforo y el hierro, entre otros. Esta composición lo convierte en un posible aliado en la prevención de enfermedades como el cáncer, la diabetes o el deterioro cognitivo.",
+          "variants": [
+            {
+              "name": "Champiñones tajados x 70grs bandeja",
+              "price": 3500
+            },
+            {
+              "name": "X 1 unidad",
+              "price": 4000
+            },
+            {
+              "name": "X 2 unidades (Ahorro)",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Mazorca sabanera x3 uni",
+          "description": "Antioxidantes: El maíz es fuente de antioxidantes que combaten los radicales libres y el envejecimiento celular. Saciante: Rico en fibra e hidratos de carbono el maíz es saciante y ayuda a controlar nuestro apetito.",
+          "variants": [
+            {
+              "name": "Mazorca premium bandeja 3 unidades",
+              "price": 5000
+            },
+            {
+              "name": "X1 Bandeja",
+              "price": 8800
+            },
+            {
+              "name": "X2 Bandejas (Ahorro)",
+              "price": 16500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hortalizas",
+      "products": [
+        {
+          "name": "Zucchini Amarillo",
+          "description": "La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario.",
+          "variants": [
+            {
+              "name": "500gr",
+              "price": 4900
+            },
+            {
+              "name": "1000gr Ahorro",
+              "price": 8500
+            }
+          ]
+        },
+        {
+          "name": "Zucchini verde",
+          "description": "La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario.",
+          "variants": [
+            {
+              "name": "1000gr (Ahorro)",
+              "price": 7500
+            },
+            {
+              "name": "500gr",
+              "price": 3900
+            }
+          ]
+        },
+        {
+          "name": "Tomate Uvalina",
+          "description": "Los tomates uva son más oblongos que los tomates cherry y se parecen más a las uvas en términos de su forma (de ahí el nombre de tomate uva!). También son más pequeños que los tomates cherry (aproximadamente la mitad del tamaño) y tienen una piel más gruesa. Los tomates uva tampoco son tan dulces como los tomates cherry y su carne es más carnosa y menos acuosa.",
+          "variants": [
+            {
+              "name": "X 250 grs",
+              "price": 7500
+            },
+            {
+              "name": "X500grs(Ahorro)",
+              "price": 13800
+            }
+          ]
+        },
+        {
+          "name": "Tomate cherry",
+          "description": "Fuente de vitamina A: contiene una cantidad importante de vitamina A, básicamente en forma de carotenoides, concretamente de licopeno. Estos pigmentos son, a su vez, responsables del color de esta verdura. La vitamina A es esencial para la piel y los dientes.",
+          "variants": [
+            {
+              "name": "X 250 grs",
+              "price": 6600
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hortalizas Frescas",
+      "products": [
+        {
+          "name": "Producto Anterior (Sin Nombre)",
+          "description": "Producto sin nombre identificado en este segmento del menú. Los siguientes son los detalles de sus variantes.",
+          "variants": [
+            {
+              "name": "x 500 gr",
+              "price": 25000
+            },
+            {
+              "name": "X 1000gr (Ahorro)",
+              "price": 48000
+            }
+          ]
+        },
+        {
+          "name": "Zanahoria",
+          "description": "Mejora la vista. Protege la dentadura. Ayuda en los problemas intestinales. Tiene propiedades diuréticas. Por su elevado contenido en agua son diuréticas y ayudan a la desintegración de los cálculos renales. Proporcionan energía al cerebro. Buena para uñas y cabello",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 3400
+            },
+            {
+              "name": "X 1000gr Ahorro",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Remolacha",
+          "description": "Es un potente anticancerígeno. Controla la tensión arterial. Ayuda a prevenir ataques de asma. Es un alimento excelente para atletas. Contribuye al buen estado de la vista.",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 4800
+            },
+            {
+              "name": "X 1000gr Ahorro",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "Cebolla larga malla",
+          "description": "",
+          "variants": [
+            {
+              "name": "X 1 kilo",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Cebolla cabezona blanca",
+          "description": "",
+          "variants": []
+        }
+      ]
+    },
+    {
+      "name": "Verduras",
+      "products": [
+        {
+          "name": "Cebolla roja mediana",
+          "description": "Las cebollas son una fuente de fibra, lo que contribuye a la ingesta de fibras solubles. El tipo de fibra presente en las cebollas puede reducir la probabilidad de desarrollar enfermedades cardiovasculares",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 4900
+            },
+            {
+              "name": "X 1000gr (Ahorro)",
+              "price": 8900
+            },
+            {
+              "name": "X 500grs",
+              "price": 6200
+            },
+            {
+              "name": "X 1000gr Ahorro",
+              "price": 10900
+            }
+          ]
+        },
+        {
+          "name": "Apio tallos bandeja",
+          "description": "Tallos de de apio bandeja",
+          "variants": [
+            {
+              "name": "X250",
+              "price": 4500
+            },
+            {
+              "name": "X500",
+              "price": 8800
+            }
+          ]
+        },
+        {
+          "name": "Apio Entero paquete",
+          "description": "El apio, rico en fibra, es también un excelente regulador del tránsito intestinal. Previene el estreñimiento, favorece una buena digestión,",
+          "variants": [
+            {
+              "name": "X1 Unidad Aprox 500grs",
+              "price": 4400
+            },
+            {
+              "name": "X2 Aprox 1000 grs (Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Rabanos",
+          "description": "",
+          "variants": [
+            {
+              "name": "X Bandeja X 400grs",
+              "price": 5500
+            },
+            {
+              "name": "X 800gr (Ahorro)",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Brocoli",
+          "description": "Bueno para la anemia. Protege al corazón. Mejora la hipertensión",
+          "variants": [
+            {
+              "name": "X500grs",
+              "price": 5500
+            },
+            {
+              "name": "X 1000gr (Ahorro)",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Ajo importado malla",
+          "description": "El Ajo tiene entre sus propiedades medicinales naturales la peculiaridad de combatir infecciones respiratorias, dilata los bronquios, fluidifica las mucosas, estimula el sistema inmunológico.",
+          "variants": [
+            {
+              "name": "Unidad 110grs",
+              "price": 4200
+            },
+            {
+              "name": "2 unidades (Ahorro)",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Pepino cohombro",
+          "description": "Contiene (ligninas) que ayudan a combatir algunos tipos de cáncer como seno, próstata y uterino. Ayuda a reducir los niveles de colesterol",
+          "variants": [
+            {
+              "name": "X 500grs",
+              "price": 3600
+            }
+          ]
+        },
+        {
+          "name": "Rugula Bandeja",
+          "description": "Rugula Bandeja x 150 grs Aprox",
+          "variants": [
+            {
+              "name": "X1 unidad",
+              "price": 4500
+            },
+            {
+              "name": "unidades (Ahorro)",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Kale crespo",
+          "description": "Kale crespo Bandeja x130grs",
+          "variants": [
+            {
+              "name": "Una unidad",
+              "price": 3900
+            },
+            {
+              "name": "Dos Unidades (Ahorro)",
+              "price": 6500
+            }
+          ]
+        },
+        {
+          "name": "Repollo unidad",
+          "description": "Repollo unidad de 1200 grs Aprox",
+          "variants": [
+            {
+              "name": "Una unidad",
+              "price": 7300
+            },
+            {
+              "name": "Dos Unidades(Ahorro)",
+              "price": 13900
+            }
+          ]
+        },
+        {
+          "name": "Acelga",
+          "description": "Acelga",
+          "variants": [
+            {
+              "name": "500grs",
+              "price": 3300
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Verduras y Hierbas",
+      "products": [
+        {
+          "name": "Espinaca paquete x1 Kilo",
+          "description": "Espinaca fresca en presentación de 1 kilogramo.",
+          "variants": [
+            {
+              "name": "1000grs (Ahorro)",
+              "price": 6200
+            }
+          ]
+        },
+        {
+          "name": "Espinaca x paquete",
+          "description": "Espinaca fresca en paquete.",
+          "variants": [
+            {
+              "name": "Paquete",
+              "price": 8700
+            }
+          ]
+        },
+        {
+          "name": "Cilantro fresco",
+          "description": "Cilantro en paquete.",
+          "variants": [
+            {
+              "name": "Paquete x 125 grs",
+              "price": 3500
+            },
+            {
+              "name": "Paquete x 250 grs (Ahorro)",
+              "price": 6900
+            }
+          ]
+        },
+        {
+          "name": "Perejil liso",
+          "description": "Perejil en paquete.",
+          "variants": [
+            {
+              "name": "Pequeño 100 grs",
+              "price": 3000
+            },
+            {
+              "name": "Mediano 200 grs (Ahorro)",
+              "price": 5800
+            }
+          ]
+        },
+        {
+          "name": "Cebollin",
+          "description": "Cebollín fresco.",
+          "variants": [
+            {
+              "name": "125grs",
+              "price": 3800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Produce",
+      "products": [
+        {
+          "name": "Alcachofa",
+          "description": "Alcachofa x unidad",
+          "variants": [
+            {
+              "name": "250grs",
+              "price": 7500
+            },
+            {
+              "name": "X1 Unidad",
+              "price": 6000
+            },
+            {
+              "name": "X2 unidades",
+              "price": 11900
+            }
+          ]
+        },
+        {
+          "name": "Raíces chinas",
+          "description": "Raíz china en bandeja",
+          "variants": [
+            {
+              "name": "Bandeja x 250g",
+              "price": 3500
+            },
+            {
+              "name": "(2)bandejas 500g",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Cebolla Ocañera",
+          "description": "",
+          "variants": [
+            {
+              "name": "Bandeja x 500 grs",
+              "price": 6500
+            },
+            {
+              "name": "Bandeja x 1000 grs",
+              "price": 12800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Other Products",
+      "products": [
+        {
+          "name": "Bandejas",
+          "description": "",
+          "variants": [
+            {
+              "name": "Bandeja x 125 grs",
+              "price": 6400
+            },
+            {
+              "name": "2 Bandejas x125gr c/u (Ahorro)",
+              "price": 12300
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "SALUDABLES",
+      "products": [
+        {
+          "name": "Semillas de quinoa",
+          "description": "Tiene más proteína que cualquier cereal. Es ideal para veganos. Previene enfermedades. Buena para los diabéticos. Contiene carbohidratos complejos. Posee grasas buenas. Rica en fibra y minerales. Repleta de vitaminas.",
+          "variants": [
+            {
+              "name": "x 125 grs",
+              "price": 4000
+            },
+            {
+              "name": "x120 grs",
+              "price": 5000
+            },
+            {
+              "name": "x240grs (Ahorro)",
+              "price": 9500
+            }
+          ]
+        },
+        {
+          "name": "Semillas de Chía",
+          "description": "Beneficios de la Chía Son ricas en antioxidantes. Son excelente fuente de fibra. Gran aporte de proteínas buenas. Alto contenido de ácidos grasos Omega-3. Ayudan a tu salud metabólica. Proveen de nutrientes para los huesos. Previenen la diabetes.",
+          "variants": [
+            {
+              "name": "x 125 grs",
+              "price": 4600
+            },
+            {
+              "name": "x 120 grs",
+              "price": 5600
+            },
+            {
+              "name": "x 240grs (Ahorro)",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Semillas Linaza",
+          "description": "Las semillas de linaza contienen fibra, vitaminas, minerales, proteínas, grasas vegetales saludables y antioxidantes que ayudan a prevenir el daño celular. Estas semillas son una buena fuente de fibra soluble e insoluble que ayudan a mantener sus deposiciones regulares y a prevenir el estreñimiento.",
+          "variants": [
+            {
+              "name": "x 125 grs",
+              "price": 4500
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Especias",
+      "products": [
+        {
+          "name": "Oregano seco",
+          "description": "El orégano seco es un condimento que contienen 11 gramos de proteínas, 21,63 gramos de carbohidratos, 10,25 gramos de grasa y 21,63 gramos de azúcar por cada 100 gramos, aportando 308 calorias a la dieta.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3000
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Finas Hierbas",
+          "description": "Estas hierbas se utilizan como especias y condimentos por sus características organolépticas, que brindan a los alimentos y bebidas aromas, colores y sabores, que los hacen más apetitosos al olfato, vista y paladar.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3000
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Curcuma",
+          "description": "es una especia sabrosa que es nutritiva para consumir, también se ha utilizado tradicionalmente en la medicina ayurvédica y china para tratar la inflamación, enfermedades de la piel, heridas, dolencias digestivas y condiciones hepáticas.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3000
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Canela",
+          "description": "mejora las digestiones y ayuda a prevenir los resfriados, ya que es expectorante y posee propiedades analgésicas.",
+          "variants": [
+            {
+              "name": "X 10grs",
+              "price": 3300
+            },
+            {
+              "name": "X 20 grs(Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Canela Polvo",
+          "description": "mejora las digestiones y ayuda a prevenir los resfriados, ya que es expectorante y posee propiedades analgésicas.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3400
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 6200
+            }
+          ]
+        },
+        {
+          "name": "Ajo Polvo",
+          "description": "Se emplea para aromatizar una elaboración, pero también es muy utilizado en la elaboración de embutidos al tratarse de un potente conservante",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3100
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Especias y Condimentos",
+      "products": [
+        {
+          "name": "Bicarbonato",
+          "description": "es un antiácido usado para aliviar la pirosis (acidez estomacal) y la indigestión ácida",
+          "variants": [
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            },
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "Achiote polvo",
+          "description": "es un colorante natural, también llamado anatto, onoto o bijol, el cual se obtiene de un árbol pequeño que da un fruto oval y carnoso y cuyas semillas dan lugar a la especia. Éstas son comestibles y se usan en algunos países como sustituto del azafrán para condimentar y dar color a los platillos.",
+          "variants": [
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5500
+            },
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Tomillo Seco",
+          "description": "Por sus propiedades antiespasmódica, expectorante y antiséptica, el tomillo está especialmente indicado en el tratamiento de ciertas afecciones de las vías respiratorias altas, particularmente las que cursan con tos irritativa, laringitis, bronquitis, asma, enfisema y gripe.",
+          "variants": [
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            },
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Laurel seco",
+          "description": "Puede ayudar a aliviar los cólicos, problemas estomacales y a eliminar los gases intestinales, combatiendo así la aerofagia.",
+          "variants": [
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Moringa",
+          "description": "podrían ayudar a tratar algunos trastornos estomacales, como la constipación, la gastritis y la colitis ulcerosa",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Pimienta Pepas",
+          "description": "puede ayudarte a adelgazar, mejorar la digestión, aliviar la tos y el resfriado, acelerar el metabolismo y tratar problemas dermatológicos.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Paprika",
+          "description": "La paprika es un condimento en polvo obtenido al moler pimientos rojos secos para sazonar distintos platos.",
+          "variants": [
+            {
+              "name": "Paquete x20grs",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Pimienta Cayena",
+          "description": "es un maravilloso anti-inflamatorio y puede servir para aliviar alergias",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3600
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 6200
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Especias y Hierbas",
+      "products": [
+        {
+          "name": "Albahaca seca",
+          "description": "puede utilizarse para aromatizar platos crudos o cocidos, por ejemplo, ensaladas, salsas, adobos, pizzas, pasta, verduras u hortalizas crudas (por ejemplo, tomate), pestos de hierbas, sopas o salsas.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Jengibre Polvo",
+          "description": "funciona como protector del sistema digestivo, además de antidiarreico debido a que aumenta la proporción de bacterias beneficiosas. También favorece la circulación sanguínea, ayuda a prevenir la gripe y los resfriados, y es hipocolesterolemiante, antiinflamatorio y analgésico natural.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3200
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 5900
+            }
+          ]
+        },
+        {
+          "name": "Stevia Hoja",
+          "description": "La Stevia es probablemente el endulzante natural más popular. Dentro de las propiedades principales que la destacan se encuentran: su soporte a la diabetes, al control de peso y la reducción de la presión arterial.",
+          "variants": [
+            {
+              "name": "X 20grs",
+              "price": 3800
+            },
+            {
+              "name": "X 40grs (Ahorro)",
+              "price": 6900
+            }
+          ]
+        },
+        {
+          "name": "Comino pepa",
+          "description": "Es una especia muy utilizada en la gastronomía como un digestivo, además de darle un olor y sabor único a los platos.",
+          "variants": [
+            {
+              "name": "Paquete x20grs",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Ajo pelado importado",
+          "description": "",
+          "variants": [
+            {
+              "name": "Paquete x20grs",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Guasca seca",
+          "description": "Esta hierba se usa principalmente para sazonar el ajiaco, también tiene propiedades cicatrizantes y antiinflamatorias.",
+          "variants": [
+            {
+              "name": "Paquete x20grs",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Ajonjolí tostado",
+          "description": "El ajonjolí ayuda a combatir el colesterol malo, siendo combatiente de las enfermedades del corazón y la prevención de las mismas.",
+          "variants": [
+            {
+              "name": "Paquete x20grs",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Flor de Jamaica",
+          "description": "Los usos tradicionales de esta planta son muy variados e incluyen las flores para el tratamiento de diversos problemas incluyendo los siguientes. Sistema circulatorio. Alta presión sanguínea. Niveles altos de grasa en la sangre. Contra la diabetes. Obesidad. El té sin azúcar se usa en México contra la tos.",
+          "variants": [
+            {
+              "name": "X50 grs",
+              "price": 9900
+            },
+            {
+              "name": "X125grs",
+              "price": 25800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Productos geniales",
+      "products": [
+        {
+          "name": "Bálsamo labial de aguacate",
+          "description": "El balsamo labial de aguacate ,es un maravilloso producto que reúne todas las propiedades del la bioemulcion de aguacate Humectar - protege de rayos UV - suavidad -cudado de la piel, restauración de la piel Las materias primas usadas en este balsamo son 100% colombianas compradas directamente a los cultivadores de antioquia y Santander Las propiedades mencionadas son certificadas por un estudio realizado por la universidad de antioquia y la empresa bioingredtech",
+          "variants": [
+            {
+              "name": "Unidad",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "Llaveros",
+          "description": "Para un regalo o para ti son hermosos y duraderos",
+          "variants": [
+            {
+              "name": "Ref # 1",
+              "price": 4500
+            },
+            {
+              "name": "Ref #2",
+              "price": 4500
+            },
+            {
+              "name": "Ref #3",
+              "price": 4500
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

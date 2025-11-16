@@ -48,31 +48,53 @@ export interface Product {
 }
 
 // Productos por defecto si no hay datos guardados
-const DEFAULT_PRODUCTS: Product[] = [
-  // Aguacates
-  { id: '1', name: 'Aguacate Hass Premium', description: 'Variedad premium de alta calidad', price: 6500, category: 'Aguacates', stock: 150, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '2', name: 'Aguacate Criollo', description: 'Variedad colombiana tradicional', price: 3500, category: 'Aguacates', stock: 200, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '3', name: 'Aguacate Orgánico', description: 'Cultivado sin pesticidas', price: 8500, category: 'Aguacates', stock: 75, is_active: true, unit: 'unidad', min_quantity: 1, is_organic: true },
-  { id: '4', name: 'Aguacate Jumbo', description: 'Tamaño extra grande', price: 5500, category: 'Aguacates', stock: 100, is_active: true, unit: 'unidad', min_quantity: 1 },
-
-  // Frutas
-  { id: '5', name: 'Limón Tahití', description: 'Ácido y jugoso', price: 3700, category: 'Frutas', stock: 300, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '6', name: 'Naranja Valencia', description: 'Dulce y jugosa', price: 2500, category: 'Frutas', stock: 250, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '7', name: 'Mango Ataulfo', description: 'Dulce y aromático', price: 4500, category: 'Frutas', stock: 180, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '8', name: 'Fresa Fresca', description: 'Fresa fresca y dulce', price: 8500, category: 'Frutas', stock: 120, is_active: true, unit: 'unidad', min_quantity: 1 },
-
-  // Verduras
-  { id: '9', name: 'Tomate Rojo', description: 'Tomate maduro y jugoso', price: 2000, category: 'Verduras', stock: 400, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '10', name: 'Lechuga Crespa', description: 'Lechuga fresca y crujiente', price: 1500, category: 'Verduras', stock: 350, is_active: true, unit: 'unidad', min_quantity: 1 },
-  { id: '11', name: 'Cilantro Fresco', description: 'Cilantro orgánico fresco', price: 800, category: 'Verduras', stock: 500, is_active: true, unit: 'unidad', min_quantity: 1, is_organic: true },
-  { id: '12', name: 'Pimentón Rojo', description: 'Pimentón rojo fresco', price: 2200, category: 'Verduras', stock: 280, is_active: true, unit: 'unidad', min_quantity: 1 },
-];
+const DEFAULT_PRODUCTS: Product[] = [];
 
 export const getDefaultProducts = (): Product[] => {
   return DEFAULT_PRODUCTS;
 };
 
-export const getProducts = (): Product[] => {
+// Función para cargar productos desde el CSV pre-generado
+const loadProductsFromCSV = async (): Promise<Product[]> => {
+  try {
+    const response = await fetch('/catalogo-productos.csv');
+    const csvText = await response.text();
+
+    const lines = csvText.split('\n').filter(line => line.trim());
+    const headers = lines[0].split(',').map(h => h.trim());
+
+    const products: Product[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim().replace(/^"(.*)"$/, '$1'));
+
+      if (values.length >= 6) {
+        const product: Product = {
+          id: values[0] || `product-${i}`,
+          name: values[1] || 'Producto sin nombre',
+          description: values[2] || '',
+          price: parseFloat(values[3]) || 0,
+          category: values[4] || 'General',
+          image: values[5] || '',
+          is_active: true,
+          stock: 100, // Stock por defecto
+          unit: 'unidad',
+          min_quantity: 1
+        };
+
+        products.push(product);
+      }
+    }
+
+    console.log(`✅ ${products.length} productos cargados desde CSV`);
+    return products;
+  } catch (error) {
+    console.error('❌ Error cargando productos desde CSV:', error);
+    return [];
+  }
+};
+
+export const getProducts = async (): Promise<Product[]> => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
   const saved = localStorage.getItem('tus_aguacates_products');
@@ -82,11 +104,39 @@ export const getProducts = (): Product[] => {
       console.log('✅ Productos cargados desde localStorage compartido:', parsed.length);
       return parsed;
     } catch (e) {
-      console.log('⚠️ Error al leer localStorage, usando productos por defecto');
-      return DEFAULT_PRODUCTS;
+      console.log('⚠️ Error al leer localStorage, intentando cargar desde CSV');
     }
   }
-  console.log('📦 No hay productos guardados, usando productos por defecto');
+
+  // Si no hay datos en localStorage, intentar cargar desde CSV
+  console.log('📦 Cargando productos desde CSV...');
+  const csvProducts = await loadProductsFromCSV();
+
+  if (csvProducts.length > 0) {
+    // Guardar en localStorage para futuras cargas
+    localStorage.setItem('tus_aguacates_products', JSON.stringify(csvProducts));
+    return csvProducts;
+  }
+
+  // Último recurso: productos por defecto (vacío)
+  console.log('⚠️ No se pudieron cargar productos, usando lista vacía');
+  return DEFAULT_PRODUCTS;
+};
+
+// Versión síncrona para el admin que solo lee del localStorage
+export const getProductsSync = (): Product[] => {
+  if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
+
+  const saved = localStorage.getItem('tus_aguacates_products');
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      return parsed;
+    } catch (e) {
+      console.log('⚠️ Error al leer localStorage');
+    }
+  }
+
   return DEFAULT_PRODUCTS;
 };
 
@@ -111,8 +161,8 @@ export const updateProductImage = (productId: string, imageData: string): Produc
   return updated;
 };
 
-export const getProductsByCategory = (category: string): Product[] => {
-  const allProducts = getProducts();
+export const getProductsByCategory = async (category: string): Promise<Product[]> => {
+  const allProducts = await getProducts();
   if (category === 'todos' || category === 'Todos') {
     return allProducts.filter(p => p.is_active !== false).map(product => ({
       ...product,
@@ -243,8 +293,8 @@ export const initializeProducts = async (): Promise<Product[]> => {
     console.log('⚠️ Products initialized from localStorage (fallback)');
   }
 
-  // Retornar productos actualizados
-  return getProducts();
+  // Retornar productos actualizados (ahora es asíncrono)
+  return await getProducts();
 };
 
 // 🚀 FUNCIÓN DE IMPORTACIÓN CSV

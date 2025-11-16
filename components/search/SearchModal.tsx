@@ -42,7 +42,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         await initializeProducts();
 
         // Obtener todos los productos de localStorage
-        const allProducts = getProductsByCategory('todos');
+        const allProducts = await getProductsByCategory('todos');
 
         // Filtrar productos que coincidan con la búsqueda
         const searchResults = allProducts

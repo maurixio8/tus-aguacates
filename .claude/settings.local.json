@@ -15,7 +15,10 @@
       "Bash(ls:*)",
       "Bash(dir:*)",
       "Bash(test:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(findstr:*)",
+      "Bash(Get-ChildItem:*)",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []

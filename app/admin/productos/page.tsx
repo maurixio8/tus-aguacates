@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
 import { CSVImporter } from '@/components/admin/CSVImporter';
-import { getProducts, saveProducts, getDefaultProducts } from '@/lib/productStorage';
+import { getProductsSync, saveProducts, getDefaultProducts, getProducts } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
 
 const CATEGORIES = ['Todos', 'Aguacates', 'Frutas', 'Verduras', 'Lácteos', 'Panadería'];
@@ -38,9 +38,20 @@ export default function ProductsPage() {
 
   // CARGAR productos del sistema compartido AL INICIAR
   useEffect(() => {
-    const loaded = getProducts();
-    setProducts(loaded);
-    console.log('✅ Productos cargados desde sistema compartido:', loaded.length);
+    const initializeAdminProducts = async () => {
+      // Si no hay productos en localStorage, cargar desde CSV
+      const current = getProductsSync();
+      if (current.length === 0) {
+        console.log('📦 Cargando productos iniciales desde CSV...');
+        const loaded = await getProducts();
+        setProducts(loaded);
+      } else {
+        setProducts(current);
+      }
+      console.log('✅ Productos cargados:', current.length);
+    };
+
+    initializeAdminProducts();
   }, []);
 
   // GUARDAR usando sistema compartido cuando cambien
