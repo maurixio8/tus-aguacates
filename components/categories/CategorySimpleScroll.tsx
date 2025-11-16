@@ -1,52 +1,67 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Categorías extraídas del JSON master
 const categories = [
   {
     id: 1,
-    name: 'Tubérculos',
-    slug: 'tuberculos',
-    icon: '🥔',
-    image: '/categories/tuberculos.jpg',
-  },
-  {
-    id: 2,
-    name: 'Saludables',
-    slug: 'saludables',
-    icon: '🥗',
-    image: '/categories/saludables.jpg',
-  },
-  {
-    id: 3,
-    name: 'Frutas',
-    slug: 'frutas',
-    icon: '🍎',
-    image: '/categories/frutas.jpg',
-  },
-  {
-    id: 4,
-    name: 'Aguacates',
+    name: '🥑 Aguacates',
     slug: 'aguacates',
     icon: '🥑',
     image: '/categories/aguacates.jpg',
   },
   {
+    id: 2,
+    name: '🌿 Aromáticas y Zumos',
+    slug: 'aromaticas-y-zumos',
+    icon: '🌿',
+    image: '/categories/aromaticas.jpg',
+  },
+  {
+    id: 3,
+    name: '🍯🥜 SALUDABLES',
+    slug: 'saludables',
+    icon: '🍯',
+    image: '/categories/saludables.jpg',
+  },
+  {
+    id: 4,
+    name: '🥗🌱☘️ Especias',
+    slug: 'especias',
+    icon: '🥗',
+    image: '/categories/especias.jpg',
+  },
+  {
     id: 5,
-    name: 'Verduras',
-    slug: 'verduras',
-    icon: '🥬',
-    image: '/categories/verduras.jpg',
+    name: '🍊🍎 Tropicales',
+    slug: 'tropicales',
+    icon: '🍊',
+    image: '/categories/tropicales.jpg',
   },
   {
     id: 6,
-    name: 'Combos',
-    slug: 'combos',
-    icon: '🎁',
-    image: '/categories/combos.jpg',
+    name: '🍓 Frutos Rojos',
+    slug: 'frutos-rojos',
+    icon: '🍓',
+    image: '/categories/frutos-rojos.jpg',
+  },
+  {
+    id: 7,
+    name: '🌽 Desgranados',
+    slug: 'desgranados',
+    icon: '🌽',
+    image: '/categories/desgranados.jpg',
+  },
+  {
+    id: 8,
+    name: '🍅🌽 Gourmet',
+    slug: 'gourmet',
+    icon: '🍅',
+    image: '/categories/gourmet.jpg',
   },
 ];
 
@@ -81,7 +96,7 @@ export default function CategorySimpleScroll() {
         {categories.map((category) => (
           <Link
             key={category.id}
-            href={`/categoria/${category.slug}`}
+            href={`/tienda/${category.slug}`}
             className="flex-shrink-0 flex flex-col items-center group"
           >
             {/* Imagen */}

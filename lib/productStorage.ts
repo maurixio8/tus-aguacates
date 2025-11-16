@@ -360,11 +360,14 @@ export const categoryToSlug = (category: string): string => {
 
 export const slugToCategory = (slug: string): string => {
   const categories: { [key: string]: string } = {
-    'aguacates': 'Aguacates',
-    'frutas': 'Frutas',
-    'verduras': 'Verduras',
-    'lacteos': 'Lácteos',
-    'panaderia': 'Panadería'
+    'aguacates': '🥑 Aguacates',
+    'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
+    'saludables': '🍯🥜 SALUDABLES',
+    'especias': '🥗🌱☘️ Especias',
+    'tropicales': '🍊🍎 Tropicales',
+    'frutos-rojos': '🍓 Frutos Rojos',
+    'desgranados': '🌽 Desgranados',
+    'gourmet': '🍅🌽 Gourmet'
   };
   return categories[slug] || slug;
 };
