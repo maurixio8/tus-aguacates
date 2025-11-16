@@ -15,7 +15,7 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
     fetchProducts();
   }, [categoria]);
 
-  function fetchProducts() {
+  async function fetchProducts() {
     try {
       setLoading(true);
 
@@ -24,7 +24,7 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
       console.log(`🔍 Buscando productos para categoría: ${categoria} -> ${categoryName}`);
 
       // Obtener productos del localStorage compartido
-      const productsData = getProductsByCategory(categoryName);
+      const productsData = await getProductsByCategory(categoryName);
 
       console.log(`✅ Encontrados ${productsData.length} productos para ${categoryName}`);
       setProducts(productsData);

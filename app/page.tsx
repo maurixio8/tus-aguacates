@@ -25,7 +25,7 @@ export default function Home() {
         await initializeProducts();
 
         // Obtener productos destacados o los más recientes
-        const allProducts = getProductsByCategory('todos');
+        const allProducts = await getProductsByCategory('todos');
 
         // Prioridad: productos destacados > productos recientes
         const featured = allProducts
