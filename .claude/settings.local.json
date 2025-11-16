@@ -19,7 +19,8 @@
       "Bash(findstr:*)",
       "Bash(Get-ChildItem:*)",
       "Bash(python:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(timeout:*)"
     ],
     "deny": [],
     "ask": []

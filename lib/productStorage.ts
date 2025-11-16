@@ -126,6 +126,75 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
   }
 };
 
+// Función para cargar TODOS los productos del JSON MASTER recategorizado
+const loadAllProductsFromMaster = async (): Promise<Product[]> => {
+  try {
+    console.log('🔄 Cargando TODOS los productos recategorizados desde JSON MASTER...');
+
+    const response = await fetch('/productos-master.json');
+    if (!response.ok) {
+      throw new Error('No se pudo cargar el JSON MASTER de productos');
+    }
+
+    const jsonData = await response.json();
+    console.log('✅ JSON MASTER cargado exitosamente');
+
+    const products: Product[] = [];
+    let productId = 1;
+
+    // Procesar TODAS las categorías del JSON MASTER
+    for (const category of jsonData.categories || []) {
+      const categoryName = category.name || 'General';
+      console.log(`📦 Procesando categoría: ${categoryName}`);
+
+      // ✅ LEER CADA PRODUCTO TAL CUAL - SIN MODIFICAR NOMBRES
+      for (const product of category.products || []) {
+        const productName = product.name || 'Producto sin nombre'; // ✅ NOMBRE EXACTO con emojis
+        const description = product.description || '';
+        const variants = product.variants || [];
+
+        // ✅ USAR PRECIO EXACTO del JSON
+        const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
+
+        const productEntry: Product = {
+          id: `product-${productId}`,
+          name: productName, // ✅ NOMBRE EXACTO Y COMPLETO del dashboard
+          description: description,
+          price: basePrice,
+          category: categoryName,
+          image: '',
+          is_active: true,
+          stock: 100,
+          unit: 'unidad',
+          min_quantity: 1,
+          // ✅ Variantes exactas con nombres y precios del dashboard
+          variants: variants.map((variant: any, index: number) => ({
+            id: `${productId}-variant-${index}`,
+            product_id: `product-${productId}`,
+            variant_name: variant.name || '',
+            variant_value: variant.name || '',
+            price_adjustment: (variant.price || 0) - basePrice,
+            is_active: true,
+            created_at: new Date().toISOString()
+          })),
+          hasVariants: variants.length > 1,
+          base_price: basePrice
+        };
+
+        products.push(productEntry);
+        productId++;
+      }
+    }
+
+    console.log(`✅ ${products.length} productos RECATEGORIZADOS cargados con NOMBRES EXACTOS`);
+    return products;
+
+  } catch (error) {
+    console.error('❌ Error cargando productos recategorizados desde JSON MASTER:', error);
+    return [];
+  }
+};
+
 // Función para cargar productos del JSON LIMPIO (nombres exactos y precios correctos)
 const loadFruitsFromJSON = async (): Promise<Product[]> => {
   try {
@@ -204,22 +273,22 @@ const loadFruitsFromJSON = async (): Promise<Product[]> => {
 export const getProducts = async (): Promise<Product[]> => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
-  // 🧪 PRUEBA: Cargar SOLO Frutas Frescas para validar enfoque
-  console.log('🧪 PRUEBA: Cargando SOLO Frutas Frescas...');
+  // ✅ CARGAR TODOS LOS PRODUCTOS RECATEGORIZADOS DEL JSON MASTER
+  console.log('📦 Cargando productos recategorizados desde JSON MASTER...');
 
   // Limpiar localStorage completamente
   localStorage.removeItem('tus_aguacates_products');
 
-  // Cargar SOLO productos de Frutas Frescas
-  const fruitsProducts = await loadFruitsFromJSON();
+  // Cargar TODOS los productos del JSON master con categorías correctas
+  const allProducts = await loadAllProductsFromMaster();
 
-  if (fruitsProducts.length > 0) {
-    console.log(`✅ ${fruitsProducts.length} productos de Frutas Frescas cargados para prueba`);
-    return fruitsProducts;
+  if (allProducts.length > 0) {
+    console.log(`✅ ${allProducts.length} productos recategorizados cargados desde JSON MASTER`);
+    return allProducts;
   }
 
-  // Si falla la carga de frutas, retornar vacío
-  console.log('❌ Error crítico: No se pudieron cargar productos de Frutas Frescas');
+  // Si falla la carga, retornar vacío
+  console.log('❌ Error crítico: No se pudieron cargar productos del JSON MASTER');
   return DEFAULT_PRODUCTS;
 };
 

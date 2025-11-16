@@ -1,0 +1,774 @@
+{
+  "categories": [
+    {
+      "name": "🥑 Aguacates",
+      "description": "Aguacates frescos de la mejor calidad, cultivados con amor",
+      "products": [
+        {
+          "name": "🌞 Nueva Maya paquete x 8 Mediano",
+          "description": "Paquete de 8 aguacates maya tamaño mediano",
+          "price": 8400,
+          "variants": [
+            {
+              "name": "Paquete x 8 unidades medianas",
+              "price": 8400
+            },
+            {
+              "name": "2 Paquetes (Ahorro)",
+              "price": 15000
+            }
+          ]
+        },
+        {
+          "name": "🥑 Nueva ⭐ Maya paquete x 7 premium",
+          "description": "Paquete premium de 7 aguacates maya seleccionados",
+          "price": 12800,
+          "variants": [
+            {
+              "name": "Paquete x 7 unidades premium",
+              "price": 12800
+            },
+            {
+              "name": "2 Paquetes premium (Ahorro)",
+              "price": 23000
+            }
+          ]
+        },
+        {
+          "name": "✨ Promo paga 2 lleva tres",
+          "description": "Promoción especial de aguacates: lleva 3 pagando solo 2",
+          "price": 48000,
+          "variants": [
+            {
+              "name": "Paquete x 3 unidades",
+              "price": 48000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🌿 Aromáticas y Zumos",
+      "description": "Hierbas frescas aromáticas y zumos concentrados",
+      "products": [
+        {
+          "name": "🌳 Lechuga morada",
+          "description": "Lechuga morada fresca y crujiente con propiedades antioxidantes",
+          "price": 5600,
+          "variants": [
+            {
+              "name": "Por 1 unidad",
+              "price": 5600
+            },
+            {
+              "name": "Por 2 unidades (Ahorro)",
+              "price": 10000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🍯🥜 SALUDABLES",
+      "description": "Productos naturales saludables para tu bienestar",
+      "products": [
+        {
+          "name": "🌱 Flor de Jamaica",
+          "description": "Flor de Jamaica fresca para infusiones y bebidas",
+          "price": 9900,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 9900
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 5500
+            }
+          ]
+        },
+        {
+          "name": "🥔 Yacon bandeja",
+          "description": "Yacon fresco en bandeja, ideal para diabéticos",
+          "price": 7900,
+          "variants": [
+            {
+              "name": "Bandeja x 1 kilogramo",
+              "price": 7900
+            },
+            {
+              "name": "Bandeja x 500 gramos",
+              "price": 4500
+            }
+          ]
+        },
+        {
+          "name": "🌱 Raíces chinas",
+          "description": "Raíces chinas frescas con propiedades medicinales",
+          "price": 3500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 3500
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "🌱 Guisantes Bandeja",
+          "description": "Guisantes frescos tiernos en bandeja",
+          "price": 6400,
+          "variants": [
+            {
+              "name": "Bandeja x 1 kilogramo",
+              "price": 6400
+            },
+            {
+              "name": "Bandeja x 500 gramos",
+              "price": 3500
+            }
+          ]
+        },
+        {
+          "name": "🌱 Germinados",
+          "description": "Germinados frescos ricos en nutrientes y enzimas",
+          "price": 6700,
+          "variants": [
+            {
+              "name": "Mix 5 germinados",
+              "price": 6700
+            },
+            {
+              "name": "Alfalfa 200g",
+              "price": 4500
+            },
+            {
+              "name": "Brocoli 200g",
+              "price": 5000
+            },
+            {
+              "name": "Lenteja 200g",
+              "price": 4800
+            },
+            {
+              "name": "Rábano 200g",
+              "price": 4200
+            }
+          ]
+        },
+        {
+          "name": "🌺 Polen",
+          "description": "Polen fresco de abeja, superalimento natural",
+          "price": 22900,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 22900
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 12900
+            }
+          ]
+        },
+        {
+          "name": "🥔 Papa criolla",
+          "description": "Papa criolla fresca amarilla, ideal para sancochos",
+          "price": 3500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 3500
+            },
+            {
+              "name": "Por 2 kilogramos (Ahorro)",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "🥔 Papa sabanera",
+          "description": "Papa sabanera fresca, perfecta para freír",
+          "price": 3500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 3500
+            },
+            {
+              "name": "Por 2 kilogramos (Ahorro)",
+              "price": 6000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🥗🌱☘️ Especias",
+      "description": "Condimentos, especias y concentrados para dar sabor a tus platos",
+      "products": [
+        {
+          "name": "🧄 Pasta de Ajo",
+          "description": "Pasta de ajo artesanal fresca",
+          "price": 1500,
+          "variants": [
+            {
+              "name": "Presentación pequeña 100g",
+              "price": 1500
+            },
+            {
+              "name": "Presentación mediana 200g",
+              "price": 2500
+            },
+            {
+              "name": "Presentación grande 500g",
+              "price": 5000
+            }
+          ]
+        },
+        {
+          "name": "🧂 Cúrcuma",
+          "description": "Cúrcuma fresca rallida, poderoso antiinflamatorio",
+          "price": 3500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 3500
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "🫛 Picados para sopa",
+          "description": "Mezcla de vegetales picados para sopas y guisos",
+          "price": 3600,
+          "variants": [
+            {
+              "name": "Pack 500 gramos",
+              "price": 3600
+            }
+          ]
+        },
+        {
+          "name": "🌶️ Pimenton amarillo",
+          "description": "Pimentón amarillo en polvo para dar color y sabor",
+          "price": 4500,
+          "variants": [
+            {
+              "name": "Presentación 100g",
+              "price": 4500
+            },
+            {
+              "name": "Presentación 200g (Ahorro)",
+              "price": 8000
+            }
+          ]
+        },
+        {
+          "name": "🌶️ Ají guajillo x50 g",
+          "description": "Ají guajillo seco x 50 gramos, sabor suave",
+          "price": 9000,
+          "variants": [
+            {
+              "name": "Paquete x 50 gramos",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "🌶️ Ají chipotle x 50 g",
+          "description": "Ají chipotle ahumado x 50 gramos, sabor ahumado",
+          "price": 9000,
+          "variants": [
+            {
+              "name": "Paquete x 50 gramos",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "🌶️ Ají ancho x 50g",
+          "description": "Ají ancho seco x 50 gramos, sabor intenso",
+          "price": 9000,
+          "variants": [
+            {
+              "name": "Paquete x 50 gramos",
+              "price": 9000
+            }
+          ]
+        },
+        {
+          "name": "🌶️ Ají Jalapeño",
+          "description": "Ají jalapeño fresco, ideal para tacos y ensaladas",
+          "price": 8900,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 8900
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 5000
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo🫒Limón concentrado",
+          "description": "Zumo concentrado de limón, perfecto para bebidas",
+          "price": 3800,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 3800
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 6500
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo 🥭mango concentrado",
+          "description": "Zumo concentrado de mango, dulce y tropical",
+          "price": 3600,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 3600
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 6200
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo 🥥 concentrado",
+          "description": "Zumo concentrado de coco, sabor exótico",
+          "price": 3600,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 3600
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 6200
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo🍈 lulo concentrado",
+          "description": "Zumo concentrado de lulo, sabor ácido tropical",
+          "price": 4600,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 4600
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo🍒cereza concentrado",
+          "description": "Zumo concentrado de cereza, dulce y frutal",
+          "price": 4500,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 4500
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 7600
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo🟠maracuya concentr",
+          "description": "Zumo concentrado de maracuyá, sabor tropical intenso",
+          "price": 4600,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 4600
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "🧃 Zumo🍊Naranja concentr",
+          "description": "Zumo concentrado de naranja, cítrico y refrescante",
+          "price": 4600,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 4600
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 7800
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🍊🍎 Tropicales",
+      "description": "Frutas tropicales frescas, dulces y nutritivas",
+      "products": [
+        {
+          "name": "🏀 Granada",
+          "description": "Granadas frescas y jugosas, ricas en antioxidantes",
+          "price": 17000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 17000
+            },
+            {
+              "name": "Por 1 unidad grande",
+              "price": 9500
+            }
+          ]
+        },
+        {
+          "name": "🍊 Toronja x1000 grs",
+          "description": "Toronja fresca por 1000 gramos, cítrica y saludable",
+          "price": 8800,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 8800
+            }
+          ]
+        },
+        {
+          "name": "🍉 Sandía Baby",
+          "description": "Sandía baby pequeña, dulce y refrescante",
+          "price": 7800,
+          "variants": [
+            {
+              "name": "Por 1 unidad",
+              "price": 7800
+            }
+          ]
+        },
+        {
+          "name": "🍈 Anón",
+          "description": "Anón fresco, exótico y tropical",
+          "price": 10000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 10000
+            },
+            {
+              "name": "Por 1 unidad",
+              "price": 6000
+            }
+          ]
+        },
+        {
+          "name": "🫒 Feijoa",
+          "description": "Feijoa fresca, sabor único tropical",
+          "price": 0,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "🍒 Ciruela importada bandeja",
+          "description": "Ciruela importada fresca en bandeja",
+          "price": 10000,
+          "variants": [
+            {
+              "name": "Bandeja x 6 unidades",
+              "price": 10000
+            },
+            {
+              "name": "2 Bandejas (Ahorro)",
+              "price": 18000
+            }
+          ]
+        },
+        {
+          "name": "🍒 Ciruela Importada",
+          "description": "Ciruela importada de alta calidad",
+          "price": 5000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 5000
+            }
+          ]
+        },
+        {
+          "name": "🍑 Durazno Importado",
+          "description": "Durazno importado fresco y jugoso",
+          "price": 0,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "🍇 Zarzamora",
+          "description": "Zarzamora fresca, silvestre y nutritiva",
+          "price": 0,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🍓 Frutos Rojos",
+      "description": "Frutos rojos, bayas y berries frescos",
+      "products": [
+        {
+          "name": "🥔 Datiles",
+          "description": "Dátiles frescos naturales, dulces y energéticos",
+          "price": 13900,
+          "variants": [
+            {
+              "name": "Presentación premium 500g",
+              "price": 13900
+            },
+            {
+              "name": "Presentación estándar 1kg",
+              "price": 22000
+            },
+            {
+              "name": "Pack familiar (1.5kg)",
+              "price": 30000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🌽 Desgranados",
+      "description": "Granos y legumbres desgranadas frescas para facilitar la cocina",
+      "products": [
+        {
+          "name": "🫙 Adobo",
+          "description": "Adobo sazonador tradicional para carnes",
+          "price": 0,
+          "variants": [
+            {
+              "name": "Presentación 200g",
+              "price": 0
+            },
+            {
+              "name": "Presentación 500g",
+              "price": 0
+            },
+            {
+              "name": "Presentación 1kg",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "🫛 Arveja en vaina",
+          "description": "Arveja fresca en vaina, tierna y dulce",
+          "price": 10000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 10000
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 6000
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🍅🌽 Gourmet",
+      "description": "Verduras especiales y productos gourmet para cocina refinada",
+      "products": [
+        {
+          "name": "🧅 Cebolla Ocañera",
+          "description": "Cebolla ocañera fresca, sabor característico",
+          "price": 6500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 6500
+            },
+            {
+              "name": "Por 2 kilogramos (Ahorro)",
+              "price": 11000
+            }
+          ]
+        },
+        {
+          "name": "🥒 Habichuela",
+          "description": "Habichuela fresca verde tierna",
+          "price": 4500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 4500
+            }
+          ]
+        },
+        {
+          "name": "🪴 Aloe Vera",
+          "description": "Aloe vera fresco, propiedades medicinales",
+          "price": 0,
+          "variants": [
+            {
+              "name": "Por 1 hoja mediana",
+              "price": 0
+            },
+            {
+              "name": "Por 3 hojas",
+              "price": 0
+            }
+          ]
+        },
+        {
+          "name": "Aceite de coco",
+          "description": "Aceite de coco virgen extra prensado en frío",
+          "price": 56000,
+          "variants": [
+            {
+              "name": "Presentación 500ml",
+              "price": 56000
+            },
+            {
+              "name": "Presentación 1L (Ahorro)",
+              "price": 98000
+            },
+            {
+              "name": "Presentación 2L (Super Ahorro)",
+              "price": 170000
+            },
+            {
+              "name": "Pack 3x500ml",
+              "price": 150000
+            }
+          ]
+        },
+        {
+          "name": "🟣 Corozo",
+          "description": "Corozo fresco, fruta tropical única",
+          "price": 8500,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 8500
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 5000
+            }
+          ]
+        },
+        {
+          "name": "🟡 Cubios",
+          "description": "Cubios frescos, vegetales andinos",
+          "price": 2000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "Pistachos",
+          "description": "Pistachos tostados sin sal, snack saludable",
+          "price": 11500,
+          "variants": [
+            {
+              "name": "Presentación 200g",
+              "price": 11500
+            },
+            {
+              "name": "Presentación 500g (Ahorro)",
+              "price": 25000
+            }
+          ]
+        },
+        {
+          "name": "🟢 Cidra",
+          "description": "Cidra fresca, ácida y refrescante",
+          "price": 2000,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 2000
+            }
+          ]
+        },
+        {
+          "name": "🥒 Abichuelin",
+          "description": "Abichuelin fresco tierno, especie de habichuela pequeña",
+          "price": 3200,
+          "variants": [
+            {
+              "name": "Por 1 kilogramo",
+              "price": 3200
+            },
+            {
+              "name": "Por 500 gramos",
+              "price": 1800
+            }
+          ]
+        },
+        {
+          "name": "🌽 Maíz dulce",
+          "description": "Maíz dulce fresco, tierno y jugoso",
+          "price": 7500,
+          "variants": [
+            {
+              "name": "Por 1 unidad",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "🌰 Ajo Negro Artesanal",
+          "description": "Ajo negro fermentado artesanal, superalimento",
+          "price": 28800,
+          "variants": [
+            {
+              "name": "Presentación 200g",
+              "price": 28800
+            },
+            {
+              "name": "Presentación 500g",
+              "price": 65000
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
