@@ -152,7 +152,7 @@ export const saveProducts = (products: Product[]): void => {
 };
 
 export const updateProductImage = (productId: string, imageData: string): Product[] => {
-  const products = getProducts();
+  const products = getProductsSync();
   const updated = products.map(p =>
     p.id === productId ? { ...p, image: imageData } : p
   );
@@ -220,7 +220,7 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
     console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
 
     // 2. Obtener datos actuales de localStorage
-    const localProducts = getProducts();
+    const localProducts = await getProducts();
     console.log(`📦 Found ${localProducts.length} products in localStorage`);
 
     // 3. Mapear y combinar datos
