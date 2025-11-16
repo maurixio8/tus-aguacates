@@ -54,42 +54,81 @@ export const getDefaultProducts = (): Product[] => {
   return DEFAULT_PRODUCTS;
 };
 
-// Función para cargar productos desde el CSV pre-generado
-const loadProductsFromCSV = async (): Promise<Product[]> => {
+// Función para cargar productos DIRECTAMENTE desde el JSON real
+const loadProductsFromJSON = async (): Promise<Product[]> => {
   try {
-    const response = await fetch('/catalogo-productos.csv');
-    const csvText = await response.text();
+    console.log('🔄 Cargando productos directamente desde JSON real...');
 
-    const lines = csvText.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim());
+    const response = await fetch('/productos tus_aguacates.json');
+    if (!response.ok) {
+      throw new Error('No se pudo cargar el JSON de productos');
+    }
+
+    const jsonData = await response.json();
+    console.log('✅ JSON cargado exitosamente');
 
     const products: Product[] = [];
+    let productId = 1;
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/^"(.*)"$/, '$1'));
+    // Procesar cada categoría del JSON
+    for (const category of jsonData.categories || []) {
+      const categoryName = category.name || 'General';
+      console.log(`📦 Procesando categoría: ${categoryName}`);
 
-      if (values.length >= 6) {
-        const product: Product = {
-          id: values[0] || `product-${i}`,
-          name: values[1] || 'Producto sin nombre',
-          description: values[2] || '',
-          price: parseFloat(values[3]) || 0,
-          category: values[4] || 'General',
-          image: values[5] || '',
-          is_active: true,
-          stock: 100, // Stock por defecto
-          unit: 'unidad',
-          min_quantity: 1
-        };
+      // Procesar cada producto en la categoría
+      for (const product of category.products || []) {
+        const productName = product.name || 'Producto sin nombre';
+        const description = product.description || '';
+        const variants = product.variants || [];
 
-        products.push(product);
+        // Si tiene variantes, crear un producto por cada variante
+        if (variants && variants.length > 0) {
+          for (const variant of variants) {
+            const variantName = variant.name || productName;
+            const variantPrice = variant.price || 0;
+
+            const productEntry: Product = {
+              id: `product-${productId}`,
+              name: variantName,
+              description: description,
+              price: variantPrice,
+              category: categoryName,
+              image: '',
+              is_active: true,
+              stock: 100,
+              unit: 'unidad',
+              min_quantity: 1
+            };
+
+            products.push(productEntry);
+            productId++;
+          }
+        } else {
+          // Si no tiene variantes, crear un producto con precio 0
+          const productEntry: Product = {
+            id: `product-${productId}`,
+            name: productName,
+            description: description,
+            price: product.price || 0,
+            category: categoryName,
+            image: '',
+            is_active: true,
+            stock: 100,
+            unit: 'unidad',
+            min_quantity: 1
+          };
+
+          products.push(productEntry);
+          productId++;
+        }
       }
     }
 
-    console.log(`✅ ${products.length} productos cargados desde CSV`);
+    console.log(`✅ ${products.length} productos cargados desde JSON real`);
     return products;
+
   } catch (error) {
-    console.error('❌ Error cargando productos desde CSV:', error);
+    console.error('❌ Error cargando productos desde JSON:', error);
     return [];
   }
 };
@@ -97,29 +136,22 @@ const loadProductsFromCSV = async (): Promise<Product[]> => {
 export const getProducts = async (): Promise<Product[]> => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
-  const saved = localStorage.getItem('tus_aguacates_products');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      console.log('✅ Productos cargados desde localStorage compartido:', parsed.length);
-      return parsed;
-    } catch (e) {
-      console.log('⚠️ Error al leer localStorage, intentando cargar desde CSV');
-    }
+  // SIEMPRE cargar desde JSON real - LIMPIEZA TOTAL
+  console.log('🧹 LIMPIEZA: Cargando SOLO productos del JSON real...');
+
+  // Limpiar localStorage completamente
+  localStorage.removeItem('tus_aguacates_products');
+
+  // Cargar TODOS los productos desde JSON real
+  const jsonProducts = await loadProductsFromJSON();
+
+  if (jsonProducts.length > 0) {
+    console.log(`✅ ${jsonProducts.length} productos cargados desde JSON real`);
+    return jsonProducts;
   }
 
-  // Si no hay datos en localStorage, intentar cargar desde CSV
-  console.log('📦 Cargando productos desde CSV...');
-  const csvProducts = await loadProductsFromCSV();
-
-  if (csvProducts.length > 0) {
-    // Guardar en localStorage para futuras cargas
-    localStorage.setItem('tus_aguacates_products', JSON.stringify(csvProducts));
-    return csvProducts;
-  }
-
-  // Último recurso: productos por defecto (vacío)
-  console.log('⚠️ No se pudieron cargar productos, usando lista vacía');
+  // Si falla el JSON, retornar vacío
+  console.log('❌ Error crítico: No se pudieron cargar productos del JSON');
   return DEFAULT_PRODUCTS;
 };
 
