@@ -126,54 +126,55 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
   }
 };
 
-// Función para cargar SOLO la categoría "Frutas Frescas" como prueba
+// Función para cargar productos del JSON LIMPIO (nombres exactos y precios correctos)
 const loadFruitsFromJSON = async (): Promise<Product[]> => {
   try {
-    console.log('🔄 Cargando SOLO Frutas Frescas desde JSON...');
+    console.log('🔄 Cargando productos TROPICALES desde JSON LIMPIO...');
 
-    const response = await fetch('/productos tus_aguacates.json');
+    const response = await fetch('/productos-tropicales-limpios.json');
     if (!response.ok) {
-      throw new Error('No se pudo cargar el JSON de productos');
+      throw new Error('No se pudo cargar el JSON LIMPIO de productos');
     }
 
     const jsonData = await response.json();
-    console.log('✅ JSON cargado exitosamente');
+    console.log('✅ JSON LIMPIO cargado exitosamente');
 
     const products: Product[] = [];
     let productId = 1;
 
-    // Buscar la categoría "Frutas Frescas" exactamente
-    const fruitsCategory = jsonData.categories?.find((cat: any) =>
-      cat.name === 'Frutas Frescas'
+    // Buscar la categoría "Tropicales" del JSON LIMPIO
+    const tropicalesCategory = jsonData.categories?.find((cat: any) =>
+      cat.name === 'Tropicales'
     );
 
-    if (!fruitsCategory) {
-      console.error('❌ No se encontró la categoría "Frutas Frescas"');
+    if (!tropicalesCategory) {
+      console.error('❌ No se encontró la categoría "Tropicales" en el JSON LIMPIO');
       return [];
     }
 
-    console.log(`📦 Procesando categoría: ${fruitsCategory.name}`);
+    console.log(`📦 Procesando categoría: ${tropicalesCategory.name}`);
 
-    // ✅ LEER CADA PRODUCTO DE FRUTAS TAL CUAL
-    for (const product of fruitsCategory.products || []) {
-      const productName = product.name || 'Producto sin nombre';
+    // ✅ LEER CADA PRODUCTO TAL CUAL - SIN MODIFICAR NOMBRES
+    for (const product of tropicalesCategory.products || []) {
+      const productName = product.name || 'Producto sin nombre'; // ✅ NOMBRE EXACTO: "🍎 Manzana roja Bandeja"
       const description = product.description || '';
       const variants = product.variants || [];
 
+      // ✅ USAR PRECIO EXACTO del JSON
       const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
 
       const productEntry: Product = {
         id: `product-${productId}`,
-        name: productName, // ✅ Nombre EXACTO del JSON: "Manzana roja Bandeja"
+        name: productName, // ✅ NOMBRE EXACTO Y COMPLETO del dashboard
         description: description,
         price: basePrice,
-        category: 'Frutas Frescas',
+        category: 'Tropicales',
         image: '',
         is_active: true,
         stock: 100,
         unit: 'unidad',
         min_quantity: 1,
-        // ✅ Variantes tal cual: ["Bandeja 6u", "2 Bandejas (Ahorro)"]
+        // ✅ Variantes exactas con nombres y precios del dashboard
         variants: variants.map((variant: any, index: number) => ({
           id: `${productId}-variant-${index}`,
           product_id: `product-${productId}`,
@@ -191,11 +192,11 @@ const loadFruitsFromJSON = async (): Promise<Product[]> => {
       productId++;
     }
 
-    console.log(`✅ ${products.length} productos de Frutas Frescas cargados tal cual`);
+    console.log(`✅ ${products.length} productos TROPICALES cargados con NOMBRES EXACTOS`);
     return products;
 
   } catch (error) {
-    console.error('❌ Error cargando Frutas Frescas desde JSON:', error);
+    console.error('❌ Error cargando productos TROPICALES desde JSON LIMPIO:', error);
     return [];
   }
 };
