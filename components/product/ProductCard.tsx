@@ -33,27 +33,44 @@ export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
 
-  // Cargar variantes al montar el componente
+  // Cargar variantes del producto (locales o Supabase)
   useEffect(() => {
-    async function loadVariants() {
-      const { data } = await supabase
-        .from('product_variants')
-        .select('*')
-        .eq('product_id', product.id)
-        .eq('is_active', true)
-        .order('price_adjustment', { ascending: true });
+    // ✅ USAR VARIANTES DEL OBJETO PRODUCTO (vienen del JSON)
+    if (product.variants && product.variants.length > 0) {
+      console.log('📦 Usando variantes locales del producto:', product.name, product.variants);
 
-      if (data && data.length > 0) {
-        const variantsWithPrice = data.map(v => ({
-          ...v,
-          price: (product.discount_price || product.price) + v.price_adjustment
-        }));
-        setVariants(variantsWithPrice);
-        setSelectedVariant(variantsWithPrice[0]); // Seleccionar primer variante por defecto
+      const variantsWithPrice = product.variants.map(v => ({
+        ...v,
+        price: (product.discount_price || product.base_price || product.price) + v.price_adjustment
+      }));
+      setVariants(variantsWithPrice);
+      setSelectedVariant(variantsWithPrice[0]); // Seleccionar primer variante por defecto
+    } else {
+      // Si no hay variantes locales, buscar en Supabase (fallback)
+      async function loadVariantsFromSupabase() {
+        try {
+          const { data } = await supabase
+            .from('product_variants')
+            .select('*')
+            .eq('product_id', product.id)
+            .eq('is_active', true)
+            .order('price_adjustment', { ascending: true });
+
+          if (data && data.length > 0) {
+            const variantsWithPrice = data.map(v => ({
+              ...v,
+              price: (product.discount_price || product.price) + v.price_adjustment
+            }));
+            setVariants(variantsWithPrice);
+            setSelectedVariant(variantsWithPrice[0]);
+          }
+        } catch (error) {
+          console.log('⚠️ Error cargando variantes desde Supabase:', error);
+        }
       }
+      loadVariantsFromSupabase();
     }
-    loadVariants();
-  }, [product.id, product.price, product.discount_price]);
+  }, [product.id, product.price, product.discount_price, product.base_price, product.variants]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();

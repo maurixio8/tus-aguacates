@@ -45,6 +45,8 @@ export interface Product {
   created_at?: string;
   updated_at?: string;
   variants?: ProductVariant[];
+  hasVariants?: boolean;
+  base_price?: number;
 }
 
 // Productos por defecto si no hay datos guardados
@@ -54,10 +56,10 @@ export const getDefaultProducts = (): Product[] => {
   return DEFAULT_PRODUCTS;
 };
 
-// Función para cargar productos DIRECTAMENTE desde el JSON real
+// Función para cargar productos DIRECTAMENTE desde el JSON real - LEER TAL CUAL
 const loadProductsFromJSON = async (): Promise<Product[]> => {
   try {
-    console.log('🔄 Cargando productos directamente desde JSON real...');
+    console.log('🔄 Cargando productos tal cual desde JSON real...');
 
     const response = await fetch('/productos tus_aguacates.json');
     if (!response.ok) {
@@ -75,56 +77,47 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
       const categoryName = category.name || 'General';
       console.log(`📦 Procesando categoría: ${categoryName}`);
 
-      // Procesar cada producto en la categoría
+      // ✅ LEER CADA PRODUCTO TAL CUAL - UNO POR UNO
       for (const product of category.products || []) {
         const productName = product.name || 'Producto sin nombre';
         const description = product.description || '';
         const variants = product.variants || [];
 
-        // Si tiene variantes, crear un producto por cada variante
-        if (variants && variants.length > 0) {
-          for (const variant of variants) {
-            const variantName = variant.name || productName;
-            const variantPrice = variant.price || 0;
+        // ✅ ENFOQUE SIMPLE: Leer el producto exactamente como está en el JSON
+        // Usar el precio de la primera variante o el precio del producto si no hay variantes
+        const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
 
-            const productEntry: Product = {
-              id: `product-${productId}`,
-              name: variantName,
-              description: description,
-              price: variantPrice,
-              category: categoryName,
-              image: '',
-              is_active: true,
-              stock: 100,
-              unit: 'unidad',
-              min_quantity: 1
-            };
-
-            products.push(productEntry);
-            productId++;
-          }
-        } else {
-          // Si no tiene variantes, crear un producto con precio 0
-          const productEntry: Product = {
-            id: `product-${productId}`,
-            name: productName,
-            description: description,
-            price: product.price || 0,
-            category: categoryName,
-            image: '',
+        const productEntry: Product = {
+          id: `product-${productId}`,
+          name: productName, // ✅ Nombre EXACTO del JSON
+          description: description,
+          price: basePrice,
+          category: categoryName,
+          image: '',
+          is_active: true,
+          stock: 100,
+          unit: 'unidad',
+          min_quantity: 1,
+          // ✅ Variantes tal cual del JSON
+          variants: variants.map((variant: any, index: number) => ({
+            id: `${productId}-variant-${index}`,
+            product_id: `product-${productId}`,
+            variant_name: variant.name || '',
+            variant_value: variant.name || '',
+            price_adjustment: (variant.price || 0) - basePrice,
             is_active: true,
-            stock: 100,
-            unit: 'unidad',
-            min_quantity: 1
-          };
+            created_at: new Date().toISOString()
+          })),
+          hasVariants: variants.length > 1,
+          base_price: basePrice
+        };
 
-          products.push(productEntry);
-          productId++;
-        }
+        products.push(productEntry);
+        productId++;
       }
     }
 
-    console.log(`✅ ${products.length} productos cargados desde JSON real`);
+    console.log(`✅ ${products.length} productos cargados tal cual desde JSON`);
     return products;
 
   } catch (error) {
@@ -133,25 +126,99 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
   }
 };
 
+// Función para cargar SOLO la categoría "Frutas Frescas" como prueba
+const loadFruitsFromJSON = async (): Promise<Product[]> => {
+  try {
+    console.log('🔄 Cargando SOLO Frutas Frescas desde JSON...');
+
+    const response = await fetch('/productos tus_aguacates.json');
+    if (!response.ok) {
+      throw new Error('No se pudo cargar el JSON de productos');
+    }
+
+    const jsonData = await response.json();
+    console.log('✅ JSON cargado exitosamente');
+
+    const products: Product[] = [];
+    let productId = 1;
+
+    // Buscar la categoría "Frutas Frescas" exactamente
+    const fruitsCategory = jsonData.categories?.find((cat: any) =>
+      cat.name === 'Frutas Frescas'
+    );
+
+    if (!fruitsCategory) {
+      console.error('❌ No se encontró la categoría "Frutas Frescas"');
+      return [];
+    }
+
+    console.log(`📦 Procesando categoría: ${fruitsCategory.name}`);
+
+    // ✅ LEER CADA PRODUCTO DE FRUTAS TAL CUAL
+    for (const product of fruitsCategory.products || []) {
+      const productName = product.name || 'Producto sin nombre';
+      const description = product.description || '';
+      const variants = product.variants || [];
+
+      const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
+
+      const productEntry: Product = {
+        id: `product-${productId}`,
+        name: productName, // ✅ Nombre EXACTO del JSON: "Manzana roja Bandeja"
+        description: description,
+        price: basePrice,
+        category: 'Frutas Frescas',
+        image: '',
+        is_active: true,
+        stock: 100,
+        unit: 'unidad',
+        min_quantity: 1,
+        // ✅ Variantes tal cual: ["Bandeja 6u", "2 Bandejas (Ahorro)"]
+        variants: variants.map((variant: any, index: number) => ({
+          id: `${productId}-variant-${index}`,
+          product_id: `product-${productId}`,
+          variant_name: variant.name || '',
+          variant_value: variant.name || '',
+          price_adjustment: (variant.price || 0) - basePrice,
+          is_active: true,
+          created_at: new Date().toISOString()
+        })),
+        hasVariants: variants.length > 1,
+        base_price: basePrice
+      };
+
+      products.push(productEntry);
+      productId++;
+    }
+
+    console.log(`✅ ${products.length} productos de Frutas Frescas cargados tal cual`);
+    return products;
+
+  } catch (error) {
+    console.error('❌ Error cargando Frutas Frescas desde JSON:', error);
+    return [];
+  }
+};
+
 export const getProducts = async (): Promise<Product[]> => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
-  // SIEMPRE cargar desde JSON real - LIMPIEZA TOTAL
-  console.log('🧹 LIMPIEZA: Cargando SOLO productos del JSON real...');
+  // 🧪 PRUEBA: Cargar SOLO Frutas Frescas para validar enfoque
+  console.log('🧪 PRUEBA: Cargando SOLO Frutas Frescas...');
 
   // Limpiar localStorage completamente
   localStorage.removeItem('tus_aguacates_products');
 
-  // Cargar TODOS los productos desde JSON real
-  const jsonProducts = await loadProductsFromJSON();
+  // Cargar SOLO productos de Frutas Frescas
+  const fruitsProducts = await loadFruitsFromJSON();
 
-  if (jsonProducts.length > 0) {
-    console.log(`✅ ${jsonProducts.length} productos cargados desde JSON real`);
-    return jsonProducts;
+  if (fruitsProducts.length > 0) {
+    console.log(`✅ ${fruitsProducts.length} productos de Frutas Frescas cargados para prueba`);
+    return fruitsProducts;
   }
 
-  // Si falla el JSON, retornar vacío
-  console.log('❌ Error crítico: No se pudieron cargar productos del JSON');
+  // Si falla la carga de frutas, retornar vacío
+  console.log('❌ Error crítico: No se pudieron cargar productos de Frutas Frescas');
   return DEFAULT_PRODUCTS;
 };
 
