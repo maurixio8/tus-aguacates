@@ -105,10 +105,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="sticky top-4 right-4 z-10 absolute top-4 right-4 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg transition-all"
+              className="sticky top-4 right-4 z-10 absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
               aria-label="Cerrar"
+              title="Cerrar"
             >
-              <X className="w-6 h-6 text-gray-600" />
+              <X className="w-6 h-6" />
             </button>
 
             {/* Content Grid - Responsive */}
@@ -166,10 +167,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
                 {/* Título y Descripción */}
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                  <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
                     {product.name}
                   </h2>
-                  <p className="text-gray-600 leading-relaxed text-sm md:text-base">
+                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">
                     {product.description || 'Producto de alta calidad de Tus Aguacates'}
                   </p>
                 </div>
@@ -280,17 +281,21 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 <button
                   onClick={handleAddToCart}
                   disabled={(product.stock || 0) === 0}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-lg"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-emerald-700 disabled:border-gray-500 text-lg"
                 >
                   <ShoppingCart className="w-5 h-5" />
-                  {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
+                  {(product.stock || 0) > 0 ? '🛒 Agregar al Carrito' : '❌ Agotado'}
                 </button>
 
-                {/* Información Adicional */}
-                <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm text-gray-600">
-                  <p>✓ Envío rápido a todo el país</p>
-                  <p>✓ Productos frescos garantizados</p>
-                  <p>✓ Devolución sin preguntas</p>
+                {/* Garantía y Confianza */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300">
+                  <div className="flex items-start gap-3">
+                    <span className="text-2xl">✅</span>
+                    <div>
+                      <p className="font-bold text-green-900">Productos Frescos Garantizados</p>
+                      <p className="text-sm text-green-700">Calidad premium verificada en cada envío</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
