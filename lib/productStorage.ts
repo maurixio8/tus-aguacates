@@ -271,13 +271,13 @@ const loadFruitsFromJSON = async (): Promise<Product[]> => {
 };
 
 export const getProducts = async (): Promise<Product[]> => {
-  // ✅ CARGAR TODOS LOS PRODUCTOS DESDE JSON CON 143 ITEMS
-  console.log('📦 Cargando todos los productos desde JSON (143 items)...');
+  // ✅ CARGAR TODOS LOS PRODUCTOS DESDE JSON MASTER CON 50 ITEMS CORRECTOS
+  console.log('📦 Cargando todos los productos desde JSON MASTER...');
 
-  const products = await loadProductsFromJSON();
+  const products = await loadAllProductsFromMaster();
 
   if (products.length > 0) {
-    console.log(`✅ ${products.length} productos cargados desde JSON`);
+    console.log(`✅ ${products.length} productos cargados desde JSON MASTER`);
     return products;
   }
 

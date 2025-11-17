@@ -2,47 +2,11 @@
 
 import Link from 'next/link';
 import { ArrowRight, Leaf, Truck, Shield } from 'lucide-react';
-import { ProductCard } from '@/components/product/ProductCard';
-import ProductSwiper from '@/components/product/ProductSwiper';
 import Image from 'next/image';
 import PromotionSlider from '@/components/promotions/PromotionSlider';
 import UnifiedCategories from '@/components/categories/UnifiedCategories';
-import { useState, useEffect } from 'react';
-import { initializeProducts, getProductsByCategory } from '@/lib/productStorage';
-import type { Product } from '@/lib/productStorage';
 
 export default function Home() {
-  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        setLoading(true);
-
-        // Inicializar productos (sincronizar si es necesario)
-        await initializeProducts();
-
-        // Obtener productos destacados o los más recientes
-        const allProducts = await getProductsByCategory('todos');
-
-        // Prioridad: productos destacados > productos recientes
-        const featured = allProducts
-          .filter(p => p.is_active !== false)
-          .filter(p => p.is_featured || true) // Si no hay destacados, usar todos
-          .slice(0, 12);
-
-        setFeaturedProducts(featured);
-
-      } catch (error) {
-        console.error('Error loading products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadProducts();
-  }, []);
 
   return (
     <div>
@@ -144,23 +108,6 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <PromotionSlider />
         </div>
-      </section>
-
-      {/* Productos Destacados con Swiper */}
-      <section className="py-4 bg-gray-50">
-        {loading ? (
-          <div className="container mx-auto px-4">
-            <div className="text-center py-8">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-verde-bosque"></div>
-              <p className="mt-2 text-gray-600">Cargando productos frescos...</p>
-            </div>
-          </div>
-        ) : (
-          <ProductSwiper
-            products={featuredProducts}
-            title="Lo Más Fresco"
-          />
-        )}
       </section>
 
       {/* CTA Final */}
