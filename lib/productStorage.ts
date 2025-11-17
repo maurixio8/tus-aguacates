@@ -397,10 +397,14 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
   }
 };
 
-export const getProductsByCategory = async (categoryNameOrSlug: string): Promise<Product[]> => {
+export const getProductsByCategory = async (categorySlugOrName: string): Promise<Product[]> => {
   try {
+    console.log(`\n🔍 === getProductsByCategory START ===`);
+    console.log(`Input: "${categorySlugOrName}"`);
+
     // Si es "todos", cargar todos los productos
-    if (categoryNameOrSlug === 'todos' || categoryNameOrSlug === 'Todos') {
+    if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
+      console.log(`📦 Modo "todos": cargando TODOS los productos...`);
       const allProducts = await getProducts();
       return allProducts.filter(p => p.is_active !== false).map(product => ({
         ...product,
@@ -408,61 +412,82 @@ export const getProductsByCategory = async (categoryNameOrSlug: string): Promise
       }));
     }
 
-    // Extraer el slug del nombre de la categoría (ej: "🥑 Aguacates" → no es slug)
-    // O si ya es un slug válido, usarlo directamente
-    let slug = categoryNameOrSlug.toLowerCase();
+    // Paso 1: Obtener todas las categorías de Supabase con slug
+    console.log(`📂 Obteniendo categorías de Supabase...`);
+    const { data: categories, error: catError } = await supabase
+      .from('categories')
+      .select('id, slug, name')
+      .eq('is_active', true);
 
-    // Si no es un slug válido (contiene emojis), obtener todos y filtrar por nombre
-    if (slug.includes('🥑') || slug.includes('🍊') || slug.includes('🍓') ||
-        slug.includes('🌿') || slug.includes('🍯') || slug.includes('🥗') ||
-        slug.includes('🌽') || slug.includes('🍅')) {
-
-      console.log(`🔍 Filtrando por nombre de categoría (tiene emojis): ${categoryNameOrSlug}`);
-      const allProducts = await getProducts();
-
-      // Buscar productos que pertenezcan a una categoría con ese nombre
-      const { data: categories } = await supabase
-        .from('categories')
-        .select('id, name')
-        .eq('is_active', true);
-
-      if (!categories || categories.length === 0) {
-        console.warn(`⚠️ No se encontraron categorías activas`);
-        return [];
-      }
-
-      // Encontrar el ID de la categoría que coincida con el nombre (ignorando emojis)
-      const categoryId = categories.find(cat =>
-        cat.name.toLowerCase().includes(categoryNameOrSlug.replace(/[🥑🍊🍓🌿🍯🥗🌽🍅🎁☘️🌱🥜🍎]/g, '').trim())
-      )?.id;
-
-      if (!categoryId) {
-        console.warn(`⚠️ No se encontró categoría para: ${categoryNameOrSlug}`);
-        return [];
-      }
-
-      return allProducts
-        .filter(p => p.category_id === categoryId && p.is_active !== false)
-        .map(product => ({
-          ...product,
-          main_image_url: product.image || product.main_image_url
-        }));
-    }
-
-    // Si es un slug válido, obtener el category_id
-    const categoryId = await slugToCategoryId(slug);
-    if (!categoryId) {
-      console.warn(`⚠️ No se encontró category para slug: ${slug}`);
+    if (catError || !categories || categories.length === 0) {
+      console.warn(`❌ Error cargando categorías:`, catError);
       return [];
     }
 
+    console.log(`✅ ${categories.length} categorías encontradas:`);
+    categories.forEach(c => console.log(`   - ${c.name} (slug: ${c.slug})`));
+
+    // Paso 2: Determinar el slug objetivo
+    let targetSlug = categorySlugOrName.toLowerCase();
+    let targetCategory = null;
+
+    // Si contiene emojis, buscar por nombre
+    if (/[\p{Emoji}]/u.test(categorySlugOrName)) {
+      console.log(`\n📝 Input contiene emojis, buscando por nombre...`);
+      const cleanName = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim();
+      console.log(`Nombre limpio: "${cleanName}"`);
+
+      targetCategory = categories.find(cat => {
+        const catClean = cat.name.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
+        const match = catClean.includes(cleanName.toLowerCase()) ||
+                      cleanName.toLowerCase().includes(catClean);
+        console.log(`  Comparando: "${catClean}" vs "${cleanName}" -> ${match ? '✅' : '❌'}`);
+        return match;
+      });
+
+      if (targetCategory) {
+        targetSlug = targetCategory.slug;
+        console.log(`✅ Encontrado: ${targetCategory.name} -> slug: ${targetSlug}`);
+      } else {
+        console.warn(`❌ No se encontró categoría para: ${categorySlugOrName}`);
+        return [];
+      }
+    } else {
+      // Es un slug, buscarlo directamente
+      console.log(`\n🔎 Input es un slug, buscando: "${targetSlug}"`);
+      targetCategory = categories.find(cat => cat.slug === targetSlug);
+
+      if (!targetCategory) {
+        console.warn(`❌ No se encontró categoría con slug: "${targetSlug}"`);
+        console.warn(`Slugs disponibles: ${categories.map(c => c.slug).join(', ')}`);
+        return [];
+      }
+
+      console.log(`✅ Encontrado: ${targetCategory.name}`);
+    }
+
+    // Paso 3: Cargar productos desde Supabase
+    console.log(`\n📦 Cargando todos los productos de Supabase...`);
     const allProducts = await getProducts();
-    return allProducts
-      .filter(p => p.category_id === categoryId && p.is_active !== false)
-      .map(product => ({
-        ...product,
-        main_image_url: product.image || product.main_image_url
-      }));
+    console.log(`✅ ${allProducts.length} productos cargados`);
+
+    // Paso 4: Filtrar por category_id
+    console.log(`\n🔎 Filtrando productos con category_id: ${targetCategory.id}`);
+    const filteredProducts = allProducts.filter(p => {
+      const matches = p.category_id === targetCategory.id;
+      if (!matches && allProducts.indexOf(p) < 5) {
+        console.log(`  Producto "${p.name}" tiene category_id: ${p.category_id} (no coincide)`);
+      }
+      return matches && p.is_active !== false;
+    });
+
+    console.log(`✅ ${filteredProducts.length} productos encontrados para ${targetCategory.name}`);
+    console.log(`=== getProductsByCategory END ===\n`);
+
+    return filteredProducts.map(product => ({
+      ...product,
+      main_image_url: product.image || product.main_image_url
+    }));
 
   } catch (error) {
     console.error('❌ Error en getProductsByCategory:', error);
