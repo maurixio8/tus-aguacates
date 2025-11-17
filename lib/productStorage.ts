@@ -450,22 +450,14 @@ export const slugToCategory = (slug: string): string => {
     'frutos-rojos': '🍓 Frutos Rojos',
     'aromaticas': '🌿 Aromáticas y Zumos',
     'saludables': '🍯🥜 SALUDABLES',
-    'especias': '🥗🌱☘️ Especias',  // ✅ CORREGIDO: emoji exacto del JSON
+    'especias': '🥗🌱☘️ Especias',
     'desgranados': '🌽 Desgranados',
     'gourmet': '🍅🌽 Gourmet',
     // Compatibilidad con URLs antiguas
     'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
-    'tropicales': '🍊🍎 Tropicales',
-    // Categorías obsoletas (no existen en el JSON actual)
-    'verduras': null,  // No existe en master.json
-    'combos': null     // No existe en master.json
+    'tropicales': '🍊🍎 Tropicales'
   };
-  const categoryName = categories[slug];
-  if (categoryName === null) {
-    console.warn(`⚠️ Categoría '${slug}' no existe en el JSON de productos`);
-    return '';
-  }
-  return categoryName || slug;
+  return categories[slug] || slug;
 };
 
 // 🔧 FUNCIÓN DE SINCRONIZACIÓN - OPCIÓN B
