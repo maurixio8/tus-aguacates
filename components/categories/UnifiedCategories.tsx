@@ -49,7 +49,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
   },
   {
     id: 'cat-3',
-    name: 'Frutas Rojas',
+    name: 'Frutos Rojos',
     slug: 'frutos-rojos',
     icon: '🍓',
     image: '/categories/frutos-rojos.jpg',

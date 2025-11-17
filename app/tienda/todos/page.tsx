@@ -1,15 +1,25 @@
 import { ProductCard } from '@/components/product/ProductCard';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
-import { getProductsByCategory } from '@/lib/productStorage';
+import { getProducts } from '@/lib/productStorage';
+
+// Asegurar que esta página se ejecute dinámicamente en el servidor
+export const dynamic = 'force-dynamic';
 
 async function getAllProducts() {
   try {
-    // ✅ Cargar desde nuestra fuente de verdad (JSON con 217 productos)
-    const products = await getProductsByCategory('todos');
-    return products;
+    console.log('📦 Cargando todos los productos...');
+    // ✅ Cargar TODOS los productos directamente
+    const allProducts = await getProducts();
+    console.log(`✅ ${allProducts.length} productos cargados exitosamente`);
+
+    // Filtrar solo activos
+    const activeProducts = allProducts.filter(p => p.is_active !== false);
+    console.log(`✅ ${activeProducts.length} productos activos`);
+
+    return activeProducts;
   } catch (error) {
-    console.error('Error cargando productos:', error);
+    console.error('❌ Error cargando productos:', error);
     return [];
   }
 }
