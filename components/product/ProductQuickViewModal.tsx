@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, ShoppingCart } from 'lucide-react';
+import { X, ShoppingCart, CheckCircle } from 'lucide-react';
 import type { Product, ProductVariant } from '@/lib/productStorage';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
@@ -96,15 +96,16 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           }}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex justify-between items-start">
-            <h2 className="text-xl font-bold text-gray-900">
-              Vista Rápida
+          <div className="sticky top-0 bg-gradient-to-r from-blue-50 to-cyan-50 border-b-2 border-blue-200 p-4 flex justify-between items-start">
+            <h2 className="text-xl font-bold text-blue-900">
+              ✨ Vista Rápida
             </h2>
             <button
               onClick={onClose}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              className="p-2 hover:bg-red-500 bg-red-500 text-white rounded-full transition-all transform hover:scale-110 shadow-lg font-bold"
+              title="Cerrar"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6" />
             </button>
           </div>
 
@@ -130,13 +131,13 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
               {/* Información */}
               <div className="space-y-4">
                 {/* Nombre */}
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   {product.name}
                 </h1>
 
                 {/* Descripción */}
                 {product.description && (
-                  <p className="text-gray-600 line-clamp-3">
+                  <p className="text-gray-700 line-clamp-3 text-lg">
                     {product.description}
                   </p>
                 )}
@@ -144,8 +145,8 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Selector de presentaciones */}
                 {variants.length > 0 && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Presentación:
+                    <label className="block text-sm font-bold text-blue-900">
+                      📦 Presentación:
                     </label>
                     <select
                       value={selectedVariant?.id || ''}
@@ -153,7 +154,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                         const variant = variants.find(v => v.id === e.target.value);
                         setSelectedVariant(variant || null);
                       }}
-                      className="w-full border-2 border-gray-300 px-3 py-2 rounded-lg focus:border-green-600 focus:outline-none"
+                      className="w-full border-2 border-blue-400 px-3 py-2 rounded-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 text-blue-900 font-medium"
                     >
                       {variants.map((variant) => (
                         <option key={variant.id} value={variant.id}>
@@ -167,34 +168,45 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                   </div>
                 )}
 
-  
+
                 {/* Total final */}
-                <div className="flex justify-between items-center py-2 border-t border-b border-gray-200">
-                  <span className="text-lg font-semibold">Total:</span>
-                  <span className="text-2xl font-bold text-green-600">
+                <div className="flex justify-between items-center py-3 px-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg">
+                  <span className="text-lg font-bold text-blue-900">💰 Total:</span>
+                  <span className="text-3xl font-bold text-cyan-600">
                     {formatPrice(finalPrice)}
                   </span>
                 </div>
 
-                {/* Botón agregar al carrito - mismo estilo que ProductCard */}
+                {/* Botón agregar al carrito - mejorado */}
                 <button
                   onClick={handleAddToCart}
                   disabled={(product.stock || 0) === 0}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-emerald-700 disabled:border-gray-500 text-lg"
                 >
-                  <ShoppingCart className="w-4 h-4" />
-                  {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
+                  <ShoppingCart className="w-5 h-5" />
+                  {(product.stock || 0) > 0 ? '🛒 Agregar al Carrito' : '❌ Agotado'}
                 </button>
 
-                {/* Badges */}
-                <div className="flex gap-2">
+                {/* Garantía y Confianza */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+                    <div>
+                      <p className="font-bold text-green-900">✅ Productos Frescos Garantizados</p>
+                      <p className="text-sm text-green-700">Calidad premium verificada en cada envío</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Badges adicionales */}
+                <div className="flex gap-2 flex-wrap">
                   {product.is_organic === true && (
-                    <span className="bg-green-100 text-green-800 text-sm font-medium px-3 py-1 rounded-full">
+                    <span className="bg-green-100 text-green-800 text-sm font-bold px-3 py-2 rounded-full border border-green-300">
                       🌿 Orgánico
                     </span>
                   )}
                   {product.is_featured === true && (
-                    <span className="bg-yellow-100 text-yellow-800 text-sm font-medium px-3 py-1 rounded-full">
+                    <span className="bg-yellow-100 text-yellow-800 text-sm font-bold px-3 py-2 rounded-full border border-yellow-300">
                       ⭐ Destacado
                     </span>
                   )}
