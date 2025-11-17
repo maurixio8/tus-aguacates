@@ -370,7 +370,6 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
     // Determinar el slug de la categoría
     let targetSlug = categorySlugOrName.toLowerCase();
-    let targetCategoryName = null;
 
     // Si contiene emojis o espacios, es un nombre - buscar en Supabase
     if (/[\p{Emoji}]|\s/u.test(categorySlugOrName)) {
@@ -391,35 +390,40 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       }
     }
 
-    // Buscar productos por nombre de categoría (cómo está en el JSON)
-    // Primero, obtener qué nombre de categoría del JSON corresponde a este slug
-    const categoryNameMap: { [key: string]: string } = {
-      'aguacates': '🥑 Aguacates',
-      'frutas-tropicales': '🍊🍎 Tropicales',
-      'frutos-rojos': '🍓 Frutos Rojos',
-      'aromaticas': '🌿 Aromáticas y Zumos',
-      'saludables': '🍯🥜 SALUDABLES',
-      'especias': '🥗🌱☘️ Especias',
-      'desgranados': '🌽 Desgranados',
-      'gourmet': '🍅🌽 Gourmet'
+    // ✅ Mapeo FLEXIBLE con múltiples variaciones posibles del nombre
+    // Permite que funcione con diferentes formatos de categoría en el JSON
+    const categoryNameMap: { [key: string]: string[] } = {
+      'aguacates': ['🥑 Aguacates', 'Aguacates'],
+      'frutas-tropicales': ['🍊🍎 Tropicales', 'Tropicales', 'Frutas Tropicales'],
+      'frutos-rojos': ['🍓 Frutos Rojos', 'Frutos Rojos', 'Frutos rojos'],
+      'aromaticas': ['🌿 Aromáticas y Zumos', 'Aromáticas y Zumos', 'Aromáticas', 'Hierbas Aromáticas'],
+      'saludables': ['🍯🥜 SALUDABLES', 'SALUDABLES', 'Saludables'],
+      'especias': ['🥗🌱☘️ Especias', 'Especias', 'Especias y Condimentos'],
+      'desgranados': ['🌽 Desgranados', 'Desgranados'],
+      'gourmet': ['🍅🌽 Gourmet', 'Gourmet']
     };
 
-    targetCategoryName = categoryNameMap[targetSlug];
+    const possibleCategoryNames = categoryNameMap[targetSlug];
 
-    if (!targetCategoryName) {
+    if (!possibleCategoryNames || possibleCategoryNames.length === 0) {
       console.warn(`⚠️ No se encontró mapeo para slug: "${targetSlug}"`);
       console.warn(`Slugs disponibles: ${Object.keys(categoryNameMap).join(', ')}`);
       return [];
     }
 
-    console.log(`🔎 Buscando productos en categoría: "${targetCategoryName}"`);
+    console.log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
 
-    // Filtrar productos por nombre exacto de categoría
+    // Filtrar productos que coincidan con CUALQUIERA de los nombres posibles
     const filteredProducts = allProducts.filter(p =>
-      p.category === targetCategoryName && p.is_active !== false
+      p.category &&
+      possibleCategoryNames.some(catName =>
+        p.category?.toLowerCase().includes(catName.toLowerCase()) ||
+        catName.toLowerCase().includes(p.category?.toLowerCase() || '')
+      ) &&
+      p.is_active !== false
     );
 
-    console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetCategoryName}"\n`);
+    console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
 
     return filteredProducts;
 

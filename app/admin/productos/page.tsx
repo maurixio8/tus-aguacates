@@ -6,7 +6,17 @@ import { CSVImporter } from '@/components/admin/CSVImporter';
 import { getProductsSync, saveProducts, getDefaultProducts, getProducts } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
 
-const CATEGORIES = ['Todos', 'Aguacates', 'Frutas', 'Verduras', 'Lácteos', 'Panadería'];
+const CATEGORIES = [
+  'Todos',
+  'Aguacates',
+  'Frutas Tropicales',
+  'Frutas Rojas',
+  'Aromáticas',
+  'Saludables',
+  'Especias',
+  'Desgranados',
+  'Gourmet'
+];
 
 const SAMPLE_PRODUCTS: Product[] = [
   // Aguacates
@@ -35,6 +45,8 @@ export default function ProductsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   // CARGAR productos del sistema compartido AL INICIAR
   useEffect(() => {
@@ -105,6 +117,13 @@ export default function ProductsPage() {
     setProducts(products.map(p =>
       p.id === productId ? { ...p, is_active: !p.is_active } : p
     ));
+  };
+
+  const handleSaveEdit = (updatedProduct: Product) => {
+    setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+    setEditingProduct(null);
+    setShowEditModal(false);
+    console.log('✅ Producto actualizado:', updatedProduct.name);
   };
 
   return (
@@ -309,7 +328,13 @@ export default function ProductsPage() {
                       >
                         🖼️ Imagen
                       </button>
-                      <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium">
+                      <button
+                        onClick={() => {
+                          setEditingProduct(product);
+                          setShowEditModal(true);
+                        }}
+                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium"
+                      >
                         ✏️ Editar
                       </button>
                       <button
@@ -336,7 +361,107 @@ export default function ProductsPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Edit Modal */}
+      {showEditModal && editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-gray-900">✏️ Editar Producto</h2>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingProduct(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Nombre */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
+                <input
+                  type="text"
+                  value={editingProduct.name}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              {/* Descripción */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                <textarea
+                  value={editingProduct.description}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  rows={3}
+                />
+              </div>
+
+              {/* Precio */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio (COP)</label>
+                  <input
+                    type="number"
+                    value={editingProduct.price}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                  <input
+                    type="number"
+                    value={editingProduct.stock || 0}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                <select
+                  value={editingProduct.category || ''}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {CATEGORIES.filter(cat => cat !== 'Todos').map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3 pt-4 border-t">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingProduct(null);
+                  }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleSaveEdit(editingProduct)}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                >
+                  💾 Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Upload Modal */}
       {showImageUpload && selectedProduct && (
         <ImageUploadModal
           product={selectedProduct}
