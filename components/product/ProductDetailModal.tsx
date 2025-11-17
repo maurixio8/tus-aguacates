@@ -105,7 +105,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             {/* Close Button */}
             <button
               onClick={onClose}
-              className="sticky top-4 right-4 z-10 absolute top-4 right-4 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
+              className="absolute top-4 right-4 z-50 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
               aria-label="Cerrar"
               title="Cerrar"
             >
