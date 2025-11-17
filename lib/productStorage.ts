@@ -373,7 +373,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     let targetCategoryName = null;
 
     // Si contiene emojis o espacios, es un nombre - buscar en Supabase
-    if (/[\p{Emoji}]|\s/.test(categorySlugOrName)) {
+    if (/[\p{Emoji}]|\s/u.test(categorySlugOrName)) {
       console.log(`📝 Es un nombre con emojis/espacios, buscando en Supabase...`);
 
       // Limpiar emojis y espacios extras
