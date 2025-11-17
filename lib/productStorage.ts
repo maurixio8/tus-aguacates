@@ -270,71 +270,19 @@ const loadFruitsFromJSON = async (): Promise<Product[]> => {
   }
 };
 
-// ✅ NUEVA FUNCIÓN: Cargar productos desde Supabase (143 productos reales)
-const loadProductsFromSupabase = async (): Promise<Product[]> => {
-  try {
-    console.log('🔄 Cargando productos desde Supabase...');
-
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('❌ Error cargando productos de Supabase:', error);
-      return [];
-    }
-
-    const products: Product[] = (data || []).map(product => ({
-      id: product.id,
-      name: product.name,
-      description: product.description,
-      price: product.price,
-      category_id: product.category_id,
-      main_image_url: product.main_image_url,
-      images: product.images || [],
-      stock: product.stock || 0,
-      reserved_stock: product.reserved_stock || 0,
-      is_featured: product.is_featured || false,
-      is_active: product.is_active !== false,
-      unit: product.unit || 'unidad',
-      min_quantity: product.min_quantity || 1,
-      discount_price: product.discount_price,
-      weight: product.weight,
-      is_organic: product.is_organic,
-      benefits: product.benefits || [],
-      rating: product.rating || 0,
-      review_count: product.review_count || 0,
-      slug: product.slug,
-      sku: product.sku,
-      created_at: product.created_at,
-      updated_at: product.updated_at,
-      variants: product.variants || [],
-    }));
-
-    console.log(`✅ ${products.length} productos cargados desde Supabase`);
-    return products;
-
-  } catch (error) {
-    console.error('❌ Error en loadProductsFromSupabase:', error);
-    return [];
-  }
-};
-
 export const getProducts = async (): Promise<Product[]> => {
-  // ✅ CARGAR PRODUCTOS DESDE SUPABASE (143 productos reales)
-  console.log('📦 Cargando productos desde Supabase...');
+  // ✅ CARGAR TODOS LOS PRODUCTOS DESDE JSON CON 143 ITEMS
+  console.log('📦 Cargando todos los productos desde JSON (143 items)...');
 
-  const products = await loadProductsFromSupabase();
+  const products = await loadProductsFromJSON();
 
   if (products.length > 0) {
-    console.log(`✅ ${products.length} productos cargados desde Supabase`);
+    console.log(`✅ ${products.length} productos cargados desde JSON`);
     return products;
   }
 
-  // Si falla la carga de Supabase, retornar vacío
-  console.log('❌ No se pudieron cargar productos de Supabase');
+  // Fallback si falla
+  console.log('❌ No se pudieron cargar productos');
   return DEFAULT_PRODUCTS;
 };
 
@@ -399,95 +347,81 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
 
 export const getProductsByCategory = async (categorySlugOrName: string): Promise<Product[]> => {
   try {
-    console.log(`\n🔍 === getProductsByCategory START ===`);
-    console.log(`Input: "${categorySlugOrName}"`);
+    console.log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
 
     // Si es "todos", cargar todos los productos
     if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
-      console.log(`📦 Modo "todos": cargando TODOS los productos...`);
+      console.log(`📦 Modo "todos": cargando TODOS los productos`);
       const allProducts = await getProducts();
-      return allProducts.filter(p => p.is_active !== false).map(product => ({
-        ...product,
-        main_image_url: product.image || product.main_image_url
-      }));
+      return allProducts.filter(p => p.is_active !== false);
     }
 
-    // Paso 1: Obtener todas las categorías de Supabase con slug
-    console.log(`📂 Obteniendo categorías de Supabase...`);
-    const { data: categories, error: catError } = await supabase
+    // Obtener todos los productos
+    const allProducts = await getProducts();
+    console.log(`✅ Total de ${allProducts.length} productos cargados`);
+
+    // Obtener categorías de Supabase para mapeo
+    const { data: supabaseCategories } = await supabase
       .from('categories')
       .select('id, slug, name')
       .eq('is_active', true);
 
-    if (catError || !categories || categories.length === 0) {
-      console.warn(`❌ Error cargando categorías:`, catError);
+    console.log(`📂 Categorías en Supabase:`, supabaseCategories?.map(c => `${c.name} (${c.slug})`) || []);
+
+    // Determinar el slug de la categoría
+    let targetSlug = categorySlugOrName.toLowerCase();
+    let targetCategoryName = null;
+
+    // Si contiene emojis o espacios, es un nombre - buscar en Supabase
+    if (/[\p{Emoji}]|\s/.test(categorySlugOrName)) {
+      console.log(`📝 Es un nombre con emojis/espacios, buscando en Supabase...`);
+
+      // Limpiar emojis y espacios extras
+      const cleanInput = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
+      console.log(`  Nombre limpio: "${cleanInput}"`);
+
+      const match = supabaseCategories?.find(cat =>
+        cat.name.toLowerCase().includes(cleanInput) ||
+        cleanInput.includes(cat.name.toLowerCase().replace(/[\p{Emoji}]/gu, '').trim())
+      );
+
+      if (match) {
+        targetSlug = match.slug;
+        console.log(`✅ Encontrado: "${match.name}" -> slug: "${targetSlug}"`);
+      }
+    }
+
+    // Buscar productos por nombre de categoría (cómo está en el JSON)
+    // Primero, obtener qué nombre de categoría del JSON corresponde a este slug
+    const categoryNameMap: { [key: string]: string } = {
+      'aguacates': '🥑 Aguacates',
+      'frutas-tropicales': '🍊🍎 Tropicales',
+      'frutos-rojos': '🍓 Frutos Rojos',
+      'aromaticas': '🌿 Aromáticas y Zumos',
+      'saludables': '🍯🥜 SALUDABLES',
+      'especias': '🥗🌱☘️ Especias',
+      'desgranados': '🌽 Desgranados',
+      'gourmet': '🍅🌽 Gourmet'
+    };
+
+    targetCategoryName = categoryNameMap[targetSlug];
+
+    if (!targetCategoryName) {
+      console.warn(`⚠️ No se encontró mapeo para slug: "${targetSlug}"`);
+      console.warn(`Slugs disponibles: ${Object.keys(categoryNameMap).join(', ')}`);
       return [];
     }
 
-    console.log(`✅ ${categories.length} categorías encontradas:`);
-    categories.forEach(c => console.log(`   - ${c.name} (slug: ${c.slug})`));
+    console.log(`🔎 Buscando productos en categoría: "${targetCategoryName}"`);
 
-    // Paso 2: Determinar el slug objetivo
-    let targetSlug = categorySlugOrName.toLowerCase();
-    let targetCategory = null;
+    // Filtrar productos por nombre exacto de categoría
+    const filteredProducts = allProducts.filter(p =>
+      p.category === targetCategoryName && p.is_active !== false
+    );
 
-    // Si contiene emojis, buscar por nombre
-    if (/[\p{Emoji}]/u.test(categorySlugOrName)) {
-      console.log(`\n📝 Input contiene emojis, buscando por nombre...`);
-      const cleanName = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim();
-      console.log(`Nombre limpio: "${cleanName}"`);
+    console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetCategoryName}"\n`);
 
-      targetCategory = categories.find(cat => {
-        const catClean = cat.name.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
-        const match = catClean.includes(cleanName.toLowerCase()) ||
-                      cleanName.toLowerCase().includes(catClean);
-        console.log(`  Comparando: "${catClean}" vs "${cleanName}" -> ${match ? '✅' : '❌'}`);
-        return match;
-      });
-
-      if (targetCategory) {
-        targetSlug = targetCategory.slug;
-        console.log(`✅ Encontrado: ${targetCategory.name} -> slug: ${targetSlug}`);
-      } else {
-        console.warn(`❌ No se encontró categoría para: ${categorySlugOrName}`);
-        return [];
-      }
-    } else {
-      // Es un slug, buscarlo directamente
-      console.log(`\n🔎 Input es un slug, buscando: "${targetSlug}"`);
-      targetCategory = categories.find(cat => cat.slug === targetSlug);
-
-      if (!targetCategory) {
-        console.warn(`❌ No se encontró categoría con slug: "${targetSlug}"`);
-        console.warn(`Slugs disponibles: ${categories.map(c => c.slug).join(', ')}`);
-        return [];
-      }
-
-      console.log(`✅ Encontrado: ${targetCategory.name}`);
-    }
-
-    // Paso 3: Cargar productos desde Supabase
-    console.log(`\n📦 Cargando todos los productos de Supabase...`);
-    const allProducts = await getProducts();
-    console.log(`✅ ${allProducts.length} productos cargados`);
-
-    // Paso 4: Filtrar por category_id
-    console.log(`\n🔎 Filtrando productos con category_id: ${targetCategory.id}`);
-    const filteredProducts = allProducts.filter(p => {
-      const matches = p.category_id === targetCategory.id;
-      if (!matches && allProducts.indexOf(p) < 5) {
-        console.log(`  Producto "${p.name}" tiene category_id: ${p.category_id} (no coincide)`);
-      }
-      return matches && p.is_active !== false;
-    });
-
-    console.log(`✅ ${filteredProducts.length} productos encontrados para ${targetCategory.name}`);
-    console.log(`=== getProductsByCategory END ===\n`);
-
-    return filteredProducts.map(product => ({
-      ...product,
-      main_image_url: product.image || product.main_image_url
-    }));
+    return filteredProducts;
 
   } catch (error) {
     console.error('❌ Error en getProductsByCategory:', error);
