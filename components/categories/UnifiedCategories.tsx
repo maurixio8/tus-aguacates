@@ -26,7 +26,8 @@ interface UnifiedCategoriesProps {
   maxItems?: number;
 }
 
-// Mapeo unificado de categorías (basado en JSON master pero limpio)
+// Mapeo unificado de categorías (sincronizado con productos-master.json)
+// ✅ Estas 8 categorías coinciden exactamente con las del JSON
 const UNIFIED_CATEGORIES: UnifiedCategory[] = [
   {
     id: 'cat-1',
@@ -57,15 +58,6 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
   },
   {
     id: 'cat-4',
-    name: 'Verduras',
-    slug: 'verduras',
-    icon: '🥬',
-    image: '/categories/verduras.jpg',
-    description: 'Verduras frescas y orgánicas',
-    color: 'from-green-400 to-lime-600'
-  },
-  {
-    id: 'cat-5',
     name: 'Aromáticas',
     slug: 'aromaticas',
     icon: '🌿',
@@ -74,7 +66,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     color: 'from-emerald-500 to-teal-600'
   },
   {
-    id: 'cat-6',
+    id: 'cat-5',
     name: 'Saludables',
     slug: 'saludables',
     icon: '🥗',
@@ -83,22 +75,31 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     color: 'from-emerald-500 to-teal-600'
   },
   {
-    id: 'cat-7',
+    id: 'cat-6',
     name: 'Especias',
     slug: 'especias',
-    icon: '🌶️',
+    icon: '🥗🌱☘️',
     image: '/categories/especias.jpg',
     description: 'Especias y condimentos naturales',
     color: 'from-yellow-500 to-orange-600'
   },
   {
+    id: 'cat-7',
+    name: 'Desgranados',
+    slug: 'desgranados',
+    icon: '🌽',
+    image: '/categories/desgranados.jpg',
+    description: 'Productos desgranados frescos',
+    color: 'from-yellow-400 to-amber-600'
+  },
+  {
     id: 'cat-8',
-    name: 'Combos',
-    slug: 'combos',
-    icon: '🎁',
-    image: '/categories/combos.jpg',
-    description: 'Combos especiales y paquetes',
-    color: 'from-purple-500 to-indigo-600'
+    name: 'Gourmet',
+    slug: 'gourmet',
+    icon: '🍅🌽',
+    image: '/categories/gourmet.jpg',
+    description: 'Productos gourmet premium',
+    color: 'from-red-500 to-orange-700'
   }
 ];
 

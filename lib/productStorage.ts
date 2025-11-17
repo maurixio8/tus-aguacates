@@ -359,23 +359,30 @@ export const categoryToSlug = (category: string): string => {
 };
 
 export const slugToCategory = (slug: string): string => {
-  // Mapeo unificado sin emojis (para consistencia)
+  // Mapeo unificado con nombres exactos del JSON de productos
   const categories: { [key: string]: string } = {
+    // Categorías principales (coinciden con master.json)
     'aguacates': '🥑 Aguacates',
     'frutas-tropicales': '🍊🍎 Tropicales',
     'frutos-rojos': '🍓 Frutos Rojos',
-    'verduras': '🥬 Verduras',
     'aromaticas': '🌿 Aromáticas y Zumos',
     'saludables': '🍯🥜 SALUDABLES',
-    'especias': '🌶️ Especias',
-    'combos': '🎁 Combos',
-    // Mantener compatibilidad con URLs antiguas
+    'especias': '🥗🌱☘️ Especias',  // ✅ CORREGIDO: emoji exacto del JSON
+    'desgranados': '🌽 Desgranados',
+    'gourmet': '🍅🌽 Gourmet',
+    // Compatibilidad con URLs antiguas
     'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
     'tropicales': '🍊🍎 Tropicales',
-    'desgranados': '🌽 Desgranados',
-    'gourmet': '🍅🌽 Gourmet'
+    // Categorías obsoletas (no existen en el JSON actual)
+    'verduras': null,  // No existe en master.json
+    'combos': null     // No existe en master.json
   };
-  return categories[slug] || slug;
+  const categoryName = categories[slug];
+  if (categoryName === null) {
+    console.warn(`⚠️ Categoría '${slug}' no existe en el JSON de productos`);
+    return '';
+  }
+  return categoryName || slug;
 };
 
 // 🔧 FUNCIÓN DE SINCRONIZACIÓN - OPCIÓN B
