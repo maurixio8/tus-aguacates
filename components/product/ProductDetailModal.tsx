@@ -52,11 +52,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const itemToAdd = {
       ...product,
       category_id: product.category_id || product.category || 'general',
-      quantity: quantity,
       variant: selectedVariant ?? undefined
     };
 
-    addItem(itemToAdd);
+    // Pasar quantity como segundo parámetro, no como propiedad del objeto
+    addItem(itemToAdd as any, quantity);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
 

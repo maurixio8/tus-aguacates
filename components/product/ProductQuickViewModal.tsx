@@ -64,12 +64,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
-      quantity: quantity,
-      selectedVariant,
+      variant: selectedVariant,
       finalPrice,
     };
 
-    addItem(itemToAdd);
+    // Pasar quantity como segundo parámetro, no como propiedad del objeto
+    addItem(itemToAdd as any, quantity);
     setShowToast(true);
 
     setTimeout(() => {

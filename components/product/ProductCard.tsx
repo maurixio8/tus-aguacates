@@ -79,7 +79,6 @@ export function ProductCard({ product }: ProductCardProps) {
     const itemToAdd = {
       ...product,
       category_id: product.category_id || product.category || 'general',
-      quantity: 1,
       variant: selectedVariant ?? undefined
     };
 
@@ -90,7 +89,8 @@ export function ProductCard({ product }: ProductCardProps) {
       return;
     }
 
-    addItem(itemToAdd);
+    // Pasar quantity como segundo parámetro
+    addItem(itemToAdd as any, 1);
     console.log('✅ Product added to cart successfully');
 
     // Mostrar toast de éxito
