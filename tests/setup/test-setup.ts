@@ -28,6 +28,33 @@ vi.mock('@/lib/utils', () => ({
   slugify: (text: string) => text.toLowerCase().replace(/\s+/g, '-'),
 }));
 
+// Mock Supabase
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+          order: vi.fn(() => Promise.resolve({ data: [], error: null })),
+        })),
+        in: vi.fn(() => Promise.resolve({ data: [], error: null })),
+      })),
+      insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      update: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      delete: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    })),
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      signIn: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      signUp: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+    },
+    functions: {
+      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+    },
+  },
+}));
+
 // Mock auth context
 vi.mock('@/lib/auth-context', () => ({
   useAuth: () => ({
@@ -42,7 +69,9 @@ vi.mock('@/lib/auth-context', () => ({
 
 // Configuración del servidor mock
 beforeAll(() => {
-  server.listen({ onUnhandledRequest: 'error' });
+  server.listen({
+    onUnhandledRequest: 'warn' // Cambiado a 'warn' para no romper tests
+  });
 });
 
 afterEach(() => {

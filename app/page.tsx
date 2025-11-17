@@ -6,8 +6,7 @@ import { ProductCard } from '@/components/product/ProductCard';
 import ProductSwiper from '@/components/product/ProductSwiper';
 import Image from 'next/image';
 import PromotionSlider from '@/components/promotions/PromotionSlider';
-import CategoryScroll from '@/components/categories/CategoryScroll';
-import CategorySimpleScroll from '@/components/categories/CategorySimpleScroll';
+import UnifiedCategories from '@/components/categories/UnifiedCategories';
 import { useState, useEffect } from 'react';
 import { initializeProducts, getProductsByCategory } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
@@ -122,18 +121,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Categorías con imágenes */}
+      {/* Categorías Unificadas - Scroll Horizontal */}
       <section className="py-12 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
               Explora por Categoría
             </h2>
-            <p className="text-gray-600 text-sm">
-              Explora nuestras categorías de productos frescos
+            <p className="text-gray-600">
+              Desliza para descubrir productos frescos de nuestra tierra
             </p>
           </div>
-          <CategorySimpleScroll />
+          <UnifiedCategories
+            variant="scroll"
+            showProductCount={false}
+          />
         </div>
       </section>
 
@@ -141,21 +143,6 @@ export default function Home() {
       <section className="py-8">
         <div className="container mx-auto px-4">
           <PromotionSlider />
-        </div>
-      </section>
-
-      {/* Categories Scroll */}
-      <section>
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
-              Explora por Categoría
-            </h2>
-            <p className="text-gray-600">
-              Desliza para descubrir productos frescos
-            </p>
-          </div>
-          <CategoryScroll />
         </div>
       </section>
 

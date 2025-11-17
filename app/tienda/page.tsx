@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SearchTrigger } from '@/components/tienda/SearchTrigger';
+import UnifiedCategories from '@/components/categories/UnifiedCategories';
 import { useState, useEffect } from 'react';
 
 // Estado para manejar refresh de productos
@@ -80,15 +81,7 @@ export default function TiendaPage() {
     loadProducts();
   }, []);
 
-  const categories = [
-    { name: 'Frutas', emoji: '🍓', slug: 'frutas', color: 'from-red-500 to-pink-600' },
-    { name: 'Verduras', emoji: '🥬', slug: 'verduras', color: 'from-lime-500 to-green-600' },
-    { name: 'Aguacates', emoji: '🥑', slug: 'aguacates', color: 'from-green-500 to-green-700' },
-    { name: 'Especias', emoji: '🌶️', slug: 'especias', color: 'from-yellow-500 to-orange-600' },
-    { name: 'Hierbas Aromáticas', emoji: '🌿', slug: 'hierbas-aromaticas', color: 'from-emerald-500 to-teal-600' },
-    { name: 'Combos', emoji: '📦', slug: 'combos', color: 'from-purple-500 to-indigo-600' },
-    { name: 'Saludables', emoji: '🥗', slug: 'saludables', color: 'from-emerald-500 to-teal-600' },
-  ];
+  // Ya no necesitamos categorías hardcodeadas, usamos UnifiedCategories
 
   return (
     <div className="container mx-auto px-4 py-12">
@@ -102,26 +95,11 @@ export default function TiendaPage() {
         </p>
       </div>
 
-      {/* Categories Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mb-8">
-        {categories.map((category) => (
-          <Link
-            key={category.slug}
-            href={`/tienda/${category.slug}`}
-            className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl"
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${category.color} opacity-90`} />
-            <div className="relative h-full flex flex-col items-center justify-center text-white">
-              <span className="text-6xl mb-4 transform group-hover:scale-110 transition-transform duration-300">
-                {category.emoji}
-              </span>
-              <h3 className="text-2xl font-bold text-center px-4">
-                {category.name}
-              </h3>
-            </div>
-          </Link>
-        ))}
-      </div>
+      {/* Categories Grid - Unificado */}
+      <UnifiedCategories
+        variant="grid"
+        showProductCount={true}
+      />
 
       {/* Mobile Search Section - Added between categories and featured products */}
       <div className="mb-12 md:hidden">

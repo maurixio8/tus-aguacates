@@ -359,13 +359,19 @@ export const categoryToSlug = (category: string): string => {
 };
 
 export const slugToCategory = (slug: string): string => {
+  // Mapeo unificado sin emojis (para consistencia)
   const categories: { [key: string]: string } = {
     'aguacates': '🥑 Aguacates',
-    'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
-    'saludables': '🍯🥜 SALUDABLES',
-    'especias': '🥗🌱☘️ Especias',
-    'tropicales': '🍊🍎 Tropicales',
+    'frutas-tropicales': '🍊🍎 Tropicales',
     'frutos-rojos': '🍓 Frutos Rojos',
+    'verduras': '🥬 Verduras',
+    'aromaticas': '🌿 Aromáticas y Zumos',
+    'saludables': '🍯🥜 SALUDABLES',
+    'especias': '🌶️ Especias',
+    'combos': '🎁 Combos',
+    // Mantener compatibilidad con URLs antiguas
+    'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
+    'tropicales': '🍊🍎 Tropicales',
     'desgranados': '🌽 Desgranados',
     'gourmet': '🍅🌽 Gourmet'
   };

@@ -156,6 +156,41 @@ export const handlers = [
       updated_at: new Date().toISOString(),
     });
   }),
+
+  // POST shipping calculate
+  http.post('/api/shipping/calculate', async ({ request }) => {
+    const body = await request.json() as any;
+    const { subtotal, location } = body;
+
+    // Validar entrada (permitir subtotal = 0 para tests)
+    if (typeof subtotal !== 'number' || subtotal < 0 || isNaN(subtotal) || !isFinite(subtotal)) {
+      return HttpResponse.json(
+        { success: false, error: 'Subtotal inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Lógica de shipping
+    let shippingCost = 7400; // Default Bogotá
+    if (location === 'Medellín') {
+      shippingCost = 8900;
+    } else if (location === 'Cali') {
+      shippingCost = 9500;
+    }
+
+    const freeShippingMin = 68900;
+    const freeShipping = subtotal >= freeShippingMin;
+
+    return HttpResponse.json({
+      success: true,
+      data: {
+        shippingCost: freeShipping ? 0 : shippingCost,
+        freeShipping,
+        location: location || 'Bogotá',
+        estimatedDelivery: '2-3 días hábiles'
+      }
+    });
+  }),
 ];
 
 export const server = setupServer(...handlers);
