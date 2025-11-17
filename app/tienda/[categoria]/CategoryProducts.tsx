@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProductSwiper from '@/components/product/ProductSwiper';
 import { ProductCard } from '@/components/product/ProductCard';
 import { getProductsByCategory, slugToCategory } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
@@ -9,7 +8,6 @@ import type { Product } from '@/lib/productStorage';
 export function CategoryProducts({ categoria }: { categoria: string }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     fetchProducts();
@@ -37,8 +35,6 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
     }
   }
 
-  const first12 = products.slice(0, 12);
-
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -58,45 +54,20 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
 
   return (
     <>
-      {/* Slider inicial - SIN botón agregar */}
-      <div className="mb-12">
-        <h2 className="text-2xl font-display font-bold mb-6 px-4">
-          Productos Destacados
-        </h2>
-        <ProductSwiper
-          products={first12}
-          title=""
-        />
+      {/* Grid de todos los productos - SIN carousel */}
+      <div>
+        <div className="mb-4">
+          <p className="text-gray-600 text-sm md:text-base">
+            Mostrando <span className="font-bold text-green-600">{products.length}</span> producto{products.length !== 1 ? 's' : ''}
+          </p>
+        </div>
 
-        {/* Botón Ver Más */}
-        {products.length > 12 && (
-          <div className="text-center mt-8">
-            {!showAll ? (
-              <button
-                onClick={() => setShowAll(true)}
-                className="bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl"
-              >
-                Ver Más Productos ({products.length - 12} más)
-              </button>
-            ) : (
-              <div>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
-                <div className="text-center">
-                  <button
-                    onClick={() => setShowAll(false)}
-                    className="bg-gray-600 hover:bg-gray-700 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:shadow-xl"
-                  >
-                    Mostrar Menos
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        {/* Grid con todos los productos */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
       </div>
     </>
   );

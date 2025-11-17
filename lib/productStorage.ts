@@ -270,25 +270,71 @@ const loadFruitsFromJSON = async (): Promise<Product[]> => {
   }
 };
 
+// ✅ NUEVA FUNCIÓN: Cargar productos desde Supabase (143 productos reales)
+const loadProductsFromSupabase = async (): Promise<Product[]> => {
+  try {
+    console.log('🔄 Cargando productos desde Supabase...');
+
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('❌ Error cargando productos de Supabase:', error);
+      return [];
+    }
+
+    const products: Product[] = (data || []).map(product => ({
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      category_id: product.category_id,
+      main_image_url: product.main_image_url,
+      images: product.images || [],
+      stock: product.stock || 0,
+      reserved_stock: product.reserved_stock || 0,
+      is_featured: product.is_featured || false,
+      is_active: product.is_active !== false,
+      unit: product.unit || 'unidad',
+      min_quantity: product.min_quantity || 1,
+      discount_price: product.discount_price,
+      weight: product.weight,
+      is_organic: product.is_organic,
+      benefits: product.benefits || [],
+      rating: product.rating || 0,
+      review_count: product.review_count || 0,
+      slug: product.slug,
+      sku: product.sku,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      variants: product.variants || [],
+    }));
+
+    console.log(`✅ ${products.length} productos cargados desde Supabase`);
+    return products;
+
+  } catch (error) {
+    console.error('❌ Error en loadProductsFromSupabase:', error);
+    return [];
+  }
+};
+
 export const getProducts = async (): Promise<Product[]> => {
-  if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
+  // ✅ CARGAR PRODUCTOS DESDE SUPABASE (143 productos reales)
+  console.log('📦 Cargando productos desde Supabase...');
 
-  // ✅ CARGAR TODOS LOS PRODUCTOS RECATEGORIZADOS DEL JSON MASTER
-  console.log('📦 Cargando productos recategorizados desde JSON MASTER...');
+  const products = await loadProductsFromSupabase();
 
-  // Limpiar localStorage completamente
-  localStorage.removeItem('tus_aguacates_products');
-
-  // Cargar TODOS los productos del JSON master con categorías correctas
-  const allProducts = await loadAllProductsFromMaster();
-
-  if (allProducts.length > 0) {
-    console.log(`✅ ${allProducts.length} productos recategorizados cargados desde JSON MASTER`);
-    return allProducts;
+  if (products.length > 0) {
+    console.log(`✅ ${products.length} productos cargados desde Supabase`);
+    return products;
   }
 
-  // Si falla la carga, retornar vacío
-  console.log('❌ Error crítico: No se pudieron cargar productos del JSON MASTER');
+  // Si falla la carga de Supabase, retornar vacío
+  console.log('❌ No se pudieron cargar productos de Supabase');
   return DEFAULT_PRODUCTS;
 };
 
@@ -330,20 +376,98 @@ export const updateProductImage = (productId: string, imageData: string): Produc
   return updated;
 };
 
-export const getProductsByCategory = async (category: string): Promise<Product[]> => {
-  const allProducts = await getProducts();
-  if (category === 'todos' || category === 'Todos') {
-    return allProducts.filter(p => p.is_active !== false).map(product => ({
-      ...product,
-      main_image_url: product.image || product.main_image_url
-    }));
+// ✅ Mapeo de slug a category_id en Supabase
+const slugToCategoryId = async (slug: string): Promise<string | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', slug)
+      .single();
+
+    if (error || !data) {
+      console.warn(`⚠️ No se encontró category_id para slug: ${slug}`);
+      return null;
+    }
+
+    return data.id;
+  } catch (error) {
+    console.error(`❌ Error obteniendo category_id para ${slug}:`, error);
+    return null;
   }
-  return allProducts.filter(p =>
-    p.category === category && p.is_active !== false
-  ).map(product => ({
-    ...product,
-    main_image_url: product.image || product.main_image_url
-  }));
+};
+
+export const getProductsByCategory = async (categoryNameOrSlug: string): Promise<Product[]> => {
+  try {
+    // Si es "todos", cargar todos los productos
+    if (categoryNameOrSlug === 'todos' || categoryNameOrSlug === 'Todos') {
+      const allProducts = await getProducts();
+      return allProducts.filter(p => p.is_active !== false).map(product => ({
+        ...product,
+        main_image_url: product.image || product.main_image_url
+      }));
+    }
+
+    // Extraer el slug del nombre de la categoría (ej: "🥑 Aguacates" → no es slug)
+    // O si ya es un slug válido, usarlo directamente
+    let slug = categoryNameOrSlug.toLowerCase();
+
+    // Si no es un slug válido (contiene emojis), obtener todos y filtrar por nombre
+    if (slug.includes('🥑') || slug.includes('🍊') || slug.includes('🍓') ||
+        slug.includes('🌿') || slug.includes('🍯') || slug.includes('🥗') ||
+        slug.includes('🌽') || slug.includes('🍅')) {
+
+      console.log(`🔍 Filtrando por nombre de categoría (tiene emojis): ${categoryNameOrSlug}`);
+      const allProducts = await getProducts();
+
+      // Buscar productos que pertenezcan a una categoría con ese nombre
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true);
+
+      if (!categories || categories.length === 0) {
+        console.warn(`⚠️ No se encontraron categorías activas`);
+        return [];
+      }
+
+      // Encontrar el ID de la categoría que coincida con el nombre (ignorando emojis)
+      const categoryId = categories.find(cat =>
+        cat.name.toLowerCase().includes(categoryNameOrSlug.replace(/[🥑🍊🍓🌿🍯🥗🌽🍅🎁☘️🌱🥜🍎]/g, '').trim())
+      )?.id;
+
+      if (!categoryId) {
+        console.warn(`⚠️ No se encontró categoría para: ${categoryNameOrSlug}`);
+        return [];
+      }
+
+      return allProducts
+        .filter(p => p.category_id === categoryId && p.is_active !== false)
+        .map(product => ({
+          ...product,
+          main_image_url: product.image || product.main_image_url
+        }));
+    }
+
+    // Si es un slug válido, obtener el category_id
+    const categoryId = await slugToCategoryId(slug);
+    if (!categoryId) {
+      console.warn(`⚠️ No se encontró category para slug: ${slug}`);
+      return [];
+    }
+
+    const allProducts = await getProducts();
+    return allProducts
+      .filter(p => p.category_id === categoryId && p.is_active !== false)
+      .map(product => ({
+        ...product,
+        main_image_url: product.image || product.main_image_url
+      }));
+
+  } catch (error) {
+    console.error('❌ Error en getProductsByCategory:', error);
+    return [];
+  }
 };
 
 // Mapeo de categorías para URLs
