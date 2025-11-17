@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/product/ProductCard';
-import { getProductsByCategory, slugToCategory } from '@/lib/productStorage';
+import { getProductsByCategory } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
 
 export function CategoryProducts({ categoria }: { categoria: string }) {
@@ -17,18 +17,17 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
     try {
       setLoading(true);
 
-      // Convertir slug a nombre de categoría
-      const categoryName = slugToCategory(categoria);
-      console.log(`🔍 Buscando productos para categoría: ${categoria} -> ${categoryName}`);
+      // ✅ Pasar el SLUG directamente (getProductsByCategory es inteligente)
+      console.log(`🔍 Buscando productos para slug: ${categoria}`);
 
-      // Obtener productos del localStorage compartido
-      const productsData = await getProductsByCategory(categoryName);
+      // Obtener productos usando el slug
+      const productsData = await getProductsByCategory(categoria);
 
-      console.log(`✅ Encontrados ${productsData.length} productos para ${categoryName}`);
+      console.log(`✅ Encontrados ${productsData.length} productos para ${categoria}`);
       setProducts(productsData);
 
     } catch (error) {
-      console.error('Error in fetchProducts:', error);
+      console.error('❌ Error in fetchProducts:', error);
       setProducts([]);
     } finally {
       setLoading(false);

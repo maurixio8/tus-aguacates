@@ -213,38 +213,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     const allProducts = await getProducts();
     console.log(`✅ Total de ${allProducts.length} productos cargados`);
 
-    // Obtener categorías de Supabase para mapeo
-    const { data: supabaseCategories } = await supabase
-      .from('categories')
-      .select('id, slug, name')
-      .eq('is_active', true);
-
-    console.log(`📂 Categorías en Supabase:`, supabaseCategories?.map(c => `${c.name} (${c.slug})`) || []);
-
-    // Determinar el slug de la categoría
-    let targetSlug = categorySlugOrName.toLowerCase();
-
-    // Si contiene emojis o espacios, es un nombre - buscar en Supabase
-    if (/[\p{Emoji}]|\s/u.test(categorySlugOrName)) {
-      console.log(`📝 Es un nombre con emojis/espacios, buscando en Supabase...`);
-
-      // Limpiar emojis y espacios extras
-      const cleanInput = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
-      console.log(`  Nombre limpio: "${cleanInput}"`);
-
-      const match = supabaseCategories?.find(cat =>
-        cat.name.toLowerCase().includes(cleanInput) ||
-        cleanInput.includes(cat.name.toLowerCase().replace(/[\p{Emoji}]/gu, '').trim())
-      );
-
-      if (match) {
-        targetSlug = match.slug;
-        console.log(`✅ Encontrado: "${match.name}" -> slug: "${targetSlug}"`);
-      }
-    }
-
     // ✅ Mapeo FLEXIBLE con múltiples variaciones posibles del nombre
-    // Permite que funcione con diferentes formatos de categoría en el JSON
     const categoryNameMap: { [key: string]: string[] } = {
       'aguacates': ['🥑 Aguacates', 'Aguacates'],
       'frutas-tropicales': ['🍊🍎 Tropicales', 'Tropicales', 'Frutas Tropicales'],
@@ -255,6 +224,42 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       'desgranados': ['🌽 Desgranados', 'Desgranados'],
       'gourmet': ['🍅🌽 Gourmet', 'Gourmet']
     };
+
+    // Determinar si es un slug o un nombre
+    let targetSlug = categorySlugOrName.toLowerCase();
+
+    // Si tiene guiones, es probablemente un slug (ej: 'frutos-rojos')
+    // Si tiene espacios o emojis, es probablemente un nombre (ej: '🍓 Frutos Rojos')
+    const isSlug = /^[a-z0-9\-]+$/.test(categorySlugOrName);
+
+    if (!isSlug) {
+      // Es un nombre con posibles emojis/espacios
+      console.log(`📝 Detectado como NOMBRE (no slug): "${categorySlugOrName}"`);
+
+      // Obtener categorías de Supabase para mapeo
+      const { data: supabaseCategories } = await supabase
+        .from('categories')
+        .select('id, slug, name')
+        .eq('is_active', true);
+
+      if (supabaseCategories && supabaseCategories.length > 0) {
+        // Limpiar emojis y espacios
+        const cleanInput = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
+        console.log(`  Nombre limpio: "${cleanInput}"`);
+
+        const match = supabaseCategories.find(cat =>
+          cat.name.toLowerCase().includes(cleanInput) ||
+          cleanInput.includes(cat.name.toLowerCase().replace(/[\p{Emoji}]/gu, '').trim())
+        );
+
+        if (match) {
+          targetSlug = match.slug;
+          console.log(`✅ Encontrado en Supabase: "${match.name}" -> slug: "${targetSlug}"`);
+        }
+      }
+    } else {
+      console.log(`✅ Detectado como SLUG: "${categorySlugOrName}"`);
+    }
 
     const possibleCategoryNames = categoryNameMap[targetSlug];
 
