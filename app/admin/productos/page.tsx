@@ -2,78 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import ImageUploadModal from '@/components/admin/ImageUploadModal';
-import { CSVImporter } from '@/components/admin/CSVImporter';
-import { getProductsSync, saveProducts, getDefaultProducts, getProducts } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
 
-const CATEGORIES = [
-  'Todos',
-  'Aguacates',
-  'Frutas Tropicales',
-  'Frutas Rojas',
-  'Aromáticas',
-  'Saludables',
-  'Especias',
-  'Desgranados',
-  'Gourmet'
-];
-
-const SAMPLE_PRODUCTS: Product[] = [
-  // Aguacates
-  { id: '1', name: 'Aguacate Hass Premium', description: 'Variedad premium de alta calidad', price: 6500, category: 'Aguacates', stock: 150, is_active: true },
-  { id: '2', name: 'Aguacate Criollo', description: 'Variedad colombiana tradicional', price: 3500, category: 'Aguacates', stock: 200, is_active: true },
-  { id: '3', name: 'Aguacate Orgánico', description: 'Cultivado sin pesticidas', price: 8500, category: 'Aguacates', stock: 75, is_active: true },
-  { id: '4', name: 'Aguacate Jumbo', description: 'Tamaño extra grande', price: 5500, category: 'Aguacates', stock: 100, is_active: true },
-
-  // Frutas
-  { id: '5', name: 'Limón Tahití', description: 'Ácido y jugoso', price: 3700, category: 'Frutas', stock: 300, is_active: true },
-  { id: '6', name: 'Naranja Valencia', description: 'Dulce y jugosa', price: 2500, category: 'Frutas', stock: 250, is_active: true },
-  { id: '7', name: 'Mango Ataulfo', description: 'Dulce y aromático', price: 4500, category: 'Frutas', stock: 180, is_active: true },
-  { id: '8', name: 'Fresa Fresca', description: 'Fresa fresca y dulce', price: 8500, category: 'Frutas', stock: 120, is_active: true },
-
-  // Verduras
-  { id: '9', name: 'Tomate Rojo', description: 'Tomate maduro y jugoso', price: 2000, category: 'Verduras', stock: 400, is_active: true },
-  { id: '10', name: 'Lechuga Crespa', description: 'Lechuga fresca y crujiente', price: 1500, category: 'Verduras', stock: 350, is_active: true },
-  { id: '11', name: 'Cilantro Fresco', description: 'Cilantro orgánico fresco', price: 800, category: 'Verduras', stock: 500, is_active: true },
-  { id: '12', name: 'Pimentón Rojo', description: 'Pimentón rojo fresco', price: 2200, category: 'Verduras', stock: 280, is_active: true },
-];
+interface ProductResponse extends Product {
+  category?: string;
+}
 
 export default function ProductsPage() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductResponse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductResponse | null>(null);
   const [showImageUpload, setShowImageUpload] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [editingProduct, setEditingProduct] = useState<ProductResponse | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
 
-  // CARGAR productos del sistema compartido AL INICIAR
+  // CARGAR productos de Supabase al iniciar
   useEffect(() => {
-    const initializeAdminProducts = async () => {
-      // Si no hay productos en localStorage, cargar desde CSV
-      const current = getProductsSync();
-      if (current.length === 0) {
-        console.log('📦 Cargando productos iniciales desde CSV...');
-        const loaded = await getProducts();
-        setProducts(loaded);
-      } else {
-        setProducts(current);
-      }
-      console.log('✅ Productos cargados:', current.length);
-    };
-
-    initializeAdminProducts();
+    loadProductsFromSupabase();
   }, []);
 
-  // GUARDAR usando sistema compartido cuando cambien
-  useEffect(() => {
-    if (products.length > 0) {
-      saveProducts(products);
-    }
-  }, [products]);
-
-  // Filtrar productos
+  // Filtrar productos cuando cambian los filtros
   useEffect(() => {
     let filtered = products;
 
@@ -91,19 +44,76 @@ export default function ProductsPage() {
     setFilteredProducts(filtered);
   }, [selectedCategory, searchTerm, products]);
 
+  // Actualizar categorías cuando cambien los productos
+  useEffect(() => {
+    const uniqueCategories = ['Todos', ...new Set(products.map(p => p.category).filter(Boolean))];
+    setCategories(uniqueCategories as string[]);
+  }, [products]);
+
+  // Cargar productos de Supabase
+  const loadProductsFromSupabase = async () => {
+    try {
+      setLoading(true);
+      console.log('📥 Cargando productos de Supabase...');
+
+      const response = await fetch('/api/admin/products');
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`✅ ${data.data?.length || 0} productos cargados de Supabase`);
+
+      setProducts(data.data || []);
+    } catch (error) {
+      console.error('❌ Error cargando productos de Supabase:', error);
+      alert('Error al cargar productos de Supabase. Por favor, intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Sincronizar productos (botón "Sincronizar")
+  const handleSyncProducts = async () => {
+    try {
+      setIsSyncing(true);
+      console.log('🔄 Sincronizando productos...');
+
+      const response = await fetch('/api/admin/products');
+
+      if (!response.ok) {
+        throw new Error(`Sync failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const count = data.data?.length || 0;
+
+      setProducts(data.data || []);
+      console.log(`✅ Sincronización completada: ${count} productos`);
+      alert(`✅ Sincronización completada\n${count} productos cargados desde Supabase`);
+    } catch (error) {
+      console.error('❌ Error sincronizando:', error);
+      alert('Error al sincronizar productos. Intenta de nuevo.');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Actualizar imagen (sincroniza con Supabase)
   const handleImageUpload = async (imageUrl: string) => {
     if (!selectedProduct) return;
 
     const updated = {
       ...selectedProduct,
-      main_image_url: imageUrl, // Guardar URL de Supabase Storage
-      image: imageUrl // Mantener también en 'image' para compatibilidad
+      main_image_url: imageUrl,
+      image: imageUrl
     };
 
-    // Actualizar array localmente
+    // Actualizar localmente
     setProducts(products.map(p => p.id === selectedProduct.id ? updated : p));
 
-    // SINCRONIZAR CON SUPABASE usando el API endpoint
+    // Sincronizar con Supabase
     try {
       console.log('🔄 Sincronizando imagen con Supabase para producto:', selectedProduct.id);
 
@@ -120,7 +130,7 @@ export default function ProductsPage() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('❌ Error sincronizando con Supabase:', errorData.error);
-        alert(`⚠️ Imagen guardada localmente, pero error al sincronizar con Supabase:\n${errorData.error}`);
+        alert(`⚠️ Imagen guardada localmente, pero error al sincronizar:\n${errorData.error}`);
       } else {
         console.log('✅ Imagen sincronizada exitosamente con Supabase');
       }
@@ -133,23 +143,92 @@ export default function ProductsPage() {
     setShowImageUpload(false);
   };
 
-  const handleDelete = (productId: string) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este producto?')) {
+  // Eliminar producto de Supabase
+  const handleDelete = async (productId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+
+    try {
+      console.log('🗑️ Eliminando producto:', productId);
+
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error deleting product');
+      }
+
       setProducts(products.filter(p => p.id !== productId));
+      console.log('✅ Producto eliminado exitosamente');
+      alert('✅ Producto eliminado');
+    } catch (error) {
+      console.error('❌ Error eliminando producto:', error);
+      alert('Error al eliminar el producto. Intenta de nuevo.');
     }
   };
 
-  const handleToggleActive = (productId: string) => {
-    setProducts(products.map(p =>
-      p.id === productId ? { ...p, is_active: !p.is_active } : p
-    ));
+  // Toggle activo/inactivo en Supabase
+  const handleToggleActive = async (productId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_active: !currentStatus
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error updating product');
+      }
+
+      setProducts(products.map(p =>
+        p.id === productId ? { ...p, is_active: !currentStatus } : p
+      ));
+      console.log('✅ Estado del producto actualizado');
+    } catch (error) {
+      console.error('❌ Error actualizando producto:', error);
+      alert('Error al actualizar el producto.');
+    }
   };
 
-  const handleSaveEdit = (updatedProduct: Product) => {
-    setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
-    setEditingProduct(null);
-    setShowEditModal(false);
-    console.log('✅ Producto actualizado:', updatedProduct.name);
+  // Guardar cambios de edición en Supabase
+  const handleSaveEdit = async (updatedProduct: ProductResponse) => {
+    try {
+      const response = await fetch(`/api/admin/products/${updatedProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: updatedProduct.name,
+          description: updatedProduct.description,
+          price: updatedProduct.price,
+          stock: updatedProduct.stock,
+          category: updatedProduct.category,
+          is_active: updatedProduct.is_active
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Error updating product');
+      }
+
+      setProducts(products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+      setEditingProduct(null);
+      setShowEditModal(false);
+      console.log('✅ Producto actualizado exitosamente');
+    } catch (error) {
+      console.error('❌ Error guardando cambios:', error);
+      alert('Error al guardar los cambios.');
+    }
   };
 
   return (
@@ -165,12 +244,12 @@ export default function ProductsPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2">
-              ➕ Nuevo Producto
-            </button>
-            <CSVImporter />
-            <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2">
-              🔄 Sincronizar con Tienda
+            <button
+              onClick={handleSyncProducts}
+              disabled={isSyncing}
+              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              🔄 {isSyncing ? 'Sincronizando...' : 'Sincronizar'}
             </button>
           </div>
         </div>
@@ -198,24 +277,9 @@ export default function ProductsPage() {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
             >
-              {CATEGORIES.map(cat => (
+              {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
-            </select>
-
-            {/* Selector de orden */}
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
-              <option value="name-asc">Nombre A-Z</option>
-              <option value="name-desc">Nombre Z-A</option>
-              <option value="price-asc">Precio Menor a Mayor</option>
-              <option value="price-desc">Precio Mayor a Menor</option>
-            </select>
-
-            {/* Selector de estado */}
-            <select className="w-full p-3 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none">
-              <option value="all">Todos los productos</option>
-              <option value="active">Solo activos</option>
-              <option value="inactive">Solo inactivos</option>
             </select>
           </div>
         </div>
@@ -276,114 +340,112 @@ export default function ProductsPage() {
 
       {/* Tabla de productos */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Producto</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Categoría</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Precio</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Stock</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Imagen</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Estado</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      {product.main_image_url || product.image ? (
-                        <img
-                          src={product.main_image_url || product.image}
-                          alt={product.name}
-                          className="w-12 h-12 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                          <span className="text-xl">🥑</span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-semibold text-gray-900">{product.name}</p>
-                        <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-bold text-green-600">
-                      ${product.price.toLocaleString('es-CO')}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium">{product.stock || 0}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    {product.image || product.main_image_url ? (
-                      <div>
-                        <span className="text-green-600 font-medium">✅ Sí</span>
-                        {product.main_image_url && (
-                          <p className="text-xs text-gray-500 mt-1">📦 Supabase Storage</p>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-red-600 font-medium">❌ No</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleActive(product.id)}
-                      className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        product.is_active
-                          ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                          : 'bg-red-100 text-red-800 hover:bg-red-200'
-                      }`}
-                    >
-                      {product.is_active ? '✅ Activo' : '❌ Inactivo'}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedProduct(product);
-                          setShowImageUpload(true);
-                        }}
-                        className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 font-medium"
-                      >
-                        🖼️ Imagen
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingProduct(product);
-                          setShowEditModal(true);
-                        }}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium"
-                      >
-                        ✏️ Editar
-                      </button>
-                      <button
-                        onClick={() => handleDelete(product.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
-                      >
-                        🗑️ Eliminar
-                      </button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando productos...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Producto</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Categoría</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Precio</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Stock</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Imagen</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Estado</th>
+                  <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {product.main_image_url || product.image ? (
+                          <img
+                            src={product.main_image_url || product.image}
+                            alt={product.name}
+                            className="w-12 h-12 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <span className="text-xl">🥑</span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-gray-900">{product.name}</p>
+                          <p className="text-sm text-gray-600 line-clamp-1">{product.description}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                        {product.category || 'Sin categoría'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-green-600">
+                        ${product.price.toLocaleString('es-CO')}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="font-medium">{product.stock || 0}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      {product.image || product.main_image_url ? (
+                        <div>
+                          <span className="text-green-600 font-medium">✅ Sí</span>
+                          {product.main_image_url && (
+                            <p className="text-xs text-gray-500 mt-1">📦 Supabase Storage</p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-red-600 font-medium">❌ No</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      <button
+                        onClick={() => handleToggleActive(product.id, product.is_active || false)}
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          product.is_active
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
+                        {product.is_active ? '✅ Activo' : '❌ Inactivo'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedProduct(product);
+                            setShowImageUpload(true);
+                          }}
+                          className="bg-purple-600 text-white px-3 py-1 rounded text-sm hover:bg-purple-700 font-medium"
+                        >
+                          🖼️ Imagen
+                        </button>
+                        <button
+                          onClick={() => handleDelete(product.id)}
+                          className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
+                        >
+                          🗑️ Eliminar
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {/* Mensaje si no hay resultados */}
-        {filteredProducts.length === 0 && (
+        {!loading && filteredProducts.length === 0 && (
           <div className="p-8 text-center text-gray-600">
             <div className="text-4xl mb-4">📭</div>
             <p className="text-lg font-medium mb-2">No hay productos que coincidan con tu búsqueda</p>
@@ -391,106 +453,6 @@ export default function ProductsPage() {
           </div>
         )}
       </div>
-
-      {/* Edit Modal */}
-      {showEditModal && editingProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b p-6 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">✏️ Editar Producto</h2>
-              <button
-                onClick={() => {
-                  setShowEditModal(false);
-                  setEditingProduct(null);
-                }}
-                className="text-gray-500 hover:text-gray-700 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              {/* Nombre */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Producto</label>
-                <input
-                  type="text"
-                  value={editingProduct.name}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-
-              {/* Descripción */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
-                <textarea
-                  value={editingProduct.description}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                  rows={3}
-                />
-              </div>
-
-              {/* Precio */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio (COP)</label>
-                  <input
-                    type="number"
-                    value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
-                  <input
-                    type="number"
-                    value={editingProduct.stock || 0}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Categoría */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                <select
-                  value={editingProduct.category || ''}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  {CATEGORIES.filter(cat => cat !== 'Todos').map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Botones */}
-              <div className="flex gap-3 pt-4 border-t">
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingProduct(null);
-                  }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={() => handleSaveEdit(editingProduct)}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                >
-                  💾 Guardar Cambios
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Image Upload Modal */}
       {showImageUpload && selectedProduct && (
