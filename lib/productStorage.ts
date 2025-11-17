@@ -249,9 +249,9 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       'aguacates': ['🥑 Aguacates', 'Aguacates'],
       'frutas-tropicales': ['🍊🍎 Tropicales', 'Tropicales', 'Frutas Tropicales'],
       'frutos-rojos': ['🍓 Frutos Rojos', 'Frutos Rojos', 'Frutos rojos'],
-      'aromaticas': ['🌿 Aromáticas y Zumos', 'Aromáticas y Zumos', 'Aromáticas', 'Hierbas Aromáticas'],
+      'aromaticas': ['🌿 Aromáticas y Zumos', 'Aromáticas y Zumos', 'Aromáticas', 'Hierbas Aromáticas', 'Hierbas'],
       'saludables': ['🍯🥜 SALUDABLES', 'SALUDABLES', 'Saludables'],
-      'especias': ['🥗🌱☘️ Especias', 'Especias', 'Especias y Condimentos'],
+      'especias': ['🥗🌱☘️ Especias', 'Especias', 'Especias y Condimentos', 'Especias y Hierbas'],
       'desgranados': ['🌽 Desgranados', 'Desgranados'],
       'gourmet': ['🍅🌽 Gourmet', 'Gourmet']
     };
@@ -266,15 +266,31 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
     console.log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
 
+    // ✅ Función helper para limpiar y comparar nombres de categoría
+    const cleanCategoryName = (name: string): string => {
+      return name
+        .replace(/[\p{Emoji}]/gu, '') // Eliminar emojis
+        .trim()
+        .toLowerCase();
+    };
+
     // Filtrar productos que coincidan con CUALQUIERA de los nombres posibles
-    const filteredProducts = allProducts.filter(p =>
-      p.category &&
-      possibleCategoryNames.some(catName =>
-        p.category?.toLowerCase().includes(catName.toLowerCase()) ||
-        catName.toLowerCase().includes(p.category?.toLowerCase() || '')
-      ) &&
-      p.is_active !== false
-    );
+    const filteredProducts = allProducts.filter(p => {
+      if (!p.category || p.is_active === false) return false;
+
+      const productCategoryClean = cleanCategoryName(p.category);
+
+      // Buscar coincidencia con cualquiera de los nombres posibles
+      return possibleCategoryNames.some(catName => {
+        const mapCategoryClean = cleanCategoryName(catName);
+        // Match exacto o parcial después de limpiar emojis
+        return (
+          productCategoryClean === mapCategoryClean ||
+          productCategoryClean.includes(mapCategoryClean) ||
+          mapCategoryClean.includes(productCategoryClean)
+        );
+      });
+    });
 
     console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
 
