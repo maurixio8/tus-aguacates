@@ -91,12 +91,13 @@ export default function ProductsPage() {
     setFilteredProducts(filtered);
   }, [selectedCategory, searchTerm, products]);
 
-  const handleImageUpload = (imageData: string) => {
+  const handleImageUpload = (imageUrl: string) => {
     if (!selectedProduct) return;
 
     const updated = {
       ...selectedProduct,
-      image: imageData
+      main_image_url: imageUrl, // Guardar URL de Supabase Storage
+      image: imageUrl // Mantener también en 'image' para compatibilidad
     };
 
     // Actualizar array y localStorage se actualiza automáticamente por useEffect
@@ -104,7 +105,7 @@ export default function ProductsPage() {
     setSelectedProduct(null);
     setShowImageUpload(false);
 
-    console.log('✅ Imagen guardada para:', selectedProduct.name);
+    console.log('✅ Imagen de Supabase Storage guardada para:', selectedProduct.name);
   };
 
   const handleDelete = (productId: string) => {
@@ -213,7 +214,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Con Imágenes</p>
-              <p className="text-2xl font-bold text-green-600">{products.filter(p => p.image).length}</p>
+              <p className="text-2xl font-bold text-green-600">{products.filter(p => p.image || p.main_image_url).length}</p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
               <span className="text-2xl">🖼️</span>
@@ -225,7 +226,7 @@ export default function ProductsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Sin Imágenes</p>
-              <p className="text-2xl font-bold text-orange-600">{products.filter(p => !p.image).length}</p>
+              <p className="text-2xl font-bold text-orange-600">{products.filter(p => !p.image && !p.main_image_url).length}</p>
             </div>
             <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
               <span className="text-2xl">📷</span>
@@ -268,9 +269,9 @@ export default function ProductsPage() {
                 <tr key={product.id} className="border-b hover:bg-gray-50 transition-colors">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      {product.image ? (
+                      {product.main_image_url || product.image ? (
                         <img
-                          src={product.image}
+                          src={product.main_image_url || product.image}
                           alt={product.name}
                           className="w-12 h-12 object-cover rounded-lg"
                         />
@@ -299,8 +300,13 @@ export default function ProductsPage() {
                     <p className="font-medium">{product.stock || 0}</p>
                   </td>
                   <td className="px-6 py-4">
-                    {product.image ? (
-                      <span className="text-green-600 font-medium">✅ Sí</span>
+                    {product.image || product.main_image_url ? (
+                      <div>
+                        <span className="text-green-600 font-medium">✅ Sí</span>
+                        {product.main_image_url && (
+                          <p className="text-xs text-gray-500 mt-1">📦 Supabase Storage</p>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-red-600 font-medium">❌ No</span>
                     )}
