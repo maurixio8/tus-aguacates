@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { Upload, CheckCircle, AlertCircle, FileImage } from 'lucide-react';
+import { uploadProductImage, validateImage } from '@/lib/image-upload-service';
 
 interface Product {
   id: string;
@@ -8,21 +10,32 @@ interface Product {
   description: string;
   price: number;
   image?: string;
+  main_image_url?: string;
   category?: string;
 }
 
 interface ImageUploadModalProps {
   product: Product;
-  onUpload: (imageData: string) => void;
+  onUpload: (imageUrl: string) => void;
   onClose: () => void;
+}
+
+interface UploadProgress {
+  percentage: number;
+  loaded: number;
+  total: number;
+  status: 'validating' | 'compressing' | 'uploading' | 'complete' | 'error';
+  message: string;
 }
 
 export default function ImageUploadModal({ product, onUpload, onClose }: ImageUploadModalProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<UploadProgress | null>(null);
   const [sizeInfo, setSizeInfo] = useState({ original: 0, optimized: 0 });
   const [dragActive, setDragActive] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'supabase' | 'base64'>('supabase');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -89,32 +102,90 @@ export default function ImageUploadModal({ product, onUpload, onClose }: ImageUp
     }
 
     setLoading(true);
+    setProgress(null);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      console.log('🚀 Iniciando upload de imagen:', file.name);
-
-      const response = await fetch('/api/admin/convert-image', {
-        method: 'POST',
-        body: formData
+      // 1. Validar imagen
+      console.log('🔍 Validando imagen:', file.name);
+      setProgress({
+        percentage: 10,
+        loaded: 0,
+        total: file.size,
+        status: 'validating',
+        message: 'Validando imagen...'
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        console.log('✅ Imagen convertida exitosamente');
-        onUpload(data.dataUrl);
-        alert(`✅ Imagen actualizada para ${product.name}\n📊 Tamaño optimizado: ${Math.round(data.size / 1024)} KB`);
-      } else {
-        throw new Error(data.error || 'Error desconocido');
+      const validation = validateImage(file);
+      if (!validation.valid) {
+        throw new Error(validation.error || 'Imagen inválida');
       }
+
+      // 2. Comprimir y subir a Supabase Storage
+      console.log('🚀 Iniciando upload a Supabase Storage:', file.name);
+      setProgress({
+        percentage: 30,
+        loaded: 0,
+        total: file.size,
+        status: 'compressing',
+        message: 'Comprimiendo imagen...'
+      });
+
+      const result = await uploadProductImage(file, product.id, (prog) => {
+        // Actualizar progreso durante la subida
+        setProgress({
+          percentage: Math.min(95, 30 + (prog.percentage * 0.65)), // De 30% a 95%
+          loaded: prog.loaded,
+          total: prog.total,
+          status: 'uploading',
+          message: `Subiendo a Supabase Storage... ${prog.percentage}%`
+        });
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || 'Error desconocido al subir imagen');
+      }
+
+      if (!result.publicUrl) {
+        throw new Error('No se obtuvo URL pública de la imagen');
+      }
+
+      // 3. Éxito
+      console.log('✅ Imagen subida exitosamente a Supabase Storage');
+      setProgress({
+        percentage: 100,
+        loaded: file.size,
+        total: file.size,
+        status: 'complete',
+        message: 'Imagen subida exitosamente'
+      });
+
+      // Esperar a que se muestre la animación de completado
+      setTimeout(() => {
+        onUpload(result.publicUrl!); // Pasar URL de Supabase Storage
+        alert(`✅ Imagen actualizada para ${product.name}\n📦 Guardada en Supabase Storage\n🔗 ${result.publicUrl}`);
+      }, 500);
+
     } catch (error) {
       console.error('❌ Error subiendo imagen:', error);
-      alert('❌ Error subiendo imagen: ' + (error instanceof Error ? error.message : 'Error desconocido'));
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+      setProgress({
+        percentage: 0,
+        loaded: 0,
+        total: 100,
+        status: 'error',
+        message: `Error: ${errorMessage}`
+      });
+
+      alert(`❌ Error subiendo imagen:\n${errorMessage}`);
     } finally {
       setLoading(false);
+      // Limpiar progreso después de 3 segundos
+      setTimeout(() => {
+        if (!progress || progress.status !== 'complete') {
+          setProgress(null);
+        }
+      }, 3000);
     }
   };
 
@@ -261,6 +332,73 @@ export default function ImageUploadModal({ product, onUpload, onClose }: ImageUp
           </div>
         </div>
 
+        {/* Progress Indicator */}
+        {progress && (
+          <div className="mt-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center gap-3 mb-2">
+              {progress.status === 'validating' && (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                  <span className="font-medium text-blue-900">🔍 Validando imagen...</span>
+                </>
+              )}
+              {progress.status === 'compressing' && (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+                  <span className="font-medium text-blue-900">⚙️ Comprimiendo imagen...</span>
+                </>
+              )}
+              {progress.status === 'uploading' && (
+                <>
+                  <Upload className="w-4 h-4 text-blue-600 animate-bounce" />
+                  <span className="font-medium text-blue-900">📤 Subiendo a Supabase...</span>
+                </>
+              )}
+              {progress.status === 'complete' && (
+                <>
+                  <CheckCircle className="w-4 h-4 text-green-600" />
+                  <span className="font-medium text-green-900">✅ Completado</span>
+                </>
+              )}
+              {progress.status === 'error' && (
+                <>
+                  <AlertCircle className="w-4 h-4 text-red-600" />
+                  <span className="font-medium text-red-900">❌ Error</span>
+                </>
+              )}
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-white rounded-full h-2 overflow-hidden border border-blue-200">
+              <div
+                className={`h-full transition-all duration-300 ${
+                  progress.status === 'error'
+                    ? 'bg-red-500'
+                    : progress.status === 'complete'
+                    ? 'bg-green-500'
+                    : 'bg-gradient-to-r from-blue-500 to-indigo-600'
+                }`}
+                style={{ width: `${progress.percentage}%` }}
+              ></div>
+            </div>
+
+            {/* Progress Percentage and Message */}
+            <div className="flex items-center justify-between mt-2">
+              <span className="text-sm text-gray-700">{progress.message}</span>
+              <span className="text-sm font-bold text-blue-900">{progress.percentage}%</span>
+            </div>
+
+            {/* Upload Stats */}
+            {progress.total > 0 && (
+              <div className="mt-2 text-xs text-gray-600">
+                <span>
+                  {Math.round(progress.loaded / 1024)} KB / {Math.round(progress.total / 1024)} KB
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Botones de acción */}
         <div className="flex gap-3 mt-6">
           <button
@@ -271,17 +409,19 @@ export default function ImageUploadModal({ product, onUpload, onClose }: ImageUp
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
-                Subiendo...
+                {progress?.status === 'validating' ? 'Validando...' : progress?.status === 'compressing' ? 'Comprimiendo...' : 'Subiendo...'}
               </>
             ) : (
               <>
-                ✅ Guardar Imagen
+                <Upload className="w-4 h-4" />
+                Guardar Imagen
               </>
             )}
           </button>
           <button
             onClick={onClose}
-            className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500 font-medium"
+            disabled={loading}
+            className="flex-1 bg-gray-400 text-white py-3 rounded-lg hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             ✖️ Cancelar
           </button>
