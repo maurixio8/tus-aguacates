@@ -1,31 +1,53 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import { ProductCard } from '@/components/product/ProductCard';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { getProducts } from '@/lib/productStorage';
+import type { Product } from '@/lib/productStorage';
 
-// Asegurar que esta página se ejecute dinámicamente en el servidor
-export const dynamic = 'force-dynamic';
+export default function TodosProductosPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
 
-async function getAllProducts() {
-  try {
-    console.log('📦 Cargando todos los productos...');
-    // ✅ Cargar TODOS los productos directamente
-    const allProducts = await getProducts();
-    console.log(`✅ ${allProducts.length} productos cargados exitosamente`);
+  useEffect(() => {
+    loadAllProducts();
+  }, []);
 
-    // Filtrar solo activos
-    const activeProducts = allProducts.filter(p => p.is_active !== false);
-    console.log(`✅ ${activeProducts.length} productos activos`);
+  async function loadAllProducts() {
+    try {
+      setLoading(true);
+      console.log('📦 Cargando todos los productos...');
 
-    return activeProducts;
-  } catch (error) {
-    console.error('❌ Error cargando productos:', error);
-    return [];
+      // ✅ Cargar TODOS los productos directamente (en el navegador funciona)
+      const allProducts = await getProducts();
+      console.log(`✅ ${allProducts.length} productos cargados exitosamente`);
+
+      // Filtrar solo activos
+      const activeProducts = allProducts.filter(p => p.is_active !== false);
+      console.log(`✅ ${activeProducts.length} productos activos`);
+
+      setProducts(activeProducts);
+    } catch (error) {
+      console.error('❌ Error cargando productos:', error);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
   }
-}
 
-export default async function TodosProductosPage() {
-  const products = await getAllProducts();
+  // Mostrar loading
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 pt-20 pb-24 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando todos los productos...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-20 pb-24">
