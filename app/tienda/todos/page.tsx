@@ -1,24 +1,15 @@
-import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
+import { getProductsByCategory } from '@/lib/productStorage';
 
 async function getAllProducts() {
   try {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching products:', error);
-      return [];
-    }
-
-    return data || [];
+    // ✅ Cargar desde nuestra fuente de verdad (JSON con 217 productos)
+    const products = await getProductsByCategory('todos');
+    return products;
   } catch (error) {
-    console.error('Error in getAllProducts:', error);
+    console.error('Error cargando productos:', error);
     return [];
   }
 }

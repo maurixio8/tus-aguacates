@@ -56,10 +56,10 @@ export const getDefaultProducts = (): Product[] => {
   return DEFAULT_PRODUCTS;
 };
 
-// Función para cargar productos DIRECTAMENTE desde el JSON real - LEER TAL CUAL
+// ✅ ÚNICA FUENTE DE VERDAD: productos tus_aguacates.json (217 productos)
 const loadProductsFromJSON = async (): Promise<Product[]> => {
   try {
-    console.log('🔄 Cargando productos tal cual desde JSON real...');
+    console.log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
 
     const response = await fetch('/productos tus_aguacates.json');
     if (!response.ok) {
@@ -77,19 +77,18 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
       const categoryName = category.name || 'General';
       console.log(`📦 Procesando categoría: ${categoryName}`);
 
-      // ✅ LEER CADA PRODUCTO TAL CUAL - UNO POR UNO
+      // ✅ LEER CADA PRODUCTO TAL CUAL
       for (const product of category.products || []) {
         const productName = product.name || 'Producto sin nombre';
         const description = product.description || '';
         const variants = product.variants || [];
 
-        // ✅ ENFOQUE SIMPLE: Leer el producto exactamente como está en el JSON
-        // Usar el precio de la primera variante o el precio del producto si no hay variantes
+        // Usar el precio de la primera variante o el precio del producto
         const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
 
         const productEntry: Product = {
           id: `product-${productId}`,
-          name: productName, // ✅ Nombre EXACTO del JSON
+          name: productName,
           description: description,
           price: basePrice,
           category: categoryName,
@@ -98,7 +97,6 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
           stock: 100,
           unit: 'unidad',
           min_quantity: 1,
-          // ✅ Variantes tal cual del JSON
           variants: variants.map((variant: any, index: number) => ({
             id: `${productId}-variant-${index}`,
             product_id: `product-${productId}`,
@@ -117,167 +115,22 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
       }
     }
 
-    console.log(`✅ ${products.length} productos cargados tal cual desde JSON`);
+    console.log(`✅ ${products.length} productos cargados exitosamente`);
     return products;
 
   } catch (error) {
-    console.error('❌ Error cargando productos desde JSON:', error);
+    console.error('❌ Error cargando productos:', error);
     return [];
   }
 };
 
-// Función para cargar TODOS los productos del JSON MASTER recategorizado
-const loadAllProductsFromMaster = async (): Promise<Product[]> => {
-  try {
-    console.log('🔄 Cargando TODOS los productos recategorizados desde JSON MASTER...');
-
-    const response = await fetch('/productos-master.json');
-    if (!response.ok) {
-      throw new Error('No se pudo cargar el JSON MASTER de productos');
-    }
-
-    const jsonData = await response.json();
-    console.log('✅ JSON MASTER cargado exitosamente');
-
-    const products: Product[] = [];
-    let productId = 1;
-
-    // Procesar TODAS las categorías del JSON MASTER
-    for (const category of jsonData.categories || []) {
-      const categoryName = category.name || 'General';
-      console.log(`📦 Procesando categoría: ${categoryName}`);
-
-      // ✅ LEER CADA PRODUCTO TAL CUAL - SIN MODIFICAR NOMBRES
-      for (const product of category.products || []) {
-        const productName = product.name || 'Producto sin nombre'; // ✅ NOMBRE EXACTO con emojis
-        const description = product.description || '';
-        const variants = product.variants || [];
-
-        // ✅ USAR PRECIO EXACTO del JSON
-        const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
-
-        const productEntry: Product = {
-          id: `product-${productId}`,
-          name: productName, // ✅ NOMBRE EXACTO Y COMPLETO del dashboard
-          description: description,
-          price: basePrice,
-          category: categoryName,
-          image: '',
-          is_active: true,
-          stock: 100,
-          unit: 'unidad',
-          min_quantity: 1,
-          // ✅ Variantes exactas con nombres y precios del dashboard
-          variants: variants.map((variant: any, index: number) => ({
-            id: `${productId}-variant-${index}`,
-            product_id: `product-${productId}`,
-            variant_name: variant.name || '',
-            variant_value: variant.name || '',
-            price_adjustment: (variant.price || 0) - basePrice,
-            is_active: true,
-            created_at: new Date().toISOString()
-          })),
-          hasVariants: variants.length > 1,
-          base_price: basePrice
-        };
-
-        products.push(productEntry);
-        productId++;
-      }
-    }
-
-    console.log(`✅ ${products.length} productos RECATEGORIZADOS cargados con NOMBRES EXACTOS`);
-    return products;
-
-  } catch (error) {
-    console.error('❌ Error cargando productos recategorizados desde JSON MASTER:', error);
-    return [];
-  }
-};
-
-// Función para cargar productos del JSON LIMPIO (nombres exactos y precios correctos)
-const loadFruitsFromJSON = async (): Promise<Product[]> => {
-  try {
-    console.log('🔄 Cargando productos TROPICALES desde JSON LIMPIO...');
-
-    const response = await fetch('/productos-tropicales-limpios.json');
-    if (!response.ok) {
-      throw new Error('No se pudo cargar el JSON LIMPIO de productos');
-    }
-
-    const jsonData = await response.json();
-    console.log('✅ JSON LIMPIO cargado exitosamente');
-
-    const products: Product[] = [];
-    let productId = 1;
-
-    // Buscar la categoría "Tropicales" del JSON LIMPIO
-    const tropicalesCategory = jsonData.categories?.find((cat: any) =>
-      cat.name === 'Tropicales'
-    );
-
-    if (!tropicalesCategory) {
-      console.error('❌ No se encontró la categoría "Tropicales" en el JSON LIMPIO');
-      return [];
-    }
-
-    console.log(`📦 Procesando categoría: ${tropicalesCategory.name}`);
-
-    // ✅ LEER CADA PRODUCTO TAL CUAL - SIN MODIFICAR NOMBRES
-    for (const product of tropicalesCategory.products || []) {
-      const productName = product.name || 'Producto sin nombre'; // ✅ NOMBRE EXACTO: "🍎 Manzana roja Bandeja"
-      const description = product.description || '';
-      const variants = product.variants || [];
-
-      // ✅ USAR PRECIO EXACTO del JSON
-      const basePrice = variants.length > 0 ? variants[0].price || 0 : (product.price || 0);
-
-      const productEntry: Product = {
-        id: `product-${productId}`,
-        name: productName, // ✅ NOMBRE EXACTO Y COMPLETO del dashboard
-        description: description,
-        price: basePrice,
-        category: 'Tropicales',
-        image: '',
-        is_active: true,
-        stock: 100,
-        unit: 'unidad',
-        min_quantity: 1,
-        // ✅ Variantes exactas con nombres y precios del dashboard
-        variants: variants.map((variant: any, index: number) => ({
-          id: `${productId}-variant-${index}`,
-          product_id: `product-${productId}`,
-          variant_name: variant.name || '',
-          variant_value: variant.name || '',
-          price_adjustment: (variant.price || 0) - basePrice,
-          is_active: true,
-          created_at: new Date().toISOString()
-        })),
-        hasVariants: variants.length > 1,
-        base_price: basePrice
-      };
-
-      products.push(productEntry);
-      productId++;
-    }
-
-    console.log(`✅ ${products.length} productos TROPICALES cargados con NOMBRES EXACTOS`);
-    return products;
-
-  } catch (error) {
-    console.error('❌ Error cargando productos TROPICALES desde JSON LIMPIO:', error);
-    return [];
-  }
-};
 
 export const getProducts = async (): Promise<Product[]> => {
-  // ✅ CARGAR TODOS LOS PRODUCTOS DESDE JSON MASTER CON 50 ITEMS CORRECTOS
-  console.log('📦 Cargando todos los productos desde JSON MASTER...');
-
-  const products = await loadAllProductsFromMaster();
+  // ✅ CARGAR SIEMPRE desde productos tus_aguacates.json (217 productos)
+  const products = await loadProductsFromJSON();
 
   if (products.length > 0) {
-    console.log(`✅ ${products.length} productos cargados desde JSON MASTER`);
+    console.log(`✅ ${products.length} productos cargados desde JSON`);
     return products;
   }
 
