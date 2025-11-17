@@ -1,6 +1,161 @@
 {
   "categories": [
     {
+      "name": "Aguacates",
+      "products": [
+        {
+          "name": "Caja de 24 unidades hass mediano",
+          "description": "",
+          "variants": [
+            {
+              "name": "24 unidades",
+              "price": 16600
+            }
+          ]
+        },
+        {
+          "name": "Caja de 12 unidades Premium",
+          "description": "",
+          "variants": [
+            {
+              "name": "12 unidades",
+              "price": 24700
+            }
+          ]
+        },
+        {
+          "name": "Caja de 7 unidades injerto",
+          "description": "",
+          "variants": [
+            {
+              "name": "7 unidades",
+              "price": 24000
+            }
+          ]
+        },
+        {
+          "name": "Caja promoción del día",
+          "description": "",
+          "variants": [
+            {
+              "name": "6-8 unidades",
+              "price": 14900
+            }
+          ]
+        },
+        {
+          "name": "Caja de 35 unidades hass baby",
+          "description": "",
+          "variants": [
+            {
+              "name": "35 unidades",
+              "price": 15900
+            }
+          ]
+        },
+        {
+          "name": "Maya injerto promoción",
+          "description": "",
+          "variants": [
+            {
+              "name": "3 unidades",
+              "price": 7500
+            }
+          ]
+        },
+        {
+          "name": "Combo Ahorro #2",
+          "description": "",
+          "variants": [
+            {
+              "name": "Combo",
+              "price": 29900
+            }
+          ]
+        },
+        {
+          "name": "Combo Ahorro #1",
+          "description": "",
+          "variants": [
+            {
+              "name": "Combo",
+              "price": 34100
+            }
+          ]
+        },
+        {
+          "name": "Combo Ahorro #3",
+          "description": "",
+          "variants": [
+            {
+              "name": "Combo",
+              "price": 26600
+            }
+          ]
+        },
+        {
+          "name": "Nuevo combo 4",
+          "description": "",
+          "variants": [
+            {
+              "name": "Combo",
+              "price": 40500
+            }
+          ]
+        },
+        {
+          "name": "Combo Mercado Semanal Completo",
+          "description": "",
+          "variants": [
+            {
+              "name": "Combo",
+              "price": 68900
+            }
+          ]
+        },
+        {
+          "name": "Paquete X 12 Unidades baby",
+          "description": "",
+          "variants": [
+            {
+              "name": "12 unidades",
+              "price": 7900
+            }
+          ]
+        },
+        {
+          "name": "Paquete x 8 unidades mediano",
+          "description": "",
+          "variants": [
+            {
+              "name": "8 unidades",
+              "price": 8900
+            }
+          ]
+        },
+        {
+          "name": "Paquete x4 unidades premium",
+          "description": "",
+          "variants": [
+            {
+              "name": "4 unidades",
+              "price": 9900
+            }
+          ]
+        },
+        {
+          "name": "Paquete 4 Unidades injerto",
+          "description": "",
+          "variants": [
+            {
+              "name": "4 unidades",
+              "price": 14400
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "PRODUCTOS NUEVOS",
       "products": [
         {
@@ -254,10 +409,6 @@
             {
               "name": "X250grs",
               "price": 25900
-            },
-            {
-              "name": "Mediano",
-              "price": 0
             }
           ]
         },
@@ -286,24 +437,6 @@
           ]
         },
         {
-          "name": "Adobo",
-          "description": "",
-          "variants": [
-            {
-              "name": "Pequeño x100 gr",
-              "price": 0
-            },
-            {
-              "name": "Mediano x250gr",
-              "price": 0
-            },
-            {
-              "name": "Grande x500gr",
-              "price": 0
-            }
-          ]
-        },
-        {
           "name": "Sandía Baby",
           "description": "",
           "variants": [
@@ -324,52 +457,12 @@
           ]
         },
         {
-          "name": "Feijoa",
-          "description": "",
-          "variants": [
-            {
-              "name": "Unidad",
-              "price": 0
-            }
-          ]
-        },
-        {
           "name": "Ciruela Importada",
           "description": "",
           "variants": [
             {
               "name": "Unidad",
               "price": 5000
-            }
-          ]
-        },
-        {
-          "name": "Durazno Importado",
-          "description": "",
-          "variants": [
-            {
-              "name": "Unidad",
-              "price": 0
-            }
-          ]
-        },
-        {
-          "name": "Aloe Vera",
-          "description": "",
-          "variants": [
-            {
-              "name": "Unidad",
-              "price": 0
-            }
-          ]
-        },
-        {
-          "name": "Zarzamora",
-          "description": "",
-          "variants": [
-            {
-              "name": "Unidad",
-              "price": 0
             }
           ]
         },
@@ -703,171 +796,6 @@
       ]
     },
     {
-      "name": "Cajitas",
-      "products": [
-        {
-          "name": "Caja de 24 unidades hass mediano",
-          "description": "",
-          "variants": [
-            {
-              "name": "24 unidades",
-              "price": 16600
-            }
-          ]
-        },
-        {
-          "name": "Caja de 12 unidades Premium",
-          "description": "",
-          "variants": [
-            {
-              "name": "12 unidades",
-              "price": 24700
-            }
-          ]
-        },
-        {
-          "name": "Caja de 7 unidades injerto",
-          "description": "",
-          "variants": [
-            {
-              "name": "7 unidades",
-              "price": 24000
-            }
-          ]
-        },
-        {
-          "name": "Caja promoción del día",
-          "description": "",
-          "variants": [
-            {
-              "name": "6-8 unidades",
-              "price": 14900
-            }
-          ]
-        },
-        {
-          "name": "Caja de 35 unidades hass baby",
-          "description": "",
-          "variants": [
-            {
-              "name": "35 unidades",
-              "price": 15900
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Ofertas",
-      "products": [
-        {
-          "name": "Maya injerto promoción",
-          "description": "",
-          "variants": [
-            {
-              "name": "3 unidades",
-              "price": 7500
-            }
-          ]
-        },
-        {
-          "name": "Combo Ahorro #2",
-          "description": "",
-          "variants": [
-            {
-              "name": "Combo",
-              "price": 29900
-            }
-          ]
-        },
-        {
-          "name": "Combo Ahorro #1",
-          "description": "",
-          "variants": [
-            {
-              "name": "Combo",
-              "price": 34100
-            }
-          ]
-        },
-        {
-          "name": "Combo Ahorro #3",
-          "description": "",
-          "variants": [
-            {
-              "name": "Combo",
-              "price": 26600
-            }
-          ]
-        },
-        {
-          "name": "Nuevo combo 4",
-          "description": "",
-          "variants": [
-            {
-              "name": "Combo",
-              "price": 40500
-            }
-          ]
-        },
-        {
-          "name": "Combo Mercado Semanal Completo",
-          "description": "",
-          "variants": [
-            {
-              "name": "Combo",
-              "price": 68900
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "name": "Paquetes",
-      "products": [
-        {
-          "name": "Paquete X 12 Unidades baby",
-          "description": "",
-          "variants": [
-            {
-              "name": "12 unidades",
-              "price": 7900
-            }
-          ]
-        },
-        {
-          "name": "Paquete x 8 unidades mediano",
-          "description": "",
-          "variants": [
-            {
-              "name": "8 unidades",
-              "price": 8900
-            }
-          ]
-        },
-        {
-          "name": "Paquete x4 unidades premium",
-          "description": "",
-          "variants": [
-            {
-              "name": "4 unidades",
-              "price": 9900
-            }
-          ]
-        },
-        {
-          "name": "Paquete 4 Unidades injerto",
-          "description": "",
-          "variants": [
-            {
-              "name": "4 unidades",
-              "price": 14400
-            }
-          ]
-        }
-      ]
-    },
-    {
       "name": "Aromáticas",
       "products": [
         {
@@ -991,16 +919,6 @@
             {
               "name": "Paquete",
               "price": 3800
-            }
-          ]
-        },
-        {
-          "name": "Limonaria",
-          "description": "",
-          "variants": [
-            {
-              "name": "Paquete",
-              "price": 0
             }
           ]
         }
