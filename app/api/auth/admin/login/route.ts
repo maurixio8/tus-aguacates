@@ -23,13 +23,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // VALIDACIÓN TEMPORAL HARDCODEADA
-    if (email === 'admin@tusaguacates.com' && password === 'admin123') {
+    // VALIDACIÓN USANDO VARIABLES DE ENTORNO
+    const validEmail = process.env.ADMIN_EMAIL || 'admin@tusaguacates.com';
+    const validPassword = process.env.ADMIN_PASSWORD || 'admin123';
+
+    if (email === validEmail && password === validPassword) {
       console.log('✅ [Login API] Credenciales válidas - Admin verificado');
 
       const adminUser = {
         id: 'admin-001',
-        email: 'admin@tusaguacates.com',
+        email: email, // Usar el email proporcionado en la request
         name: 'Administrador',
         role: 'super_admin'
       };
