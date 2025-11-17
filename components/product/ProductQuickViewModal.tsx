@@ -145,7 +145,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Selector de presentaciones */}
                 {variants.length > 0 && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-bold text-blue-900">
+                    <label className="block text-sm font-bold text-emerald-900">
                       📦 Presentación:
                     </label>
                     <select
@@ -154,7 +154,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                         const variant = variants.find(v => v.id === e.target.value);
                         setSelectedVariant(variant || null);
                       }}
-                      className="w-full border-2 border-blue-400 px-3 py-2 rounded-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 text-blue-900 font-medium"
+                      className="w-full border-2 border-emerald-500 px-3 py-3 rounded-lg focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-emerald-300 text-emerald-900 font-bold bg-emerald-50 hover:bg-emerald-100 transition-colors"
                     >
                       {variants.map((variant) => (
                         <option key={variant.id} value={variant.id}>
