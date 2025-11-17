@@ -9,7 +9,7 @@ import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
-// import ProductModal from './ProductModal'; // Temporarily disabled
+import { ProductDetailModal } from './ProductDetailModal';
 
 interface ProductVariant {
   id: string;
@@ -101,8 +101,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    // Navegar a la página de producto usando window.location
-    window.location.href = `/tienda`;
+    setIsModalOpen(true);
   };
 
   // Precio a mostrar (variante seleccionada o precio base con descuento)
@@ -234,12 +233,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       )}
 
-      {/* Product Modal - Temporarily disabled */}
-      {/* <ProductModal
+      {/* Product Detail Modal */}
+      <ProductDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         product={product}
-      /> */}
+      />
     </>
   );
 }
