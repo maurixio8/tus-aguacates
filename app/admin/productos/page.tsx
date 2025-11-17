@@ -91,7 +91,7 @@ export default function ProductsPage() {
     setFilteredProducts(filtered);
   }, [selectedCategory, searchTerm, products]);
 
-  const handleImageUpload = (imageUrl: string) => {
+  const handleImageUpload = async (imageUrl: string) => {
     if (!selectedProduct) return;
 
     const updated = {
@@ -100,12 +100,37 @@ export default function ProductsPage() {
       image: imageUrl // Mantener también en 'image' para compatibilidad
     };
 
-    // Actualizar array y localStorage se actualiza automáticamente por useEffect
+    // Actualizar array localmente
     setProducts(products.map(p => p.id === selectedProduct.id ? updated : p));
+
+    // SINCRONIZAR CON SUPABASE usando el API endpoint
+    try {
+      console.log('🔄 Sincronizando imagen con Supabase para producto:', selectedProduct.id);
+
+      const response = await fetch(`/api/admin/products/${selectedProduct.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          main_image_url: imageUrl
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Error sincronizando con Supabase:', errorData.error);
+        alert(`⚠️ Imagen guardada localmente, pero error al sincronizar con Supabase:\n${errorData.error}`);
+      } else {
+        console.log('✅ Imagen sincronizada exitosamente con Supabase');
+      }
+    } catch (error) {
+      console.error('❌ Error en la solicitud:', error);
+      alert('⚠️ Imagen guardada localmente, pero hubo error al sincronizar con Supabase');
+    }
+
     setSelectedProduct(null);
     setShowImageUpload(false);
-
-    console.log('✅ Imagen de Supabase Storage guardada para:', selectedProduct.name);
   };
 
   const handleDelete = (productId: string) => {
