@@ -19,6 +19,7 @@ interface ManualOrderFormProps {
 
 const SHIPPING_COST = 7400;
 const TAX_RATE = 0.08; // 8%
+const SITE_URL = 'https://tusaguacatescom.ola.click';
 
 export default function ManualOrderForm({
   products,
@@ -29,6 +30,9 @@ export default function ManualOrderForm({
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
+  const [serviceType, setServiceType] = useState('domicilio');
+  const [paymentMethod, setPaymentMethod] = useState('efectivo');
+  const [amountReceived, setAmountReceived] = useState(0);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedQuantity, setSelectedQuantity] = useState(1);
@@ -171,6 +175,11 @@ export default function ManualOrderForm({
     try {
       setLoading(true);
 
+      // Calcular vuelto si es necesario
+      const change = paymentMethod === 'efectivo' && amountReceived > total
+        ? amountReceived - total
+        : 0;
+
       // Primero guardar el pedido
       const saveResponse = await fetch('/api/admin/manual-orders', {
         method: 'POST',
@@ -185,6 +194,10 @@ export default function ManualOrderForm({
           tax,
           shipping_fee: SHIPPING_COST,
           total,
+          service_type: serviceType,
+          payment_method: paymentMethod,
+          amount_received: amountReceived,
+          change,
         }),
       });
 
@@ -201,12 +214,18 @@ export default function ManualOrderForm({
         body: JSON.stringify({
           customer_name: customerName,
           customer_phone: customerPhone,
+          customer_address: customerAddress,
           order_id: saveData.orderId,
           items: orderItems,
           subtotal,
           tax,
           shipping_fee: SHIPPING_COST,
           total,
+          service_type: serviceType,
+          payment_method: paymentMethod,
+          amount_received: amountReceived,
+          change,
+          site_url: SITE_URL,
         }),
       });
 
@@ -328,6 +347,68 @@ export default function ManualOrderForm({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Sección de Servicio y Pago */}
+      <div className="mb-8">
+        <h2 className="text-lg font-bold text-gray-900 mb-4">🔧 Servicio y Pago</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Tipo de Servicio *
+            </label>
+            <select
+              value={serviceType}
+              onChange={(e) => setServiceType(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="domicilio">🚚 Domicilio</option>
+              <option value="recogida">🏪 Recogida en tienda</option>
+              <option value="envio">📦 Envío especial</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Método de Pago *
+            </label>
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="efectivo">💵 Efectivo</option>
+              <option value="transferencia">💳 Transferencia</option>
+              <option value="tarjeta">🏦 Tarjeta de crédito</option>
+              <option value="pendiente">⏳ Pendiente</option>
+            </select>
+          </div>
+
+          {paymentMethod === 'efectivo' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Monto Recibido
+              </label>
+              <input
+                type="number"
+                value={amountReceived || ''}
+                onChange={(e) => setAmountReceived(parseFloat(e.target.value) || 0)}
+                placeholder="100000"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+          )}
+
+          {paymentMethod === 'efectivo' && amountReceived > 0 && (
+            <div className="bg-blue-50 p-3 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <strong>Total a pagar:</strong> {formatPrice(total)}<br/>
+                <strong>Monto recibido:</strong> {formatPrice(amountReceived)}<br/>
+                <strong>Vuelto:</strong> <span className="text-green-600 font-bold">{formatPrice(amountReceived - total)}</span>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

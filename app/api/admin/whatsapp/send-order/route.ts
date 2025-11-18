@@ -50,7 +50,22 @@ function formatPhoneForWhatsApp(phone: string): string {
   return withoutZero;
 }
 
-// POST - Enviar resumen por WhatsApp
+// Generar ID de orden con timestamp
+function generateOrderId(): string {
+  return 'CO-' + Date.now();
+}
+
+// Traducir tipo de servicio
+function translateServiceType(type: string): string {
+  const map: Record<string, string> = {
+    'domicilio': '🚚 Domicilio',
+    'recogida': '🏪 Recogida en tienda',
+    'envio': '📦 Envío especial'
+  };
+  return map[type] || type;
+}
+
+// POST - Enviar resumen por WhatsApp con formato profesional
 export async function POST(request: NextRequest) {
   try {
     console.log('📱 [WhatsApp API] Recibida petición de enviar resumen por WhatsApp');
@@ -65,12 +80,18 @@ export async function POST(request: NextRequest) {
     const {
       customer_name,
       customer_phone,
+      customer_address,
       order_id,
       items,
       subtotal,
       tax,
       shipping_fee,
       total,
+      service_type,
+      payment_method,
+      amount_received,
+      change,
+      site_url,
     } = body;
 
     // Validar datos requeridos
@@ -90,35 +111,60 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Formatear el mensaje de WhatsApp
+    // Formatear datos
     const formattedPhone = formatPhoneForWhatsApp(customer_phone);
+    const orderNumber = order_id || generateOrderId();
+    const currentDate = new Date();
+    const dateStr = currentDate.toLocaleDateString('es-CO');
+    const timeStr = currentDate.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+    // Construcción del mensaje personalizado
     const itemsList = items
-      .map(
-        (item: any) =>
-          `🥑 ${item.product_name}\n   Cantidad: ${item.quantity} × ${formatPrice(item.product_price)} = ${formatPrice(item.product_price * item.quantity)}`
-      )
-      .join('\n\n');
+      .map((item: any) => {
+        const emoji = getProductEmoji(item.product_name);
+        return `*X${item.quantity}* ${emoji}${item.product_name} $ ${item.product_price.toLocaleString('es-CO')}`;
+      })
+      .join('\n');
 
-    const message = `¡Hola ${customer_name}! 👋
+    // Información de pago
+    let paymentInfo = '';
+    if (payment_method === 'efectivo') {
+      paymentInfo = `Efectivo ${amount_received?.toLocaleString('es-CO')} (monto recibido ${amount_received?.toLocaleString('es-CO')}, vuelto ${change?.toLocaleString('es-CO')})`;
+    } else if (payment_method === 'transferencia') {
+      paymentInfo = 'Transferencia bancaria';
+    } else if (payment_method === 'tarjeta') {
+      paymentInfo = 'Tarjeta de crédito';
+    } else {
+      paymentInfo = 'Por definir';
+    }
 
-Resumen de tu pedido:
+    const message = `👋 Hola ${customer_name}  acá en esta tu resumen ✨
 
+Vengo de ${site_url || 'https://tusaguacatescom.ola.click'}
+${orderNumber}
+🗓️ ${dateStr} ⏰ ${timeStr}
+
+*Tipo de servicio: ${translateServiceType(service_type)}*
+
+*Nombre:* ${customer_name}
+*Teléfono:* 57 ${formattedPhone.replace('57', '')}
+*Dirección:* ${customer_address}
+
+*📝 Productos*
 ${itemsList}
 
-═══════════════════════════════
-Subtotal: ${formatPrice(subtotal)}
-Impuesto: ${formatPrice(tax)}
-Envío: ${formatPrice(shipping_fee)}
-═══════════════════════════════
-*Total: ${formatPrice(total)}*
+*Subtotal:* $ ${subtotal.toLocaleString('es-CO')}
+*Entrega:* Por definir
+*Total:* $ ${total.toLocaleString('es-CO')}
 
-📍 Estado: Pendiente de confirmación
-🆔 Pedido: ${order_id}
+*💲 Pago*
+*Estado del pago:* ${payment_method === 'pendiente' ? 'por definir' : 'Confirmado'}
+*Total a pagar:* $ ${total.toLocaleString('es-CO')}
+${paymentInfo}
 
-¿Confirmas este pedido?
+${payment_method === 'efectivo' ? 'El domiciliario recaudara en efectivo o como desees' : ''}
 
-*Tus Aguacates* 🥑
-Productos frescos garantizados`;
+👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.`;
 
     // Crear el link de WhatsApp
     // Format: https://api.whatsapp.com/send?phone=PHONENUMBER&text=URLENCODEDTEXT
@@ -128,16 +174,16 @@ Productos frescos garantizados`;
       customer: customer_name,
       phone: formattedPhone,
       messageLength: message.length,
-      orderId: order_id,
+      orderId: orderNumber,
     });
 
     return NextResponse.json({
       success: true,
       whatsappLink,
-      message, // Para preview/debug
+      message,
       customer_name,
       customer_phone: formattedPhone,
-      order_id,
+      order_id: orderNumber,
     });
   } catch (error) {
     console.error('❌ [WhatsApp API] Error:', error);
@@ -146,4 +192,31 @@ Productos frescos garantizados`;
       { status: 500 }
     );
   }
+}
+
+// Función auxiliar para obtener emoji del producto
+function getProductEmoji(productName: string): string {
+  const name = productName.toLowerCase();
+
+  if (name.includes('aguacate')) return '🥑';
+  if (name.includes('sandía')) return '🍉';
+  if (name.includes('durazno')) return '🍑';
+  if (name.includes('fresa')) return '🍓';
+  if (name.includes('limón')) return '🫒';
+  if (name.includes('mango')) return '🥭';
+  if (name.includes('tomate')) return '🍅';
+  if (name.includes('espárrago')) return '🎋';
+  if (name.includes('mora')) return '🫐';
+  if (name.includes('papaya')) return '🧡';
+  if (name.includes('piña')) return '🍍';
+  if (name.includes('naranja')) return '🍊';
+  if (name.includes('limón')) return '🍋';
+  if (name.includes('cereza')) return '🍒';
+  if (name.includes('cereza')) return '🍒';
+  if (name.includes('pera')) return '🍐';
+  if (name.includes('plátano')) return '🍌';
+  if (name.includes('coco')) return '🥥';
+
+  // Default para verduras/frutas genéricas
+  return '🟢';
 }
