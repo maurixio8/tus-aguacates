@@ -217,6 +217,12 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => router.push('/admin/pedidos')}
+              className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2"
+            >
+              ➕ Nuevo Pedido Manual
+            </button>
             <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2">
               📥 Exportar Reporte
             </button>
