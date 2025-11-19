@@ -11,29 +11,33 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
     // Get the admin-token cookie from the request
     const token = request.cookies.get('admin-token')?.value;
 
+    console.log('🔍 Products [id] API: Token check:', token ? 'present' : 'missing');
+
     if (!token) {
       return { success: false, error: 'No autenticado' };
     }
 
-    // Verify the JWT token
+    // Verify the JWT token (MISMO CÓDIGO QUE EN LOGIN Y ME)
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;
+      console.log('🔍 Products [id] API: Token decoded:', { id: decoded.id, email: decoded.email, type: decoded.type });
     } catch (jwtError) {
-      console.error('JWT verification error:', jwtError);
-      return { success: false, error: 'Token inválido' };
+      console.error('❌ Products [id] API: JWT verification error:', jwtError);
+      return { success: false, error: 'Token inválido o expirado' };
     }
 
     // Check if this is an admin token
     if (decoded.type !== 'admin') {
+      console.log('❌ Products [id] API: Token no es de tipo admin');
       return { success: false, error: 'Token no válido para administrador' };
     }
 
     return { success: true, adminId: decoded.id };
 
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('❌ Products [id] API: Authentication error:', error);
     return { success: false, error: 'Error de autenticación' };
   }
 }

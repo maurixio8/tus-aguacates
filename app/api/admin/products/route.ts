@@ -11,29 +11,33 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
     // Get the admin-token cookie from the request
     const token = request.cookies.get('admin-token')?.value;
 
+    console.log('🔍 Products API: Token check:', token ? 'present' : 'missing');
+
     if (!token) {
       return { success: false, error: 'No autenticado' };
     }
 
-    // Verify the JWT token
+    // Verify the JWT token (MISMO CÓDIGO QUE EN LOGIN Y ME)
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;
+      console.log('🔍 Products API: Token decoded:', { id: decoded.id, email: decoded.email, type: decoded.type });
     } catch (jwtError) {
-      console.error('JWT verification error:', jwtError);
-      return { success: false, error: 'Token inválido' };
+      console.error('❌ Products API: JWT verification error:', jwtError);
+      return { success: false, error: 'Token inválido o expirado' };
     }
 
     // Check if this is an admin token
     if (decoded.type !== 'admin') {
+      console.log('❌ Products API: Token no es de tipo admin');
       return { success: false, error: 'Token no válido para administrador' };
     }
 
     return { success: true, adminId: decoded.id };
 
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('❌ Products API: Authentication error:', error);
     return { success: false, error: 'Error de autenticación' };
   }
 }
@@ -60,20 +64,41 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 API: Fetching products with params:', { search, category, status, page, limit });
 
-    const supabase = createSupabaseClient();
+    let supabase;
+    try {
+      supabase = createSupabaseClient();
+      console.log('✅ Products API: Supabase client created successfully');
+    } catch (supabaseError) {
+      console.error('❌ Products API: Error creating Supabase client:', supabaseError);
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 500 }
+      );
+    }
 
-    let query = supabase
-      .from('products')
-      .select(`
-        *,
-        categories:category_id (
-          id,
-          name,
-          slug
-        )
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
+    let query;
+    try {
+      query = supabase
+        .from('products')
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            slug
+          )
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      console.log('✅ Products API: Query created successfully');
+    } catch (queryError) {
+      console.error('❌ Products API: Error creating query:', queryError);
+      return NextResponse.json(
+        { error: 'Error al construir la consulta' },
+        { status: 500 }
+      );
+    }
 
     // Apply search filter
     if (search) {
@@ -96,21 +121,59 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data, error, count } = await query;
+    let data, error, count;
+    try {
+      const result = await query;
+      data = result.data;
+      error = result.error;
+      count = result.count;
 
-    console.log('📊 API: Products response:', {
-      data: data?.length || 0,
-      error,
-      count,
-      success: !error
-    });
+      console.log('📊 API: Products response:', {
+        data: data?.length || 0,
+        error,
+        count,
+        success: !error
+      });
 
-    if (error) {
-      console.error('❌ API: Error fetching products:', error);
-      return NextResponse.json(
-        { error: 'Error al cargar productos' },
-        { status: 500 }
-      );
+      if (error) {
+        console.error('❌ API: Supabase error fetching products:', error);
+
+        // Si hay error de Supabase, devolver array vacío en lugar de error 500
+        if (error.code?.startsWith('PGRST')) {
+          console.log('⚠️ API: Supabase connection issue, returning empty array');
+          return NextResponse.json({
+            success: true,
+            data: [],
+            pagination: {
+              page,
+              limit,
+              total: 0,
+              totalPages: 0
+            },
+            warning: 'Temporalmente sin conexión a la base de datos'
+          });
+        }
+
+        return NextResponse.json(
+          { error: 'Error al cargar productos: ' + error.message },
+          { status: 500 }
+        );
+      }
+    } catch (queryExecutionError) {
+      console.error('❌ API: Error executing query:', queryExecutionError);
+
+      // Devolver array vacío si falla la ejecución
+      return NextResponse.json({
+        success: true,
+        data: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        },
+        warning: 'Error al consultar productos, mostrando lista vacía'
+      });
     }
 
     // Transform data to include category_name
