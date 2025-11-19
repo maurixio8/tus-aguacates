@@ -54,7 +54,7 @@ export function Header() {
             <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
               Aguacates
             </Link>
-            <Link href="/tienda/frutas" className="hover:text-verde-aguacate-200 transition-colors">
+            <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
               Frutas
             </Link>
           </nav>

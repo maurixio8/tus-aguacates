@@ -46,7 +46,7 @@ export default function PromotionSlider({
       title: 'Frutas Tropicales',
       description: 'El sabor exótico que buscas',
       image_url: 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&h=400&fit=crop',
-      link: '/tienda/frutas',
+      link: '/tienda/frutas-tropicales',
       sort_order: 2
     },
     {
