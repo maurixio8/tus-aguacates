@@ -51,7 +51,7 @@ describe('📂 Sistema de Categorías - Diagnóstico', () => {
 
       // Solo tienen 'aguacates' y 'saludables' en común
       const common = categoryGridSlugs.filter(slug => categorySimpleScrollSlugs.includes(slug));
-      expect(common).toEqual(['aguacates', 'saludables']);
+      expect(common.sort()).toEqual(['aguacates', 'saludables']);
 
       // 🚨 PROBLEMA: Múltiples categorías no están sincronizadas
       const notInJSON = categoryGridSlugs.filter(slug => !categorySimpleScrollSlugs.includes(slug));

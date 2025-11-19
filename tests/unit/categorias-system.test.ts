@@ -1,6 +1,5 @@
 // Tests específicos para el sistema de categorías - ANTES de la refactorización
 import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
 import { slugToCategory, categoryToSlug, getProductsByCategory } from '@/lib/productStorage';
 
 // Mock del JSON master
@@ -174,32 +173,8 @@ describe('📂 Sistema de Categorías - Estado Actual', () => {
     });
   });
 
-  describe('🧪 Testing de Componentes Actuales', () => {
-    it('debe verificar que CategoryGrid está hardcodeado', async () => {
-      // Importar dinámicamente para evitar errores de compilación
-      const CategoryGridModule = await import('@/components/categories/CategoryGrid');
-      const CategoryGrid = CategoryGridModule.default;
-
-      render(<CategoryGrid />);
-
-      // Verificar que muestra las categorías hardcodeadas
-      expect(screen.getByText('Tubérculos')).toBeInTheDocument();
-      expect(screen.getByText('Aguacates')).toBeInTheDocument();
-      expect(screen.getByText('Combos')).toBeInTheDocument();
-    });
-
-    it('debe verificar que CategorySimpleScroll usa datos del JSON', async () => {
-      const CategorySimpleScrollModule = await import('@/components/categories/CategorySimpleScroll');
-      const CategorySimpleScroll = CategorySimpleScrollModule.default;
-
-      render(<CategorySimpleScroll />);
-
-      // Verificar que muestra las categorías del JSON
-      expect(screen.getByText('🥑 Aguacates')).toBeInTheDocument();
-      expect(screen.getByText('🌿 Aromáticas y Zumos')).toBeInTheDocument();
-      expect(screen.getByText('🍯🥜 SALUDABLES')).toBeInTheDocument();
-    });
-  });
+  // Note: Component tests have been moved to separate .tsx files
+  // to avoid JSX parsing issues in .ts files
 });
 
 describe('🔧 Tests para Validar Problemas Identificados', () => {

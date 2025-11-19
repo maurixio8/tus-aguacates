@@ -28,32 +28,48 @@ vi.mock('@/lib/utils', () => ({
   slugify: (text: string) => text.toLowerCase().replace(/\s+/g, '-'),
 }));
 
-// Mock Supabase
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(() => Promise.resolve({ data: null, error: null })),
-          order: vi.fn(() => Promise.resolve({ data: [], error: null })),
-        })),
-        in: vi.fn(() => Promise.resolve({ data: [], error: null })),
-      })),
+// Mock Supabase con soporte para encadenamiento completo
+vi.mock('@/lib/supabase', () => {
+  // Crear un objeto chainable que siempre retorna métodos útiles
+  const createChainableMock = () => {
+    const chainable: any = {
+      select: vi.fn(() => chainable),
+      eq: vi.fn(() => chainable),
+      neq: vi.fn(() => chainable),
+      gt: vi.fn(() => chainable),
+      gte: vi.fn(() => chainable),
+      lt: vi.fn(() => chainable),
+      lte: vi.fn(() => chainable),
+      in: vi.fn(() => chainable),
+      is: vi.fn(() => chainable),
+      order: vi.fn(() => chainable),
+      limit: vi.fn(() => chainable),
+      range: vi.fn(() => chainable),
+      single: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      maybeSingle: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      then: vi.fn((resolve) => resolve({ data: [], error: null })),
+    };
+    return chainable;
+  };
+
+  return {
+    supabase: {
+      from: vi.fn(() => createChainableMock()),
       insert: vi.fn(() => Promise.resolve({ data: null, error: null })),
       update: vi.fn(() => Promise.resolve({ data: null, error: null })),
       delete: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    })),
-    auth: {
-      getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-      signIn: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
-      signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
-      signUp: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      auth: {
+        getUser: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+        signIn: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+        signOut: vi.fn(() => Promise.resolve({ data: null, error: null })),
+        signUp: vi.fn(() => Promise.resolve({ data: { user: null }, error: null })),
+      },
+      functions: {
+        invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
+      },
     },
-    functions: {
-      invoke: vi.fn(() => Promise.resolve({ data: null, error: null })),
-    },
-  },
-}));
+  };
+});
 
 // Mock auth context
 vi.mock('@/lib/auth-context', () => ({

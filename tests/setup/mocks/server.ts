@@ -172,22 +172,33 @@ export const handlers = [
 
     // Lógica de shipping
     let shippingCost = 7400; // Default Bogotá
+    let estimatedDays = 1;
+
     if (location === 'Medellín') {
       shippingCost = 8900;
+      estimatedDays = 2;
     } else if (location === 'Cali') {
       shippingCost = 9500;
+      estimatedDays = 3;
     }
 
     const freeShippingMin = 68900;
     const freeShipping = subtotal >= freeShippingMin;
+    const finalShippingCost = freeShipping ? 0 : shippingCost;
+    const amountForFreeShipping = Math.max(0, freeShippingMin - subtotal);
 
+    // Estructura que espera cart-store
     return HttpResponse.json({
       success: true,
-      data: {
-        shippingCost: freeShipping ? 0 : shippingCost,
+      shipping: {
+        cost: finalShippingCost,
         freeShipping,
-        location: location || 'Bogotá',
-        estimatedDelivery: '2-3 días hábiles'
+        freeShippingMin,
+        amountForFreeShipping,
+        estimatedDays,
+        message: freeShipping
+          ? '¡Envío GRATIS en tu pedido!'
+          : `Envío: $${finalShippingCost.toLocaleString('es-CO')}`
       }
     });
   }),

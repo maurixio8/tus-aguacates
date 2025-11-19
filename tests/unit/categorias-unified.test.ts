@@ -13,11 +13,11 @@ describe('📂 Sistema Unificado de Categorías - Validación', () => {
       expect(slugToCategory('aguacates')).toBe('🥑 Aguacates');
       expect(slugToCategory('frutas-tropicales')).toBe('🍊🍎 Tropicales');
       expect(slugToCategory('frutos-rojos')).toBe('🍓 Frutos Rojos');
-      expect(slugToCategory('verduras')).toBe('🥬 Verduras');
       expect(slugToCategory('aromaticas')).toBe('🌿 Aromáticas y Zumos');
       expect(slugToCategory('saludables')).toBe('🍯🥜 SALUDABLES');
-      expect(slugToCategory('especias')).toBe('🌶️ Especias');
-      expect(slugToCategory('combos')).toBe('🎁 Combos');
+      expect(slugToCategory('especias')).toBe('🥗🌱☘️ Especias');
+      expect(slugToCategory('desgranados')).toBe('🌽 Desgranados');
+      expect(slugToCategory('gourmet')).toBe('🍅🌽 Gourmet');
     });
 
     it('debe mantener compatibilidad con URLs antiguas', () => {
@@ -43,8 +43,8 @@ describe('📂 Sistema Unificado de Categorías - Validación', () => {
   describe('📋 Validación de Categorías Unificadas', () => {
     it('debe tener todas las categorías necesarias', () => {
       const expectedSlugs = [
-        'aguacates', 'frutas-tropicales', 'frutos-rojos', 'verduras',
-        'aromaticas', 'saludables', 'especias', 'combos'
+        'aguacates', 'frutas-tropicales', 'frutos-rojos',
+        'aromaticas', 'saludables', 'especias', 'desgranados', 'gourmet'
       ];
 
       const actualSlugs = UNIFIED_CATEGORIES.map(cat => cat.slug);

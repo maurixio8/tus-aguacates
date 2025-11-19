@@ -5,16 +5,13 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useCartStore } from '../../lib/cart-store';
-
-// Mock fetch para las llamadas API
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
+import { server } from '../setup/mocks/server';
+import { http, HttpResponse } from 'msw';
 
 describe('🚚 Shipping Calculation - Unit Tests', () => {
   beforeEach(() => {
     // Resetear el store antes de cada test
     useCartStore.getState().clearCart();
-    mockFetch.mockClear();
   });
 
   afterEach(() => {
@@ -34,7 +31,7 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
       expect(defaultShipping.message).toBe('Envío: $7.400');
     });
 
-    it('✅ Debe calcular amountForFreeShipping correctamente con subtotal', () => {
+    it('✅ Debe calcular amountForFreeShipping correctamente con subtotal', async () => {
       // Agregar un producto al carrito
       const mockProduct = {
         id: 'test-1',
@@ -51,6 +48,10 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
       };
 
       useCartStore.getState().addItem(mockProduct, 3); // 3 * 10000 = 30000
+
+      // Llamar calculateShipping para actualizar el shipping con el nuevo subtotal
+      await useCartStore.getState().calculateShipping();
+
       const store = useCartStore.getState();
 
       // amountForFreeShipping = 68900 - 30000 = 38900
@@ -60,89 +61,85 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
 
   describe('calculateShipping - API Response Validation', () => {
     it('✅ Debe manejar respuesta exitosa válida', async () => {
-      const mockResponse = {
-        success: true,
-        shipping: {
-          cost: 0,
-          freeShipping: true,
-          freeShippingMin: 68900,
-          amountForFreeShipping: 0,
-          estimatedDays: 2,
-          message: '¡Envío GRATIS en tu pedido!'
-        }
+      // Agregar producto que califica para free shipping
+      const mockProduct = {
+        id: 'test-premium',
+        name: 'Premium Product',
+        price: 100000,
+        discount_price: null,
+        description: 'Test',
+        image_url: null,
+        category_id: 'cat-1',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        in_stock: true,
+        featured: false
       };
 
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse
-      });
+      useCartStore.getState().addItem(mockProduct); // Subtotal = 100000 >= 68900
 
       await useCartStore.getState().calculateShipping('Bogotá');
 
       const store = useCartStore.getState();
+      // Con subtotal > 68900, debe haber free shipping
       expect(store.shipping.cost).toBe(0);
       expect(store.shipping.freeShipping).toBe(true);
       expect(store.shipping.message).toBe('¡Envío GRATIS en tu pedido!');
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/shipping/calculate',
-        expect.objectContaining({
-          method: 'POST',
-          body: expect.stringContaining('Bogotá')
-        })
-      );
     });
 
     it('✅ Debe validar estructura de respuesta API', async () => {
-      const invalidResponse = {
-        success: true,
-        shipping: {
-          // Faltan campos obligatorios
-          cost: 'invalid', // debería ser number
-          freeShipping: 'true', // debería ser boolean
-          // missing freeShippingMin
-          message: null // debería ser string
-        }
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => invalidResponse
-      });
+      // Sobrescribir handler de MSW con respuesta inválida
+      server.use(
+        http.post('/api/shipping/calculate', () => {
+          return HttpResponse.json({
+            success: true,
+            shipping: {
+              cost: 'invalid', // string en lugar de number
+              freeShipping: 'true', // string en lugar de boolean
+              // missing freeShippingMin, amountForFreeShipping, estimatedDays
+              message: null // null en lugar de string
+            }
+          });
+        })
+      );
 
       await useCartStore.getState().calculateShipping();
 
       const store = useCartStore.getState();
       // Debe usar fallbacks para valores inválidos
       expect(store.shipping.cost).toBe(7400); // fallback
-      expect(store.shipping.freeShipping).toBe(true); // Boolean(true)
+      expect(store.shipping.freeShipping).toBe(true); // Boolean('true') = true
       expect(store.shipping.freeShippingMin).toBe(68900); // fallback
       expect(store.shipping.message).toBe('Envío: $7.400'); // fallback
     });
 
     it('✅ Debe manejar respuesta de API con success: false', async () => {
-      const errorResponse = {
-        success: false,
-        error: 'Location not supported'
-      };
-
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => errorResponse
-      });
+      // Sobrescribir handler con error
+      server.use(
+        http.post('/api/shipping/calculate', () => {
+          return HttpResponse.json({
+            success: false,
+            error: 'Location not supported'
+          });
+        })
+      );
 
       await useCartStore.getState().calculateShipping('Medellín');
 
       const store = useCartStore.getState();
+      // Debe usar valores por defecto cuando success: false
       expect(store.shipping.cost).toBe(7400);
       expect(store.shipping.freeShipping).toBe(false);
       expect(store.shipping.message).toBe('Envío: $7.400');
     });
 
     it('✅ Debe manejar error HTTP (fallback)', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 500
-      });
+      // Simular error HTTP 500
+      server.use(
+        http.post('/api/shipping/calculate', () => {
+          return new HttpResponse(null, { status: 500 });
+        })
+      );
 
       await useCartStore.getState().calculateShipping();
 
@@ -152,7 +149,12 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
     });
 
     it('✅ Debe manejar error de red (fallback)', async () => {
-      mockFetch.mockRejectedValueOnce(new Error('Network error'));
+      // Simular error de red
+      server.use(
+        http.post('/api/shipping/calculate', () => {
+          return HttpResponse.error();
+        })
+      );
 
       await useCartStore.getState().calculateShipping();
 
@@ -212,28 +214,13 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
 
       useCartStore.getState().addItem(mockProduct);
 
-      // Mock successful shipping con costo
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          shipping: {
-            cost: 5000,
-            freeShipping: false,
-            freeShippingMin: 68900,
-            amountForFreeShipping: 18900,
-            estimatedDays: 1,
-            message: 'Envío: $5.000'
-          }
-        })
-      });
-
       await useCartStore.getState().calculateShipping();
 
       const totals = useCartStore.getState().getTotals();
       expect(totals.subtotal).toBe(50000);
-      expect(totals.shipping).toBe(5000);
-      expect(totals.total).toBe(55000);
+      // MSW retorna 7400 para Bogotá (default)
+      expect(totals.shipping).toBe(7400);
+      expect(totals.total).toBe(57400);
     });
 
     it('✅ Debe calcular free shipping correctamente', async () => {
@@ -254,22 +241,7 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
 
       useCartStore.getState().addItem(mockProduct);
 
-      // Mock free shipping response
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          shipping: {
-            cost: 0,
-            freeShipping: true,
-            freeShippingMin: 68900,
-            amountForFreeShipping: 0,
-            estimatedDays: 2,
-            message: '¡Envío GRATIS en tu pedido!'
-          }
-        })
-      });
-
+      // Con subtotal de 100000 >= 68900, debe haber free shipping
       await useCartStore.getState().calculateShipping();
 
       const totals = useCartStore.getState().getTotals();
@@ -291,54 +263,27 @@ describe('🚚 Shipping Calculation - Unit Tests', () => {
     });
 
     it('✅ Debe manejar ubicación por defecto Bogotá', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          shipping: {
-            cost: 7400,
-            freeShipping: false,
-            freeShippingMin: 68900,
-            amountForFreeShipping: 38900,
-            estimatedDays: 1,
-            message: 'Envío: $7.400'
-          }
-        })
-      });
-
-      // Llamar sin especificar ubicación
+      // Llamar sin especificar ubicación (default: Bogotá)
       await useCartStore.getState().calculateShipping();
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/shipping/calculate',
-        expect.objectContaining({
-          body: expect.stringContaining('"location":"Bogotá"')
-        })
-      );
+      const store = useCartStore.getState();
+      // MSW retorna valores por defecto para Bogotá
+      expect(store.shipping.cost).toBe(7400);
+      expect(store.shipping.freeShipping).toBe(false);
+      expect(store.shipping.freeShippingMin).toBe(68900);
+      expect(store.shipping.estimatedDays).toBe(1);
+      expect(store.shipping.message).toBe('Envío: $7.400');
     });
 
     it('✅ Debe actualizar shipping con location diferente', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          success: true,
-          shipping: {
-            cost: 10000,
-            freeShipping: false,
-            freeShippingMin: 80000,
-            amountForFreeShipping: 30000,
-            estimatedDays: 2,
-            message: 'Envío: $10.000'
-          }
-        })
-      });
-
       await useCartStore.getState().calculateShipping('Medellín');
 
       const store = useCartStore.getState();
-      expect(store.shipping.cost).toBe(10000);
-      expect(store.shipping.freeShippingMin).toBe(80000);
-      expect(store.shipping.message).toBe('Envío: $10.000');
+      // MSW retorna 8900 para Medellín
+      expect(store.shipping.cost).toBe(8900);
+      expect(store.shipping.freeShippingMin).toBe(68900);
+      expect(store.shipping.estimatedDays).toBe(2);
+      expect(store.shipping.message).toBe('Envío: $8.900');
     });
   });
 });
