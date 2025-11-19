@@ -1,50 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Me API: Verificando admin user');
+    console.log('🔍 [Me API] Verificando admin user');
 
     // Get the admin-token cookie from the request
     const token = request.cookies.get('admin-token')?.value;
 
-    console.log('🔍 Token recibido:', token ? 'present' : 'missing');
+    console.log('🔍 [Me API] Token recibido:', token ? 'present' : 'missing');
 
     if (!token) {
-      console.log('❌ No hay token de autenticación');
+      console.log('❌ [Me API] No hay token de autenticación');
       return NextResponse.json(
         { error: 'No autenticado' },
         { status: 401 }
       );
     }
 
-    // VERIFICACIÓN SIMPLE TEMPORAL
-    if (token === 'temp-admin-token') {
-      console.log('✅ Token válido - Admin temporal');
+    // ✅ VERIFICAR JWT CON EL MISMO SECRETO QUE LOGIN
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+    try {
+      const decoded = jwt.verify(token, jwtSecret) as {
+        id: string;
+        email: string;
+        type: string;
+        role: string;
+        iat: number;
+        exp: number;
+      };
+
+      console.log('✅ [Me API] JWT válido - Token decodificado:', {
+        userId: decoded.id,
+        email: decoded.email,
+        type: decoded.type,
+        role: decoded.role
+      });
+
+      // Verificar que es un token de admin
+      if (decoded.type !== 'admin') {
+        console.log('❌ [Me API] Token no es de tipo admin');
+        return NextResponse.json(
+          { error: 'Token inválido' },
+          { status: 401 }
+        );
+      }
 
       const adminUser = {
-        id: 'admin-001',
-        email: 'admin@tusaguacates.com',
+        id: decoded.id,
+        email: decoded.email,
         name: 'Administrador',
-        role: 'super_admin',
+        role: decoded.role,
         last_login: new Date().toISOString()
       };
+
+      console.log('✅ [Me API] Usuario autenticado:', adminUser);
 
       return NextResponse.json({
         success: true,
         user: adminUser
       });
+
+    } catch (jwtError) {
+      console.log('❌ [Me API] Error verificando JWT:', {
+        error: jwtError instanceof Error ? jwtError.message : String(jwtError)
+      });
+      return NextResponse.json(
+        { error: 'Token inválido o expirado' },
+        { status: 401 }
+      );
     }
 
-    console.log('❌ Token inválido');
-    return NextResponse.json(
-      { error: 'Token inválido' },
-      { status: 401 }
-    );
-
   } catch (error) {
-    console.error('❌ Error en Me API:', error);
+    console.error('❌ [Me API] Error en Me API:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
       { status: 500 }
