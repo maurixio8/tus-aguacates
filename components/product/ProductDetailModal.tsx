@@ -52,11 +52,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const itemToAdd = {
       ...product,
       category_id: product.category_id || product.category || 'general',
-      quantity: quantity,
       variant: selectedVariant ?? undefined
     };
 
-    addItem(itemToAdd);
+    // Pasar quantity como segundo parámetro, no como propiedad del objeto
+    addItem(itemToAdd as any, quantity);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2000);
 
@@ -102,15 +102,16 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl animation-in fade-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Button */}
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 z-50 bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
-              aria-label="Cerrar"
-              title="Cerrar"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            {/* Header con botón cerrar */}
+            <div className="flex justify-end p-4 border-b border-gray-200">
+              <button
+                onClick={onClose}
+                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
+                aria-label="Cerrar"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
 
             {/* Content Grid - Responsive */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 p-6 md:p-8">

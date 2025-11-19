@@ -1,13 +1,26 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentTime, setCurrentTime] = useState<string>('Cargando...');
   const router = useRouter();
   const pathname = usePathname();
+
+  // Actualizar tiempo en el cliente después de montar
+  useEffect(() => {
+    setCurrentTime(new Date().toLocaleString('es-CO'));
+
+    // Actualizar cada minuto
+    const interval = setInterval(() => {
+      setCurrentTime(new Date().toLocaleString('es-CO'));
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     // Eliminar token de admin
@@ -172,7 +185,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="flex items-center gap-4">
               <div className="text-right">
                 <p className="text-sm text-gray-600">Última actualización</p>
-                <p className="text-sm font-medium">{new Date().toLocaleString('es-CO')}</p>
+                <p className="text-sm font-medium">{currentTime}</p>
               </div>
               <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
                 <span className="text-white text-sm font-bold">A</span>

@@ -7,37 +7,122 @@ export const dynamic = 'force-dynamic';
 
 // Helper function to verify admin authentication
 async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
+  // Generate a request ID for logging correlation
+  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const method = request.method;
+  const endpoint = new URL(request.url).pathname;
+
   try {
     // Get the admin-token cookie from the request
     const token = request.cookies.get('admin-token')?.value;
 
-    console.log('🔍 Products API: Token check:', token ? 'present' : 'missing');
-
     if (!token) {
+      // ❌ CASE 1: No cookie found - log all available cookies for debugging
+      const allCookies = request.cookies.getAll().map(c => c.name);
+      console.warn(`⚠️ [${requestId}] ❌ FALTA COOKIE admin-token`, {
+        endpoint,
+        method,
+        cookiesPresentes: allCookies.length > 0 ? allCookies.join(', ') : 'NINGUNA',
+        timestamp: new Date().toISOString(),
+        causasPosibles: [
+          '1. Usuario no ha iniciado sesión (falta login en /admin/login)',
+          '2. Cookie expirada (maxAge es 24 horas)',
+          '3. Cookie no se envía (problema CORS o cross-origin)',
+          '4. Path de cookie incorrecto (debe ser path=/)',
+          '5. En producción: Domain no coincide con el dominio actual'
+        ]
+      });
       return { success: false, error: 'No autenticado' };
     }
 
-    // Verify the JWT token (MISMO CÓDIGO QUE EN LOGIN Y ME)
+    // Verify the JWT token
     const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;
-      console.log('🔍 Products API: Token decoded:', { id: decoded.id, email: decoded.email, type: decoded.type });
     } catch (jwtError) {
-      console.error('❌ Products API: JWT verification error:', jwtError);
-      return { success: false, error: 'Token inválido o expirado' };
+      // ❌ CASE 2 & 3: Token JWT inválido o expirado - diferencia entre tipos de error
+      if (jwtError instanceof jwt.TokenExpiredError) {
+        console.warn(`⚠️ [${requestId}] ❌ TOKEN EXPIRADO`, {
+          endpoint,
+          method,
+          expiradoEn: new Date(jwtError.expiredAt).toISOString(),
+          ahora: new Date().toISOString(),
+          userId: (jwtError as any).decoded?.id || 'desconocido',
+          timestamp: new Date().toISOString(),
+          accion: '🔄 El usuario debe volver a iniciar sesión en /admin/login',
+          solucion: 'El token JWT tiene maxAge de 24 horas. Necesita re-login.'
+        });
+      } else if (jwtError instanceof jwt.JsonWebTokenError) {
+        console.error(`❌ [${requestId}] ❌ TOKEN JWT INVÁLIDO (firma/formato)`, {
+          endpoint,
+          method,
+          error: jwtError.message,
+          tokenLength: token.length,
+          timestamp: new Date().toISOString(),
+          causasPosibles: [
+            '1. JWT_SECRET no coincide entre login y verificación',
+            '2. Verificar .env.local tiene JWT_SECRET configurado',
+            '3. Token está corrupto o malformado',
+            '4. Token fue modificado después de su creación',
+            '5. En producción: JWT_SECRET no está configurado en variables de entorno'
+          ],
+          verificacion: 'Asegúrate que el token fue creado con jwt.sign() y mismo JWT_SECRET'
+        });
+      } else {
+        console.error(`❌ [${requestId}] ❌ ERROR DESCONOCIDO VERIFICANDO JWT`, {
+          endpoint,
+          method,
+          error: jwtError instanceof Error ? jwtError.message : String(jwtError),
+          errorType: jwtError?.constructor?.name,
+          timestamp: new Date().toISOString()
+        });
+      }
+      return { success: false, error: 'Token inválido' };
     }
 
-    // Check if this is an admin token
+    // ❌ CASE 4: Claims incorrectos - el token es válido pero no es de admin
     if (decoded.type !== 'admin') {
-      console.log('❌ Products API: Token no es de tipo admin');
+      console.warn(`⚠️ [${requestId}] ❌ TOKEN VÁLIDO PERO SIN CLAIMS DE ADMIN`, {
+        endpoint,
+        method,
+        userId: decoded.id || 'desconocido',
+        email: decoded.email || 'desconocido',
+        claimType: decoded.type || 'FALTA CLAIM',
+        claimsPresentes: Object.keys(decoded)
+          .filter(k => !['iat', 'exp'].includes(k))
+          .reduce((acc, k) => ({ ...acc, [k]: decoded[k] }), {}),
+        timestamp: new Date().toISOString(),
+        claimEsperado: 'type: "admin"',
+        solucion: 'El endpoint /api/auth/admin/login debe crear JWT con claim type="admin". Verificar app/api/auth/admin/login/route.ts línea 43'
+      });
       return { success: false, error: 'Token no válido para administrador' };
     }
+
+    // ✅ Autenticación exitosa
+    console.log(`✅ [${requestId}] ✅ AUTENTICACIÓN EXITOSA`, {
+      endpoint,
+      method,
+      userId: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      expiresAt: new Date(decoded.exp * 1000).toISOString(),
+      issueAt: new Date(decoded.iat * 1000).toISOString(),
+      timestamp: new Date().toISOString()
+    });
 
     return { success: true, adminId: decoded.id };
 
   } catch (error) {
-    console.error('❌ Products API: Authentication error:', error);
+    // Catch-all for unexpected errors
+    console.error(`❌ [${requestId}] ❌ ERROR INESPERADO EN AUTENTICACIÓN`, {
+      endpoint,
+      method,
+      error: error instanceof Error ? error.message : String(error),
+      errorType: error?.constructor?.name,
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 3).join('\n') : undefined,
+      timestamp: new Date().toISOString()
+    });
     return { success: false, error: 'Error de autenticación' };
   }
 }
@@ -64,41 +149,20 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 API: Fetching products with params:', { search, category, status, page, limit });
 
-    let supabase;
-    try {
-      supabase = createSupabaseClient();
-      console.log('✅ Products API: Supabase client created successfully');
-    } catch (supabaseError) {
-      console.error('❌ Products API: Error creating Supabase client:', supabaseError);
-      return NextResponse.json(
-        { error: 'Error de conexión a la base de datos' },
-        { status: 500 }
-      );
-    }
+    const supabase = createSupabaseClient();
 
-    let query;
-    try {
-      query = supabase
-        .from('products')
-        .select(`
-          *,
-          categories:category_id (
-            id,
-            name,
-            slug
-          )
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range((page - 1) * limit, page * limit - 1);
-
-      console.log('✅ Products API: Query created successfully');
-    } catch (queryError) {
-      console.error('❌ Products API: Error creating query:', queryError);
-      return NextResponse.json(
-        { error: 'Error al construir la consulta' },
-        { status: 500 }
-      );
-    }
+    let query = supabase
+      .from('products')
+      .select(`
+        *,
+        categories:category_id (
+          id,
+          name,
+          slug
+        )
+      `, { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range((page - 1) * limit, page * limit - 1);
 
     // Apply search filter
     if (search) {
@@ -121,59 +185,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    let data, error, count;
-    try {
-      const result = await query;
-      data = result.data;
-      error = result.error;
-      count = result.count;
+    const { data, error, count } = await query;
 
-      console.log('📊 API: Products response:', {
-        data: data?.length || 0,
-        error,
-        count,
-        success: !error
-      });
+    console.log('📊 API: Products response:', {
+      data: data?.length || 0,
+      error,
+      count,
+      success: !error
+    });
 
-      if (error) {
-        console.error('❌ API: Supabase error fetching products:', error);
-
-        // Si hay error de Supabase, devolver array vacío en lugar de error 500
-        if (error.code?.startsWith('PGRST')) {
-          console.log('⚠️ API: Supabase connection issue, returning empty array');
-          return NextResponse.json({
-            success: true,
-            data: [],
-            pagination: {
-              page,
-              limit,
-              total: 0,
-              totalPages: 0
-            },
-            warning: 'Temporalmente sin conexión a la base de datos'
-          });
-        }
-
-        return NextResponse.json(
-          { error: 'Error al cargar productos: ' + error.message },
-          { status: 500 }
-        );
-      }
-    } catch (queryExecutionError) {
-      console.error('❌ API: Error executing query:', queryExecutionError);
-
-      // Devolver array vacío si falla la ejecución
-      return NextResponse.json({
-        success: true,
-        data: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0
-        },
-        warning: 'Error al consultar productos, mostrando lista vacía'
-      });
+    if (error) {
+      console.error('❌ API: Error fetching products:', error);
+      return NextResponse.json(
+        { error: 'Error al cargar productos' },
+        { status: 500 }
+      );
     }
 
     // Transform data to include category_name

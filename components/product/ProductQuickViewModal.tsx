@@ -19,8 +19,9 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const [showToast, setShowToast] = useState(false);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+  const [quantity, setQuantity] = useState(1);
 
-  // Cargar variantes del producto
+  // Cargar variantes del producto y resetear cantidad
   useEffect(() => {
     async function loadVariants() {
       try {
@@ -51,6 +52,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
     if (isOpen && product.id) {
       loadVariants();
+      setQuantity(1); // Resetear cantidad cuando abre el modal
     }
   }, [product.id, isOpen]);
 
@@ -62,12 +64,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const handleAddToCart = () => {
     const itemToAdd = {
       ...product,
-      quantity: 1,
-      selectedVariant,
+      variant: selectedVariant,
       finalPrice,
     };
 
-    addItem(itemToAdd);
+    // Pasar quantity como segundo parámetro, no como propiedad del objeto
+    addItem(itemToAdd as any, quantity);
     setShowToast(true);
 
     setTimeout(() => {
@@ -145,7 +147,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                 {/* Selector de presentaciones */}
                 {variants.length > 0 && (
                   <div className="space-y-2">
-                    <label className="block text-sm font-bold text-blue-900">
+                    <label className="block text-sm font-bold text-emerald-900">
                       📦 Presentación:
                     </label>
                     <select
@@ -154,7 +156,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                         const variant = variants.find(v => v.id === e.target.value);
                         setSelectedVariant(variant || null);
                       }}
-                      className="w-full border-2 border-blue-400 px-3 py-2 rounded-lg focus:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-300 text-blue-900 font-medium"
+                      className="w-full border-2 border-emerald-500 px-3 py-3 rounded-lg focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-emerald-300 text-emerald-900 font-bold bg-emerald-50 hover:bg-emerald-100 transition-colors"
                     >
                       {variants.map((variant) => (
                         <option key={variant.id} value={variant.id}>
@@ -170,18 +172,48 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
 
                 {/* Total final */}
-                <div className="flex justify-between items-center py-3 px-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-lg">
-                  <span className="text-lg font-bold text-blue-900">💰 Total:</span>
-                  <span className="text-3xl font-bold text-cyan-600">
-                    {formatPrice(finalPrice)}
+                <div className="flex justify-between items-center py-3 px-3 bg-gradient-to-r from-yellow-50 to-amber-50 border-2 border-yellow-200 rounded-lg">
+                  <span className="text-lg font-bold text-amber-900">💰 Total:</span>
+                  <span className="text-3xl font-bold text-amber-600">
+                    {formatPrice(finalPrice * quantity)}
                   </span>
                 </div>
 
-                {/* Botón agregar al carrito - mejorado */}
+                {/* Selector de Cantidad */}
+                {(product.stock || 0) > 0 && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-3">
+                      Cantidad
+                    </label>
+                    <div className="flex items-center border-2 border-yellow-400 rounded-lg w-fit bg-yellow-50">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="px-4 py-2 text-amber-700 hover:bg-yellow-200 transition font-bold text-lg"
+                      >
+                        −
+                      </button>
+                      <input
+                        type="number"
+                        min="1"
+                        value={quantity}
+                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="w-16 text-center font-bold border-0 focus:outline-none bg-yellow-50 text-amber-900 text-lg"
+                      />
+                      <button
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="px-4 py-2 text-amber-700 hover:bg-yellow-200 transition font-bold text-lg"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Botón agregar al carrito - AMARILLO DORADO */}
                 <button
                   onClick={handleAddToCart}
                   disabled={(product.stock || 0) === 0}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-emerald-700 disabled:border-gray-500 text-lg"
+                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-lg"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   {(product.stock || 0) > 0 ? '🛒 Agregar al Carrito' : '❌ Agotado'}
@@ -225,7 +257,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           <span className="text-xl">🛒</span>
           <div>
             <p className="font-bold">¡Agregado al carrito!</p>
-            <p className="text-sm">1 × {product.name}</p>
+            <p className="text-sm">{quantity} × {product.name}</p>
           </div>
         </div>
       )}
