@@ -6,15 +6,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('🔍 Me API: Verificando admin user');
-
     // Get the admin-token cookie from the request
     const token = request.cookies.get('admin-token')?.value;
 
-    console.log('🔍 Token recibido:', token ? 'present' : 'missing');
-
     if (!token) {
-      console.log('❌ No hay token de autenticación');
       return NextResponse.json(
         { error: 'No autenticado' },
         { status: 401 }
@@ -26,9 +21,7 @@ export async function GET(request: NextRequest) {
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;
-      console.log('🔍 Token decodificado:', { id: decoded.id, email: decoded.email, role: decoded.role, type: decoded.type });
     } catch (jwtError) {
-      console.error('❌ JWT verification error:', jwtError);
       return NextResponse.json(
         { error: 'Token inválido o expirado' },
         { status: 401 }
@@ -37,39 +30,66 @@ export async function GET(request: NextRequest) {
 
     // Check if this is an admin token
     if (decoded.type !== 'admin') {
-      console.log('❌ Token no es de tipo admin');
       return NextResponse.json(
         { error: 'Token no válido para administrador' },
         { status: 401 }
       );
     }
 
-    // VERIFICAR CON SUPABASE (con fallback para admin temporal)
-    const supabase = createSupabaseClient();
-    const adminResult = await verifyAdminUser(supabase, decoded.id);
-
-    if (adminResult.success && adminResult.user) {
-      console.log('✅ Admin verificado:', adminResult.user.email);
-
-      const adminUser = {
-        id: adminResult.user.id,
-        email: adminResult.user.email,
-        name: adminResult.user.name,
-        role: adminResult.user.role,
-        last_login: adminResult.user.last_login
+    // OPTIMIZACIÓN: Quick path for known admin ID
+    if (decoded.id === 'admin-001') {
+      const tempAdmin = {
+        id: 'admin-001',
+        email: 'admin@tusaguacates.com',
+        name: 'Administrador Temporal',
+        role: 'super_admin',
+        last_login: null
       };
 
       return NextResponse.json({
         success: true,
-        user: adminUser
+        user: tempAdmin
       });
     }
 
-    console.log('❌ Admin no encontrado o inactivo:', adminResult.error);
-    return NextResponse.json(
-      { error: adminResult.error || 'Admin no encontrado' },
-      { status: 401 }
-    );
+    // VERIFICAR CON SUPABASE (con timeout)
+    const supabase = createSupabaseClient();
+
+    try {
+      const adminResult = await Promise.race([
+        verifyAdminUser(supabase, decoded.id),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Database timeout')), 3000)
+        )
+      ]);
+
+      if (adminResult.success && adminResult.user) {
+        const adminUser = {
+          id: adminResult.user.id,
+          email: adminResult.user.email,
+          name: adminResult.user.name,
+          role: adminResult.user.role,
+          last_login: adminResult.user.last_login
+        };
+
+        return NextResponse.json({
+          success: true,
+          user: adminUser
+        });
+      }
+
+      return NextResponse.json(
+        { error: adminResult.error || 'Admin no encontrado' },
+        { status: 401 }
+      );
+
+    } catch (dbError) {
+      console.log('⚠️ Database timeout or error, using fallback');
+      return NextResponse.json(
+        { error: 'Error de conexión a la base de datos' },
+        { status: 401 }
+      );
+    }
 
   } catch (error) {
     console.error('❌ Error en Me API:', error);

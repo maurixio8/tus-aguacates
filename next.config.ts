@@ -1,16 +1,21 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // output: 'export', // Incompatible con API routes dinámicas
+  // Fix workspace root issue
+  outputFileTracingRoot: __dirname,
+
   images: {
     unoptimized: true,
   },
-  trailingSlash: true, // Mejora el routing en deployment estático
+  trailingSlash: true,
   eslint: {
     ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: false,
+  },
+  experimental: {
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
 };
 

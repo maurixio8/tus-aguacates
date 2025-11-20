@@ -75,7 +75,15 @@ export default function AdminDashboard() {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch('/api/auth/admin/me');
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+      const response = await fetch('/api/auth/admin/me', {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
       const data = await response.json();
 
       if (data.success && data.user) {
@@ -85,6 +93,9 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Auth check error:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Auth check timed out - redirecting to login');
+      }
       router.push('/admin/login');
     } finally {
       setAuthLoading(false);

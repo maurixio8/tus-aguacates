@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import { SearchTrigger } from '@/components/tienda/SearchTrigger';
-import UnifiedCategories from '@/components/categories/UnifiedCategories';
+import PremiumCategoryGrid from '@/components/categories/PremiumCategoryGrid';
 import { useState, useEffect } from 'react';
 
 // Estado para manejar refresh de productos
@@ -85,21 +85,8 @@ export default function TiendaPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      {/* Hero Section */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-gray-800">
-          Explora Nuestras Categorías
-        </h1>
-        <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-          Descubre la frescura y calidad de nuestros productos cultivados con amor en Colombia
-        </p>
-      </div>
-
-      {/* Categories Grid - Unificado */}
-      <UnifiedCategories
-        variant="grid"
-        showProductCount={true}
-      />
+      {/* Categories Grid Premium */}
+      <PremiumCategoryGrid />
 
       {/* Mobile Search Section - Added between categories and featured products */}
       <div className="mb-12 md:hidden">

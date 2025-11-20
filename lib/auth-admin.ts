@@ -59,9 +59,9 @@ export async function verifyAdminUser(supabase: any, userId: string): Promise<Au
     }
 
     // FALLBACK TEMPORAL: Permitir acceso al admin temporal
-    if (userId === 'temp-admin-id') {
+    if (userId === 'admin-001') {
       const tempAdmin: AdminUser = {
-        id: 'temp-admin-id',
+        id: 'admin-001',
         email: 'admin@tusaguacates.com',
         name: 'Administrador Temporal',
         role: 'super_admin',
@@ -133,7 +133,7 @@ export async function authenticateAdmin(
     if (email === hardcodedEmail && password === hardcodedPassword) {
       // Usuario admin temporal hardcodeado
       const tempAdmin: AdminUser = {
-        id: 'temp-admin-id',
+        id: 'admin-001',
         email: hardcodedEmail,
         name: 'Administrador Temporal',
         role: 'super_admin',
@@ -177,7 +177,7 @@ export async function logAdminActivity(
 ): Promise<boolean> {
   try {
     // Si es el admin temporal, solo loggear a consola y retornar true
-    if (adminId === 'temp-admin-id') {
+    if (adminId === 'admin-001') {
       console.log(`📝 ACTIVIDAD ADMIN: ${action}`, {
         adminId,
         tableName,
@@ -271,7 +271,7 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 export async function updateLastLogin(supabase: any, adminId: string): Promise<boolean> {
   try {
     // Si es el admin temporal, solo loggear y retornar true
-    if (adminId === 'temp-admin-id') {
+    if (adminId === 'admin-001') {
       console.log('📝 Actualizando login para admin temporal');
       return true;
     }
