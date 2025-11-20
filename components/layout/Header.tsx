@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn, Shield } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
@@ -92,6 +92,17 @@ export function Header() {
                 <span className="hidden lg:inline text-sm">Ingresar</span>
               </Link>
             )}
+
+            <Link
+              href="https://admin-dashboard-4xmuae7an-mauricio-s-projects-2bf4b7a2.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-amarillo-400 transition-colors flex items-center gap-2 bg-verde-aguacate-600 hover:bg-verde-aguacate-700 px-3 py-2 rounded-lg"
+              title="Panel de Administrador"
+            >
+              <Shield className="w-5 h-5" />
+              <span className="hidden lg:inline text-sm font-medium">Admin</span>
+            </Link>
 
             <button
               onClick={toggleCart}
