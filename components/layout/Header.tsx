@@ -94,7 +94,7 @@ export function Header() {
             )}
 
             <Link
-              href="https://admin-dashboard-ge5dkkxku-mauricio-s-projects-2bf4b7a2.vercel.app"
+              href="https://admin-dashboard-k3gytk5nw-mauricio-s-projects-2bf4b7a2.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-amarillo-400 transition-colors flex items-center gap-2 bg-verde-aguacate-600 hover:bg-verde-aguacate-700 px-3 py-2 rounded-lg"
