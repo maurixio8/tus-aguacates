@@ -113,7 +113,7 @@ export default function CouponsPage() {
           inactive: allCoupons.filter((c: Coupon) => !c.is_active).length,
           expired: expiredCoupons.length,
           totalUsed,
-          totalDiscount: 0 // TODO: Calculate from coupon_usage table
+          totalDiscount: data.stats?.totalDiscount || 0
         });
       } else {
         throw new Error(data.error);
@@ -336,7 +336,7 @@ export default function CouponsPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-2xl p-6 shadow-soft">
             <div className="flex items-center justify-between">
               <div>
@@ -384,6 +384,16 @@ export default function CouponsPage() {
                 <p className="text-3xl font-bold text-blue-600">{stats.totalUsed}</p>
               </div>
               <TrendingUp className="w-12 h-12 text-blue-500" />
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-soft">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 text-sm mb-1">Descuento Total</p>
+                <p className="text-3xl font-bold text-purple-600">{formatCurrency(stats.totalDiscount)}</p>
+              </div>
+              <DollarSign className="w-12 h-12 text-purple-500" />
             </div>
           </div>
         </div>

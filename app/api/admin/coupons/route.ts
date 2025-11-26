@@ -106,9 +106,24 @@ export async function GET(request: NextRequest) {
       remaining_uses: coupon.usage_limit ? coupon.usage_limit - coupon.times_used : null
     })) || [];
 
+    // Calculate total discount amount from coupon_usage table
+    const { data: usageData, error: usageError } = await supabase
+      .from('coupon_usage')
+      .select('discount_amount');
+
+    let totalDiscount = 0;
+    if (!usageError && usageData) {
+      totalDiscount = usageData.reduce((sum, usage) => sum + (parseFloat(usage.discount_amount as any) || 0), 0);
+    }
+
+    console.log('💰 Total discount calculated:', { totalDiscount, usageCount: usageData?.length || 0 });
+
     return NextResponse.json({
       success: true,
       data: couponsWithStats,
+      stats: {
+        totalDiscount
+      },
       pagination: {
         page,
         limit,
