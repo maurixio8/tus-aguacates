@@ -12,17 +12,28 @@ import { ComponentProps } from 'react';
 import { vi } from 'vitest';
 
 // Mocks
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
     prefetch: vi.fn(),
     back: vi.fn(),
     forward: vi.fn(),
     refresh: vi.fn(),
-    replace: vi.fn(),
+    replace: mockReplace,
   }),
   usePathname: () => '/productos',
   useSearchParams: () => new URLSearchParams(),
+}));
+
+// Mock next/link to prevent navigation errors
+vi.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, href, ...props }: any) => {
+    return React.createElement('a', { ...props, href }, children);
+  },
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -455,16 +466,13 @@ describe('🛒 Flujo Completo de Compra - Integration Tests', () => {
     test('✅ Flujo completo: Producto → Carrito → Checkout → Confirmación', async () => {
       const user = userEvent.setup();
       const mockPush = vi.fn();
+      const mockRouter = { push: mockPush, prefetch: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
 
-      const mockPush = vi.fn();
-    const mockRouter = { push: mockPush, prefetch: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
-    vi.doMock('next/navigation', () => ({
-      useRouter: () => mockRouter,
-      usePathname: () => '/productos',
-      useSearchParams: () => new URLSearchParams(),
-    }));
-        push: mockPush,
-      });
+      vi.doMock('next/navigation', () => ({
+        useRouter: () => mockRouter,
+        usePathname: () => '/productos',
+        useSearchParams: () => new URLSearchParams(),
+      }));
 
       // 1. Agregar producto al carrito desde ProductCard
       render(
@@ -546,16 +554,13 @@ describe('🛒 Flujo Completo de Compra - Integration Tests', () => {
   describe('5. Manejo de Errores', () => {
     test('❌ Debe mostrar error si el carrito está vacío', () => {
       const mockPush = vi.fn();
+      const mockRouter = { push: mockPush, prefetch: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
 
-      const mockPush = vi.fn();
-    const mockRouter = { push: mockPush, prefetch: vi.fn(), back: vi.fn(), forward: vi.fn(), refresh: vi.fn(), replace: vi.fn() };
-    vi.doMock('next/navigation', () => ({
-      useRouter: () => mockRouter,
-      usePathname: () => '/productos',
-      useSearchParams: () => new URLSearchParams(),
-    }));
-        push: mockPush,
-      });
+      vi.doMock('next/navigation', () => ({
+        useRouter: () => mockRouter,
+        usePathname: () => '/productos',
+        useSearchParams: () => new URLSearchParams(),
+      }));
 
       render(
         <TestWrapper>

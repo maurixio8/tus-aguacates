@@ -5,50 +5,22 @@ import { ArrowRight, Leaf, Truck, Shield } from 'lucide-react';
 import Image from 'next/image';
 import PromotionSlider from '@/components/promotions/PromotionSlider';
 import UnifiedCategories from '@/components/categories/UnifiedCategories';
+import { PersonalizedHero } from '@/components/home/PersonalizedHero';
+import { RecommendedProducts } from '@/components/home/RecommendedProducts';
+import { LastOrderSummary } from '@/components/home/LastOrderSummary';
 
 export default function Home() {
 
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative text-white py-16 md:py-24 overflow-hidden">
-        {/* Imagen de fondo SIN overlays */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/hero-limpio.png"
-            alt="Fondo hero"
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
+      {/* Personalized Hero Section */}
+      <PersonalizedHero />
 
-        {/* Contenido */}
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            {/* Título según especificación del usuario */}
-            <h1 className="text-4xl md:text-6xl font-display font-bold mb-6">
-              Del Corazón de Colombia
-              <br />
-              <span className="text-yellow-400">a tu Mesa</span>
-            </h1>
+      {/* Last Order Summary (Only for Authenticated Users) */}
+      <LastOrderSummary />
 
-            {/* Subtítulo */}
-            <p className="text-xl md:text-2xl mb-8 text-white/90">
-              Frutas y verduras frescas, cultivadas con amor por familias campesinas colombianas
-            </p>
-
-            {/* UN SOLO botón - diseño simple */}
-            <Link
-              href="/tienda"
-              className="bg-yellow-400 hover:bg-yellow-500 text-green-900 font-bold px-8 py-4 rounded-xl transition-all inline-flex items-center justify-center gap-2 shadow-lg"
-            >
-              Explorar Tienda
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* Recommended Products (Only for Authenticated Users) */}
+      <RecommendedProducts />
 
       {/* Beneficios */}
       <section className="py-12 bg-white">

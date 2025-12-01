@@ -163,9 +163,9 @@ function AdminLoginPage() {
         {/* Información de ayuda */}
         <div className="mt-6 p-4 bg-gray-50 rounded-lg">
           <p className="text-xs text-gray-600 text-center">
-            <strong>Credenciales de prueba:</strong><br />
+            <strong>Credenciales de administrador:</strong><br />
             Email: admin@tusaguacates.com<br />
-            Contraseña: admin123
+            Contraseña: 7FdX9Zq-hson&j39
           </p>
         </div>
 

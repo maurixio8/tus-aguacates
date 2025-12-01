@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
+import userEvent from '@testing-library/user-event';
 import { vi, beforeEach, describe, it, expect } from 'vitest';
 
 // Mock imports before importing the component
@@ -51,15 +51,36 @@ describe('Payment Methods Integration', () => {
   const mockCartStore = {
     items: mockItems,
     getTotal: () => 9000,
-    clearCart: vi.fn()
+    getTotals: () => ({
+      subtotal: 9000,
+      discount: 0,
+      shipping: 0,
+      total: 9000
+    }),
+    clearCart: vi.fn(),
+    calculateShipping: vi.fn().mockResolvedValue(undefined),
+    appliedCoupon: null,
+    shipping: {
+      cost: 0,
+      freeShipping: false,
+      freeShippingMin: 68900,
+      amountForFreeShipping: 68900,
+      estimatedDays: 1,
+      message: 'Envío: $7.400'
+    }
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+
+    // Mock useCartStore hook
     (useCartStore as vi.Mock).mockReturnValue(mockCartStore);
 
+    // Mock useCartStore.getState()
+    (useCartStore as any).getState = vi.fn(() => mockCartStore);
+
     // Mock successful Supabase responses
-    const { supabase } = require('@/lib/supabase');
+    const { supabase } = await import('@/lib/supabase');
 
     const mockInsert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
@@ -242,7 +263,7 @@ describe('Payment Methods Integration', () => {
   it('should send WhatsApp notifications with payment method', async () => {
     const user = userEvent.setup();
     const onSuccess = vi.fn();
-    const { supabase } = require('@/lib/supabase');
+    const { supabase } = await import('@/lib/supabase');
 
     render(<GuestCheckoutForm onSuccess={onSuccess} />);
 
@@ -362,7 +383,7 @@ describe('Payment Methods Integration', () => {
     const onSuccess = vi.fn();
 
     // Mock slow response
-    const { supabase } = require('@/lib/supabase');
+    const { supabase } = await import('@/lib/supabase');
     supabase.from().insert().select().single.mockImplementation(
       () => new Promise(resolve => setTimeout(() => resolve({
         data: { id: 'test-order-123' },

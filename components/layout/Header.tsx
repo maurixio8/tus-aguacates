@@ -19,6 +19,13 @@ export function Header() {
     setMounted(true);
   }, []);
 
+  const getFirstName = () => {
+    if (!user) return '';
+    const email = user.email || '';
+    const name = email.split('@')[0];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
   return (
     <header className="hidden md:block bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
       <div className="container mx-auto px-4">
@@ -80,29 +87,12 @@ export function Header() {
                 title="Mi Cuenta"
               >
                 <User className="w-5 h-5" />
-                <span className="hidden lg:inline text-sm">Mi Cuenta</span>
+                <span className="hidden lg:inline text-sm">
+                  Hola, {getFirstName()}
+                </span>
               </Link>
-            ) : (
-              <Link
-                href="/auth/login"
-                className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
-                title="Iniciar Sesión"
-              >
-                <LogIn className="w-5 h-5" />
-                <span className="hidden lg:inline text-sm">Ingresar</span>
-              </Link>
-            )}
+            ) : null}
 
-            <Link
-              href="https://admin-dashboard-k3gytk5nw-mauricio-s-projects-2bf4b7a2.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-amarillo-400 transition-colors flex items-center gap-2 bg-verde-aguacate-600 hover:bg-verde-aguacate-700 px-3 py-2 rounded-lg"
-              title="Panel de Administrador"
-            >
-              <Shield className="w-5 h-5" />
-              <span className="hidden lg:inline text-sm font-medium">Admin</span>
-            </Link>
 
             <button
               onClick={toggleCart}

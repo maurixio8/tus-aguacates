@@ -13,6 +13,14 @@ import React from 'react';
 // Make React available globally for JSX
 global.React = React;
 
+// Mock next/link globally to prevent navigation errors in jsdom
+vi.mock('next/link', () => ({
+  __esModule: true,
+  default: ({ children, href, ...props }: any) => {
+    return React.createElement('a', { ...props, href }, children);
+  },
+}));
+
 // Mock utils for consistent formatting in tests
 vi.mock('@/lib/utils', () => ({
   formatPrice: (price: number) => new Intl.NumberFormat('es-CO', {

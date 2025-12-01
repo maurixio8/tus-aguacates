@@ -20,6 +20,7 @@ import {
   Package as PackageIcon,
   CreditCard
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface GuestOrder {
   id: string;
@@ -115,63 +116,41 @@ export default function AdminDashboard() {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      // Usar datos de ejemplo para el dashboard demo
-      const sampleOrders: GuestOrder[] = [
-        {
-          id: 'sample-1',
-          guest_name: 'Juan Pérez',
-          guest_email: 'juan@email.com',
-          guest_phone: '3011234567',
-          guest_address: 'Calle 123 #45-67, Bogotá',
-          order_data: {
-            items: [
-              { productName: 'Aguacate Hass', quantity: 2, price: 5000 },
-              { productName: 'Aguacate Criollo', quantity: 1, price: 3000 }
-            ]
-          },
-          total_amount: 13000,
-          status: 'pendiente',
-          delivery_date: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'sample-2',
-          guest_name: 'María García',
-          guest_email: 'maria@email.com',
-          guest_phone: '3109876543',
-          guest_address: 'Av. Principal #89-12, Medellín',
-          order_data: {
-            items: [
-              { productName: 'Aguacate Hass Premium', quantity: 3, price: 7000 }
-            ]
-          },
-          total_amount: 21000,
-          status: 'completado',
-          delivery_date: new Date().toISOString().split('T')[0],
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
+      console.log('📊 [Dashboard] Cargando pedidos desde API...');
+      
+      // ✅ USAR API ROUTE PARA PEDIDOS
+      const response = await fetch('/api/admin/orders');
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Error cargando pedidos');
+      }
+
+      console.log('✅ [Dashboard] Pedidos cargados:', data.orders?.length || 0);
 
       // Filtrar por status si es necesario
       const filteredOrders = selectedStatus === 'all'
-        ? sampleOrders
-        : sampleOrders.filter(o => o.status === selectedStatus);
+        ? data.orders || []
+        : (data.orders || []).filter((o: GuestOrder) => o.status === selectedStatus);
 
       setOrders(filteredOrders);
 
-      // Calcular estadísticas basadas en todos los pedidos
-      const allOrders = sampleOrders;
-      setStats({
+      // Calcular estadísticas basadas en datos reales
+      const allOrders = data.orders || [];
+      const realStats = {
         total: allOrders.length,
-        pending: allOrders.filter(o => o.status === 'pendiente').length,
-        completed: allOrders.filter(o => o.status === 'completado').length,
+        pending: allOrders.filter((o: GuestOrder) => o.status === 'pendiente').length,
+        completed: allOrders.filter((o: GuestOrder) => o.status === 'completado').length,
         revenue: allOrders
-          .filter(o => o.status === 'completado')
-          .reduce((sum, o) => sum + Number(o.total_amount), 0)
-      });
+          .filter((o: GuestOrder) => o.status === 'completado')
+          .reduce((sum: number, o: GuestOrder) => sum + Number(o.total_amount), 0)
+      };
+
+      console.log('📈 [Dashboard] Estadísticas reales:', realStats);
+      setStats(realStats);
 
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error('❌ [Dashboard] Error en loadOrders:', error);
       setOrders([]);
       setStats({ total: 0, pending: 0, completed: 0, revenue: 0 });
     } finally {
@@ -179,7 +158,57 @@ export default function AdminDashboard() {
     }
   };
 
-  
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      console.log(`🔄 [Dashboard] Actualizando pedido ${orderId} a ${newStatus}`);
+      
+      // ✅ USAR API ROUTE PARA ACTUALIZAR
+      const response = await fetch('/api/admin/orders', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: orderId,
+          status: newStatus,
+          ...(newStatus === 'completado' && { delivery_date: new Date().toISOString().split('T')[0] })
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Error actualizando pedido');
+      }
+
+      console.log(`✅ [Dashboard] Pedido ${orderId} actualizado exitosamente`);
+      
+      // Recargar datos para reflejar cambios
+      await loadOrders();
+      
+    } catch (error) {
+      console.error('❌ [Dashboard] Error en updateOrderStatus:', error);
+      alert('Error al actualizar el estado del pedido. Por favor intenta nuevamente.');
+    }
+  };
+
+  const viewOrderDetails = (order: GuestOrder) => {
+    const items = order.order_data?.items || [];
+    const itemsList = items.map((item: any, index: number) =>
+      `${item.productName} x${item.quantity} = $${(item.quantity * item.price).toLocaleString('es-CO')}`
+    ).join('\n');
+    
+    alert(`📋 DETALLES DEL PEDIDO #${order.id.slice(0, 8)}...\n\n` +
+          `👤 Cliente: ${order.guest_name}\n` +
+          `📧 Email: ${order.guest_email}\n` +
+          `📞 Teléfono: ${order.guest_phone}\n` +
+          `📍 Dirección: ${order.guest_address}\n\n` +
+          `🛒 Productos:\n${itemsList}\n\n` +
+          `💰 Total: $${Number(order.total_amount).toLocaleString('es-CO')}\n` +
+          `📅 Fecha: ${new Date(order.created_at).toLocaleString('es-CO')}\n` +
+          `📦 Estado: ${order.status.toUpperCase()}`);
+  };
+
   const exportToCSV = () => {
     const csvContent = [
       ['Fecha', 'Cliente', 'Email', 'Telefono', 'Total', 'Estado'].join(','),
@@ -414,12 +443,26 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium">
+                        <button
+                          onClick={() => viewOrderDetails(order)}
+                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium"
+                        >
                           📄 Ver
                         </button>
                         {order.status === 'pendiente' && (
-                          <button className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 font-medium">
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'completado')}
+                            className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 font-medium"
+                          >
                             ✅ Completar
+                          </button>
+                        )}
+                        {order.status === 'pendiente' && (
+                          <button
+                            onClick={() => updateOrderStatus(order.id, 'cancelado')}
+                            className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 font-medium"
+                          >
+                            ❌ Cancelar
                           </button>
                         )}
                       </div>

@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useCartStore } from '@/lib/cart-store';
 import { ShoppingBag } from 'lucide-react';
 import { GuestCheckoutForm } from '@/components/checkout/GuestCheckoutForm';
+import { AuthenticatedCheckoutForm } from '@/components/checkout/AuthenticatedCheckoutForm';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -58,21 +59,11 @@ export default function CheckoutPage() {
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             {!user ? (
               <GuestCheckoutForm onSuccess={handleOrderSuccess} />
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">
-                  Funcionalidad de checkout para usuarios registrados en desarrollo
-                </p>
-                <button
-                  onClick={() => router.push('/productos')}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
-                >
-                  Volver a Productos
-                </button>
-              </div>
+              <AuthenticatedCheckoutForm onSuccess={handleOrderSuccess} />
             )}
           </div>
         </div>
