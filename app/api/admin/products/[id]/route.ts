@@ -5,6 +5,20 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
+// Configuración CORS para permitir el dashboard
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
+};
+
+// Manejar solicitudes OPTIONS para CORS
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { headers: corsHeaders });
+}
+
 // Helper function to verify admin authentication
 async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
   try {
@@ -53,7 +67,7 @@ export async function GET(
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -81,14 +95,14 @@ export async function GET(
       if (error.code === 'PGRST116') {
         return NextResponse.json(
           { error: 'Producto no encontrado' },
-          { status: 404 }
+          { status: 404, headers: corsHeaders }
         );
       }
 
       console.error('❌ API: Error fetching product:', error);
       return NextResponse.json(
         { error: 'Error al cargar el producto' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -103,13 +117,13 @@ export async function GET(
     return NextResponse.json({
       success: true,
       data: product
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -125,7 +139,7 @@ export async function PUT(
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -146,7 +160,7 @@ export async function PUT(
     if (fetchError || !existingProduct) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -154,14 +168,14 @@ export async function PUT(
     if (body.price !== undefined && (typeof body.price !== 'number' || body.price < 0)) {
       return NextResponse.json(
         { error: 'El precio debe ser un número válido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (body.stock !== undefined && (typeof body.stock !== 'number' || body.stock < 0)) {
       return NextResponse.json(
         { error: 'El stock debe ser un número válido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -209,20 +223,20 @@ export async function PUT(
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Ya existe un producto con ese SKU o slug' },
-          { status: 409 }
+          { status: 409, headers: corsHeaders }
         );
       }
 
       if (error.code === '23503') {
         return NextResponse.json(
           { error: 'La categoría especificada no existe' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       return NextResponse.json(
         { error: 'Error al actualizar el producto' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -232,13 +246,13 @@ export async function PUT(
       success: true,
       data,
       message: 'Producto actualizado exitosamente'
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error updating product:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -254,7 +268,7 @@ export async function DELETE(
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -273,7 +287,7 @@ export async function DELETE(
     if (fetchError || !existingProduct) {
       return NextResponse.json(
         { error: 'Producto no encontrado' },
-        { status: 404 }
+        { status: 404, headers: corsHeaders }
       );
     }
 
@@ -294,13 +308,13 @@ export async function DELETE(
       if (error.code === '23503') {
         return NextResponse.json(
           { error: 'No se puede eliminar el producto porque tiene registros relacionados (órdenes, variantes, etc.)' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       return NextResponse.json(
         { error: 'Error al eliminar el producto' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -310,13 +324,13 @@ export async function DELETE(
       success: true,
       data,
       message: 'Producto eliminado exitosamente'
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error deleting product:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
