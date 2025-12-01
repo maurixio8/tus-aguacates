@@ -71,16 +71,15 @@ export interface CartItem {
 export interface Address {
   id: string;
   user_id: string;
-  type: 'shipping' | 'billing';
-  street: string;
-  number: string;
-  apartment?: string;
+  label: string; // "Casa", "Trabajo", "Oficina", etc.
+  full_name: string;
+  phone: string;
+  street_address: string;
   city: string;
   state: string;
-  postal_code: string;
-  country: string;
+  postal_code?: string;
+  additional_info?: string; // Referencias, instrucciones de entrega
   is_default: boolean;
-  notes?: string;
   created_at: string;
   updated_at: string;
 }
@@ -96,8 +95,10 @@ export interface Order {
   discount: number;
   total: number;
   coupon_code?: string;
-  shipping_address_id?: string;
-  shipping_address_snapshot?: any;
+  address_id?: string; // Referencia a addresses table
+  shipping_address?: any; // JSONB snapshot de la dirección
+  shipping_address_id?: string; // Deprecated - usar address_id
+  shipping_address_snapshot?: any; // Deprecated - usar shipping_address
   payment_method?: string;
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   notes?: string;
@@ -107,6 +108,8 @@ export interface Order {
   shipped_at?: string;
   delivered_at?: string;
   cancelled_at?: string;
+  created_from_guest?: boolean; // Indica si se creó desde pedido invitado
+  guest_order_id?: string; // ID del pedido invitado original
 }
 
 export interface OrderItem {

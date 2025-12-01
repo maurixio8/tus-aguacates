@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
+import { migrateGuestOrders } from './migrations';
 
 interface AuthContextType {
   user: User | null;
@@ -44,12 +45,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Métodos de autenticación
   async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({ 
-      email, 
-      password 
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
     });
-    
+
     if (error) throw error;
+
+    // Migrar pedidos de invitado automáticamente
+    if (data.user) {
+      try {
+        const result = await migrateGuestOrders(data.user.id, email);
+        if (result.success && result.migratedCount > 0) {
+          console.log(`Migrated ${result.migratedCount} orders for user ${email}`);
+        }
+      } catch (migrationError) {
+        // No bloquear el login si falla la migración
+        console.error('Error migrating guest orders:', migrationError);
+      }
+    }
+
     return data;
   }
 
@@ -74,6 +89,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         full_name: fullName,
         role: 'customer',
       });
+
+      // Migrar pedidos de invitado automáticamente
+      try {
+        const result = await migrateGuestOrders(data.user.id, email);
+        if (result.success && result.migratedCount > 0) {
+          console.log(`Migrated ${result.migratedCount} orders for new user ${email}`);
+        }
+      } catch (migrationError) {
+        // No bloquear el registro si falla la migración
+        console.error('Error migrating guest orders during signup:', migrationError);
+      }
     }
 
     return data;
