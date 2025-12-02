@@ -6,6 +6,7 @@ import type { Product } from '@/lib/productStorage';
 
 interface ProductResponse extends Product {
   category?: string;
+  category_name?: string;
 }
 
 export default function ProductsPage() {
@@ -31,7 +32,7 @@ export default function ProductsPage() {
     let filtered = products;
 
     if (selectedCategory !== 'Todos') {
-      filtered = filtered.filter(p => p.category === selectedCategory);
+      filtered = filtered.filter(p => (p.category_name || p.category) === selectedCategory);
     }
 
     if (searchTerm) {
@@ -46,7 +47,7 @@ export default function ProductsPage() {
 
   // Actualizar categorías cuando cambien los productos
   useEffect(() => {
-    const uniqueCategories = ['Todos', ...new Set(products.map(p => p.category).filter(Boolean))];
+    const uniqueCategories = ['Todos', ...new Set(products.map(p => p.category_name || p.category).filter(Boolean))];
     setCategories(uniqueCategories as string[]);
   }, [products]);
 
@@ -383,7 +384,7 @@ export default function ProductsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        {product.category || 'Sin categoría'}
+                        {product.category_name || product.category || 'Sin categoría'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
