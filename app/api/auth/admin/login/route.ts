@@ -1,14 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-// Configuración CORS para permitir el dashboard
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
+// Configuración CORS dinámica para permitir el dashboard
+function getCorsHeaders(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://tus-aguacates-57vp.vercel.app',
+    'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  ];
+
+  // Allow any vercel.app subdomain or localhost
+  const isAllowed = allowedOrigins.includes(origin) ||
+                   origin.includes('.vercel.app') ||
+                   origin.includes('localhost');
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[2],
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 // Manejar solicitudes OPTIONS para CORS
 export async function OPTIONS(request: NextRequest) {
@@ -16,7 +31,7 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
-      ...corsHeaders,
+      ...getCorsHeaders(request),
       'Content-Length': '0'
     }
   });
@@ -40,7 +55,7 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️  [Login API] Faltan email o password en request');
       return NextResponse.json(
         { error: 'Email y contraseña son requeridos' },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: getCorsHeaders(request) }
       );
     }
 
@@ -89,13 +104,10 @@ export async function POST(request: NextRequest) {
           role: adminUser.role,
           last_login: new Date().toISOString()
         }
-      }, { headers: corsHeaders });
+      }, { headers: getCorsHeaders(request) });
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
       const isProduction = process.env.NODE_ENV === 'production';
-      const domain = isProduction
-        ? 'tus-aguacates-57vp.vercel.app'
-        : undefined; // localhost no necesita domain
 
       response.cookies.set('admin-token', token, {
         httpOnly: true, // No accesible desde JavaScript (seguridad XSS)
@@ -103,7 +115,7 @@ export async function POST(request: NextRequest) {
         sameSite: 'lax', // Previene CSRF - 'lax' permite navegación top-level
         maxAge: 86400, // 24 horas en segundos
         path: '/', // ✅ Cookie disponible en toda la app
-        domain: domain // ✅ Especificar dominio en producción
+        // No especificar domain para que funcione en cualquier dominio
       });
 
       console.log('🍪 [Login API] Cookie establecida:', {
@@ -111,7 +123,6 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        domain: domain || 'localhost (sin domain)',
         maxAge: '24 horas',
         tokenLength: token.length
       });
@@ -133,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Credenciales inválidas' },
-      { status: 401, headers: corsHeaders }
+      { status: 401, headers: getCorsHeaders(request) }
     );
 
   } catch (error) {
@@ -145,7 +156,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getCorsHeaders(request) }
     );
   }
 }
