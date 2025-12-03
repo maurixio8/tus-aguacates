@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  trailingSlash: true,
+  trailingSlash: false, // Desactivado para evitar problemas con CORS en APIs
   eslint: {
     ignoreDuringBuilds: true,
   },

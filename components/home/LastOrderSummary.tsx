@@ -93,7 +93,8 @@ export function LastOrderSummary() {
     return statusMap[status] || status;
   };
 
-  const itemCount = lastOrder.order_data?.items?.length || 0;
+  // Como los items están en una tabla separada, usamos un valor por defecto
+  const itemCount = 1; // Por ahora asumimos que hay al menos 1 item
 
   return (
     <section className="py-8 bg-gray-50">
@@ -118,7 +119,7 @@ export function LastOrderSummary() {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-verde-aguacate">
-                  {formatPrice(lastOrder.total_amount)}
+                  {formatPrice(lastOrder.total)}
                 </p>
                 <p className="text-sm text-gray-600">
                   {itemCount} {itemCount === 1 ? 'producto' : 'productos'}

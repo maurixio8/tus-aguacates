@@ -1,0 +1,20 @@
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+
+export function middleware(request: NextRequest) {
+  // Solo aplicar a rutas de API admin
+  if (request.nextUrl.pathname.startsWith('/api/admin')) {
+    // Prevenir redirects de trailing slash en APIs
+    if (request.nextUrl.pathname.endsWith('/') && request.nextUrl.pathname !== '/api/admin/') {
+      const url = request.nextUrl.clone();
+      url.pathname = url.pathname.slice(0, -1);
+      return NextResponse.redirect(url);
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: '/api/admin/:path*',
+};
