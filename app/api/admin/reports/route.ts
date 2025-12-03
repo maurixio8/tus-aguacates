@@ -5,18 +5,41 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
-// Configuración CORS para permitir el dashboard
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
+// Configuración CORS dinámica para permitir el dashboard
+function getCorsHeaders(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://tus-aguacates-57vp.vercel.app',
+    'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+    'https://admin-dashboard-seven-zeta-68.vercel.app',
+    'https://admin-dashboard-kj6u60d3m-mauricio-s-projects-2bf4b7a2.vercel.app',
+  ];
+
+  // Allow any vercel.app subdomain or localhost
+  const isAllowed = allowedOrigins.includes(origin) ||
+                   origin.includes('.vercel.app') ||
+                   origin.includes('localhost');
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[2],
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 // Manejar solicitudes OPTIONS para CORS
 export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { headers: corsHeaders });
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      ...getCorsHeaders(request),
+      'Content-Length': '0'
+    }
+  });
 }
 
 // Helper function to verify admin authentication
@@ -53,7 +76,7 @@ export async function GET(request: NextRequest) {
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: getCorsHeaders(request) }
       );
     }
 
@@ -100,7 +123,7 @@ export async function GET(request: NextRequest) {
           console.error('❌ [Reports API] Error generating sales report:', salesError);
           return NextResponse.json(
             { error: 'Error al generar reporte de ventas' },
-            { status: 500, headers: corsHeaders }
+            { status: 500, headers: getCorsHeaders(request) }
           );
         }
 
@@ -143,7 +166,7 @@ export async function GET(request: NextRequest) {
           console.error('❌ [Reports API] Error generating products report:', productsError);
           return NextResponse.json(
             { error: 'Error al generar reporte de productos' },
-            { status: 500, headers: corsHeaders }
+            { status: 500, headers: getCorsHeaders(request) }
           );
         }
 
@@ -182,7 +205,7 @@ export async function GET(request: NextRequest) {
           console.error('❌ [Reports API] Error generating customers report:', customersError);
           return NextResponse.json(
             { error: 'Error al generar reporte de clientes' },
-            { status: 500, headers: corsHeaders }
+            { status: 500, headers: getCorsHeaders(request) }
           );
         }
 
@@ -224,7 +247,7 @@ export async function GET(request: NextRequest) {
       default:
         return NextResponse.json(
           { error: 'Tipo de reporte no válido' },
-          { status: 400, headers: corsHeaders }
+          { status: 400, headers: getCorsHeaders(request) }
         );
     }
 
@@ -233,13 +256,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: reportData
-    }, { headers: corsHeaders });
+    }, { headers: getCorsHeaders(request) });
 
   } catch (error) {
     console.error('❌ [Reports API] Error generating report:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getCorsHeaders(request) }
     );
   }
 }

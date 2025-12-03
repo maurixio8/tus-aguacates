@@ -5,18 +5,41 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
-// Configuración CORS para permitir el dashboard
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
+// Configuración CORS dinámica para permitir el dashboard
+function getCorsHeaders(request: NextRequest) {
+  const origin = request.headers.get('origin') || '';
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'https://tus-aguacates-57vp.vercel.app',
+    'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+    'https://admin-dashboard-seven-zeta-68.vercel.app',
+    'https://admin-dashboard-kj6u60d3m-mauricio-s-projects-2bf4b7a2.vercel.app',
+  ];
+
+  // Allow any vercel.app subdomain or localhost
+  const isAllowed = allowedOrigins.includes(origin) ||
+                   origin.includes('.vercel.app') ||
+                   origin.includes('localhost');
+
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : allowedOrigins[2],
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 // Manejar solicitudes OPTIONS para CORS
 export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { headers: corsHeaders });
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      ...getCorsHeaders(request),
+      'Content-Length': '0'
+    }
+  });
 }
 
 // Helper function to verify admin authentication
@@ -149,7 +172,7 @@ export async function GET(request: NextRequest) {
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: getCorsHeaders(request) }
       );
     }
 
@@ -212,7 +235,7 @@ export async function GET(request: NextRequest) {
       console.error('❌ API: Error fetching products:', error);
       return NextResponse.json(
         { error: 'Error al cargar productos' },
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: getCorsHeaders(request) }
       );
     }
 
@@ -231,13 +254,13 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit)
       }
-    }, { headers: corsHeaders });
+    }, { headers: getCorsHeaders(request) });
 
   } catch (error) {
     console.error('❌ API: Unexpected error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getCorsHeaders(request) }
     );
   }
 }
@@ -250,7 +273,7 @@ export async function POST(request: NextRequest) {
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401, headers: corsHeaders }
+        { status: 401, headers: getCorsHeaders(request) }
       );
     }
 
@@ -263,7 +286,7 @@ export async function POST(request: NextRequest) {
       if (!body[field]) {
         return NextResponse.json(
           { error: `El campo ${field} es requerido` },
-          { status: 400, headers: corsHeaders }
+          { status: 400, headers: getCorsHeaders(request) }
         );
       }
     }
@@ -272,14 +295,14 @@ export async function POST(request: NextRequest) {
     if (typeof body.price !== 'number' || body.price < 0) {
       return NextResponse.json(
         { error: 'El precio debe ser un número válido' },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: getCorsHeaders(request) }
       );
     }
 
     if (typeof body.stock !== 'number' || body.stock < 0) {
       return NextResponse.json(
         { error: 'El stock debe ser un número válido' },
-        { status: 400, headers: corsHeaders }
+        { status: 400, headers: getCorsHeaders(request) }
       );
     }
 
@@ -335,20 +358,20 @@ export async function POST(request: NextRequest) {
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Ya existe un producto con ese SKU o slug' },
-          { status: 409, headers: corsHeaders }
+          { status: 409, headers: getCorsHeaders(request) }
         );
       }
 
       if (error.code === '23503') {
         return NextResponse.json(
           { error: 'La categoría especificada no existe' },
-          { status: 400, headers: corsHeaders }
+          { status: 400, headers: getCorsHeaders(request) }
         );
       }
 
       return NextResponse.json(
         { error: 'Error al crear el producto' },
-        { status: 500, headers: corsHeaders }
+        { status: 500, headers: getCorsHeaders(request) }
       );
     }
 
@@ -358,13 +381,13 @@ export async function POST(request: NextRequest) {
       success: true,
       data,
       message: 'Producto creado exitosamente'
-    }, { status: 201, headers: corsHeaders });
+    }, { status: 201, headers: getCorsHeaders(request) });
 
   } catch (error) {
     console.error('❌ API: Unexpected error creating product:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
+      { status: 500, headers: getCorsHeaders(request) }
     );
   }
 }
