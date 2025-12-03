@@ -2,12 +2,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "framework": "nextjs",
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/api/auth/admin/login",
-      "destination": "/api/auth/admin/login"
-    }
-  ]
+  "cleanUrls": false,
+  "trailingSlash": false
 }
