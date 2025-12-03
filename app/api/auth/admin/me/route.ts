@@ -13,6 +13,7 @@ function getCorsHeaders(request: NextRequest) {
     'https://tus-aguacates-57vp.vercel.app',
     'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
     'https://admin-dashboard-seven-zeta-68.vercel.app',
+    'https://admin-dashboard-kj6u60d3m-mauricio-s-projects-2bf4b7a2.vercel.app',
   ];
 
   // Allow any vercel.app subdomain or localhost
