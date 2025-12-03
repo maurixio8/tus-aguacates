@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 const getAllowedOrigin = (request: NextRequest) => {
   const origin = request.headers.get('origin');
   const allowedOrigins = [
+    'https://admin-dashboard-du01ozplk-mauricio-s-projects-2bf4b7a2.vercel.app',
     'https://admin-dashboard-bvk52p4zx-mauricio-s-projects-2bf4b7a2.vercel.app',
     'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
     'http://localhost:5173',
