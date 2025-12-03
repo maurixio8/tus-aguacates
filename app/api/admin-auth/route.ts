@@ -1,11 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
-// Configuración CORS simple para desarrollo
-const getCorsHeaders = () => ({
-  'Access-Control-Allow-Origin': '*',
+// Configuración CORS para permitir el dashboard
+const getAllowedOrigin = (request: NextRequest) => {
+  const origin = request.headers.get('origin');
+  const allowedOrigins = [
+    'https://admin-dashboard-bvk52p4zx-mauricio-s-projects-2bf4b7a2.vercel.app',
+    'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://127.0.0.1:5173',
+  ];
+
+  if (origin && allowedOrigins.includes(origin)) {
+    return origin;
+  }
+  return allowedOrigins[0]; // Default to production
+};
+
+const getCorsHeaders = (request: NextRequest) => ({
+  'Access-Control-Allow-Origin': getAllowedOrigin(request),
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+  'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400',
 });
 
@@ -13,7 +30,7 @@ const getCorsHeaders = () => ({
 export async function OPTIONS(request: NextRequest) {
   console.log('🔍 [Admin-Auth API] OPTIONS request received from:', request.headers.get('origin'));
 
-  const headers = getCorsHeaders();
+  const headers = getCorsHeaders(request);
   console.log('✅ [Admin-Auth API] Sending CORS headers:', headers);
 
   return new NextResponse(null, {
@@ -41,7 +58,7 @@ export async function POST(request: NextRequest) {
       console.error('❌ [Admin-Auth API] Texto recibido:', text);
       return NextResponse.json(
         { error: 'Formato JSON inválido' },
-        { status: 400, headers: getCorsHeaders() }
+        { status: 400, headers: getCorsHeaders(request) }
       );
     }
     
@@ -58,7 +75,7 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️  [Admin-Auth API] Faltan email o password en request');
       return NextResponse.json(
         { error: 'Email y contraseña son requeridos' },
-        { status: 400, headers: getCorsHeaders() }
+        { status: 400, headers: getCorsHeaders(request) }
       );
     }
 
@@ -107,7 +124,7 @@ export async function POST(request: NextRequest) {
           role: adminUser.role,
           last_login: new Date().toISOString()
         }
-      }, { headers: getCorsHeaders() });
+      }, { headers: getCorsHeaders(request) });
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
       const isProduction = process.env.NODE_ENV === 'production';
@@ -151,7 +168,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Credenciales inválidas' },
-      { status: 401, headers: getCorsHeaders() }
+      { status: 401, headers: getCorsHeaders(request) }
     );
 
   } catch (error) {
@@ -163,7 +180,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500, headers: getCorsHeaders() }
+      { status: 500, headers: getCorsHeaders(request) }
     );
   }
 }
