@@ -1,9 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
+
+// Create Supabase client directly to avoid import issues
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Missing Supabase environment variables');
+    throw new Error('Missing Supabase configuration');
+  }
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
@@ -170,7 +187,16 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 API: Fetching products with params:', { search, category, status, page, limit });
 
-    const supabase = createSupabaseClient();
+    let supabase;
+    try {
+      supabase = getSupabaseClient();
+    } catch (configError) {
+      console.error('❌ Supabase configuration error:', configError);
+      return NextResponse.json(
+        { error: 'Error de configuración del servidor', details: String(configError) },
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
     let query = supabase
       .from('products')
@@ -310,7 +336,7 @@ export async function POST(request: NextRequest) {
     // Generate SKU if not provided
     const sku = body.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
 
-    const supabase = createSupabaseClient();
+    const supabase = getSupabaseClient();
 
     // Create the product
     const { data, error } = await supabase
