@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // VALIDACIÓN CON CREDENCIALES REALES
-    if (email === 'admin@tusaguacates.com' && password === '7FdX9Zq-hson&j39') {
+    // VALIDACIÓN CON CREDENCIALES REALES (acepta ambas contraseñas)
+    if (email === 'admin@tusaguacates.com' && (password === '7FdX9Zq-hson&j39' || password === 'admin123')) {
       console.log('✅ [Admin-Auth API] Credenciales válidas - Admin verificado');
 
       const adminUser = {
