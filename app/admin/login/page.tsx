@@ -32,7 +32,11 @@ export default function AdminLoginPage() {
       if (data.success && data.user) {
         // Guardar datos del admin en localStorage
         localStorage.setItem('admin', JSON.stringify(data.user));
-        router.push('/admin');
+        // Pequeño delay para asegurar que localStorage se sincroniza
+        await new Promise(resolve => setTimeout(resolve, 100));
+        // Usar window.location para forzar recarga completa
+        window.location.href = '/admin';
+        return;
       } else {
         setError(data.error || 'Error al iniciar sesión');
       }
@@ -128,7 +132,7 @@ export default function AdminLoginPage() {
             <p className="text-xs text-gray-500 text-center">
               <strong>Credenciales:</strong><br />
               admin@tusaguacates.com<br />
-              7FdX9Zq-hson&j39
+              admin123
             </p>
           </div>
         </div>

@@ -44,20 +44,30 @@ export default function AdminLayout({
     }
 
     // Verificar autenticación
-    const savedAdmin = localStorage.getItem('admin');
-    if (savedAdmin) {
-      try {
-        const adminData = JSON.parse(savedAdmin);
-        setAdmin(adminData);
-      } catch (error) {
-        localStorage.removeItem('admin');
-        router.push('/admin/login');
+    const checkAuth = () => {
+      const savedAdmin = localStorage.getItem('admin');
+      console.log('🔐 Verificando auth, savedAdmin:', savedAdmin ? 'existe' : 'no existe');
+
+      if (savedAdmin) {
+        try {
+          const adminData = JSON.parse(savedAdmin);
+          console.log('✅ Admin data parsed:', adminData.email);
+          setAdmin(adminData);
+          setLoading(false);
+        } catch (error) {
+          console.error('❌ Error parsing admin data:', error);
+          localStorage.removeItem('admin');
+          window.location.href = '/admin/login';
+        }
+      } else {
+        console.log('⚠️ No admin en localStorage, redirigiendo a login');
+        window.location.href = '/admin/login';
       }
-    } else {
-      router.push('/admin/login');
-    }
-    setLoading(false);
-  }, [isLoginPage, router]);
+    };
+
+    // Pequeño delay para asegurar que localStorage está listo
+    setTimeout(checkAuth, 50);
+  }, [isLoginPage]);
 
   const handleLogout = async () => {
     try {
