@@ -7,12 +7,18 @@ export const dynamic = 'force-dynamic';
 // Create Supabase client directly to avoid import issues
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Usar SUPABASE_SERVICE_ROLE_KEY si existe, si no usar ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error('❌ Missing Supabase environment variables');
+    console.error('❌ Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey
+    });
     throw new Error('Missing Supabase configuration');
   }
+
+  console.log('✅ Supabase client created with URL:', supabaseUrl.substring(0, 30) + '...');
 
   return createClient(supabaseUrl, supabaseKey, {
     auth: {
