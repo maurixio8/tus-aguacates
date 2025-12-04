@@ -128,7 +128,93 @@ export async function GET(
   }
 }
 
-// PUT - Update product by ID
+// PATCH - Update product by ID (partial update)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    // Verify admin authentication
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success) {
+      return NextResponse.json(
+        { error: auth.error },
+        { status: 401, headers: corsHeaders }
+      );
+    }
+
+    const { id } = await params;
+    const body = await request.json();
+
+    console.log('📝 API: PATCH updating product:', { id, body });
+
+    const supabase = createSupabaseClient();
+
+    // First check if product exists
+    const { data: existingProduct, error: fetchError } = await supabase
+      .from('products')
+      .select('id, name')
+      .eq('id', id)
+      .single();
+
+    if (fetchError || !existingProduct) {
+      return NextResponse.json(
+        { error: 'Producto no encontrado' },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    // Prepare update object
+    const updateData: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    // Add fields from body
+    const allowedFields = [
+      'name', 'description', 'category_id', 'price', 'discount_price',
+      'unit', 'weight', 'min_quantity', 'main_image_url', 'images',
+      'stock', 'is_organic', 'is_featured', 'is_active', 'benefits'
+    ];
+
+    allowedFields.forEach(field => {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field];
+      }
+    });
+
+    const { data, error } = await supabase
+      .from('products')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ API: Error updating product:', error);
+      return NextResponse.json(
+        { error: 'Error al actualizar el producto' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    console.log('✅ API: Product updated successfully via PATCH:', data);
+
+    return NextResponse.json({
+      success: true,
+      data,
+      message: 'Producto actualizado exitosamente'
+    }, { headers: corsHeaders });
+
+  } catch (error) {
+    console.error('❌ API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500, headers: corsHeaders }
+    );
+  }
+}
+
+// PUT - Update product by ID (full update)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

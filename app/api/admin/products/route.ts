@@ -173,6 +173,15 @@ export async function GET(request: NextRequest) {
           id,
           name,
           slug
+        ),
+        product_variants (
+          id,
+          variant_name,
+          variant_value,
+          price_adjustment,
+          stock_quantity,
+          is_active,
+          sku
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
