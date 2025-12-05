@@ -259,7 +259,7 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('❌ API: Error fetching products:', error);
       return NextResponse.json(
-        { error: 'Error al cargar productos' },
+        { error: 'Error al cargar productos', details: error.message, code: error.code },
         { status: 500, headers: corsHeaders }
       );
     }
