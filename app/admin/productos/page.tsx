@@ -26,10 +26,12 @@ interface ProductVariant {
   id: string;
   variant_name: string;
   variant_value: string;
-  price_adjustment: number;
-  stock_quantity: number;
-  is_active: boolean;
+  price?: number;
+  price_adjustment?: number;
+  stock_quantity?: number;
+  is_active?: boolean;
   sku?: string;
+  sort_order?: number;
 }
 
 interface Product {
@@ -47,6 +49,8 @@ interface Product {
   category_name?: string;
   unit: string;
   product_variants?: ProductVariant[];
+  variants?: ProductVariant[];
+  hasVariants?: boolean;
 }
 
 interface Pagination {
@@ -361,10 +365,10 @@ export default function ProductsPage() {
                             )}
                             <div className="min-w-0">
                               <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                              {product.product_variants && product.product_variants.length > 0 && (
+                              {(product.variants?.length > 0 || product.product_variants?.length > 0) && (
                                 <p className="text-xs text-blue-600 flex items-center gap-1">
                                   <Layers className="w-3 h-3" />
-                                  {product.product_variants.length} variante(s)
+                                  {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
                                 </p>
                               )}
                             </div>
@@ -423,7 +427,7 @@ export default function ProductsPage() {
                               <Edit className="w-4 h-4 lg:hidden" />
                               <span className="hidden lg:inline">Editar</span>
                             </button>
-                            {product.product_variants && product.product_variants.length > 0 && (
+                            {(product.variants?.length > 0 || product.product_variants?.length > 0) && (
                               <button
                                 onClick={() => setExpandedProduct(expandedProduct === product.id ? null : product.id)}
                                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
@@ -439,13 +443,13 @@ export default function ProductsPage() {
                       </tr>
 
                       {/* Fila expandida para variantes */}
-                      {expandedProduct === product.id && product.product_variants && (
+                      {expandedProduct === product.id && (product.variants || product.product_variants) && (
                         <tr>
                           <td colSpan={6} className="px-4 lg:px-6 py-4 bg-gray-50">
                             <div className="space-y-3">
                               <h4 className="font-semibold text-gray-900">Variantes del Producto</h4>
                               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {product.product_variants.map((variant) => (
+                                {(product.variants || product.product_variants || []).map((variant) => (
                                   <div
                                     key={variant.id}
                                     className="bg-white p-3 rounded-lg border border-gray-200"
@@ -466,14 +470,11 @@ export default function ProductsPage() {
                                       </span>
                                     </div>
                                     <div className="text-sm text-gray-600 space-y-1">
-                                      <p>Stock: <span className="font-medium">{variant.stock_quantity}</span></p>
-                                      <p>SKU: <span className="font-medium">{variant.sku || 'N/A'}</span></p>
-                                      {variant.price_adjustment !== 0 && (
-                                        <p className="font-medium text-green-600">
-                                          Precio: {formatCurrency(product.price + variant.price_adjustment)}
-                                          {variant.price_adjustment > 0 ? ` (+${formatCurrency(variant.price_adjustment)})` : ` (${formatCurrency(variant.price_adjustment)})`}
-                                        </p>
-                                      )}
+                                      <p>Stock: <span className="font-medium">{variant.stock_quantity || 100}</span></p>
+                                      {variant.sku && <p>SKU: <span className="font-medium">{variant.sku}</span></p>}
+                                      <p className="font-medium text-green-600">
+                                        Precio: {formatCurrency((variant as any).price || (product.price + (variant.price_adjustment || 0)))}
+                                      </p>
                                     </div>
                                   </div>
                                 ))}

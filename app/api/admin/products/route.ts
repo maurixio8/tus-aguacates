@@ -204,6 +204,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Try to include variants, fallback to without if table doesn't exist
     let query = supabase
       .from('products')
       .select(`
@@ -212,6 +213,16 @@ export async function GET(request: NextRequest) {
           id,
           name,
           slug
+        ),
+        product_variants (
+          id,
+          variant_name,
+          variant_value,
+          price,
+          price_adjustment,
+          stock_quantity,
+          is_active,
+          sort_order
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -238,7 +249,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+
+    // If error is about product_variants not existing, retry without variants
+    if (error && error.message?.includes('product_variants')) {
+      console.log('⚠️ product_variants table not found, fetching without variants');
+      const fallbackQuery = supabase
+        .from('products')
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            slug
+          )
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (search) {
+        fallbackQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+      }
+      if (category && category !== 'all') {
+        fallbackQuery.eq('category_id', category);
+      }
+      if (status && status !== 'all') {
+        if (status === 'active') fallbackQuery.eq('is_active', true);
+        else if (status === 'inactive') fallbackQuery.eq('is_active', false);
+        else if (status === 'featured') fallbackQuery.eq('is_featured', true);
+      }
+
+      const fallbackResult = await fallbackQuery;
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+      count = fallbackResult.count;
+    }
 
     console.log('📊 API: Products response:', {
       data: data?.length || 0,
@@ -255,10 +300,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Transform data to include category_name
+    // Transform data to include category_name and variants
     const products = data?.map(item => ({
       ...item,
-      category_name: item.categories?.name || 'Sin categoría'
+      category_name: item.categories?.name || 'Sin categoría',
+      variants: item.product_variants || [],
+      hasVariants: (item.product_variants?.length || 0) > 0
     })) || [];
 
     return NextResponse.json({
