@@ -13,8 +13,12 @@ import {
   X,
   Save,
   ImageIcon,
-  Layers
+  Layers,
+  Camera,
+  Upload,
+  Loader2
 } from 'lucide-react';
+import { useRef } from 'react';
 
 interface Category {
   id: string;
@@ -77,6 +81,9 @@ export default function ProductsPage() {
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [selectedProductForImage, setSelectedProductForImage] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -198,6 +205,70 @@ export default function ProductsPage() {
     }).format(value);
   };
 
+  // Función para subir imagen rápida
+  const handleQuickImageUpload = (productId: string) => {
+    setSelectedProductForImage(productId);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedProductForImage) return;
+
+    // Validar tipo de archivo
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona una imagen válida');
+      return;
+    }
+
+    // Validar tamaño (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('La imagen es muy grande. Máximo 5MB');
+      return;
+    }
+
+    setUploadingImage(selectedProductForImage);
+
+    try {
+      // Crear FormData para subir la imagen
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('productId', selectedProductForImage);
+
+      const response = await fetch('/api/admin/upload-image/', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.imageUrl) {
+        // Actualizar el producto con la nueva imagen
+        await fetch(`/api/admin/products/${selectedProductForImage}/`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ main_image_url: data.imageUrl }),
+        });
+
+        loadProducts();
+      } else {
+        alert(data.error || 'Error al subir la imagen');
+      }
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      alert('Error al subir la imagen');
+    } finally {
+      setUploadingImage(null);
+      setSelectedProductForImage(null);
+      // Limpiar el input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
   const clearFilters = () => {
     setSearch('');
     setSelectedCategory('');
@@ -207,6 +278,16 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Input oculto para subir imágenes */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="image/*"
+        className="hidden"
+        capture="environment"
+      />
+
       {/* Header */}
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Productos</h1>
@@ -352,17 +433,32 @@ export default function ProductsPage() {
                       <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 lg:px-6 py-4">
                           <div className="flex items-center gap-3">
-                            {product.main_image_url ? (
-                              <img
-                                src={product.main_image_url}
-                                alt={product.name}
-                                className="w-12 h-12 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <ImageIcon className="w-6 h-6 text-gray-400" />
-                              </div>
-                            )}
+                            <div className="relative group">
+                              {product.main_image_url ? (
+                                <img
+                                  src={product.main_image_url}
+                                  alt={product.name}
+                                  className="w-12 h-12 rounded-lg object-cover"
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                  <ImageIcon className="w-6 h-6 text-gray-400" />
+                                </div>
+                              )}
+                              {/* Botón de cámara rápida */}
+                              <button
+                                onClick={() => handleQuickImageUpload(product.id)}
+                                disabled={uploadingImage === product.id}
+                                className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                title="Subir foto"
+                              >
+                                {uploadingImage === product.id ? (
+                                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                                ) : (
+                                  <Camera className="w-5 h-5 text-white" />
+                                )}
+                              </button>
+                            </div>
                             <div className="min-w-0">
                               <p className="font-semibold text-gray-900 truncate">{product.name}</p>
                               {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (

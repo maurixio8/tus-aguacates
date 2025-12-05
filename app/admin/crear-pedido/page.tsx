@@ -44,6 +44,8 @@ interface Product {
   category_id: string;
   categories?: Category;
   product_variants?: ProductVariant[];
+  variants?: ProductVariant[];
+  hasVariants?: boolean;
   is_active: boolean;
 }
 
@@ -174,9 +176,12 @@ export default function CreateOrderPage() {
   };
 
   const calculateItemPrice = (item: OrderItem) => {
-    const basePrice = item.product.price;
-    const variantAdjustment = item.variant?.price_adjustment || 0;
-    return basePrice + variantAdjustment;
+    // Si hay variante, usar su precio (guardado en price_adjustment)
+    if (item.variant?.price_adjustment) {
+      return item.variant.price_adjustment;
+    }
+    // Si no hay variante, usar el precio base del producto
+    return item.product.price;
   };
 
   const calculateItemTotal = (item: OrderItem) => {
@@ -377,7 +382,7 @@ export default function CreateOrderPage() {
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-gray-900">{product.name}</p>
                             <p className="text-green-600 font-medium">{formatCurrency(product.price)}</p>
-                            {product.product_variants && product.product_variants.length > 0 && (
+                            {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
                               <button
                                 onClick={() =>
                                   setExpandedProduct(expandedProduct === product.id ? null : product.id)
@@ -385,7 +390,7 @@ export default function CreateOrderPage() {
                                 className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1 mt-1"
                               >
                                 <Layers className="w-3 h-3" />
-                                {product.product_variants.length} variante(s)
+                                {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
                                 <ChevronRight
                                   className={`w-3 h-3 transition-transform ${
                                     expandedProduct === product.id ? 'rotate-90' : ''
@@ -404,10 +409,10 @@ export default function CreateOrderPage() {
                         </div>
 
                         {/* Variantes expandidas */}
-                        {expandedProduct === product.id && product.product_variants && (
+                        {expandedProduct === product.id && (product.variants || product.product_variants) && (
                           <div className="mt-3 ml-17 space-y-2">
-                            {product.product_variants
-                              .filter((v) => v.is_active && v.stock_quantity > 0)
+                            {(product.variants || product.product_variants || [])
+                              .filter((v) => v.is_active !== false && (v.stock_quantity === undefined || v.stock_quantity > 0))
                               .map((variant) => (
                                 <div
                                   key={variant.id}
@@ -418,14 +423,8 @@ export default function CreateOrderPage() {
                                       {variant.variant_name}: {variant.variant_value}
                                     </p>
                                     <p className="text-xs text-gray-600">
-                                      {formatCurrency(product.price + variant.price_adjustment)}
-                                      {variant.price_adjustment !== 0 && (
-                                        <span className="text-blue-600 ml-1">
-                                          ({variant.price_adjustment > 0 ? '+' : ''}
-                                          {formatCurrency(variant.price_adjustment)})
-                                        </span>
-                                      )}
-                                      {' · '}Stock: {variant.stock_quantity}
+                                      {formatCurrency(variant.price_adjustment || product.price)}
+                                      {variant.stock_quantity !== undefined && ` · Stock: ${variant.stock_quantity}`}
                                     </p>
                                   </div>
                                   <button
@@ -436,7 +435,7 @@ export default function CreateOrderPage() {
                                   </button>
                                 </div>
                               ))}
-                            {product.product_variants.filter((v) => v.is_active && v.stock_quantity > 0)
+                            {(product.variants || product.product_variants || []).filter((v) => v.is_active !== false && (v.stock_quantity === undefined || v.stock_quantity > 0))
                               .length === 0 && (
                               <p className="text-sm text-gray-500 p-2">
                                 No hay variantes disponibles con stock
