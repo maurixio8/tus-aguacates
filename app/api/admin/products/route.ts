@@ -251,6 +251,12 @@ export async function GET(request: NextRequest) {
 
     let { data, error, count } = await query;
 
+    console.log('🔍 Initial query result:', {
+      dataCount: data?.length || 0,
+      hasVariants: data?.[0]?.product_variants?.length || 0,
+      error: error?.message
+    });
+
     // If error is about product_variants not existing, retry without variants
     if (error && error.message?.includes('product_variants')) {
       console.log('⚠️ product_variants table not found, fetching without variants');
