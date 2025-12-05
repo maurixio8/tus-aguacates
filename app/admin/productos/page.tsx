@@ -87,7 +87,7 @@ export default function ProductsPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/categories/');
       const data = await response.json();
       if (data.success || Array.isArray(data)) {
         setCategories(data.categories || data || []);
@@ -109,7 +109,8 @@ export default function ProductsPage() {
       if (selectedCategory) params.set('category', selectedCategory);
       if (status) params.set('status', status);
 
-      const response = await fetch(`/api/admin/products?${params}`, {
+      // IMPORTANTE: trailing slash para evitar redirect 308
+      const response = await fetch(`/api/admin/products/?${params}`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -131,7 +132,7 @@ export default function ProductsPage() {
 
   const handleToggleActive = async (productId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/admin/products/${productId}`, {
+      const response = await fetch(`/api/admin/products/${productId}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -152,7 +153,7 @@ export default function ProductsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
+      const response = await fetch(`/api/admin/products/${editingProduct.id}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

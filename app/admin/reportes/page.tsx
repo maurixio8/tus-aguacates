@@ -59,10 +59,10 @@ export default function ReportsPage() {
       const filters = `dateFrom=${dateFrom}&dateTo=${dateTo}`;
 
       const [summaryRes, productsRes, categoryRes, dailyRes] = await Promise.all([
-        fetch(`/api/admin/reports?type=sales_summary&${filters}`, { credentials: 'include' }),
-        fetch(`/api/admin/reports?type=top_products&${filters}`, { credentials: 'include' }),
-        fetch(`/api/admin/reports?type=sales_by_category&${filters}`, { credentials: 'include' }),
-        fetch(`/api/admin/reports?type=daily_sales&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=sales_summary&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=top_products&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=sales_by_category&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=daily_sales&${filters}`, { credentials: 'include' }),
       ]);
 
       const [summary, products, categories, daily] = await Promise.all([

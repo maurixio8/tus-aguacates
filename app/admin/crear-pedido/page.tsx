@@ -91,7 +91,7 @@ export default function CreateOrderPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await fetch('/api/categories/');
       const data = await response.json();
       if (data.success || Array.isArray(data)) {
         setCategories(data.categories || data || []);
@@ -112,7 +112,7 @@ export default function CreateOrderPage() {
       params.set('limit', '100');
       if (search) params.set('search', search);
 
-      const response = await fetch(`/api/admin/products?${params}`, {
+      const response = await fetch(`/api/admin/products/?${params}`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -231,7 +231,7 @@ export default function CreateOrderPage() {
         total_amount: calculateTotal(),
       };
 
-      const response = await fetch('/api/admin/orders', {
+      const response = await fetch('/api/admin/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

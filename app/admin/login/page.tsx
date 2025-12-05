@@ -18,7 +18,8 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/admin-auth', {
+      // IMPORTANTE: Usar trailing slash para evitar redirect 308 de Vercel
+      const response = await fetch('/api/auth/admin/login/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
