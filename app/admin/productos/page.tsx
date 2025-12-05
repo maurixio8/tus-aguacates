@@ -365,7 +365,7 @@ export default function ProductsPage() {
                             )}
                             <div className="min-w-0">
                               <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                              {(product.variants?.length > 0 || product.product_variants?.length > 0) && (
+                              {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
                                 <p className="text-xs text-blue-600 flex items-center gap-1">
                                   <Layers className="w-3 h-3" />
                                   {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
@@ -427,7 +427,7 @@ export default function ProductsPage() {
                               <Edit className="w-4 h-4 lg:hidden" />
                               <span className="hidden lg:inline">Editar</span>
                             </button>
-                            {(product.variants?.length > 0 || product.product_variants?.length > 0) && (
+                            {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
                               <button
                                 onClick={() => setExpandedProduct(expandedProduct === product.id ? null : product.id)}
                                 className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
