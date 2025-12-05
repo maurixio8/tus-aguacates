@@ -306,12 +306,34 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get product IDs for separate variants query
+    const productIds = data?.map(item => item.id) || [];
+
+    // Fetch variants separately to avoid Supabase schema cache issues
+    let variantsMap: Record<string, any[]> = {};
+    if (productIds.length > 0) {
+      const { data: variants, error: variantsError } = await supabase
+        .from('product_variants')
+        .select('*')
+        .in('product_id', productIds);
+
+      if (!variantsError && variants) {
+        variants.forEach(v => {
+          if (!variantsMap[v.product_id]) {
+            variantsMap[v.product_id] = [];
+          }
+          variantsMap[v.product_id].push(v);
+        });
+      }
+      console.log('📦 Variants fetched:', variants?.length || 0);
+    }
+
     // Transform data to include category_name and variants
     const products = data?.map(item => ({
       ...item,
       category_name: item.categories?.name || 'Sin categoría',
-      variants: item.product_variants || [],
-      hasVariants: (item.product_variants?.length || 0) > 0
+      variants: variantsMap[item.id] || item.product_variants || [],
+      hasVariants: (variantsMap[item.id]?.length || item.product_variants?.length || 0) > 0
     })) || [];
 
     return NextResponse.json({
