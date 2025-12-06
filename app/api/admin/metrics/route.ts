@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import { createSupabaseClient } from '@/lib/auth-admin';
 
@@ -76,83 +75,140 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
-    // Get total products
-    const { count: totalProducts, error: productsError } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
+    // Obtener fechas para filtros
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
-    // Get active products
-    const { count: activeProducts, error: activeProductsError } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true })
-      .eq('is_active', true);
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 7);
+    const weekStartISO = weekStart.toISOString();
 
-    // Get total orders
-    const { count: totalOrders, error: ordersError } = await supabase
+    // ==================== VENTAS DE HOY ====================
+    const { data: todayOrders, error: todayError } = await supabase
       .from('orders')
-      .select('*', { count: 'exact', head: true });
+      .select(`
+        id,
+        total_amount,
+        order_items (
+          quantity,
+          unit_price,
+          subtotal,
+          product_id,
+          product_snapshot
+        )
+      `)
+      .gte('created_at', todayStart)
+      .lte('created_at', todayEnd);
 
-    // Get pending orders
-    const { count: pendingOrders, error: pendingOrdersError } = await supabase
+    const todayRevenue = todayOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    const todayOrdersCount = todayOrders?.length || 0;
+
+    // Calcular productos más vendidos hoy
+    const productSales: Record<string, { name: string; quantity: number; revenue: number }> = {};
+    todayOrders?.forEach(order => {
+      order.order_items?.forEach((item: any) => {
+        const productName = item.product_snapshot?.name || 'Producto';
+        const productId = item.product_id;
+        if (!productSales[productId]) {
+          productSales[productId] = { name: productName, quantity: 0, revenue: 0 };
+        }
+        productSales[productId].quantity += item.quantity || 0;
+        productSales[productId].revenue += item.subtotal || (item.unit_price * item.quantity) || 0;
+      });
+    });
+
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // ==================== PEDIDOS PENDIENTES ====================
+    const { count: pendingCount, error: pendingError } = await supabase
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .eq('order_status', 'pendiente');
 
-    // Get completed orders
-    const { count: completedOrders, error: completedOrdersError } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('order_status', 'completado');
-
-    // Get total revenue from completed orders
-    const { data: revenueData, error: revenueError } = await supabase
-      .from('orders')
-      .select('total_amount')
-      .eq('order_status', 'completado');
-
-    // Calculate total revenue
-    const totalRevenue = revenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-
-    // Get recent orders (last 5)
-    const { data: recentOrders, error: recentOrdersError } = await supabase
+    // ==================== ENTREGAS PENDIENTES (próximas) ====================
+    const { data: pendingOrders, error: pendingOrdersError } = await supabase
       .from('orders')
       .select(`
         id,
-        customer_name,
-        total_amount,
-        order_status,
-        created_at
+        order_items (
+          quantity,
+          product_snapshot
+        )
       `)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    // Get low stock products (less than 10 units)
-    const { data: lowStockProducts, error: lowStockError } = await supabase
-      .from('products')
-      .select('id, name, stock, unit')
-      .lt('stock', 10)
-      .eq('is_active', true)
-      .order('stock', { ascending: true })
+      .eq('order_status', 'pendiente')
       .limit(10);
 
+    // Agregar productos pendientes de entregar
+    const pendingProducts: Record<string, { name: string; quantity: number }> = {};
+    pendingOrders?.forEach(order => {
+      order.order_items?.forEach((item: any) => {
+        const productName = item.product_snapshot?.name || 'Producto';
+        if (!pendingProducts[productName]) {
+          pendingProducts[productName] = { name: productName, quantity: 0 };
+        }
+        pendingProducts[productName].quantity += item.quantity || 0;
+      });
+    });
+
+    const pendingProductsList = Object.values(pendingProducts)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 8);
+
+    // ==================== VENTAS DE LA SEMANA ====================
+    const { data: weekOrders, error: weekError } = await supabase
+      .from('orders')
+      .select('id, total_amount, order_items(product_id, subtotal, product_snapshot)')
+      .gte('created_at', weekStartISO);
+
+    const weekRevenue = weekOrders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    const weekOrdersCount = weekOrders?.length || 0;
+
+    // ==================== VENTAS POR CATEGORÍA (última semana) ====================
+    const categoryStats: Record<string, number> = {};
+    weekOrders?.forEach(order => {
+      order.order_items?.forEach((item: any) => {
+        const category = item.product_snapshot?.category || 'General';
+        if (!categoryStats[category]) {
+          categoryStats[category] = 0;
+        }
+        categoryStats[category] += item.subtotal || 0;
+      });
+    });
+
+    // ==================== CONSTRUIR RESPUESTA ====================
     const metrics = {
-      overview: {
-        totalProducts: totalProducts || 0,
-        activeProducts: activeProducts || 0,
-        totalOrders: totalOrders || 0,
-        pendingOrders: pendingOrders || 0,
-        completedOrders: completedOrders || 0,
-        totalRevenue: totalRevenue
+      today: {
+        orders: todayOrdersCount,
+        revenue: todayRevenue,
+        topProducts: topProducts
       },
-      recentOrders: recentOrders || [],
-      lowStockProducts: lowStockProducts || []
+      pending: {
+        count: pendingCount || 0
+      },
+      tomorrow: {
+        ordersCount: pendingOrders?.length || 0,
+        products: pendingProductsList
+      },
+      week: {
+        orders: weekOrdersCount,
+        revenue: weekRevenue
+      },
+      categoryStats: categoryStats
     };
 
-    console.log('📊 [Metrics API] Dashboard metrics loaded successfully');
+    console.log('📊 [Metrics API] Dashboard metrics loaded:', {
+      todayOrders: todayOrdersCount,
+      todayRevenue,
+      pendingCount,
+      weekOrders: weekOrdersCount
+    });
 
     return NextResponse.json({
       success: true,
-      data: metrics
+      metrics: metrics
     }, { headers: corsHeaders });
 
   } catch (error) {
