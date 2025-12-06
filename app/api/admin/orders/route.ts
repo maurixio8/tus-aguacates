@@ -254,6 +254,15 @@ export async function POST(request: NextRequest) {
     // Calcular subtotal (total de productos sin domicilio)
     const subtotal = totalAmount;
 
+    // Mapear métodos de pago del frontend a los de la base de datos
+    const paymentMethodMap: Record<string, string> = {
+      'efectivo': 'cash',
+      'transferencia': 'transfer',
+      'tarjeta': 'card',
+      'manual': 'cash'
+    };
+    const mappedPaymentMethod = paymentMethodMap[body.payment_method] || body.payment_method || 'cash';
+
     // Create the order - user_id es null para pedidos manuales de admin
     // Nota: Asegurarse de que la columna user_id sea nullable en Supabase
     // ALTER TABLE orders ALTER COLUMN user_id DROP NOT NULL;
@@ -267,7 +276,7 @@ export async function POST(request: NextRequest) {
       total: finalTotal, // Total con domicilio (columna requerida)
       total_amount: finalTotal,
       order_status: 'pendiente',
-      payment_method: body.payment_method || 'manual',
+      payment_method: mappedPaymentMethod,
       payment_status: 'pending',
       user_id: null, // Pedidos manuales no tienen usuario asociado
       created_at: new Date().toISOString(),
@@ -290,23 +299,30 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
+    const itemsToInsert = orderItems.map(item => ({
+      order_id: order.id,
+      product_id: item.product_id,
+      quantity: item.quantity,
+      unit_price: item.price,
+      total_price: item.total,
+      variant_id: item.variant_id || null,
+      created_at: new Date().toISOString()
+    }));
+
+    console.log('📦 API: Inserting order items:', JSON.stringify(itemsToInsert, null, 2));
+
     const { data: items, error: itemsError } = await supabase
       .from('order_items')
-      .insert(
-        orderItems.map(item => ({
-          ...item,
-          order_id: order.id,
-          created_at: new Date().toISOString()
-        }))
-      )
+      .insert(itemsToInsert)
       .select();
 
     if (itemsError) {
       console.error('❌ API: Error creating order items:', itemsError);
+      console.error('❌ API: Items data was:', JSON.stringify(itemsToInsert, null, 2));
       // Rollback order creation
       await supabase.from('orders').delete().eq('id', order.id);
       return NextResponse.json(
-        { error: 'Error al crear los items del pedido' },
+        { error: 'Error al crear los items del pedido', details: itemsError.message },
         { status: 500, headers: corsHeaders }
       );
     }
