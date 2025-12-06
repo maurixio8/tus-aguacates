@@ -241,6 +241,7 @@ export async function POST(request: NextRequest) {
 
       orderItems.push({
         product_id: item.product_id,
+        product_name: product.name,
         quantity: item.quantity,
         price: itemPrice,
         total: itemTotal,
@@ -299,17 +300,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
-    // Columnas de order_items: order_id, product_id, quantity, price, total, variant_id, variant_name, variant_value, price_adjustment
+    // Columnas de order_items: order_id, product_id, quantity, unit_price, subtotal, product_snapshot, created_at
     const itemsToInsert = orderItems.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
       quantity: item.quantity,
-      price: item.price,
-      total: item.total,
-      variant_id: item.variant_id || null,
-      variant_name: item.variant_name || null,
-      variant_value: item.variant_value || null,
-      price_adjustment: item.price_adjustment || null,
+      unit_price: item.price,
+      subtotal: item.total,
+      product_snapshot: {
+        name: item.product_name || 'Producto',
+        variant_name: item.variant_name || null,
+        variant_value: item.variant_value || null
+      },
       created_at: new Date().toISOString()
     }));
 
