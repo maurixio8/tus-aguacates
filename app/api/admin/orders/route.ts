@@ -216,19 +216,24 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (variantError || !variant) {
-          return NextResponse.json(
-            { error: `Variante con ID ${item.variant_id} no encontrada` },
-            { status: 400, headers: corsHeaders }
-          );
+          console.log('⚠️ Variant not found, using item price:', item.price);
+          // Si no se encuentra la variante pero se envió un precio, usar ese precio
+          if (item.price) {
+            itemPrice = item.price;
+          }
+        } else {
+          // El precio de la variante está guardado en price_adjustment como precio completo
+          itemPrice = variant.price_adjustment || product.price;
+          variantInfo = {
+            variant_id: variant.id,
+            variant_name: variant.variant_name,
+            variant_value: variant.variant_value,
+            price_adjustment: variant.price_adjustment
+          };
         }
-
-        itemPrice += variant.price_adjustment;
-        variantInfo = {
-          variant_id: variant.id,
-          variant_name: variant.variant_name,
-          variant_value: variant.variant_value,
-          price_adjustment: variant.price_adjustment
-        };
+      } else if (item.price) {
+        // Si se envió un precio directamente, usarlo
+        itemPrice = item.price;
       }
 
       const itemTotal = itemPrice * item.quantity;
@@ -243,30 +248,42 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create the order
+    // Usar el total enviado desde el frontend (ya incluye domicilio)
+    const finalTotal = body.total_amount || totalAmount;
+
+    // Calcular subtotal (total de productos sin domicilio)
+    const subtotal = totalAmount;
+
+    // Create the order - user_id es null para pedidos manuales de admin
+    // Nota: Asegurarse de que la columna user_id sea nullable en Supabase
+    // ALTER TABLE orders ALTER COLUMN user_id DROP NOT NULL;
+    const orderInsertData: Record<string, unknown> = {
+      customer_name: body.customer_name,
+      customer_phone: body.customer_phone,
+      customer_email: body.customer_email || null,
+      delivery_address: body.delivery_address,
+      delivery_notes: body.delivery_notes || null,
+      subtotal: subtotal, // Subtotal sin domicilio
+      total_amount: finalTotal,
+      order_status: 'pendiente',
+      payment_method: body.payment_method || 'manual',
+      payment_status: 'pending',
+      user_id: null, // Pedidos manuales no tienen usuario asociado
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        customer_name: body.customer_name,
-        customer_phone: body.customer_phone,
-        customer_email: body.customer_email || null,
-        delivery_address: body.delivery_address,
-        delivery_notes: body.delivery_notes || null,
-        total_amount: totalAmount,
-        order_status: 'pendiente',
-        payment_method: body.payment_method || 'manual',
-        payment_status: 'pending',
-        created_by: auth.adminId, // Track which admin created the order
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
+      .insert(orderInsertData)
       .select()
       .single();
 
     if (orderError) {
       console.error('❌ API: Error creating order:', orderError);
+      console.error('❌ API: Order data was:', orderInsertData);
       return NextResponse.json(
-        { error: 'Error al crear el pedido' },
+        { error: 'Error al crear el pedido', details: orderError.message },
         { status: 500, headers: corsHeaders }
       );
     }
