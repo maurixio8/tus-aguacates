@@ -264,6 +264,7 @@ export async function POST(request: NextRequest) {
       delivery_address: body.delivery_address,
       delivery_notes: body.delivery_notes || null,
       subtotal: subtotal, // Subtotal sin domicilio
+      total: finalTotal, // Total con domicilio (columna requerida)
       total_amount: finalTotal,
       order_status: 'pendiente',
       payment_method: body.payment_method || 'manual',
