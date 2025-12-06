@@ -2,7 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -17,6 +17,48 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+
+  // Estados para validación en tiempo real
+  const [passwordValid, setPasswordValid] = useState<boolean | null>(null);
+  const [confirmPasswordValid, setConfirmPasswordValid] = useState<boolean | null>(null);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+
+  // Validación de contraseña en tiempo real
+  useEffect(() => {
+    if (!passwordTouched) return;
+    
+    if (password === '') {
+      setPasswordValid(null);
+    } else if (password.length >= 6) {
+      setPasswordValid(true);
+    } else {
+      setPasswordValid(false);
+    }
+  }, [password, passwordTouched]);
+
+  // Validación de confirmación de contraseña en tiempo real
+  useEffect(() => {
+    if (!confirmPasswordTouched) return;
+    
+    if (confirmPassword === '') {
+      setConfirmPasswordValid(null);
+    } else if (confirmPassword === password && password.length >= 6) {
+      setConfirmPasswordValid(true);
+    } else {
+      setConfirmPasswordValid(false);
+    }
+  }, [confirmPassword, password, confirmPasswordTouched]);
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (!passwordTouched) setPasswordTouched(true);
+  };
+
+  const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setConfirmPassword(e.target.value);
+    if (!confirmPasswordTouched) setConfirmPasswordTouched(true);
+  };
 
   useEffect(() => {
     // Verificar si hay un token en la URL
@@ -172,20 +214,40 @@ function ResetPasswordContent() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
+                  onBlur={() => setPasswordTouched(true)}
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
+                  autoComplete="new-password"
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                    passwordValid === true
+                      ? 'border-green-500 bg-green-50'
+                      : passwordValid === false
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="••••••••"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {passwordTouched && passwordValid !== null && (
+                    passwordValid ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <X className="w-5 h-5 text-red-600" />
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
+              {passwordTouched && passwordValid === false && (
+                <p className="mt-1 text-sm text-red-600">La contraseña debe tener al menos 6 caracteres</p>
+              )}
             </div>
 
             {/* Confirm Password */}
@@ -199,20 +261,42 @@ function ResetPasswordContent() {
                   id="confirmPassword"
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onChange={handleConfirmPasswordChange}
+                  onBlur={() => setConfirmPasswordTouched(true)}
                   required
                   minLength={6}
-                  className="w-full pl-11 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
+                  autoComplete="new-password"
+                  className={`w-full pl-11 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                    confirmPasswordValid === true
+                      ? 'border-green-500 bg-green-50'
+                      : confirmPasswordValid === false
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="••••••••"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  {confirmPasswordTouched && confirmPasswordValid !== null && (
+                    confirmPasswordValid ? (
+                      <Check className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <X className="w-5 h-5 text-red-600" />
+                    )
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
               </div>
+              {confirmPasswordTouched && confirmPasswordValid === false && (
+                <p className="mt-1 text-sm text-red-600">
+                  {password.length >= 6 ? 'Las contraseñas no coinciden' : 'La contraseña debe tener al menos 6 caracteres'}
+                </p>
+              )}
             </div>
 
             {/* Submit Button */}

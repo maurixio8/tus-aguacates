@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
@@ -13,10 +13,41 @@ export default function ForgotPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Estados para validación en tiempo real
+  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  // Validación de email en tiempo real
+  useEffect(() => {
+    if (!emailTouched) return;
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email === '') {
+      setEmailValid(null);
+    } else if (emailRegex.test(email)) {
+      setEmailValid(true);
+    } else {
+      setEmailValid(false);
+    }
+  }, [email, emailTouched]);
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (!emailTouched) setEmailTouched(true);
+  };
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Validar email antes de enviar
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError('Por favor, ingresa un correo electrónico válido');
+      setLoading(false);
+      return;
+    }
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
@@ -98,15 +129,37 @@ export default function ForgotPasswordPage() {
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="tu@ejemplo.com"
-                />
+                <div className="relative">
+                  <input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={handleEmailChange}
+                    onBlur={() => setEmailTouched(true)}
+                    required
+                    autoComplete="email"
+                    className={`w-full pl-11 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                      emailValid === true
+                        ? 'border-green-500 bg-green-50'
+                        : emailValid === false
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="tu@ejemplo.com"
+                  />
+                  {emailTouched && emailValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {emailValid ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {emailTouched && emailValid === false && (
+                  <p className="mt-1 text-sm text-red-600">Por favor, ingresa un correo electrónico válido</p>
+                )}
               </div>
             </div>
 

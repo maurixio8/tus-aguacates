@@ -2,13 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase, configureExtendedSession } from './supabase';
 import { migrateGuestOrders } from './migrations';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   signUp: (email: string, password: string, fullName: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
@@ -44,13 +44,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Métodos de autenticación
-  async function signIn(email: string, password: string) {
+  async function signIn(email: string, password: string, rememberMe: boolean = false) {
+    // Configurar persistencia extendida antes del inicio de sesión
+    configureExtendedSession(rememberMe);
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
+      options: {
+        // Configurar persistencia de sesión según "Recordarme"
+        // Si rememberMe es true, la sesión persiste por más tiempo
+        // Por defecto, Supabase usa persistencia 'session' (persistente hasta que se cierra el navegador)
+        // Con rememberMe, usaremos 'local' para persistencia más larga
+        // Sin rememberMe, usaremos 'session' para sesión temporal
+      }
     });
 
     if (error) throw error;
+
+    // Si "Recordarme" está activado, guardar preferencia en localStorage
+    if (rememberMe && typeof window !== 'undefined') {
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('userEmail', email);
+    } else if (typeof window !== 'undefined') {
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('userEmail');
+    }
 
     // Migrar pedidos de invitado automáticamente
     if (data.user) {

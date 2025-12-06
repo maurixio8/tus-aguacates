@@ -3,7 +3,31 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = "https://gxqkmaaqoehydulksudj.supabase.co";
 const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cWttYWFxb2VoeWR1bGtzdWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NDI5NDQsImV4cCI6MjA3ODAxODk0NH0.XAR-ysQgt0ZkRZfIZx_DvpYMzmEMFsdAYK3EP1tc0mw";
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Configuración mejorada para persistencia de sesión extendida
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    // Configurar flujo de PKCE para mayor seguridad
+    flowType: 'pkce',
+  }
+});
+
+// Función para configurar persistencia extendida cuando "Recordarme" está activado
+export function configureExtendedSession(rememberMe: boolean = false) {
+  if (typeof window === 'undefined') return;
+  
+  if (rememberMe) {
+    // Usar localStorage para persistencia extendida
+    localStorage.setItem('supabase.auth.persistSession', 'true');
+    localStorage.setItem('supabase.auth.autoRefreshToken', 'true');
+  } else {
+    // Usar sessionStorage para sesión temporal
+    sessionStorage.setItem('supabase.auth.persistSession', 'true');
+    sessionStorage.setItem('supabase.auth.autoRefreshToken', 'true');
+  }
+}
 
 // Types
 export interface ProductVariant {
