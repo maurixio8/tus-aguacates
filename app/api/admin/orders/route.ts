@@ -299,13 +299,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
+    // Columnas de order_items: order_id, product_id, quantity, price, total, variant_id, variant_name, variant_value, price_adjustment
     const itemsToInsert = orderItems.map(item => ({
       order_id: order.id,
       product_id: item.product_id,
       quantity: item.quantity,
-      unit_price: item.price,
-      total_price: item.total,
+      price: item.price,
+      total: item.total,
       variant_id: item.variant_id || null,
+      variant_name: item.variant_name || null,
+      variant_value: item.variant_value || null,
+      price_adjustment: item.price_adjustment || null,
       created_at: new Date().toISOString()
     }));
 
