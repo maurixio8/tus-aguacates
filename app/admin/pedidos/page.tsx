@@ -111,7 +111,7 @@ export default function OrdersPage() {
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
 
-      const response = await fetch(`/api/admin/orders/?${params}`, {
+      const response = await fetch(`/api/admin/orders?${params}`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -134,7 +134,7 @@ export default function OrdersPage() {
   const handleUpdateStatus = async (orderId: string, newStatus: string) => {
     setUpdatingOrder(orderId);
     try {
-      const response = await fetch(`/api/admin/orders/?id=${orderId}`, {
+      const response = await fetch(`/api/admin/orders?id=${orderId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

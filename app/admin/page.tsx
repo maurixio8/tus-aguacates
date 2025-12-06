@@ -34,7 +34,7 @@ export default function AdminDashboardPage() {
 
   const loadMetrics = async () => {
     try {
-      const response = await fetch('/api/admin/metrics/', {
+      const response = await fetch('/api/admin/metrics', {
         credentials: 'include',
       });
       const data = await response.json();

@@ -13,7 +13,9 @@ import {
   Menu,
   X,
   ChevronDown,
-  Store
+  Store,
+  Users,
+  Ticket
 } from 'lucide-react';
 
 interface AdminUser {
@@ -71,7 +73,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin-auth/logout/', { method: 'POST' });
+      await fetch('/api/admin-auth/logout', { method: 'POST' });
     } catch (error) {
       console.error('Error en logout:', error);
     }
@@ -101,6 +103,8 @@ export default function AdminLayout({
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Productos', href: '/admin/productos', icon: Package },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
+    { name: 'Clientes', href: '/admin/clientes', icon: Users },
+    { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
     { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   ];

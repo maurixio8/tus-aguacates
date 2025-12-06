@@ -2,18 +2,21 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { useCartStore } from '@/lib/cart-store';
+import { useAuth } from '@/lib/auth-context';
 import {
   Home,
   Search,
   Tag,
   ShoppingCart,
-  User
+  User,
+  LogIn
 } from 'lucide-react';
 
 export default function BottomNavigation() {
   const router = useRouter();
   const pathname = usePathname();
   const { getTotal, getItemCount, toggleCart } = useCartStore();
+  const { user } = useAuth();
   const total = getTotal();
   const itemCount = getItemCount();
 
@@ -45,10 +48,10 @@ export default function BottomNavigation() {
       isCart: true
     },
     {
-      label: 'Cuenta',
-      icon: User,
-      path: '/cuenta',
-      active: pathname === '/cuenta'
+      label: user ? 'Cuenta' : 'Iniciar',
+      icon: user ? User : LogIn,
+      path: user ? '/cuenta' : '/auth/login',
+      active: pathname === '/cuenta' || pathname === '/auth/login' || pathname === '/auth/registro'
     }
   ];
 

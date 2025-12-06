@@ -98,7 +98,7 @@ export default function ProductsPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories/');
+      const response = await fetch('/api/categories');
       const data = await response.json();
       if (data.success || Array.isArray(data)) {
         setCategories(data.categories || data || []);
@@ -235,7 +235,7 @@ export default function ProductsPage() {
       formData.append('file', file);
       formData.append('productId', selectedProductForImage);
 
-      const response = await fetch('/api/admin/upload-image/', {
+      const response = await fetch('/api/admin/upload-image', {
         method: 'POST',
         credentials: 'include',
         body: formData,

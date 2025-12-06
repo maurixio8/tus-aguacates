@@ -18,7 +18,9 @@ import {
   Layers,
   ChevronRight,
   Check,
-  AlertCircle
+  AlertCircle,
+  MessageCircle,
+  CheckCircle
 } from 'lucide-react';
 
 interface Category {
@@ -57,6 +59,17 @@ interface OrderItem {
   variant?: ProductVariant;
 }
 
+interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address?: string;
+  neighborhood?: string;
+  city?: string;
+  notes?: string;
+}
+
 export default function CreateOrderPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -79,6 +92,23 @@ export default function CreateOrderPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
+  // Estado para feedback de producto agregado
+  const [addedNotification, setAddedNotification] = useState<string | null>(null);
+  const [createdOrderData, setCreatedOrderData] = useState<{
+    orderId: string;
+    total: number;
+    items: OrderItem[];
+    customerName: string;
+    customerPhone: string;
+  } | null>(null);
+
+  // Estado para autocompletado de clientes
+  const [customerSearch, setCustomerSearch] = useState('');
+  const [customerSuggestions, setCustomerSuggestions] = useState<Customer[]>([]);
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+
   useEffect(() => {
     loadCategories();
   }, []);
@@ -93,7 +123,7 @@ export default function CreateOrderPage() {
 
   const loadCategories = async () => {
     try {
-      const response = await fetch('/api/categories/');
+      const response = await fetch('/api/categories');
       const data = await response.json();
       if (data.success || Array.isArray(data)) {
         setCategories(data.categories || data || []);
@@ -133,6 +163,65 @@ export default function CreateOrderPage() {
     }
   };
 
+  // Buscar clientes para autocompletado
+  const searchCustomers = async (query: string) => {
+    if (query.length < 2) {
+      setCustomerSuggestions([]);
+      setShowCustomerSuggestions(false);
+      return;
+    }
+
+    setLoadingCustomers(true);
+    try {
+      const response = await fetch(`/api/admin/customers?search=${encodeURIComponent(query)}&limit=5`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setCustomerSuggestions(data.data || []);
+        setShowCustomerSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error buscando clientes:', error);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  // Seleccionar cliente del autocompletado
+  const selectCustomer = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setCustomerName(customer.name);
+    setCustomerPhone(customer.phone);
+    setCustomerEmail(customer.email || '');
+    setDeliveryAddress(customer.address || '');
+    setDeliveryNotes(customer.notes || '');
+    setCustomerSearch(customer.name);
+    setShowCustomerSuggestions(false);
+  };
+
+  // Limpiar cliente seleccionado
+  const clearSelectedCustomer = () => {
+    setSelectedCustomer(null);
+    setCustomerName('');
+    setCustomerPhone('');
+    setCustomerEmail('');
+    setDeliveryAddress('');
+    setDeliveryNotes('');
+    setCustomerSearch('');
+  };
+
+  // Efecto para buscar clientes con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (customerSearch && !selectedCustomer) {
+        searchCustomers(customerSearch);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [customerSearch, selectedCustomer]);
+
   const addToOrder = (product: Product, variant?: ProductVariant) => {
     const existingItemIndex = selectedItems.findIndex(
       (item) =>
@@ -156,6 +245,13 @@ export default function CreateOrderPage() {
         },
       ]);
     }
+
+    // Mostrar notificación de producto agregado
+    const notificationText = variant
+      ? `${product.name} (${variant.variant_value})`
+      : product.name;
+    setAddedNotification(notificationText);
+    setTimeout(() => setAddedNotification(null), 2000);
   };
 
   const updateQuantity = (index: number, delta: number) => {
@@ -188,8 +284,21 @@ export default function CreateOrderPage() {
     return calculateItemPrice(item) * item.quantity;
   };
 
-  const calculateTotal = () => {
+  const calculateSubtotal = () => {
     return selectedItems.reduce((total, item) => total + calculateItemTotal(item), 0);
+  };
+
+  // Reglas de domicilio: $7,400 - Gratis desde $68,000
+  const SHIPPING_COST = 7400;
+  const FREE_SHIPPING_THRESHOLD = 68000;
+
+  const calculateShipping = () => {
+    const subtotal = calculateSubtotal();
+    return subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+  };
+
+  const calculateTotal = () => {
+    return calculateSubtotal() + calculateShipping();
   };
 
   const formatCurrency = (value: number) => {
@@ -198,6 +307,56 @@ export default function CreateOrderPage() {
       currency: 'COP',
       minimumFractionDigits: 0,
     }).format(value);
+  };
+
+  // Generar mensaje de WhatsApp con resumen del pedido
+  const generateWhatsAppMessage = (orderData: typeof createdOrderData) => {
+    if (!orderData) return '';
+
+    let message = `Hola ${orderData.customerName}! Tu pedido ha sido confirmado.\n\n`;
+    message += `*Resumen del Pedido #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
+
+    let subtotal = 0;
+    orderData.items.forEach((item) => {
+      const itemName = item.variant
+        ? `${item.product.name} (${item.variant.variant_value})`
+        : item.product.name;
+      const itemPrice = item.variant?.price_adjustment || item.product.price;
+      const itemTotal = itemPrice * item.quantity;
+      subtotal += itemTotal;
+      message += `- ${item.quantity}x ${itemName}: ${formatCurrency(itemTotal)}\n`;
+    });
+
+    message += `\n_Subtotal: ${formatCurrency(subtotal)}_\n`;
+
+    const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
+    if (shipping === 0) {
+      message += `_Domicilio: GRATIS_\n`;
+    } else {
+      message += `_Domicilio: ${formatCurrency(shipping)}_\n`;
+    }
+
+    message += `\n*Total: ${formatCurrency(orderData.total)}*\n\n`;
+    message += `Gracias por tu compra! Pronto te contactaremos para coordinar la entrega.`;
+
+    return encodeURIComponent(message);
+  };
+
+  // Abrir WhatsApp con el mensaje
+  const openWhatsApp = () => {
+    if (!createdOrderData || !createdOrderData.customerPhone) return;
+
+    // Limpiar el numero de telefono (quitar espacios, guiones, etc)
+    let phone = createdOrderData.customerPhone.replace(/\D/g, '');
+
+    // Si el numero no tiene codigo de pais, agregar el de Colombia
+    if (phone.length === 10 && phone.startsWith('3')) {
+      phone = '57' + phone;
+    }
+
+    const message = generateWhatsAppMessage(createdOrderData);
+    const whatsappUrl = `https://wa.me/${phone}?text=${message}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,19 +368,31 @@ export default function CreateOrderPage() {
       return;
     }
 
-    if (!customerName || !customerPhone || !deliveryAddress) {
-      setError('Complete todos los campos requeridos');
+    // Validación detallada de campos
+    const missingFields = [];
+    if (!customerName.trim()) missingFields.push('Nombre');
+    if (!customerPhone.trim()) missingFields.push('Teléfono');
+    if (!deliveryAddress.trim()) missingFields.push('Dirección');
+
+    if (missingFields.length > 0) {
+      setError(`Campos requeridos: ${missingFields.join(', ')}`);
       return;
     }
 
     setSubmitting(true);
     try {
+      const subtotal = calculateSubtotal();
+      const shipping = calculateShipping();
+      const total = subtotal + shipping;
+
       const orderData = {
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        customer_email: customerEmail || null,
-        delivery_address: deliveryAddress,
-        delivery_notes: deliveryNotes || null,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        customer_email: customerEmail.trim() || null,
+        delivery_address: deliveryAddress.trim(),
+        delivery_notes: shipping > 0
+          ? `${deliveryNotes.trim() ? deliveryNotes.trim() + ' | ' : ''}Domicilio: ${formatCurrency(shipping)}`
+          : deliveryNotes.trim() || null,
         payment_method: paymentMethod,
         items: selectedItems.map((item) => ({
           product_id: item.product_id,
@@ -233,10 +404,10 @@ export default function CreateOrderPage() {
             ? `${item.variant.variant_name}: ${item.variant.variant_value}`
             : null,
         })),
-        total_amount: calculateTotal(),
+        total_amount: total,
       };
 
-      const response = await fetch('/api/admin/orders/', {
+      const response = await fetch('/api/admin/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -246,18 +417,36 @@ export default function CreateOrderPage() {
       const data = await response.json();
 
       if (data.success) {
+        // Guardar cliente nuevo si no estaba seleccionado de la lista
+        if (!selectedCustomer) {
+          try {
+            await fetch('/api/admin/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                name: customerName.trim(),
+                phone: customerPhone.trim(),
+                email: customerEmail.trim() || null,
+                address: deliveryAddress.trim(),
+                notes: deliveryNotes.trim() || null,
+              }),
+            });
+          } catch (customerErr) {
+            // Si falla guardar el cliente, no es crítico - el pedido ya se creó
+            console.log('No se pudo guardar cliente nuevo:', customerErr);
+          }
+        }
+
+        // Guardar datos del pedido para WhatsApp
+        setCreatedOrderData({
+          orderId: data.data?.id || Date.now().toString(),
+          total: total,
+          items: [...selectedItems],
+          customerName,
+          customerPhone,
+        });
         setSuccess(true);
-        // Reset form after 2 seconds
-        setTimeout(() => {
-          setSelectedItems([]);
-          setCustomerName('');
-          setCustomerPhone('');
-          setCustomerEmail('');
-          setDeliveryAddress('');
-          setDeliveryNotes('');
-          setPaymentMethod('efectivo');
-          setSuccess(false);
-        }, 2000);
       } else {
         setError(data.error || 'Error al crear el pedido');
       }
@@ -277,13 +466,60 @@ export default function CreateOrderPage() {
         <p className="text-gray-600 mt-1">Crea pedidos manuales seleccionando productos por categoría</p>
       </div>
 
-      {/* Success Message */}
+      {/* Notificacion de producto agregado */}
+      {addedNotification && (
+        <div className="fixed top-4 right-4 z-50 animate-pulse">
+          <div className="bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-center gap-2">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">Agregado: {addedNotification}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Success Message with WhatsApp Button */}
       {success && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-          <Check className="w-6 h-6 text-green-600" />
-          <div>
-            <p className="font-medium text-green-800">Pedido creado exitosamente</p>
-            <p className="text-sm text-green-600">El pedido ha sido registrado correctamente</p>
+        <div className="bg-green-50 border border-green-200 rounded-xl p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <CheckCircle className="w-7 h-7 text-green-600" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-green-800 text-lg">Pedido creado exitosamente</p>
+              <p className="text-green-600 mt-1">
+                Pedido #{createdOrderData?.orderId?.slice(-6).toUpperCase()} registrado correctamente
+              </p>
+              <p className="text-green-700 font-medium mt-2">
+                Total: {formatCurrency(createdOrderData?.total || 0)}
+              </p>
+
+              {/* Botones de accion */}
+              <div className="flex flex-wrap gap-3 mt-4">
+                <button
+                  onClick={openWhatsApp}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  Enviar resumen por WhatsApp
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedItems([]);
+                    setCustomerName('');
+                    setCustomerPhone('');
+                    setCustomerEmail('');
+                    setDeliveryAddress('');
+                    setDeliveryNotes('');
+                    setPaymentMethod('efectivo');
+                    setSuccess(false);
+                    setCreatedOrderData(null);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                  Crear nuevo pedido
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -463,10 +699,91 @@ export default function CreateOrderPage() {
         <div className="space-y-4">
           {/* Datos del cliente */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <User className="w-5 h-5 text-green-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Datos del Cliente</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-green-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Datos del Cliente</h2>
+              </div>
+              {selectedCustomer && (
+                <button
+                  type="button"
+                  onClick={clearSelectedCustomer}
+                  className="text-xs text-red-600 hover:text-red-700 flex items-center gap-1"
+                >
+                  <X className="w-3 h-3" />
+                  Limpiar
+                </button>
+              )}
             </div>
+
+            {/* Buscador de clientes */}
+            <div className="mb-4 relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Buscar cliente existente
+              </label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={customerSearch}
+                  onChange={(e) => {
+                    setCustomerSearch(e.target.value);
+                    if (selectedCustomer) setSelectedCustomer(null);
+                  }}
+                  onFocus={() => customerSuggestions.length > 0 && setShowCustomerSuggestions(true)}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                  placeholder="Escribe nombre o teléfono..."
+                />
+                {loadingCustomers && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sugerencias de clientes */}
+              {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                  {customerSuggestions.map((customer) => (
+                    <button
+                      key={customer.id}
+                      type="button"
+                      onClick={() => selectCustomer(customer)}
+                      className="w-full px-4 py-3 text-left hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <p className="font-medium text-gray-900">{customer.name}</p>
+                      <p className="text-sm text-gray-500 flex items-center gap-2">
+                        <Phone className="w-3 h-3" />
+                        {customer.phone}
+                        {customer.address && (
+                          <>
+                            <span className="text-gray-300">|</span>
+                            <MapPin className="w-3 h-3" />
+                            <span className="truncate max-w-[150px]">{customer.address}</span>
+                          </>
+                        )}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {showCustomerSuggestions && customerSuggestions.length === 0 && customerSearch.length >= 2 && !loadingCustomers && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
+                  <p className="text-gray-500 text-sm">No se encontraron clientes</p>
+                  <p className="text-xs text-gray-400 mt-1">Puedes crear uno nuevo llenando los datos abajo</p>
+                </div>
+              )}
+            </div>
+
+            {selectedCustomer && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <CheckCircle className="w-4 h-4 inline mr-1" />
+                  Cliente seleccionado: <strong>{selectedCustomer.name}</strong>
+                </p>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -629,15 +946,34 @@ export default function CreateOrderPage() {
                   </div>
                 ))}
 
-                {/* Total */}
-                <div className="border-t border-gray-200 pt-4 mt-4">
-                  <div className="flex justify-between items-center mb-4">
+                {/* Subtotal, Domicilio y Total */}
+                <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>Subtotal:</span>
+                    <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-gray-600">
+                    <span>Domicilio:</span>
+                    {calculateShipping() === 0 ? (
+                      <span className="text-green-600 font-medium">GRATIS</span>
+                    ) : (
+                      <span className="font-medium">{formatCurrency(calculateShipping())}</span>
+                    )}
+                  </div>
+                  {calculateSubtotal() > 0 && calculateSubtotal() < FREE_SHIPPING_THRESHOLD && (
+                    <p className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                      Agrega {formatCurrency(FREE_SHIPPING_THRESHOLD - calculateSubtotal())} más para domicilio gratis
+                    </p>
+                  )}
+                  <div className="flex justify-between items-center pt-2 border-t border-gray-100">
                     <span className="text-lg font-semibold text-gray-900">Total:</span>
                     <span className="text-2xl font-bold text-green-600">
                       {formatCurrency(calculateTotal())}
                     </span>
                   </div>
+                </div>
 
+                <div className="mt-4">
                   <button
                     onClick={handleSubmit}
                     disabled={submitting || selectedItems.length === 0}

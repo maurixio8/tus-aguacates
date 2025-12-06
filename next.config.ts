@@ -8,9 +8,6 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   trailingSlash: false, // Desactivado para evitar problemas con CORS en APIs
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   typescript: {
     ignoreBuildErrors: false,
   },

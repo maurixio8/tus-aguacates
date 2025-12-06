@@ -91,7 +91,18 @@ export function Header() {
                   Hola, {getFirstName()}
                 </span>
               </Link>
-            ) : null}
+            ) : (
+              <Link
+                href="/auth/login"
+                className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
+                title="Iniciar Sesión"
+              >
+                <LogIn className="w-5 h-5" />
+                <span className="hidden lg:inline text-sm">
+                  Iniciar Sesión
+                </span>
+              </Link>
+            )}
 
 
             <button

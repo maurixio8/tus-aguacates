@@ -2,17 +2,16 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,13 +19,48 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
-      router.push('/cuenta');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password`,
+      });
+
+      if (error) throw error;
+
+      setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'Error al iniciar sesión');
+      setError(err.message || 'Error al enviar correo de recuperación');
     } finally {
       setLoading(false);
     }
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-crema via-white to-verde-aguacate-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="font-display font-bold text-2xl text-gray-900 mb-2">
+              Correo Enviado
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Hemos enviado un correo a <span className="font-semibold">{email}</span> con las instrucciones para recuperar tu contraseña.
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              Revisa tu bandeja de entrada y carpeta de spam. El enlace expirará en 24 horas.
+            </p>
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center gap-2 text-verde-bosque hover:text-verde-bosque-600 font-medium transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver al inicio de sesión
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -37,13 +71,13 @@ export default function LoginPage() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-verde-bosque rounded-full mb-4">
-              <LogIn className="w-8 h-8 text-white" />
+              <Mail className="w-8 h-8 text-white" />
             </div>
             <h1 className="font-display font-bold text-3xl text-gray-900 mb-2">
-              Iniciar Sesión
+              ¿Olvidaste tu contraseña?
             </h1>
             <p className="text-gray-600">
-              Accede a tu cuenta de Tus Aguacates
+              Te enviaremos un correo para recuperarla
             </p>
           </div>
 
@@ -76,25 +110,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password */}
-            <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                Contraseña
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
@@ -103,41 +118,32 @@ export default function LoginPage() {
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  Iniciando sesión...
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Enviando correo...
                 </>
               ) : (
                 <>
-                  <LogIn className="w-5 h-5" />
-                  Iniciar Sesión
+                  <Mail className="w-5 h-5" />
+                  Enviar Correo de Recuperación
                 </>
               )}
             </button>
           </form>
 
-          {/* Forgot Password */}
-          <div className="mt-4 text-center">
-            <Link
-              href="/auth/forgot-password"
-              className="text-sm text-verde-bosque hover:text-verde-bosque-600 transition-colors"
-            >
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
           {/* Footer */}
           <div className="mt-6 text-center text-sm text-gray-600">
-            ¿No tienes una cuenta?{' '}
-            <Link href="/auth/registro" className="text-verde-bosque font-semibold hover:underline">
-              Regístrate aquí
+            ¿Recordaste tu contraseña?{' '}
+            <Link href="/auth/login" className="text-verde-bosque font-semibold hover:underline">
+              Inicia sesión aquí
             </Link>
           </div>
         </div>
 
-        {/* Back to Home */}
+        {/* Back to Login */}
         <div className="mt-6 text-center">
-          <Link href="/" className="text-gray-600 hover:text-verde-bosque transition-colors">
-            ← Volver al inicio
+          <Link href="/auth/login" className="text-gray-600 hover:text-verde-bosque transition-colors inline-flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Volver al inicio de sesión
           </Link>
         </div>
       </div>
