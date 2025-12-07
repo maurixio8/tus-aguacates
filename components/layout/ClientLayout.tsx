@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { AuthProvider } from "@/lib/auth-context";
+import { initializeProducts } from "@/lib/productStorage";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
@@ -10,6 +12,11 @@ import BottomNavigation from "@/components/layout/BottomNavigation";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+
+  // Sincronizar productos al iniciar la app
+  useEffect(() => {
+    initializeProducts();
+  }, []);
 
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
