@@ -136,33 +136,45 @@ export const getProducts = async (): Promise<Product[]> => {
   if (localProducts.length > 0 && baseProducts.length > 0) {
     console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
 
+    // Helper para normalizar nombres
+    const normalize = (str: string) => str.trim().toLowerCase();
+
     const mergedProducts = baseProducts.map(baseProd => {
-      // Buscar coincidencia por ID (preferido) o Nombre
+      // Buscar coincidencia por ID (preferido) o Nombre (fallback robusto)
       const localMatch = localProducts.find(lp =>
         lp.id === baseProd.id ||
-        (lp.name === baseProd.name && lp.category === baseProd.category)
+        normalize(lp.name) === normalize(baseProd.name)
       );
 
       if (localMatch) {
         // Mantener base pero sobrescribir con datos locales importantes
         return {
           ...baseProd,
-          // Priorizar imagen local si existe
-          image: localMatch.image || baseProd.image,
-          main_image_url: localMatch.main_image_url || baseProd.main_image_url || localMatch.image,
-          // Actualizar estado y precio si cambiaron
+          // ✅ CRÍTICO: Usar la imagen local si existe (prioridad máxima)
+          image: localMatch.image || localMatch.main_image_url || baseProd.image,
+          main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
+
+          // Actualizar otros campos si cambiaron
           is_active: localMatch.is_active ?? baseProd.is_active,
           price: localMatch.price || baseProd.price,
           description: localMatch.description || baseProd.description,
-          stock: localMatch.stock ?? baseProd.stock
+          // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
+          // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
         };
       }
       return baseProd;
     });
 
-    // Agregar productos nuevos que solo existan en local (creados en admin)
+    // Agregar productos COMPLETAMENTE NUEVOS (que no estén en el JSON ni por ID ni por nombre)
     const baseIds = new Set(baseProducts.map(p => p.id));
-    const newLocalProducts = localProducts.filter(lp => !baseIds.has(lp.id));
+    const baseNames = new Set(baseProducts.map(p => normalize(p.name)));
+
+    const newLocalProducts = localProducts.filter(lp => {
+      const isIdKnown = baseIds.has(lp.id);
+      const isNameKnown = baseNames.has(normalize(lp.name));
+      // Solo agregar si NO es conocido ni por ID ni por Nombre
+      return !isIdKnown && !isNameKnown;
+    });
 
     if (newLocalProducts.length > 0) {
       console.log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
