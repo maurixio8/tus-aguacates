@@ -199,7 +199,12 @@ export async function PATCH(
     if (error) {
       console.error('❌ API: Error updating product:', error);
       return NextResponse.json(
-        { error: 'Error al actualizar el producto' },
+        {
+          error: 'Error al actualizar el producto',
+          details: error.message,
+          code: error.code,
+          hint: error.hint
+        },
         { status: 500, headers: corsHeaders }
       );
     }
