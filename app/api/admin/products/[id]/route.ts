@@ -212,10 +212,28 @@ export async function PATCH(
     }
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ API: Update successful but no rows returned (ID mismatch?)');
+      console.warn('⚠️ API: Update successful but no rows returned. Attempting re-fetch to verify existence...');
+
+      // Fallback: Check if product exists (maybe select() failed to return data for some reason?)
+      const { data: refetchedProduct, error: refetchError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (!refetchError && refetchedProduct) {
+        console.log('✅ API: Product found after update (Refetch success):', refetchedProduct.name);
+        return NextResponse.json({
+          success: true,
+          data: refetchedProduct,
+          message: 'Producto actualizado (verificado por re-consulta)'
+        }, { headers: corsHeaders });
+      }
+
+      console.error('❌ API: Product definitely not found after update attempt.');
       return NextResponse.json({
         success: false,
-        error: 'No se pudo actualizar el producto (no encontrado)',
+        error: 'No se pudo actualizar el producto (no encontrado en BD)',
         data: null
       }, { status: 404, headers: corsHeaders });
     }
