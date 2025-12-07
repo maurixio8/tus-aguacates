@@ -126,6 +126,16 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 
 
 export const getProducts = async (): Promise<Product[]> => {
+  // 1. Intentar cargar de localStorage primero (datos dinámicos con imágenes)
+  const localProducts = getProductsSync();
+
+  if (localProducts.length > 0) {
+    console.log(`✅ ${localProducts.length} productos cargados desde LocalStorage (con imágenes)`);
+    return localProducts;
+  }
+
+  // 2. Fallback: Cargar desde JSON (datos estáticos, sin imágenes)
+  console.log('⚠️ LocalStorage vacío, cargando fallback JSON...');
   // ✅ CARGAR SIEMPRE desde productos tus_aguacates.json (217 productos)
   const products = await loadProductsFromJSON();
 
