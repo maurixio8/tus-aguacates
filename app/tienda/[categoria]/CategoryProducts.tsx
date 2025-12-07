@@ -11,6 +11,15 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
 
   useEffect(() => {
     fetchProducts();
+
+    // 👂 Escuchar actualizaciones de fondo (cuando termine el sync)
+    const handleUpdate = () => {
+      console.log('⚡ Actualización recibida en CategoryProducts');
+      fetchProducts();
+    };
+
+    window.addEventListener('products-updated', handleUpdate);
+    return () => window.removeEventListener('products-updated', handleUpdate);
   }, [categoria]);
 
   async function fetchProducts() {

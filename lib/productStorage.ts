@@ -480,7 +480,15 @@ export const initializeProducts = async (): Promise<Product[]> => {
   }
 
   // Retornar productos actualizados (ahora es asíncrono)
-  return await getProducts();
+  const products = await getProducts();
+
+  // 🔥 Notificar a la UI que hay datos nuevos
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('products-updated'));
+    console.log('📢 Evento products-updated enviado');
+  }
+
+  return products;
 };
 
 // 🚀 FUNCIÓN DE IMPORTACIÓN CSV
