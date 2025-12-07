@@ -126,9 +126,15 @@ export default function ProductsPage() {
       if (selectedCategory) params.set('category', selectedCategory);
       if (status) params.set('status', status);
 
-      // IMPORTANTE: trailing slash para evitar redirect 308
+      // IMPORTANTE: trailing slash para evitar redirect 308 y timestamp para anti-cache
+      params.set('_t', Date.now().toString());
       const response = await fetch(`/api/admin/products/?${params}`, {
         credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache'
+        }
       });
       const data = await response.json();
 
@@ -271,6 +277,17 @@ export default function ProductsPage() {
 
         if (patchResponse.ok && patchData.success) {
           showToast('Imagen actualizada correctamente', 'success');
+
+          // Actualización optimista del estado local para feedback inmediato
+          setProducts(prevProducts =>
+            prevProducts.map(p =>
+              p.id === selectedProductForImage
+                ? { ...p, main_image_url: data.imageUrl }
+                : p
+            )
+          );
+
+          // Recargar productos (el timestamp forzará datos frescos)
           loadProducts();
         } else {
           console.error('Error updating product with image:', patchData);
