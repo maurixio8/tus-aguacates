@@ -126,26 +126,64 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 
 
 export const getProducts = async (): Promise<Product[]> => {
-  // 1. Intentar cargar de localStorage primero (datos dinámicos con imágenes)
+  // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
+  const baseProducts = await loadProductsFromJSON();
+
+  // 2. Cargar datos locales (que pueden tener fotos actualizadas)
   const localProducts = getProductsSync();
 
+  // 3. Si hay datos locales, realizar FUSIÓN INTELIGENTE
+  if (localProducts.length > 0 && baseProducts.length > 0) {
+    console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
+
+    const mergedProducts = baseProducts.map(baseProd => {
+      // Buscar coincidencia por ID (preferido) o Nombre
+      const localMatch = localProducts.find(lp =>
+        lp.id === baseProd.id ||
+        (lp.name === baseProd.name && lp.category === baseProd.category)
+      );
+
+      if (localMatch) {
+        // Mantener base pero sobrescribir con datos locales importantes
+        return {
+          ...baseProd,
+          // Priorizar imagen local si existe
+          image: localMatch.image || baseProd.image,
+          main_image_url: localMatch.main_image_url || baseProd.main_image_url || localMatch.image,
+          // Actualizar estado y precio si cambiaron
+          is_active: localMatch.is_active ?? baseProd.is_active,
+          price: localMatch.price || baseProd.price,
+          description: localMatch.description || baseProd.description,
+          stock: localMatch.stock ?? baseProd.stock
+        };
+      }
+      return baseProd;
+    });
+
+    // Agregar productos nuevos que solo existan en local (creados en admin)
+    const baseIds = new Set(baseProducts.map(p => p.id));
+    const newLocalProducts = localProducts.filter(lp => !baseIds.has(lp.id));
+
+    if (newLocalProducts.length > 0) {
+      console.log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
+      return [...mergedProducts, ...newLocalProducts];
+    }
+
+    return mergedProducts;
+  }
+
+  // Fallbacks simples si una fuente falla
+  if (baseProducts.length > 0) {
+    console.log('⚠️ Usando solo JSON base (sin datos locales)');
+    return baseProducts;
+  }
+
   if (localProducts.length > 0) {
-    console.log(`✅ ${localProducts.length} productos cargados desde LocalStorage (con imágenes)`);
+    console.log('⚠️ Usando solo LocalStorage (JSON falló)');
     return localProducts;
   }
 
-  // 2. Fallback: Cargar desde JSON (datos estáticos, sin imágenes)
-  console.log('⚠️ LocalStorage vacío, cargando fallback JSON...');
-  // ✅ CARGAR SIEMPRE desde productos tus_aguacates.json (217 productos)
-  const products = await loadProductsFromJSON();
-
-  if (products.length > 0) {
-    console.log(`✅ ${products.length} productos cargados desde JSON`);
-    return products;
-  }
-
-  // Fallback si falla
-  console.log('❌ No se pudieron cargar productos');
+  console.log('❌ No se pudieron cargar productos de ninguna fuente');
   return DEFAULT_PRODUCTS;
 };
 
