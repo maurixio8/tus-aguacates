@@ -84,6 +84,12 @@ export default function ProductsPage() {
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedProductForImage, setSelectedProductForImage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   useEffect(() => {
     loadCategories();
@@ -243,22 +249,39 @@ export default function ProductsPage() {
 
       const data = await response.json();
 
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al subir la imagen a Supabase');
+      }
+
       if (data.success && data.imageUrl) {
         // Actualizar el producto con la nueva imagen
-        await fetch(`/api/admin/products/${selectedProductForImage}/`, {
+        const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}/`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ main_image_url: data.imageUrl }),
         });
 
-        loadProducts();
+        if (patchResponse.status === 401 || patchResponse.status === 403) {
+          showToast('Tu sesión ha expirado. Por favor recarga la página o inicia sesión de nuevo.', 'error');
+          return;
+        }
+
+        const patchData = await patchResponse.json();
+
+        if (patchResponse.ok && patchData.success) {
+          showToast('Imagen actualizada correctamente', 'success');
+          loadProducts();
+        } else {
+          console.error('Error updating product with image:', patchData);
+          showToast('Imagen subida, pero error al actualizar el producto.', 'error');
+        }
       } else {
-        alert(data.error || 'Error al subir la imagen');
+        showToast(data.error || 'Error al subir la imagen', 'error');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error subiendo imagen:', error);
-      alert('Error al subir la imagen');
+      showToast(error.message || 'Error de conexión al subir imagen', 'error');
     } finally {
       setUploadingImage(null);
       setSelectedProductForImage(null);
@@ -495,11 +518,10 @@ export default function ProductsPage() {
                         <td className="px-4 lg:px-6 py-4">
                           <button
                             onClick={() => handleToggleActive(product.id, product.is_active)}
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
-                              product.is_active
-                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
+                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active
+                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              }`}
                           >
                             {product.is_active ? (
                               <>
@@ -556,11 +578,10 @@ export default function ProductsPage() {
                                         <p className="text-sm text-gray-600">{variant.variant_value}</p>
                                       </div>
                                       <span
-                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                          variant.is_active
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
-                                        }`}
+                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${variant.is_active
+                                          ? 'bg-green-100 text-green-800'
+                                          : 'bg-red-100 text-red-800'
+                                          }`}
                                       >
                                         {variant.is_active ? 'Activa' : 'Inactiva'}
                                       </span>
@@ -775,6 +796,23 @@ export default function ProductsPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg text-white flex items-center gap-2 transform transition-all duration-300 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+          }`}>
+          {toast.type === 'success' ? (
+            <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <svg className="w-3 h-3 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+          ) : (
+            <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <svg className="w-3 h-3 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+          )}
+          <span className="font-medium">{toast.message}</span>
         </div>
       )}
     </div>
