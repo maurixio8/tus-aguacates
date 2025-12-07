@@ -80,13 +80,25 @@ export async function POST(request: NextRequest) {
       });
 
       // Crear respuesta con éxito
+      // Crear respuesta con éxito
       const response = NextResponse.json({
         success: true,
         user: {
           id: adminUser.id,
           email: adminUser.email,
-          tokenLength: token.length
-        });
+          name: adminUser.name,
+          role: adminUser.role,
+        }
+      }, { headers: corsHeaders });
+
+      // ✅ CONFIGURAR COOKIE (Restored)
+      response.cookies.set('admin-token', token, {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'none',
+        maxAge: 86400,
+        path: '/',
+      });
 
       console.log('✅ [Admin-Login API] Login exitoso - Usuario:', {
         id: adminUser.id,
