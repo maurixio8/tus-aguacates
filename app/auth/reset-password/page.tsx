@@ -1,10 +1,23 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, Eye, EyeOff, CheckCircle, AlertCircle, Loader2, Check, X } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+
+// Logger para debug del flujo de recuperación
+const logger = {
+  log: (message: string, data?: any) => {
+    console.log(`[RESET-PASSWORD DEBUG] ${message}`, data || '');
+  },
+  error: (message: string, error?: any) => {
+    console.error(`[RESET-PASSWORD ERROR] ${message}`, error || '');
+  },
+  warn: (message: string, data?: any) => {
+    console.warn(`[RESET-PASSWORD WARN] ${message}`, data || '');
+  }
+};
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -17,12 +30,16 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [sessionInfo, setSessionInfo] = useState<any>(null);
 
   // Estados para validación en tiempo real
   const [passwordValid, setPasswordValid] = useState<boolean | null>(null);
   const [confirmPasswordValid, setConfirmPasswordValid] = useState<boolean | null>(null);
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+
+  // Prevenir doble ejecución en React StrictMode
+  const isCheckingSession = useRef(false);
 
   // Validación de contraseña en tiempo real
   useEffect(() => {
@@ -61,14 +78,106 @@ function ResetPasswordContent() {
   };
 
   useEffect(() => {
-    // Verificar si hay un token en la URL
-    const token = searchParams.get('token');
-    if (!token) {
-      setError('Enlace de recuperación inválido o expirado');
-      setTokenValid(false);
-    } else {
-      setTokenValid(true);
+    // Prevenir doble ejecución en React StrictMode
+    if (isCheckingSession.current) {
+      logger.warn('useEffect ya se está ejecutando, previniendo doble ejecución');
+      return;
     }
+
+    isCheckingSession.current = true;
+    logger.log('Iniciando verificación de sesión de recuperación de contraseña');
+
+    async function checkSession() {
+      try {
+        // Log de la URL actual para debug
+        const currentUrl = window.location.href;
+        logger.log('URL actual:', currentUrl);
+
+        // Verificar parámetros en la URL
+        const token = searchParams.get('token');
+        const code = searchParams.get('code');
+        const error = searchParams.get('error');
+        const errorDescription = searchParams.get('error_description');
+
+        logger.log('Parámetros URL:', { token, code, error, errorDescription });
+
+        // Si hay error en los parámetros, mostrarlo
+        if (error) {
+          logger.error('Error detectado en parámetros URL:', { error, errorDescription });
+          setError(`Error: ${errorDescription || error}`);
+          setTokenValid(false);
+          return;
+        }
+
+        // Verificar sesión actual con Supabase
+        logger.log('Verificando sesión con Supabase...');
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          logger.error('Error al obtener sesión:', sessionError);
+          setError('Error al verificar sesión de recuperación');
+          setTokenValid(false);
+          return;
+        }
+
+        logger.log('Datos de sesión obtenidos:', {
+          hasSession: !!sessionData.session,
+          user: sessionData.session?.user?.email,
+          expiresAt: sessionData.session?.expires_at
+        });
+
+        setSessionInfo(sessionData.session);
+
+        // Con PKCE, Supabase procesa automáticamente el token y establece sesión temporal
+        if (sessionData.session) {
+          logger.log('Sesión temporal detectada correctamente');
+          setTokenValid(true);
+        } else {
+          // Si no hay sesión, verificar si hay token en URL (fallback para compatibilidad)
+          if (token || code) {
+            logger.log('No hay sesión activa pero hay token/código en URL, intentando procesar...');
+            
+            // Intentar verificar OTP si hay código
+            if (code) {
+              logger.log('Intentando verificar OTP con código...');
+              // Para recuperación de contraseña con PKCE, no necesitamos verificar manualmente
+              // Supabase maneja esto automáticamente cuando detectSessionInUrl está activado
+              logger.warn('Con PKCE, el token debe ser procesado automáticamente por Supabase');
+              logger.log('Esperando que Supabase procese el token automáticamente...');
+              
+              // Esperar un momento y verificar nuevamente la sesión
+              setTimeout(async () => {
+                const { data: retrySession } = await supabase.auth.getSession();
+                if (retrySession.session) {
+                  logger.log('Sesión establecida después del procesamiento automático');
+                  setTokenValid(true);
+                } else {
+                  logger.error('No se pudo establecer sesión después del procesamiento');
+                  setError('Enlace de recuperación inválido o expirado');
+                  setTokenValid(false);
+                }
+              }, 2000);
+            } else {
+              logger.warn('No se pudo procesar el token - no hay sesión activa ni código válido');
+              setError('Enlace de recuperación inválido o expirado');
+              setTokenValid(false);
+            }
+          } else {
+            logger.error('No hay token ni sesión válida');
+            setError('Enlace de recuperación inválido o expirado');
+            setTokenValid(false);
+          }
+        }
+      } catch (err) {
+        logger.error('Error inesperado en checkSession:', err);
+        setError('Error inesperado al verificar enlace de recuperación');
+        setTokenValid(false);
+      } finally {
+        isCheckingSession.current = false;
+      }
+    }
+
+    checkSession();
   }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -76,31 +185,67 @@ function ResetPasswordContent() {
     setError('');
     setLoading(true);
 
+    logger.log('Iniciando proceso de actualización de contraseña');
+
     // Validaciones
     if (password !== confirmPassword) {
+      logger.warn('Las contraseñas no coinciden');
       setError('Las contraseñas no coinciden');
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
+      logger.warn('Contraseña demasiado corta');
       setError('La contraseña debe tener al menos 6 caracteres');
       setLoading(false);
       return;
     }
 
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Verificar nuevamente que tenemos una sesión activa
+      logger.log('Verificando sesión antes de actualizar contraseña...');
+      const { data: currentSession, error: sessionCheckError } = await supabase.auth.getSession();
+
+      if (sessionCheckError) {
+        logger.error('Error al verificar sesión actual:', sessionCheckError);
+        throw sessionCheckError;
+      }
+
+      if (!currentSession.session) {
+        logger.error('No hay sesión activa para actualizar contraseña');
+        throw new Error('Tu sesión ha expirado. Por favor, solicita un nuevo enlace de recuperación.');
+      }
+
+      logger.log('Sesión verificada, actualizando contraseña...', {
+        userEmail: currentSession.session.user.email,
+        sessionExpiresAt: currentSession.session.expires_at
+      });
+
+      // Actualizar contraseña
+      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
         password: password
       });
 
-      if (error) throw error;
+      if (updateError) {
+        logger.error('Error al actualizar contraseña:', updateError);
+        throw updateError;
+      }
+
+      logger.log('Contraseña actualizada exitosamente:', {
+        user: updateData.user?.email,
+        timestamp: new Date().toISOString()
+      });
 
       setSuccess(true);
+      
+      // Esperar 3 segundos antes de redirigir
       setTimeout(() => {
+        logger.log('Redirigiendo a login...');
         router.push('/auth/login');
       }, 3000);
     } catch (err: any) {
+      logger.error('Error en handleSubmit:', err);
       setError(err.message || 'Error al restablecer contraseña');
     } finally {
       setLoading(false);
