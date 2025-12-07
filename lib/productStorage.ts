@@ -141,10 +141,17 @@ export const getProducts = async (): Promise<Product[]> => {
 
     const mergedProducts = baseProducts.map(baseProd => {
       // Buscar coincidencia por ID (preferido) o Nombre (fallback robusto)
-      const localMatch = localProducts.find(lp =>
-        lp.id === baseProd.id ||
-        normalize(lp.name) === normalize(baseProd.name)
-      );
+      const localMatch = localProducts.find(lp => {
+        const idMatch = lp.id === baseProd.id;
+        const nameMatch = normalize(lp.name) === normalize(baseProd.name);
+
+        // Debug para el primer producto si falla
+        if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
+          console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
+        }
+
+        return idMatch || nameMatch;
+      });
 
       if (localMatch) {
         // Mantener base pero sobrescribir con datos locales importantes

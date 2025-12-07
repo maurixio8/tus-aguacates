@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        domain: domain || 'localhost (sin domain)',
+        domain: 'auto',
         maxAge: '24 horas',
         tokenLength: token.length
       });
