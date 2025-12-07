@@ -189,12 +189,14 @@ export async function PATCH(
       }
     });
 
+    // Perform update - use select() instead of select().single() to avoid PGRST116 if no rows updated
+    console.log('💾 API: Executing Supabase update for ID:', id);
+
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
       .eq('id', id)
-      .select()
-      .single();
+      .select();
 
     if (error) {
       console.error('❌ API: Error updating product:', error);
@@ -209,11 +211,20 @@ export async function PATCH(
       );
     }
 
-    console.log('✅ API: Product updated successfully via PATCH:', data);
+    if (!data || data.length === 0) {
+      console.warn('⚠️ API: Update successful but no rows returned (ID mismatch?)');
+      return NextResponse.json({
+        success: false,
+        error: 'No se pudo actualizar el producto (no encontrado)',
+        data: null
+      }, { status: 404, headers: corsHeaders });
+    }
+
+    console.log('✅ API: Product updated successfully via PATCH:', data[0]);
 
     return NextResponse.json({
       success: true,
-      data,
+      data: data[0],
       message: 'Producto actualizado exitosamente'
     }, { headers: corsHeaders });
 
