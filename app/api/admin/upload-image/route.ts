@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import sharp from 'sharp';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,19 +54,35 @@ export async function POST(request: NextRequest) {
     const supabase = getSupabaseClient();
 
     // Generate unique filename
+    // Generate unique filename for WebP
     const timestamp = Date.now();
-    const extension = file.name.split('.').pop() || 'jpg';
-    const fileName = `products/${productId}-${timestamp}.${extension}`;
+    const fileName = `products/${productId}-${timestamp}.webp`; // Force .webp extension
 
-    // Convert File to ArrayBuffer then to Buffer
+    // Convert File to Buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+
+    // Optimize image with Sharp
+    console.log('🖼️ Iniciando optimización de imagen con Sharp...');
+    const optimizedBuffer = await sharp(buffer)
+      .resize({
+        width: 1200, // Max width 1200px
+        withoutEnlargement: true,
+        fit: 'inside'
+      })
+      .webp({
+        quality: 80, // Good balance between size and quality
+        effort: 4 // Compression effort (0-6)
+      })
+      .toBuffer();
+
+    console.log(`✅ Imagen optimizada: ${buffer.length} -> ${optimizedBuffer.length} bytes`);
 
     // Upload to Supabase Storage
     const { data, error } = await supabase.storage
       .from('product-images')
-      .upload(fileName, buffer, {
-        contentType: file.type,
+      .upload(fileName, optimizedBuffer, {
+        contentType: 'image/webp', // Always WebP
         upsert: true
       });
 
