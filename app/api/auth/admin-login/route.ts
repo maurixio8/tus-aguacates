@@ -85,32 +85,8 @@ export async function POST(request: NextRequest) {
         user: {
           id: adminUser.id,
           email: adminUser.email,
-          name: adminUser.name,
-          role: adminUser.role,
-          last_login: new Date().toISOString()
-        }
-      }, { headers: corsHeaders });
-
-      // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
-      const isProduction = process.env.NODE_ENV === 'production';
-
-      response.cookies.set('admin-token', token, {
-        httpOnly: true, // No accesible desde JavaScript (seguridad XSS)
-        secure: isProduction, // HTTPS only en producción
-        sameSite: 'lax', // Previene CSRF - 'lax' permite navegación top-level
-        maxAge: 86400, // 24 horas en segundos
-        path: '/', // ✅ Cookie disponible en toda la app
-      });
-
-      console.log('🍪 [Admin-Login API] Cookie establecida:', {
-        secure: isProduction,
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        domain: 'auto',
-        maxAge: '24 horas',
-        tokenLength: token.length
-      });
+          tokenLength: token.length
+        });
 
       console.log('✅ [Admin-Login API] Login exitoso - Usuario:', {
         id: adminUser.id,

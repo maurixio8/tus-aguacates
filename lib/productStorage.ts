@@ -464,7 +464,22 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
       // 4. Combinar con productos locales que no están en Supabase
       const supabaseIds = new Set(convertedProducts.map(p => p.id));
-      const localOnly = localProducts.filter(lp => !supabaseIds.has(lp.id));
+      // Helper para normalizar (usamos el mismo criterio que en getProducts)
+      const normalize = (str: string) => str ? str.trim().toLowerCase() : '';
+      const supabaseNames = new Set(convertedProducts.map(p => normalize(p.name)));
+
+      const localOnly = localProducts.filter(lp => {
+        // Excluir si ya existe por ID
+        if (supabaseIds.has(lp.id)) return false;
+
+        // Excluir si ya existe por NOMBRE (priorizar la versión de base de datos)
+        if (supabaseNames.has(normalize(lp.name))) {
+          console.log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
+          return false;
+        }
+
+        return true;
+      });
 
       mergedProducts = [...convertedProducts, ...localOnly];
 
