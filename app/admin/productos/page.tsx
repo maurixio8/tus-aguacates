@@ -84,6 +84,15 @@ export default function ProductsPage() {
   const [uploadingImage, setUploadingImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedProductForImage, setSelectedProductForImage] = useState<string | null>(null);
+
+  // New Image Audit State
+  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [uploadStep, setUploadStep] = useState<'select' | 'optimizing' | 'review'>('select');
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadStats, setUploadStats] = useState<{ originalSize: number; newSize: number; width: number; format: string } | null>(null);
+  const [finalImageUrl, setFinalImageUrl] = useState<string | null>(null);
+  const [finalFileName, setFinalFileName] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error') => {
@@ -217,34 +226,48 @@ export default function ProductsPage() {
     }).format(value);
   };
 
-  // Función para subir imagen rápida
+  // 1. Abrir modal
   const handleQuickImageUpload = (productId: string) => {
     setSelectedProductForImage(productId);
-    fileInputRef.current?.click();
+    setUploadModalOpen(true);
+    setUploadStep('select');
+    setSelectedFile(null);
+    setUploadPreview(null);
+    setUploadStats(null);
+    setFinalImageUrl(null);
+    setFinalFileName(null);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 2. Seleccionar archivo local
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !selectedProductForImage) return;
+    if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith('image/')) {
       alert('Por favor selecciona una imagen válida');
       return;
     }
 
-    // Validar tamaño (máximo 5MB)
     if (file.size > 5 * 1024 * 1024) {
       alert('La imagen es muy grande. Máximo 5MB');
       return;
     }
 
+    setSelectedFile(file);
+    setUploadPreview(URL.createObjectURL(file));
+    setUploadStep('select');
+  };
+
+  // 3. Enviar a optimizar (servidor)
+  const handleOptimize = async () => {
+    if (!selectedFile || !selectedProductForImage) return;
+
+    setUploadStep('optimizing');
     setUploadingImage(selectedProductForImage);
 
     try {
-      // Crear FormData para subir la imagen
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', selectedFile);
       formData.append('productId', selectedProductForImage);
 
       const response = await fetch('/api/admin/upload-image', {
@@ -255,58 +278,72 @@ export default function ProductsPage() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Error al subir la imagen a Supabase');
-      }
+      if (!response.ok) throw new Error(data.error || 'Error al optimizar');
 
       if (data.success && data.imageUrl) {
-        // Actualizar el producto con la nueva imagen
-        const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}/`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ main_image_url: data.imageUrl }),
+        setFinalImageUrl(data.imageUrl);
+        setFinalFileName(data.fileName);
+        setUploadStats(data.stats || {
+          originalSize: selectedFile.size,
+          newSize: 0,
+          width: 0,
+          format: 'webp'
         });
-
-        if (patchResponse.status === 401 || patchResponse.status === 403) {
-          showToast('Tu sesión ha expirado. Por favor recarga la página o inicia sesión de nuevo.', 'error');
-          return;
-        }
-
-        const patchData = await patchResponse.json();
-
-        if (patchResponse.ok && patchData.success) {
-          showToast('Imagen actualizada correctamente', 'success');
-
-          // Actualización optimista del estado local para feedback inmediato
-          setProducts(prevProducts =>
-            prevProducts.map(p =>
-              p.id === selectedProductForImage
-                ? { ...p, main_image_url: data.imageUrl }
-                : p
-            )
-          );
-
-          // Recargar productos (el timestamp forzará datos frescos)
-          loadProducts();
-        } else {
-          console.error('Error updating product with image:', patchData);
-          showToast('Imagen subida, pero error al actualizar el producto.', 'error');
-        }
-      } else {
-        showToast(data.error || 'Error al subir la imagen', 'error');
+        setUploadStep('review');
       }
     } catch (error: any) {
-      console.error('Error subiendo imagen:', error);
-      showToast(error.message || 'Error de conexión al subir imagen', 'error');
+      console.error('Error optimizando:', error);
+      showToast(error.message, 'error');
+      setUploadStep('select');
     } finally {
       setUploadingImage(null);
-      setSelectedProductForImage(null);
-      // Limpiar el input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     }
+  };
+
+  // 4. Confirmar y Asignar
+  const handleConfirmAssignment = async () => {
+    if (!finalImageUrl || !selectedProductForImage) return;
+
+    setSaving(true);
+    try {
+      const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ main_image_url: finalImageUrl }),
+      });
+
+      const patchData = await patchResponse.json();
+
+      if (patchResponse.ok && (patchData.success || patchData.message)) {
+        showToast('Imagen asignada correctamente', 'success');
+
+        // Optimistic update
+        setProducts(prev => prev.map(p =>
+          p.id === selectedProductForImage
+            ? { ...p, main_image_url: finalImageUrl }
+            : p
+        ));
+
+        loadProducts(); // Refresh background
+        closeUploadModal();
+      } else {
+        showToast(patchData.error || 'Error al asignar la imagen', 'error');
+      }
+    } catch (error) {
+      console.error('Error asignando:', error);
+      showToast('Error de conexión', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const closeUploadModal = () => {
+    setUploadModalOpen(false);
+    setSelectedFile(null);
+    setUploadPreview(null);
+    setFinalImageUrl(null);
+    setSelectedProductForImage(null);
   };
 
   const clearFilters = () => {
@@ -318,14 +355,133 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Modal de Auditoría de Imagen */}
+      {uploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">
+                {uploadStep === 'select' && '1. Seleccionar Imagen'}
+                {uploadStep === 'optimizing' && '2. Optimizando...'}
+                {uploadStep === 'review' && '3. Auditoría de Calidad'}
+              </h3>
+              <button onClick={closeUploadModal} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6">
+              {/* Paso 1: Selección */}
+              {uploadStep === 'select' && (
+                <div className="space-y-4">
+                  <div
+                    className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploadPreview ? (
+                      <img src={uploadPreview} alt="Preview" className="h-48 object-contain rounded-lg shadow-sm" />
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                          <Upload className="w-8 h-8 text-green-600" />
+                        </div>
+                        <p className="text-gray-600 font-medium">Clic para seleccionar imagen</p>
+                        <p className="text-xs text-gray-400 mt-1">JPG, PNG, WebP (Max 5MB)</p>
+                      </>
+                    )}
+                  </div>
+
+                  {uploadPreview && (
+                    <button
+                      onClick={handleOptimize}
+                      className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all transform hover:scale-[1.02]"
+                    >
+                      ✨ Optimizar e Inspeccionar
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Paso 2: Optimizando */}
+              {uploadStep === 'optimizing' && (
+                <div className="py-12 flex flex-col items-center text-center">
+                  <Loader2 className="w-16 h-16 text-green-500 animate-spin mb-4" />
+                  <h4 className="text-xl font-bold text-gray-800">Procesando Imagen...</h4>
+                  <p className="text-gray-500 mt-2">Redmensionando a 1200px y convirtiendo a WebP</p>
+                </div>
+              )}
+
+              {/* Paso 3: Revisión (Auditoría) */}
+              {uploadStep === 'review' && uploadStats && finalImageUrl && (
+                <div className="space-y-6">
+                  {/* Comparativa */}
+                  <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="text-center p-2 border-r border-gray-200">
+                      <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Original</p>
+                      <p className="text-lg font-bold text-gray-700">{(uploadStats.originalSize / 1024).toFixed(1)} KB</p>
+                    </div>
+                    <div className="text-center p-2">
+                      <p className="text-xs text-green-600 uppercase tracking-wider mb-1 font-bold">Optimizado</p>
+                      <p className="text-2xl font-black text-green-600">{(uploadStats.newSize / 1024).toFixed(1)} KB</p>
+                      <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-[10px] rounded-full mt-1">
+                        Ahorro: {Math.round((1 - uploadStats.newSize / uploadStats.originalSize) * 100)}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Detalles Técnicos */}
+                  <div className="text-xs text-gray-500 flex justify-between px-2">
+                    <span>Formato: <strong className="text-gray-700 uppercase">{uploadStats.format}</strong></span>
+                    <span>Ancho: <strong className="text-gray-700">{uploadStats.width}px</strong></span>
+                  </div>
+
+                  {/* Imagen Final */}
+                  <div className="relative group rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+                    <img src={finalImageUrl} alt="Final" className="w-full h-48 object-cover" />
+                    <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                      Vista Previa Final
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button
+                      onClick={() => setUploadStep('select')}
+                      className="py-2.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                    >
+                      Descartar
+                    </button>
+                    <button
+                      onClick={handleConfirmAssignment}
+                      disabled={saving}
+                      className="py-2.5 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-md shadow-green-200 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Asignando...
+                        </>
+                      ) : (
+                        '✅ Confirmar y Asignar'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Input oculto para subir imágenes */}
       <input
         type="file"
         ref={fileInputRef}
-        onChange={handleFileChange}
+        onChange={handleFileSelect}
         accept="image/*"
         className="hidden"
-        capture="environment"
       />
 
       {/* Header */}
@@ -469,155 +625,114 @@ export default function ProductsPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {products.map((product) => (
-                    <>
-                      <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 lg:px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="relative group">
-                              {product.main_image_url ? (
-                                <img
-                                  src={product.main_image_url}
-                                  alt={product.name}
-                                  className="w-12 h-12 rounded-lg object-cover"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                  <ImageIcon className="w-6 h-6 text-gray-400" />
-                                </div>
-                              )}
-                              {/* Botón de cámara rápida */}
-                              <button
-                                onClick={() => handleQuickImageUpload(product.id)}
-                                disabled={uploadingImage === product.id}
-                                className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                title="Subir foto"
-                              >
-                                {uploadingImage === product.id ? (
-                                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                                ) : (
-                                  <Camera className="w-5 h-5 text-white" />
-                                )}
-                              </button>
-                            </div>
-                            <div className="min-w-0">
-                              <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                              {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
-                                <p className="text-xs text-blue-600 flex items-center gap-1">
-                                  <Layers className="w-3 h-3" />
-                                  {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                            {product.category_name || product.categories?.name || 'Sin categoría'}
-                          </span>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4">
-                          <div>
-                            <span className="font-semibold text-gray-900">
-                              {formatCurrency(product.price)}
-                            </span>
-                            {product.discount_price && (
-                              <span className="block text-xs text-green-600">
-                                Oferta: {formatCurrency(product.discount_price)}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
-                          <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
-                            {product.stock}
-                          </span>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4">
-                          <button
-                            onClick={() => handleToggleActive(product.id, product.is_active)}
-                            className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                              }`}
-                          >
-                            {product.is_active ? (
-                              <>
-                                <Eye className="w-3 h-3" />
-                                <span className="hidden sm:inline">Activo</span>
-                              </>
+                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 lg:px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="relative group">
+                            {product.main_image_url ? (
+                              <img
+                                src={product.main_image_url}
+                                alt={product.name}
+                                className="w-12 h-12 rounded-lg object-cover"
+                              />
                             ) : (
-                              <>
-                                <EyeOff className="w-3 h-3" />
-                                <span className="hidden sm:inline">Inactivo</span>
-                              </>
+                              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                              </div>
                             )}
-                          </button>
-                        </td>
-                        <td className="px-4 lg:px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                            {/* Botón de cámara rápida */}
                             <button
-                              onClick={() => setEditingProduct(product)}
-                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                              onClick={() => handleQuickImageUpload(product.id)}
+                              disabled={uploadingImage === product.id}
+                              className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                              title="Subir foto"
                             >
-                              <Edit className="w-4 h-4 lg:hidden" />
-                              <span className="hidden lg:inline">Editar</span>
+                              {uploadingImage === product.id ? (
+                                <Loader2 className="w-5 h-5 text-white animate-spin" />
+                              ) : (
+                                <Camera className="w-5 h-5 text-white" />
+                              )}
                             </button>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-semibold text-gray-900 truncate">{product.name}</p>
                             {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
-                              <button
-                                onClick={() => setExpandedProduct(expandedProduct === product.id ? null : product.id)}
-                                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-                              >
-                                <Layers className="w-4 h-4 lg:hidden" />
-                                <span className="hidden lg:inline">
-                                  {expandedProduct === product.id ? 'Ocultar' : 'Variantes'}
-                                </span>
-                              </button>
+                              <p className="text-xs text-blue-600 flex items-center gap-1">
+                                <Layers className="w-3 h-3" />
+                                {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
+                              </p>
                             )}
                           </div>
-                        </td>
-                      </tr>
-
-                      {/* Fila expandida para variantes */}
-                      {expandedProduct === product.id && (product.variants || product.product_variants) && (
-                        <tr>
-                          <td colSpan={6} className="px-4 lg:px-6 py-4 bg-gray-50">
-                            <div className="space-y-3">
-                              <h4 className="font-semibold text-gray-900">Variantes del Producto</h4>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                {(product.variants || product.product_variants || []).map((variant) => (
-                                  <div
-                                    key={variant.id}
-                                    className="bg-white p-3 rounded-lg border border-gray-200"
-                                  >
-                                    <div className="flex justify-between items-start mb-2">
-                                      <div>
-                                        <p className="font-medium text-gray-900">{variant.variant_name}</p>
-                                        <p className="text-sm text-gray-600">{variant.variant_value}</p>
-                                      </div>
-                                      <span
-                                        className={`px-2 py-0.5 rounded-full text-xs font-medium ${variant.is_active
-                                          ? 'bg-green-100 text-green-800'
-                                          : 'bg-red-100 text-red-800'
-                                          }`}
-                                      >
-                                        {variant.is_active ? 'Activa' : 'Inactiva'}
-                                      </span>
-                                    </div>
-                                    <div className="text-sm text-gray-600 space-y-1">
-                                      <p>Stock: <span className="font-medium">{variant.stock_quantity || 100}</span></p>
-                                      {variant.sku && <p>SKU: <span className="font-medium">{variant.sku}</span></p>}
-                                      <p className="font-medium text-green-600">
-                                        Precio: {formatCurrency((variant as any).price || (product.price + (variant.price_adjustment || 0)))}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
+                        </div>
+                      </td>
+                      <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                          {product.category_name || product.categories?.name || 'Sin categoría'}
+                        </span>
+                      </td>
+                      <td className="px-4 lg:px-6 py-4">
+                        <div>
+                          <span className="font-semibold text-gray-900">
+                            {formatCurrency(product.price)}
+                          </span>
+                          {product.discount_price && (
+                            <span className="block text-xs text-green-600">
+                              Oferta: {formatCurrency(product.discount_price)}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
+                        <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                          {product.stock}
+                        </span>
+                      </td>
+                      <td className="px-4 lg:px-6 py-4">
+                        <button
+                          onClick={() => handleToggleActive(product.id, product.is_active)}
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                        >
+                          {product.is_active ? (
+                            <>
+                              <Eye className="w-3 h-3" />
+                              Activo
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-3 h-3" />
+                              Inactivo
+                            </>
+                          )}
+                        </button>
+                      </td>
+                      <td className="px-4 lg:px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingProduct(product);
+                              // Solo cargar variantes si tiene
+                              if (product.variants?.length || product.product_variants?.length) {
+                                // Logic for variants if needed
+                              }
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
                   ))}
                 </tbody>
               </table>
@@ -625,24 +740,24 @@ export default function ProductsPage() {
 
             {/* Paginación */}
             {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-4 lg:px-6 py-4 border-t border-gray-200">
-                <div className="text-sm text-gray-700">
-                  Página {pagination.page} de {pagination.totalPages} | Total: {pagination.total} productos
-                </div>
-                <div className="flex items-center gap-2">
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <p className="text-sm text-gray-600">
+                  Mostrando {((pagination.page - 1) * pagination.limit) + 1} a {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} productos
+                </p>
+                <div className="flex gap-2">
                   <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                    onClick={() => setPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
                     disabled={pagination.page === 1}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    Anterior
                   </button>
                   <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                    onClick={() => setPagination(prev => ({ ...prev, page: Math.min(prev.totalPages, prev.page + 1) }))}
                     disabled={pagination.page === pagination.totalPages}
-                    className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50"
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    Siguiente
                   </button>
                 </div>
               </div>
@@ -653,43 +768,22 @@ export default function ProductsPage() {
 
       {/* Modal de Edición */}
       {editingProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Editar Producto</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between z-10">
+              <h3 className="text-lg font-bold text-gray-900">Editar Producto</h3>
               <button
                 onClick={() => setEditingProduct(null)}
-                className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+                className="text-gray-400 hover:text-gray-600"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Imagen */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">URL de Imagen</label>
-                <div className="flex gap-4">
-                  {editingProduct.main_image_url && (
-                    <img
-                      src={editingProduct.main_image_url}
-                      alt={editingProduct.name}
-                      className="w-24 h-24 rounded-lg object-cover"
-                    />
-                  )}
-                  <input
-                    type="url"
-                    value={editingProduct.main_image_url || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, main_image_url: e.target.value })}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                    placeholder="https://..."
-                  />
-                </div>
-              </div>
-
               {/* Nombre */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Producto *</label>
                 <input
                   type="text"
                   value={editingProduct.name}
@@ -705,29 +799,15 @@ export default function ProductsPage() {
                 <textarea
                   value={editingProduct.description || ''}
                   onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
                 />
               </div>
 
-              {/* Categoría */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría *</label>
-                <select
-                  value={editingProduct.category_id}
-                  onChange={(e) => setEditingProduct({ ...editingProduct, category_id: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                >
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Precios */}
               <div className="grid grid-cols-2 gap-4">
+                {/* Precio */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Precio *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Precio Regular *</label>
                   <input
                     type="number"
                     value={editingProduct.price}
@@ -737,6 +817,7 @@ export default function ProductsPage() {
                     required
                   />
                 </div>
+                {/* Precio Oferta */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Precio Oferta</label>
                   <input

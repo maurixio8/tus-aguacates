@@ -102,7 +102,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       imageUrl: urlData.publicUrl,
-      fileName: fileName
+      fileName: fileName,
+      stats: {
+        originalSize: buffer.length,
+        newSize: optimizedBuffer.length,
+        width: 1200,
+        format: 'webp'
+      }
     });
 
   } catch (error) {
