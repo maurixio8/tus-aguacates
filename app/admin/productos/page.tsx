@@ -16,7 +16,8 @@ import {
   Layers,
   Camera,
   Upload,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { useRef } from 'react';
 
