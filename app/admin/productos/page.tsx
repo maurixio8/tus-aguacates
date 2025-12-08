@@ -218,6 +218,28 @@ export default function ProductsPage() {
     }
   };
 
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
+
+    try {
+      const response = await fetch(`/api/admin/products/${productId}/`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        showToast('Producto eliminado correctamente', 'success');
+        loadProducts();
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Error al eliminar el producto');
+      }
+    } catch (error) {
+      console.error('Error eliminando producto:', error);
+      alert('Error al eliminar el producto');
+    }
+  };
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
