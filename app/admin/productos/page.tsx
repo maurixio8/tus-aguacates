@@ -217,7 +217,7 @@ export default function ProductsPage() {
 
   const handleToggleActive = async (productId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/admin/products/${productId}/`, {
+      const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -238,7 +238,7 @@ export default function ProductsPage() {
     setSaving(true);
 
     try {
-      const response = await fetch(`/api/admin/products/${editingProduct.id}/`, {
+      const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -275,7 +275,7 @@ export default function ProductsPage() {
     if (!confirm('¿Estás seguro de que deseas eliminar este producto?')) return;
 
     try {
-      const response = await fetch(`/api/admin/products/${productId}/`, {
+      const response = await fetch(`/api/admin/products/${productId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -383,7 +383,7 @@ export default function ProductsPage() {
     try {
       console.log('📤 Sending PATCH with Image:', finalImageUrl);
 
-      const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}/`, {
+      const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -392,13 +392,20 @@ export default function ProductsPage() {
 
       const patchData = await patchResponse.json();
 
-      if (patchResponse.ok && (patchData.success || patchData.message)) {
+      console.log('📥 PATCH Response:', {
+        status: patchResponse.status,
+        ok: patchResponse.ok,
+        data: patchData
+      });
+
+      // Strict validation: only consider success if API explicitly says success AND image matches
+      if (patchResponse.ok && patchData.success && patchData.data?.main_image_url === finalImageUrl) {
         showToast('Imagen asignada correctamente al producto', 'success');
 
-        // Optimistic update (UI inmediata)
+        // Update UI with confirmed data from server
         setProducts(prev => prev.map(p =>
           p.id === selectedProductForImage
-            ? { ...p, main_image_url: finalImageUrl }
+            ? { ...p, main_image_url: patchData.data.main_image_url }
             : p
         ));
 
@@ -415,7 +422,20 @@ export default function ProductsPage() {
           }, 1000);
         }
       } else {
-        showToast(patchData.error || 'Error al asignar la imagen', 'error');
+        // Log detailed error for debugging
+        console.error('❌ PATCH Failed:', {
+          httpOk: patchResponse.ok,
+          success: patchData.success,
+          error: patchData.error,
+          sentUrl: finalImageUrl,
+          receivedUrl: patchData.data?.main_image_url,
+          debug: patchData.debug
+        });
+
+        const errorMsg = patchData.error || patchData.debug?.sent !== patchData.debug?.received
+          ? 'La imagen no se guardó en la base de datos. Revisa la consola del servidor.'
+          : 'Error al asignar la imagen';
+        showToast(errorMsg, 'error');
       }
     } catch (error) {
       console.error('Error asignando:', error);

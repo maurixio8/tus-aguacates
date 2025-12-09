@@ -182,16 +182,23 @@ export async function PATCH(
     // First check if product exists
     const { data: existingProduct, error: fetchError } = await supabase
       .from('products')
-      .select('id, name')
+      .select('id, name, main_image_url')
       .eq('id', id)
       .single();
 
     if (fetchError || !existingProduct) {
+      console.error('❌ API: Product not found:', { id, fetchError });
       return NextResponse.json(
         { error: 'Producto no encontrado' },
         { status: 404, headers: corsHeaders }
       );
     }
+
+    console.log('📦 API: Existing product before update:', {
+      id: existingProduct.id,
+      name: existingProduct.name,
+      current_image: existingProduct.main_image_url
+    });
 
     // Prepare update object
     const updateData: any = {
@@ -211,14 +218,20 @@ export async function PATCH(
       }
     });
 
-    // Perform update - use select() instead of select().single() to avoid PGRST116 if no rows updated
-    console.log('💾 API: Executing Supabase update for ID:', id);
+    console.log('💾 API: Executing Supabase update for ID:', id, 'with data:', updateData);
 
+    // Perform update with .single() to ensure we get the updated row
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
       .eq('id', id)
-      .select();
+      .select()
+      .single();
+
+    console.log('📊 API: Supabase update response:', {
+      hasData: !!data,
+      error: error ? { message: error.message, code: error.code, hint: error.hint } : null
+    });
 
     if (error) {
       console.error('❌ API: Error updating product:', error);
@@ -233,65 +246,55 @@ export async function PATCH(
       );
     }
 
-    if (!data || data.length === 0) {
-      console.warn('⚠️ API: Update returned no rows. Attempting re-fetch...');
-
-      const { data: refetchedProduct, error: refetchError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (!refetchError && refetchedProduct) {
-        console.log('✅ API: Product found after update (Refetch success). Verifying data match...');
-
-        // Verify if the update actually persisted
-        const isMatch = Object.keys(updateData).every(key =>
-          key === 'updated_at' || refetchedProduct[key] === updateData[key]
-        );
-
-        if (!isMatch) {
-          console.error('❌ API: CRITICAL - Update appeared successful but data does not match!', {
-            sent: updateData,
-            stored: refetchedProduct
-          });
-        }
-
-        return NextResponse.json({
-          success: true,
-          data: refetchedProduct,
-          message: 'Producto actualizado (verificado por re-consulta)',
-          persisted: isMatch
-        }, { headers: corsHeaders });
-      }
-
-      console.error('❌ API: Product definitely not found after update attempt.');
+    if (!data) {
+      console.error('❌ API: Update returned no data. This should not happen with .single()');
       return NextResponse.json({
         success: false,
-        error: 'No se pudo actualizar el producto (no encontrado en BD)',
+        error: 'No se pudo actualizar el producto (update no devolvió datos)',
         data: null
-      }, { status: 404, headers: corsHeaders });
+      }, { status: 500, headers: corsHeaders });
     }
 
-    // Explicit Verification for normal path
-    const updatedRow = data[0];
-    console.log('✅ API: Product updated successfully via PATCH:', updatedRow);
+    // Verify image URL was actually saved if it was part of the update
+    if (updateData.main_image_url !== undefined) {
+      console.log('🔍 API: Verifying image URL persistence:', {
+        sent: updateData.main_image_url,
+        saved: data.main_image_url,
+        match: data.main_image_url === updateData.main_image_url
+      });
+
+      if (data.main_image_url !== updateData.main_image_url) {
+        console.error('❌ API: CRITICAL IMAGE MISMATCH - DB returned different URL than sent!', {
+          sent: updateData.main_image_url,
+          received: data.main_image_url
+        });
+
+        // Return error instead of false success
+        return NextResponse.json({
+          success: false,
+          error: 'La imagen no se guardó correctamente en la base de datos',
+          data: data,
+          debug: {
+            sent: updateData.main_image_url,
+            received: data.main_image_url
+          }
+        }, { status: 500, headers: corsHeaders });
+      }
+    }
+
+    console.log('✅ API: Product updated successfully via PATCH:', {
+      id: data.id,
+      name: data.name,
+      main_image_url: data.main_image_url
+    });
 
     // Force cache invalidation
     revalidatePath('/admin/productos');
     revalidatePath('/api/admin/products');
 
-    // Double check specific fields if present
-    if (updateData.main_image_url && updatedRow.main_image_url !== updateData.main_image_url) {
-      console.error('❌ API: CRITICAL IMAGE MISMATCH - DB returned different URL than sent!', {
-        sent: updateData.main_image_url,
-        received: updatedRow.main_image_url
-      });
-    }
-
     return NextResponse.json({
       success: true,
-      data: updatedRow,
+      data: data,
       message: 'Producto actualizado exitosamente'
     }, { headers: corsHeaders });
 
