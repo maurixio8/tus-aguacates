@@ -151,13 +151,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
         {/* Contenido */}
         <div className="p-4">
-          <h3 className="font-semibold text-lg text-gray-900 mb-1 line-clamp-2">
+          <h3 className="font-semibold text-lg text-gray-900 mb-3 line-clamp-2">
             {product.name}
           </h3>
-
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {product.description}
-          </p>
 
           {/* Rating */}
           {(product.review_count ?? 0) > 0 && (
@@ -168,27 +164,60 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Selector de variantes */}
+          {/* Botones Toggle de variantes - Diseño adaptativo */}
           {variants.length > 0 && (
             <div className="mb-3" onClick={(e) => e.preventDefault()}>
-              <label className="block text-xs font-medium text-gray-700 mb-1">
-                Presentación
-              </label>
-              <select
-                value={selectedVariant?.id || ''}
-                onChange={(e) => {
-                  const variant = variants.find(v => v.id === e.target.value);
-                  setSelectedVariant(variant || null);
-                }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white"
-              >
+              {/* Grid para 2 variantes, Scroll horizontal para 3+ */}
+              <div className={`
+                ${variants.length <= 2
+                  ? 'grid grid-cols-2 gap-2'
+                  : 'flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1'
+                }
+              `}>
                 {variants.map((variant) => (
-                  <option key={variant.id} value={variant.id}>
-                    {variant.variant_value} - {formatPrice(variant.price)}
-                  </option>
+                  <button
+                    key={variant.id}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setSelectedVariant(variant);
+                    }}
+                    className={`
+                      ${variants.length > 2 ? 'min-w-[140px] snap-start' : ''}
+                      flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all
+                      ${selectedVariant?.id === variant.id
+                        ? 'border-verde-bosque bg-verde-bosque/10 shadow-md'
+                        : 'border-gray-300 bg-white hover:border-verde-bosque/50 hover:shadow-sm'
+                      }
+                    `}
+                  >
+                    <span className={`text-sm font-semibold ${
+                      selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
+                    }`}>
+                      {variant.variant_value}
+                    </span>
+                    <span className={`text-xs mt-1 font-mono ${
+                      selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
+                    }`}>
+                      {formatPrice(variant.price)}
+                    </span>
+                  </button>
                 ))}
-              </select>
+              </div>
+
+              {/* Indicadores para scroll (solo si hay 3+ variantes) */}
+              {variants.length > 2 && (
+                <div className="flex justify-center gap-1 mt-2">
+                  {variants.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-1 rounded-full transition-all ${
+                        index === 0 ? 'w-2 bg-verde-bosque' : 'w-1 bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

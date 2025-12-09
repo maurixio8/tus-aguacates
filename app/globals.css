@@ -62,3 +62,13 @@ button {
 .gradient-suave {
   background: linear-gradient(180deg, #FFFEF5 0%, #F5F3ED 100%);
 }
+
+/* Ocultar scrollbar pero mantener funcionalidad de scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE y Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Chrome, Safari y Opera */
+}
