@@ -32,7 +32,7 @@ export function ProductCardSlider({ product, onProductClick }: ProductCardSlider
             src={product.main_image_url}
             alt={product.name}
             fill
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-300"
+            className="object-contain object-center group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 50vw, 33vw"
           />
         ) : (

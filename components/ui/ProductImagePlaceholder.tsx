@@ -121,13 +121,13 @@ export function ProductImagePlaceholder({
           </div>
         )}
 
-        {/* Imagen real - Usar fill para responsive + object-cover centrado */}
+        {/* Imagen real - Usar fill para responsive + object-contain para mostrar imagen completa */}
         <div className={`relative w-full h-full overflow-hidden rounded-xl ${isLoading ? 'opacity-0' : 'opacity-100'} transition-all duration-300`}>
           <Image
             src={imageUrl}
             alt={productName}
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             priority={priority}
             onError={handleImageError}
             onLoad={handleImageLoad}

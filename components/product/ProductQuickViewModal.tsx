@@ -120,7 +120,7 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
                     src={product.main_image_url}
                     alt={product.name}
                     fill
-                    className="object-cover object-center"
+                    className="object-contain object-center"
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 ) : (
