@@ -339,17 +339,22 @@ export default function ProductsPage() {
       const patchData = await patchResponse.json();
 
       if (patchResponse.ok && (patchData.success || patchData.message)) {
-        showToast('Imagen asignada correctamente', 'success');
+        showToast('Imagen asignada correctamente al producto', 'success');
 
-        // Optimistic update
+        // Optimistic update (UI inmediata)
         setProducts(prev => prev.map(p =>
           p.id === selectedProductForImage
             ? { ...p, main_image_url: finalImageUrl }
             : p
         ));
 
-        loadProducts(); // Refresh background
+        // Cierra el modal y limpia
         closeUploadModal();
+
+        // Recargar productos con retraso para asegurar consistencia
+        setTimeout(() => {
+          loadProducts();
+        }, 1500);
       } else {
         showToast(patchData.error || 'Error al asignar la imagen', 'error');
       }
