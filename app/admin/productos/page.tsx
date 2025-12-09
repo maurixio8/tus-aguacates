@@ -152,7 +152,13 @@ export default function ProductsPage() {
         if (selectedProductForImage) {
           const updatedProd = data.data.find((p: Product) => p.id === selectedProductForImage);
           if (updatedProd) {
-            console.log(`🔍 [AdminDebug] Product ${updatedProd.name} (${updatedProd.id}) loaded. ImageURL:`, updatedProd.main_image_url);
+            console.log(`🔍 [AdminDebug] FULL PRODUCT:`, updatedProd);
+            console.log(`🔍 [AdminDebug] Timestamp check:`, {
+              updatedAt: updatedProd.updated_at,
+              now: new Date().toISOString(),
+              hasImage: !!updatedProd.main_image_url,
+              imageUrl: updatedProd.main_image_url
+            });
           }
         }
 
