@@ -109,8 +109,11 @@ export function ProductImagePlaceholder({
 
   // Si hay imagen real y no hay error, mostrar la imagen real
   if (imageUrl && !imageError) {
+    // Si se pasa className, no usar estilos inline para permitir responsive design
+    const containerStyle = className ? {} : { width, height };
+
     return (
-      <div className={`relative group ${className}`} style={{ width, height }}>
+      <div className={`relative group ${className}`} style={containerStyle}>
         {/* Loading placeholder */}
         {isLoading && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse rounded-xl">
@@ -118,14 +121,13 @@ export function ProductImagePlaceholder({
           </div>
         )}
 
-        {/* Imagen real */}
-        <div className={`relative overflow-hidden rounded-xl ${isLoading ? 'opacity-0' : 'opacity-100'} transition-all duration-300 transform group-hover:scale-105`}>
+        {/* Imagen real - Usar fill para responsive + object-contain para mostrar imagen completa */}
+        <div className={`relative w-full h-full overflow-hidden rounded-xl ${isLoading ? 'opacity-0' : 'opacity-100'} transition-all duration-300`}>
           <Image
             src={imageUrl}
             alt={productName}
-            width={width}
-            height={height}
-            className="object-cover"
+            fill
+            className="object-contain object-center"
             priority={priority}
             onError={handleImageError}
             onLoad={handleImageLoad}
@@ -155,10 +157,12 @@ export function ProductImagePlaceholder({
   }
 
   // Mostrar placeholder
+  const placeholderStyle = className ? {} : { width, height };
+
   return (
     <div
       className={`relative group overflow-hidden rounded-xl transition-all duration-300 transform hover:scale-105 ${className}`}
-      style={{ width, height }}
+      style={placeholderStyle}
     >
       {/* Gradiente de fondo dinámico */}
       <div className={`absolute inset-0 bg-gradient-to-br ${colors.gradient}`} />

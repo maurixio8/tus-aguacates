@@ -26,13 +26,14 @@ export function ProductCardSlider({ product, onProductClick }: ProductCardSlider
       className="block bg-white rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all group cursor-pointer"
     >
       {/* Imagen del producto */}
-      <div className="relative aspect-square bg-gray-100">
+      <div className="relative aspect-square bg-gray-100 overflow-hidden">
         {product.main_image_url ? (
           <Image
             src={product.main_image_url}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-contain object-center group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 50vw, 33vw"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-gray-400">
