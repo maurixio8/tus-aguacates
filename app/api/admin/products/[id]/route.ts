@@ -451,7 +451,7 @@ export async function DELETE(
     const { id } = await params;
     console.log('🗑️ API: Deleting product:', id);
 
-    const supabase = createSupabaseClient();
+    const supabase = getServiceSupabase();
 
     // First check if product exists
     const { data: existingProduct, error: fetchError } = await supabase
