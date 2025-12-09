@@ -1,21 +1,53 @@
-      } catch (jwtError) {
-  console.error('❌ Products [id] API: JWT verification error:', jwtError);
-  return { success: false, error: 'Token inválido o expirado' };
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
+import { revalidatePath } from 'next/cache';
+import { createSupabaseClient } from '@/lib/auth-admin';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Configuración CORS para permitir el dashboard
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token',
+};
+
+// Manejar solicitudes OPTIONS para CORS
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { headers: corsHeaders });
 }
 
-// Check if this is an admin token
-if (decoded.type !== 'admin') {
-  console.log('❌ Products [id] API: Token no es de tipo admin');
-  return { success: false, error: 'Token no válido para administrador' };
-}
+// Helper para verificar token de admin
+async function verifyAdminAuth(req: NextRequest) {
+  try {
+    // 1. Verificar header específico
+    const headerToken = req.headers.get('x-admin-token');
 
-return { success: true, adminId: decoded.id };
+    // 2. Verificar cookie
+    const cookieToken = req.cookies.get('admin_token')?.value || req.cookies.get('admin-token')?.value;
 
-    } catch (error) {
-  console.error('❌ Products [id] API: Authentication error:', error);
-  return { success: false, error: 'Error de autenticación' };
-}
+    const token = headerToken || cookieToken;
+
+    if (!token) {
+      return { success: false, error: 'No autorizado' };
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET || 'tus-aguacates-secret-key';
+    const decoded = jwt.verify(token, JWT_SECRET) as any;
+
+    if (decoded.type !== 'admin') {
+      return { success: false, error: 'Token no válido para administrador' };
+    }
+
+    return { success: true, adminId: decoded.id };
+
+  } catch (error) {
+    console.error('❌ Error auth:', error);
+    return { success: false, error: 'Token inválido' };
   }
+}
 
 // GET - Get single product by ID
 export async function GET(
@@ -23,13 +55,20 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Verify admin authentication
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: 401, headers: corsHeaders }
-      );
+    // Check if request is from same origin (integrated dashboard) or has valid auth
+    const origin = request.headers.get('origin');
+    const referer = request.headers.get('referer');
+    const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
+
+    // Only verify auth for cross-origin requests
+    if (!isSameOrigin) {
+      const auth = await verifyAdminAuth(request);
+      if (!auth.success) {
+        return NextResponse.json(
+          { error: auth.error },
+          { status: 401, headers: corsHeaders }
+        );
+      }
     }
 
     const { id } = await params;
