@@ -164,14 +164,18 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Botones Toggle de variantes - Diseño adaptativo */}
+          {/* Botones Toggle de variantes - Diseño adaptativo responsive */}
           {variants.length > 0 && (
             <div className="mb-3" onClick={(e) => e.preventDefault()}>
-              {/* Grid para 2 variantes, Scroll horizontal para 3+ */}
+              {/*
+                MÓVIL: Grid 2 cols para 2 variantes, Scroll para 3+
+                DESKTOP: Grid adaptativo (3-4 cols, todo visible sin scroll)
+              */}
               <div className={`
+                gap-2
                 ${variants.length <= 2
-                  ? 'grid grid-cols-2 gap-2'
-                  : 'flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1'
+                  ? 'grid grid-cols-2'
+                  : 'flex md:grid overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none scrollbar-hide pb-1 md:pb-0 md:grid-cols-3 lg:grid-cols-4'
                 }
               `}>
                 {variants.map((variant) => (
@@ -183,7 +187,7 @@ export function ProductCard({ product }: ProductCardProps) {
                       setSelectedVariant(variant);
                     }}
                     className={`
-                      ${variants.length > 2 ? 'min-w-[140px] snap-start' : ''}
+                      ${variants.length > 2 ? 'min-w-[140px] md:min-w-0 snap-start' : ''}
                       flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all
                       ${selectedVariant?.id === variant.id
                         ? 'border-verde-bosque bg-verde-bosque/10 shadow-md'
@@ -205,9 +209,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 ))}
               </div>
 
-              {/* Indicadores para scroll (solo si hay 3+ variantes) */}
+              {/* Indicadores para scroll (solo móvil con 3+ variantes) */}
               {variants.length > 2 && (
-                <div className="flex justify-center gap-1 mt-2">
+                <div className="flex md:hidden justify-center gap-1 mt-2">
                   {variants.map((_, index) => (
                     <div
                       key={index}
