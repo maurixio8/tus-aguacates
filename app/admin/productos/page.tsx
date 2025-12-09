@@ -199,7 +199,11 @@ export default function ProductsPage() {
       const data = await response.json();
 
       if (data.success && data.data) {
-        console.log('✅ Smart Refresh Success:', data.data);
+        console.log('✅ Smart Refresh Success. Payload:', {
+          id: data.data.id,
+          updated_at: data.data.updated_at,
+          main_image_url: data.data.main_image_url
+        });
         setProducts(prev => prev.map(p =>
           p.id === productId ? data.data : p
         ));
@@ -377,6 +381,8 @@ export default function ProductsPage() {
 
     setSaving(true);
     try {
+      console.log('📤 Sending PATCH with Image:', finalImageUrl);
+
       const patchResponse = await fetch(`/api/admin/products/${selectedProductForImage}/`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
