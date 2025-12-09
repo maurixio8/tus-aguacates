@@ -150,16 +150,25 @@ export default function ProductsPage() {
 
         // Debug Logging: Check if specific product has image
         if (selectedProductForImage) {
-          const updatedProd = data.data.find((p: Product) => p.id === selectedProductForImage);
-          if (updatedProd) {
-            console.log(`🔍 [AdminDebug] FULL PRODUCT:`, updatedProd);
-            console.log(`🔍 [AdminDebug] Timestamp check:`, {
-              updatedAt: updatedProd.updated_at,
-              now: new Date().toISOString(),
-              hasImage: !!updatedProd.main_image_url,
-              imageUrl: updatedProd.main_image_url
-            });
-          }
+          const listVersion = data.data.find((p: Product) => p.id === selectedProductForImage);
+
+          console.log(`🔍 [AdminDebug] Comparing Data Sources for ID: ${selectedProductForImage}`);
+          console.log(`📦 [List API] Timestamp: ${listVersion?.updated_at}, Image: ${listVersion?.main_image_url}`);
+
+          // Direct Fetch to bypass List Cache
+          fetch(`/api/admin/products/${selectedProductForImage}?_t=${Date.now()}`, {
+            headers: { 'Pragma': 'no-cache' }
+          })
+            .then(res => res.json())
+            .then(directData => {
+              const directProd = directData.data;
+              console.log(`🎯 [Direct API] Timestamp: ${directProd?.updated_at}, Image: ${directProd?.main_image_url}`);
+
+              if (listVersion?.updated_at !== directProd?.updated_at) {
+                console.error('⚠️ DATA MISMATCH: List API is serving stale data!');
+              }
+            })
+            .catch(err => console.error('Direct fetch failed', err));
         }
 
         setPagination(prev => ({
