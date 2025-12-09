@@ -212,9 +212,8 @@ export async function PATCH(
     }
 
     if (!data || data.length === 0) {
-      console.warn('⚠️ API: Update successful but no rows returned. Attempting re-fetch to verify existence...');
+      console.warn('⚠️ API: Update returned no rows. Attempting re-fetch...');
 
-      // Fallback: Check if product exists (maybe select() failed to return data for some reason?)
       const { data: refetchedProduct, error: refetchError } = await supabase
         .from('products')
         .select('*')
@@ -222,11 +221,25 @@ export async function PATCH(
         .single();
 
       if (!refetchError && refetchedProduct) {
-        console.log('✅ API: Product found after update (Refetch success):', refetchedProduct.name);
+        console.log('✅ API: Product found after update (Refetch success). Verifying data match...');
+
+        // Verify if the update actually persisted
+        const isMatch = Object.keys(updateData).every(key =>
+          key === 'updated_at' || refetchedProduct[key] === updateData[key]
+        );
+
+        if (!isMatch) {
+          console.error('❌ API: CRITICAL - Update appeared successful but data does not match!', {
+            sent: updateData,
+            stored: refetchedProduct
+          });
+        }
+
         return NextResponse.json({
           success: true,
           data: refetchedProduct,
-          message: 'Producto actualizado (verificado por re-consulta)'
+          message: 'Producto actualizado (verificado por re-consulta)',
+          persisted: isMatch
         }, { headers: corsHeaders });
       }
 
@@ -238,11 +251,21 @@ export async function PATCH(
       }, { status: 404, headers: corsHeaders });
     }
 
-    console.log('✅ API: Product updated successfully via PATCH:', data[0]);
+    // Explicit Verification for normal path
+    const updatedRow = data[0];
+    console.log('✅ API: Product updated successfully via PATCH:', updatedRow);
+
+    // Double check specific fields if present
+    if (updateData.main_image_url && updatedRow.main_image_url !== updateData.main_image_url) {
+      console.error('❌ API: CRITICAL IMAGE MISMATCH - DB returned different URL than sent!', {
+        sent: updateData.main_image_url,
+        received: updatedRow.main_image_url
+      });
+    }
 
     return NextResponse.json({
       success: true,
-      data: data[0],
+      data: updatedRow,
       message: 'Producto actualizado exitosamente'
     }, { headers: corsHeaders });
 
