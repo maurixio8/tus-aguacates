@@ -1,61 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
-import { revalidatePath } from 'next/cache';
-import { createSupabaseClient } from '@/lib/auth-admin';
-
-export const dynamic = 'force-dynamic';
-
-// Configuración CORS para permitir el dashboard
-const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
-
-// Manejar solicitudes OPTIONS para CORS
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { headers: corsHeaders });
+      } catch (jwtError) {
+  console.error('❌ Products [id] API: JWT verification error:', jwtError);
+  return { success: false, error: 'Token inválido o expirado' };
 }
 
-// Helper function to verify admin authentication
-async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
-  try {
-    // Get the admin-token cookie from the request
-    const token = request.cookies.get('admin-token')?.value;
+// Check if this is an admin token
+if (decoded.type !== 'admin') {
+  console.log('❌ Products [id] API: Token no es de tipo admin');
+  return { success: false, error: 'Token no válido para administrador' };
+}
 
-    console.log('🔍 Products [id] API: Token check:', token ? 'present' : 'missing');
+return { success: true, adminId: decoded.id };
 
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
-
-    // Verify the JWT token (MISMO CÓDIGO QUE EN LOGIN Y ME)
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret) as any;
-      console.log('🔍 Products [id] API: Token decoded:', { id: decoded.id, email: decoded.email, type: decoded.type });
-    } catch (jwtError) {
-      console.error('❌ Products [id] API: JWT verification error:', jwtError);
-      return { success: false, error: 'Token inválido o expirado' };
-    }
-
-    // Check if this is an admin token
-    if (decoded.type !== 'admin') {
-      console.log('❌ Products [id] API: Token no es de tipo admin');
-      return { success: false, error: 'Token no válido para administrador' };
-    }
-
-    return { success: true, adminId: decoded.id };
-
-  } catch (error) {
-    console.error('❌ Products [id] API: Authentication error:', error);
-    return { success: false, error: 'Error de autenticación' };
+    } catch (error) {
+  console.error('❌ Products [id] API: Authentication error:', error);
+  return { success: false, error: 'Error de autenticación' };
+}
   }
-}
 
 // GET - Get single product by ID
 export async function GET(
