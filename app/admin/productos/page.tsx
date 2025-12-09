@@ -155,9 +155,10 @@ export default function ProductsPage() {
           console.log(`🔍 [AdminDebug] Comparing Data Sources for ID: ${selectedProductForImage}`);
           console.log(`📦 [List API] Timestamp: ${listVersion?.updated_at}, Image: ${listVersion?.main_image_url}`);
 
-          // Direct Fetch to bypass List Cache
+          // Direct Fetch to bypass List Cache - FIX: Add credentials
           fetch(`/api/admin/products/${selectedProductForImage}?_t=${Date.now()}`, {
-            headers: { 'Pragma': 'no-cache' }
+            headers: { 'Pragma': 'no-cache' },
+            credentials: 'include'
           })
             .then(res => res.json())
             .then(directData => {
@@ -184,6 +185,29 @@ export default function ProductsPage() {
       showToast('Error de conexión', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Smart Refresh: Reload single product to bypass stale list cache
+  const refreshProduct = async (productId: string) => {
+    try {
+      console.log(`🔄 Smart Refresh: Fetching fresh data for ${productId}...`);
+      const response = await fetch(`/api/admin/products/${productId}?_t=${Date.now()}`, {
+        headers: { 'Pragma': 'no-cache' },
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        console.log('✅ Smart Refresh Success:', data.data);
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? data.data : p
+        ));
+      } else {
+        console.error('❌ Smart Refresh Failed:', data);
+      }
+    } catch (e) {
+      console.error('❌ Smart Refresh Error:', e);
     }
   };
 
@@ -372,13 +396,18 @@ export default function ProductsPage() {
             : p
         ));
 
+        // Capture ID before clearing state
+        const productIdToRefresh = selectedProductForImage;
+
         // Cierra el modal y limpia
         closeUploadModal();
 
-        // Recargar productos con retraso para asegurar consistencia
-        setTimeout(() => {
-          loadProducts();
-        }, 1500);
+        // Recargar SOLO este producto para confirmar persistencia (bypass cache)
+        if (productIdToRefresh) {
+          setTimeout(() => {
+            refreshProduct(productIdToRefresh);
+          }, 1000);
+        }
       } else {
         showToast(patchData.error || 'Error al asignar la imagen', 'error');
       }
