@@ -114,17 +114,17 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           <div className="p-4 md:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
               {/* Imagen */}
-              <div className="aspect-square md:aspect-square bg-gray-100 rounded-xl overflow-hidden max-h-64 md:max-h-none">
+              <div className="relative aspect-square md:aspect-square bg-gray-100 rounded-xl overflow-hidden max-h-64 md:max-h-none">
                 {product.main_image_url ? (
                   <Image
                     src={product.main_image_url}
                     alt={product.name}
-                    width={400}
-                    height={400}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover object-center"
+                    sizes="(max-width: 768px) 100vw, 50vw"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
+                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
                     <span className="text-8xl">🥑</span>
                   </div>
                 )}
