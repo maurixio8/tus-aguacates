@@ -12,14 +12,15 @@ import BottomNavigation from "@/components/layout/BottomNavigation";
 
 export function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-
-  // Sincronizar productos al iniciar la app
-  useEffect(() => {
-    initializeProducts();
-  }, []);
-
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
+
+  // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
+  useEffect(() => {
+    if (!isAdminRoute) {
+      initializeProducts();
+    }
+  }, [isAdminRoute]);
 
   // Si es ruta de admin, solo renderizar el contenido sin header/footer/nav de cliente
   if (isAdminRoute) {

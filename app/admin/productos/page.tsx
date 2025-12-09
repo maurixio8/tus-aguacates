@@ -134,30 +134,39 @@ export default function ProductsPage() {
       params.set('limit', pagination.limit.toString());
       if (search) params.set('search', search);
       if (selectedCategory) params.set('category', selectedCategory);
-      if (status) params.set('status', status);
-
-      // IMPORTANTE: trailing slash para evitar redirect 308 y timestamp para anti-cache
-      params.set('_t', Date.now().toString());
-      const response = await fetch(`/api/admin/products/?${params}`, {
+      // Add timestamp to prevent caching
+      const response = await fetch(`/api/admin/products?page=${pagination.page}&limit=${pagination.limit}&search=${search}&category=${selectedCategory}&status=${status}&_t=${Date.now()}`, {
         credentials: 'include',
         cache: 'no-store',
         headers: {
           'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache'
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
         }
       });
       const data = await response.json();
 
       if (data.success) {
         setProducts(data.data || []);
+
+        // Debug Logging: Check if specific product has image
+        if (selectedProductForImage) {
+          const updatedProd = data.data.find((p: Product) => p.id === selectedProductForImage);
+          if (updatedProd) {
+            console.log(`🔍 [AdminDebug] Product ${updatedProd.name} (${updatedProd.id}) loaded. ImageURL:`, updatedProd.main_image_url);
+          }
+        }
+
         setPagination(prev => ({
           ...prev,
-          total: data.pagination?.total || 0,
-          totalPages: data.pagination?.totalPages || 1,
+          total: data.pagination.total,
+          totalPages: data.pagination.totalPages
         }));
+      } else {
+        showToast('Error al cargar productos', 'error');
       }
     } catch (error) {
       console.error('Error cargando productos:', error);
+      showToast('Error de conexión', 'error');
     } finally {
       setLoading(false);
     }
