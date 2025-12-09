@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { revalidatePath } from 'next/cache';
 import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
@@ -254,6 +255,10 @@ export async function PATCH(
     // Explicit Verification for normal path
     const updatedRow = data[0];
     console.log('✅ API: Product updated successfully via PATCH:', updatedRow);
+
+    // Force cache invalidation
+    revalidatePath('/admin/productos');
+    revalidatePath('/api/admin/products');
 
     // Double check specific fields if present
     if (updateData.main_image_url && updatedRow.main_image_url !== updateData.main_image_url) {

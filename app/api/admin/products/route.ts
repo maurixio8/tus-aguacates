@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 // Create Supabase client directly to avoid import issues
 function getSupabaseClient() {
