@@ -2,10 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 import { revalidatePath } from 'next/cache';
-import { createSupabaseClient } from '@/lib/auth-admin';
+// Removed: import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+
+// Helper para instanciar cliente con Service Role de forma explícita
+const getServiceSupabase = () => {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        headers: {
+          'Cache-Control': 'no-store'
+        }
+      }
+    }
+  );
+};
+
+// ... existing code ...
+
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
@@ -74,7 +96,7 @@ export async function GET(
     const { id } = await params;
     console.log('🔍 API: Fetching single product:', id);
 
-    const supabase = createSupabaseClient();
+    const supabase = getServiceSupabase();
 
     const { data, error } = await supabase
       .from('products')
@@ -155,7 +177,7 @@ export async function PATCH(
 
     console.log('📝 API: PATCH updating product:', { id, body });
 
-    const supabase = createSupabaseClient();
+    const supabase = getServiceSupabase();
 
     // First check if product exists
     const { data: existingProduct, error: fetchError } = await supabase
@@ -302,7 +324,7 @@ export async function PUT(
 
     console.log('📝 API: Updating product:', { id, body });
 
-    const supabase = createSupabaseClient();
+    const supabase = getServiceSupabase();
 
     // First check if product exists
     const { data: existingProduct, error: fetchError } = await supabase
