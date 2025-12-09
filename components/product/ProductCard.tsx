@@ -188,19 +188,20 @@ export function ProductCard({ product }: ProductCardProps) {
                     }}
                     className={`
                       ${variants.length > 2 ? 'min-w-[140px] md:min-w-0 snap-start' : ''}
-                      flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all
+                      flex flex-row items-center justify-center gap-2 px-3 py-2 rounded-lg border-2 transition-all
                       ${selectedVariant?.id === variant.id
                         ? 'border-verde-bosque bg-verde-bosque/10 shadow-md'
                         : 'border-gray-300 bg-white hover:border-verde-bosque/50 hover:shadow-sm'
                       }
                     `}
                   >
-                    <span className={`text-sm font-semibold ${
+                    <span className={`text-sm font-semibold whitespace-nowrap ${
                       selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
                     }`}>
                       {variant.variant_value}
                     </span>
-                    <span className={`text-xs mt-1 font-mono ${
+                    <span className="text-gray-400 text-xs">•</span>
+                    <span className={`text-sm font-mono whitespace-nowrap ${
                       selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
                     }`}>
                       {formatPrice(variant.price)}
