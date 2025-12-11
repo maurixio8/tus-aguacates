@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react';
 import { getUserStats } from '@/lib/recommendations';
 import Link from 'next/link';
 import { ShoppingBag, TrendingUp } from 'lucide-react';
+import { supabase, Profile } from '@/lib/supabase';
+import { getDashboardGreeting } from '@/lib/greetings';
 
 interface UserStats {
   totalOrders: number;
@@ -15,7 +17,9 @@ interface UserStats {
 export function PersonalizedHero() {
   const { user, loading } = useAuth();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
     async function loadStats() {
@@ -35,23 +39,33 @@ export function PersonalizedHero() {
     loadStats();
   }, [user]);
 
-  // Get first name from email or full name
-  const getFirstName = () => {
-    if (!user) return '';
-    const email = user.email || '';
-    const name = email.split('@')[0];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  };
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
 
-  // Get greeting based on time of day
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Buenos días';
-    if (hour < 18) return 'Buenas tardes';
-    return 'Buenas noches';
-  };
+      setProfileLoading(true);
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
 
-  if (loading || statsLoading) {
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setProfileLoading(false);
+      }
+    }
+
+    loadProfile();
+  }, [user]);
+
+  if (loading || statsLoading || profileLoading) {
     return (
       <section className="bg-gradient-to-br from-green-50 via-yellow-50 to-green-50 py-16">
         <div className="container mx-auto px-4">
@@ -74,7 +88,7 @@ export function PersonalizedHero() {
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-8">
               <h1 className="text-4xl md:text-5xl font-display font-bold text-verde-bosque-700 mb-3">
-                {getGreeting()}, {getFirstName()}
+                {getDashboardGreeting(profile, user)}
               </h1>
               <p className="text-xl text-gray-700">
                 Bienvenido de vuelta a Tus Aguacates

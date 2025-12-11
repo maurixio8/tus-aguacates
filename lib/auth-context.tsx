@@ -106,6 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('profiles').insert({
         id: data.user.id,
         full_name: fullName,
+        preferred_name: null, // Se puede configurar después
         role: 'customer',
       });
 

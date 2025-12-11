@@ -76,7 +76,7 @@ export default function CuentaPage() {
 
   // Edit profile state
   const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({ full_name: '', phone: '' });
+  const [editedProfile, setEditedProfile] = useState({ full_name: '', preferred_name: '', phone: '' });
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -112,6 +112,7 @@ export default function CuentaPage() {
         setProfile(profileData);
         setEditedProfile({
           full_name: profileData.full_name || '',
+          preferred_name: profileData.preferred_name || '',
           phone: profileData.phone || '',
         });
       }
@@ -189,6 +190,7 @@ export default function CuentaPage() {
         .from('profiles')
         .update({
           full_name: editedProfile.full_name,
+          preferred_name: editedProfile.preferred_name,
           phone: editedProfile.phone,
           updated_at: new Date().toISOString(),
         })
@@ -338,17 +340,31 @@ export default function CuentaPage() {
                   <User className="w-10 h-10 text-white" />
                 </div>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.full_name}
-                    onChange={(e) => setEditedProfile({ ...editedProfile, full_name: e.target.value })}
-                    className="text-center font-display font-bold text-xl border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
-                    placeholder="Tu nombre"
-                  />
+                  <div className="w-full space-y-2">
+                    <input
+                      type="text"
+                      value={editedProfile.preferred_name}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, preferred_name: e.target.value })}
+                      className="w-full text-center font-display font-bold text-xl border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
+                      placeholder="Nombre preferido (cómo te gustas que te llamemos)"
+                    />
+                    <input
+                      type="text"
+                      value={editedProfile.full_name}
+                      onChange={(e) => setEditedProfile({ ...editedProfile, full_name: e.target.value })}
+                      className="w-full text-center text-sm border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
+                      placeholder="Nombre completo"
+                    />
+                  </div>
                 ) : (
-                  <h2 className="font-display font-bold text-xl text-center">
-                    {profile?.full_name || 'Usuario'}
-                  </h2>
+                  <div className="text-center">
+                    <h2 className="font-display font-bold text-xl">
+                      {profile?.preferred_name || profile?.full_name || 'Usuario'}
+                    </h2>
+                    {profile?.preferred_name && profile?.full_name && (
+                      <p className="text-sm text-gray-500 mt-1">{profile.full_name}</p>
+                    )}
+                  </div>
                 )}
                 <span className="text-sm text-gray-500 mt-1">Cliente</span>
               </div>
@@ -400,6 +416,7 @@ export default function CuentaPage() {
                       setIsEditing(false);
                       setEditedProfile({
                         full_name: profile?.full_name || '',
+                        preferred_name: profile?.preferred_name || '',
                         phone: profile?.phone || '',
                       });
                     }}

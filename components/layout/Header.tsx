@@ -7,24 +7,47 @@ import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
 import branding from '@/lib/config/branding';
 import { SearchModal } from '../search/SearchModal';
+import { supabase, Profile } from '@/lib/supabase';
+import { getHeaderGreeting } from '@/lib/greetings';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const itemCount = getItemCount();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  const getFirstName = () => {
-    if (!user) return '';
-    const email = user.email || '';
-    const name = email.split('@')[0];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  };
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      setLoadingProfile(true);
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+
+    loadProfile();
+  }, [user]);
 
   return (
     <header className="hidden md:block bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
@@ -88,7 +111,7 @@ export function Header() {
               >
                 <User className="w-5 h-5" />
                 <span className="hidden lg:inline text-sm">
-                  Hola, {getFirstName()}
+                  {loadingProfile ? 'Cargando...' : getHeaderGreeting(profile, user)}
                 </span>
               </Link>
             ) : (
