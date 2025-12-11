@@ -91,9 +91,9 @@ export function ChatBot() {
       sender: 'bot',
       timestamp: new Date(),
       quickReplies: [
-        { label: '📍 Estado de Pedido', value: 'estado pedido' },
-        { label: '🥑 Ayuda para elegir', value: 'ayuda compra' },
-        { label: '🔥 Ver ofertas', value: 'ofertas' }
+        { label: '🥑 Aguacates Hass', value: 'intent_avocados' },
+        { label: '🧺 Combos & Mercado', value: 'intent_market' },
+        { label: '🔥 Ver ofertas', value: 'intent_offers' }
       ]
     }]);
   };
@@ -308,8 +308,8 @@ export function ChatBot() {
             {message.text && (
               <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${message.sender === 'user'
-                    ? 'bg-verde-bosque text-white rounded-br-none'
-                    : 'bg-white text-gray-700 border border-gray-100 rounded-bl-none'
+                  ? 'bg-verde-bosque text-white rounded-br-none'
+                  : 'bg-white text-gray-700 border border-gray-100 rounded-bl-none'
                   }`}>
                   <p dangerouslySetInnerHTML={{ __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }} />
                 </div>
