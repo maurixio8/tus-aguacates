@@ -951,6 +951,24 @@ export default function ProductsPage() {
                 />
               </div>
 
+              {/* Categoría */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categoría *</label>
+                <select
+                  value={editingProduct.category_id}
+                  onChange={(e) => setEditingProduct({ ...editingProduct, category_id: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none bg-white"
+                  required
+                >
+                  <option value="">Selecciona una categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Opciones */}
               <div className="flex gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
