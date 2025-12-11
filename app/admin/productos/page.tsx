@@ -86,6 +86,12 @@ export default function ProductsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedProductForImage, setSelectedProductForImage] = useState<string | null>(null);
 
+  // Estados para edición inline
+  const [editingCategory, setEditingCategory] = useState<string | null>(null);
+  const [editingPrice, setEditingPrice] = useState<string | null>(null);
+  const [tempPrice, setTempPrice] = useState<string>('');
+  const [savingField, setSavingField] = useState<{ productId: string; field: string } | null>(null);
+
   // New Image Audit State
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [uploadStep, setUploadStep] = useState<'select' | 'optimizing' | 'review'>('select');
@@ -290,6 +296,76 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Error eliminando producto:', error);
       alert('Error al eliminar el producto');
+    }
+  };
+
+  // Cambio rápido de categoría (inline)
+  const handleQuickCategoryChange = async (productId: string, newCategoryId: string) => {
+    setSavingField({ productId, field: 'category' });
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ category_id: newCategoryId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Actualizar producto en la lista local
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, category_id: newCategoryId, categories: categories.find(c => c.id === newCategoryId) } : p
+        ));
+        showToast('Categoría actualizada ✓', 'success');
+      } else {
+        showToast('Error al actualizar categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error actualizando categoría:', error);
+      showToast('Error de conexión', 'error');
+    } finally {
+      setSavingField(null);
+      setEditingCategory(null);
+    }
+  };
+
+  // Cambio rápido de precio (inline)
+  const handleQuickPriceChange = async (productId: string, newPrice: string) => {
+    const priceNum = parseFloat(newPrice);
+    if (isNaN(priceNum) || priceNum < 0) {
+      showToast('Precio inválido', 'error');
+      setEditingPrice(null);
+      return;
+    }
+
+    setSavingField({ productId, field: 'price' });
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ price: priceNum }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Actualizar producto en la lista local
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, price: priceNum } : p
+        ));
+        showToast('Precio actualizado ✓', 'success');
+      } else {
+        showToast('Error al actualizar precio', 'error');
+      }
+    } catch (error) {
+      console.error('Error actualizando precio:', error);
+      showToast('Error de conexión', 'error');
+    } finally {
+      setSavingField(null);
+      setEditingPrice(null);
+      setTempPrice('');
     }
   };
 
@@ -773,21 +849,92 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                          {product.category_name || product.categories?.name || 'Sin categoría'}
-                        </span>
+                        {editingCategory === product.id ? (
+                          <div className="relative">
+                            <select
+                              value={product.category_id}
+                              onChange={(e) => handleQuickCategoryChange(product.id, e.target.value)}
+                              onBlur={() => setEditingCategory(null)}
+                              autoFocus
+                              disabled={savingField?.productId === product.id && savingField?.field === 'category'}
+                              className="w-full px-3 py-2.5 text-sm font-medium border-2 border-green-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 bg-white appearance-none cursor-pointer min-h-[44px]"
+                              style={{ WebkitAppearance: 'none' }}
+                            >
+                              {categories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                  {cat.name}
+                                </option>
+                              ))}
+                            </select>
+                            {savingField?.productId === product.id && savingField?.field === 'category' && (
+                              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                                <Loader2 className="w-4 h-4 text-green-600 animate-spin" />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setEditingCategory(product.id)}
+                            className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-green-50 hover:text-green-700 text-gray-700 transition-all active:scale-95 min-h-[44px] inline-flex items-center gap-1.5"
+                          >
+                            {product.category_name || product.categories?.name || 'Sin categoría'}
+                            <Edit className="w-3 h-3 opacity-50" />
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 lg:px-6 py-4">
-                        <div>
-                          <span className="font-semibold text-gray-900">
-                            {formatCurrency(product.price)}
-                          </span>
-                          {product.discount_price && (
-                            <span className="block text-xs text-green-600">
-                              Oferta: {formatCurrency(product.discount_price)}
+                        {editingPrice === product.id ? (
+                          <div className="relative flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={tempPrice}
+                              onChange={(e) => setTempPrice(e.target.value)}
+                              onBlur={() => {
+                                if (tempPrice && tempPrice !== product.price.toString()) {
+                                  handleQuickPriceChange(product.id, tempPrice);
+                                } else {
+                                  setEditingPrice(null);
+                                  setTempPrice('');
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  if (tempPrice) {
+                                    handleQuickPriceChange(product.id, tempPrice);
+                                  }
+                                } else if (e.key === 'Escape') {
+                                  setEditingPrice(null);
+                                  setTempPrice('');
+                                }
+                              }}
+                              autoFocus
+                              disabled={savingField?.productId === product.id && savingField?.field === 'price'}
+                              className="w-32 px-3 py-2.5 text-sm font-semibold border-2 border-green-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 min-h-[44px]"
+                              placeholder="Precio"
+                            />
+                            {savingField?.productId === product.id && savingField?.field === 'price' && (
+                              <Loader2 className="w-4 h-4 text-green-600 animate-spin" />
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setEditingPrice(product.id);
+                              setTempPrice(product.price.toString());
+                            }}
+                            className="group text-left hover:bg-green-50 px-3 py-2 rounded-lg transition-all active:scale-95 min-h-[44px] inline-flex flex-col justify-center"
+                          >
+                            <span className="font-semibold text-gray-900 flex items-center gap-1.5">
+                              {formatCurrency(product.price)}
+                              <Edit className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
                             </span>
-                          )}
-                        </div>
+                            {product.discount_price && (
+                              <span className="block text-xs text-green-600">
+                                Oferta: {formatCurrency(product.discount_price)}
+                              </span>
+                            )}
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
                         <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
