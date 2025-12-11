@@ -169,11 +169,15 @@ ${orderData.appliedCoupon.description}
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
       window.open(whatsappUrl, '_blank');
 
-      // 4. Actualizar estado del pedido con método de pago
+      // 4. Actualizar estado del pedido con método de pago usando API segura
       const paymentStatus = formData.paymentMethod === 'efectivo' ? 'pendiente_pago' : 'pagado';
-      await supabase
-        .from('guest_orders')
-        .update({
+      await fetch('/api/guest-orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: orderId,
           status: formData.paymentMethod === 'efectivo' ? 'pendiente_entrega' : 'pagado',
           payment_status: paymentStatus,
           payment_method: formData.paymentMethod,
@@ -181,7 +185,7 @@ ${orderData.appliedCoupon.description}
           whatsapp_message: mensajeWhatsApp,
           whatsapp_sent: true
         })
-        .eq('id', orderId);
+      });
 
       // 5. Opcional: crear cuenta si el usuario lo solicitó
       if (formData.createAccount && formData.password) {
@@ -234,14 +238,18 @@ ${orderData.appliedCoupon.description}
 
   const handlePaymentError = (errorMsg: string) => {
     setError(errorMsg);
-    // Actualizar estado del pedido a "pago fallido"
-    supabase
-      .from('guest_orders')
-      .update({ 
+    // Actualizar estado del pedido a "pago fallido" usando API segura
+    fetch('/api/guest-orders/update', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        orderId: orderId,
         status: 'pago_fallido',
         payment_status: 'fallido'
       })
-      .eq('id', orderId);
+    }).catch(err => console.error('Error updating failed payment:', err));
   };
 
   const handleConfirmOrder = async () => {
@@ -340,17 +348,21 @@ ${orderData.appliedCoupon.description}
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
       window.open(whatsappUrl, '_blank');
 
-      // 4. Actualizar estado del pedido
-      await supabase
-        .from('guest_orders')
-        .update({
+      // 4. Actualizar estado del pedido usando API segura
+      await fetch('/api/guest-orders/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          orderId: guestOrder.id,
           status: 'pendiente_entrega',
           payment_status: 'pendiente_pago',
           payment_method: 'efectivo',
           whatsapp_message: mensajeWhatsApp,
           whatsapp_sent: true
         })
-        .eq('id', guestOrder.id);
+      });
 
       // Limpiar carrito y redirigir
       clearCart();

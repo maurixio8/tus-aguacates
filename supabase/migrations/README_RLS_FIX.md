@@ -49,6 +49,7 @@ SET search_path = public, pg_temp
 ### Guest Orders (Pedidos de Invitados)
 - ✍️ **Creación pública:** Cualquiera puede crear pedidos (incluso usuarios anónimos)
 - 🔒 **Gestión admin:** Solo admins pueden ver/actualizar/eliminar pedidos
+- 🛡️ **Actualización segura:** Se usa API route con service_role para actualizar pedidos después del checkout
 
 ### Purchases & Purchase Items (Compras a Proveedores)
 - 🔒 **Solo admin:** Acceso completo solo para usuarios autenticados
@@ -68,19 +69,61 @@ Si no existían previamente, se crearon las siguientes tablas:
 - `suppliers` - Directorio de proveedores
 - `wishlist_items` - Listas de deseos de usuarios
 
+## Requisitos Previos
+
+### ⚠️ Variable de Entorno Requerida
+Para que el checkout funcione correctamente con las nuevas políticas RLS, necesitas agregar la **service role key** a tus variables de entorno:
+
+```bash
+# En tu archivo .env.local
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui
+```
+
+**⚠️ SEGURIDAD IMPORTANTE:**
+- La service role key **bypasses RLS** - úsala solo en API routes del servidor
+- **NUNCA** la expongas en el código del cliente
+- **NUNCA** la subas al repositorio (agrégala a .gitignore)
+- Solo se usa en la nueva API route `/api/guest-orders/update`
+
+**Dónde encontrarla:**
+1. Ve a Supabase Dashboard → Project Settings → API
+2. Busca la sección "Project API keys"
+3. Copia el valor de `service_role` key (secret)
+
+## Archivos Nuevos Creados
+
+Esta corrección incluye:
+1. **Migración SQL:** `supabase/migrations/20251211_fix_all_rls_security_issues.sql`
+2. **API Route segura:** `app/api/guest-orders/update/route.ts`
+3. **Cambios en checkout:** `components/checkout/GuestCheckoutForm.tsx`
+
 ## Cómo Aplicar Esta Migración
 
-### Opción 1: Supabase Dashboard (Recomendado)
+### Paso 1: Configurar Variable de Entorno
+```bash
+# Agrega esto a .env.local
+SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_de_supabase
+```
+
+### Paso 2: Ejecutar Migración SQL
+
+**Opción A: Supabase Dashboard (Recomendado)**
 1. Ir al SQL Editor en Supabase Dashboard
 2. Abrir el archivo `20251211_fix_all_rls_security_issues.sql`
 3. Copiar todo el contenido
 4. Ejecutar en el SQL Editor
 5. Verificar que no haya errores
 
-### Opción 2: Supabase CLI
+**Opción B: Supabase CLI**
 ```bash
 supabase db push
 ```
+
+### Paso 3: Verificar Código
+Los cambios en el código ya están aplicados automáticamente:
+- ✅ Nueva API route creada
+- ✅ GuestCheckoutForm actualizado
+- ✅ Llamadas a Supabase reemplazadas por llamadas a la API
 
 ## Verificación Post-Migración
 
