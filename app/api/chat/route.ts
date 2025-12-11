@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import DOMPurify from 'isomorphic-dompurify';
+import xss from 'xss';
 
 export async function POST(req: Request) {
     const body = await req.json();
@@ -40,11 +40,11 @@ export async function POST(req: Request) {
         if (data.timeline && Array.isArray(data.timeline)) {
             data.timeline.forEach((item: any) => {
                 if (item.type === 'text' && item.content) {
-                    item.content = DOMPurify.sanitize(item.content);
+                    item.content = xss(item.content);
                 }
             });
         } else if (data.text) {
-            data.text = DOMPurify.sanitize(data.text);
+            data.text = xss(data.text);
         }
 
         return NextResponse.json(data);
