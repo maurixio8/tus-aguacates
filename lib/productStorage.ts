@@ -289,7 +289,8 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       'saludables': ['🍯🥜 SALUDABLES', 'SALUDABLES', 'Saludables'],
       'especias': ['🥗🌱☘️ Especias', 'Especias', 'Especias y Condimentos', 'Especias y Hierbas'],
       'desgranados': ['🌽 Desgranados', 'Desgranados'],
-      'gourmet': ['🍅🌽 Gourmet', 'Gourmet']
+      'gourmet': ['🍅🌽 Gourmet', 'Gourmet'],
+      'productos-nuevos': ['PRODUCTOS NUEVOS', 'Productos Nuevos', 'Productos nuevos']
     };
 
     // Determinar si es un slug o un nombre
@@ -398,6 +399,7 @@ export const slugToCategory = (slug: string): string => {
     'especias': '🥗🌱☘️ Especias',
     'desgranados': '🌽 Desgranados',
     'gourmet': '🍅🌽 Gourmet',
+    'productos-nuevos': '✨ Productos Nuevos',
     // Compatibilidad con URLs antiguas
     'aromaticas-y-zumos': '🌿 Aromáticas y Zumos',
     'tropicales': '🍊🍎 Tropicales'

@@ -65,6 +65,12 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; name: string; description
     name: 'Verduras',
     description: 'Verduras frescas y orgánicas',
     imageSlug: 'gourmet' // Fallback a gourmet
+  },
+  'productos-nuevos': {
+    emoji: '✨',
+    name: 'Productos Nuevos',
+    description: 'Descubre nuestros productos más recientes',
+    imageSlug: 'aguacates' // Fallback a aguacates
   }
 };
 
