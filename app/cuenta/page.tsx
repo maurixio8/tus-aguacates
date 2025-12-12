@@ -65,6 +65,7 @@ export default function CuentaPage() {
   const { items: wishlistItems, loadWishlist, getWishlistCount } = useWishlistStore();
   const { addItem } = useCartStore();
 
+  const [mounted, setMounted] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
@@ -79,6 +80,11 @@ export default function CuentaPage() {
   const [editedProfile, setEditedProfile] = useState({ full_name: '', preferred_name: '', phone: '' });
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // Esperar hidratacion del store antes de leer datos
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push('/auth/login');
@@ -86,19 +92,19 @@ export default function CuentaPage() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (user) {
+    if (user && mounted) {
       loadUserData();
       loadWishlist(user.id);
     }
-  }, [user, loadWishlist]);
+  }, [user, mounted, loadWishlist]);
 
   useEffect(() => {
-    if (wishlistItems.length > 0) {
+    if (mounted && wishlistItems.length > 0) {
       loadFavoriteProducts();
-    } else {
+    } else if (mounted) {
       setFavoriteProducts([]);
     }
-  }, [wishlistItems]);
+  }, [wishlistItems, mounted]);
 
   async function loadUserData() {
     try {
@@ -318,7 +324,7 @@ export default function CuentaPage() {
     return labels[status] || status;
   };
 
-  if (authLoading || loading) {
+  if (authLoading || loading || !mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-verde-bosque animate-spin" />
