@@ -432,7 +432,26 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
     console.log('🔄 Starting Supabase to localStorage sync...');
 
-    // 1. Obtener datos de Supabase
+    // 1. Obtener categorias primero para mapear category_id -> category name
+    const { data: categories, error: catError } = await supabase
+      .from('categories')
+      .select('id, name, slug')
+      .eq('is_active', true);
+
+    if (catError) {
+      console.warn('⚠️ Could not fetch categories:', catError);
+    }
+
+    // Crear mapa de category_id -> category name
+    const categoryMap = new Map<string, string>();
+    if (categories) {
+      categories.forEach(cat => {
+        categoryMap.set(cat.id, cat.name);
+      });
+      console.log(`📂 Loaded ${categories.length} categories for mapping`);
+    }
+
+    // 2. Obtener productos de Supabase
     const { data: supabaseProducts, error } = await supabase
       .from('products')
       .select('*')
@@ -445,43 +464,55 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
     console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
 
-    // 2. Obtener datos actuales de localStorage (sincrono para evitar recursion)
+    // 3. Obtener datos actuales de localStorage (sincrono para evitar recursion)
     const localProducts = getProductsSync();
     console.log(`📦 Found ${localProducts.length} products in localStorage`);
 
-    // 3. Mapear y combinar datos
+    // 4. Mapear y combinar datos
     let mergedProducts: Product[] = [];
 
     if (supabaseProducts && supabaseProducts.length > 0) {
       // Convertir productos de Supabase al formato local
-      const convertedProducts: Product[] = supabaseProducts.map(sp => ({
-        id: sp.id,
-        name: sp.name,
-        description: sp.description,
-        price: sp.price,
-        // Mapear campos importantes
-        image: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
-        main_image_url: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
-        category: sp.category || localProducts.find(lp => lp.id === sp.id)?.category,
-        category_id: sp.category_id,
-        discount_price: sp.discount_price,
-        unit: sp.unit,
-        weight: sp.weight,
-        min_quantity: sp.min_quantity,
-        stock: sp.stock,
-        reserved_stock: sp.reserved_stock,
-        is_featured: sp.is_featured,
-        is_organic: sp.is_organic,
-        is_active: sp.is_active,
-        benefits: sp.benefits,
-        rating: sp.rating,
-        review_count: sp.review_count,
-        slug: sp.slug,
-        sku: sp.sku,
-        created_at: sp.created_at,
-        updated_at: sp.updated_at,
-        variants: sp.variants
-      }));
+      const convertedProducts: Product[] = supabaseProducts.map(sp => {
+        // Resolver categoria: usar campo category directo, o mapear desde category_id
+        let resolvedCategory = sp.category;
+        if (!resolvedCategory && sp.category_id && categoryMap.has(sp.category_id)) {
+          resolvedCategory = categoryMap.get(sp.category_id);
+        }
+        // Fallback: buscar en localStorage si existe
+        if (!resolvedCategory) {
+          resolvedCategory = localProducts.find(lp => lp.id === sp.id)?.category;
+        }
+
+        return {
+          id: sp.id,
+          name: sp.name,
+          description: sp.description,
+          price: sp.price,
+          // Mapear campos importantes
+          image: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
+          main_image_url: sp.main_image_url || localProducts.find(lp => lp.id === sp.id)?.image || '',
+          category: resolvedCategory,
+          category_id: sp.category_id,
+          discount_price: sp.discount_price,
+          unit: sp.unit,
+          weight: sp.weight,
+          min_quantity: sp.min_quantity,
+          stock: sp.stock,
+          reserved_stock: sp.reserved_stock,
+          is_featured: sp.is_featured,
+          is_organic: sp.is_organic,
+          is_active: sp.is_active,
+          benefits: sp.benefits,
+          rating: sp.rating,
+          review_count: sp.review_count,
+          slug: sp.slug,
+          sku: sp.sku,
+          created_at: sp.created_at,
+          updated_at: sp.updated_at,
+          variants: sp.variants
+        };
+      });
 
       // 4. Combinar con productos locales que no están en Supabase
       const supabaseIds = new Set(convertedProducts.map(p => p.id));
@@ -503,6 +534,15 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
       });
 
       mergedProducts = [...convertedProducts, ...localOnly];
+
+      // Log category resolution stats
+      const withCategory = convertedProducts.filter(p => p.category).length;
+      const withoutCategory = convertedProducts.filter(p => !p.category).length;
+      console.log(`📊 Category stats: ${withCategory} with category, ${withoutCategory} without`);
+      if (withoutCategory > 0) {
+        const sample = convertedProducts.filter(p => !p.category).slice(0, 3);
+        console.log(`⚠️ Sample products without category:`, sample.map(p => ({ id: p.id, name: p.name, category_id: p.category_id })));
+      }
 
       console.log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
     } else {
@@ -560,6 +600,14 @@ export const initializeProducts = async (): Promise<Product[]> => {
     console.log('✅ [INIT] Productos con UUIDs reales listos:', products.length);
   } else if (products.length > 0) {
     console.warn('⚠️ [INIT] ADVERTENCIA: Productos sin UUIDs de Supabase. Wishlist podria fallar.');
+  }
+
+  // Verificar cobertura de categorias
+  const withCategory = products.filter(p => p.category).length;
+  if (withCategory < products.length) {
+    console.warn(`⚠️ [INIT] ${products.length - withCategory} productos sin categoria asignada`);
+  } else {
+    console.log(`✅ [INIT] Todos los productos (${products.length}) tienen categoria`);
   }
 
   // Notificar a la UI que hay datos nuevos
