@@ -149,29 +149,30 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        {/* Contenido */}
-        <div className="p-4">
-          <h3 className="font-semibold text-lg text-gray-900 mb-3 line-clamp-2">
+        {/* Contenido - Padding reducido para tarjeta más compacta */}
+        <div className="p-3">
+          {/* Nombre centrado debajo de la imagen */}
+          <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
             {product.name}
           </h3>
 
-          {/* Rating */}
+          {/* Rating compacto */}
           {(product.review_count ?? 0) > 0 && (
-            <div className="flex items-center gap-1 mb-3">
-              <span className="text-yellow-500">★</span>
-              <span className="text-sm font-medium">{(product.rating ?? 0).toFixed(1)}</span>
+            <div className="flex items-center justify-center gap-1 mb-2">
+              <span className="text-yellow-500 text-sm">★</span>
+              <span className="text-xs font-medium">{(product.rating ?? 0).toFixed(1)}</span>
               <span className="text-xs text-gray-500">({product.review_count ?? 0})</span>
             </div>
           )}
 
-          {/* Botones Toggle de variantes - Diseño adaptativo */}
+          {/* Botones Toggle de variantes - Rectangulares horizontales (anchos y bajos) */}
           {variants.length > 0 && (
-            <div className="mb-3" onClick={(e) => e.preventDefault()}>
-              {/* Grid para 2 variantes, Scroll horizontal para 3+ */}
+            <div className="mb-2" onClick={(e) => e.preventDefault()}>
               <div className={`
+                gap-1.5
                 ${variants.length <= 2
-                  ? 'grid grid-cols-2 gap-2'
-                  : 'flex gap-2 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1'
+                  ? 'grid grid-cols-2'
+                  : 'flex md:grid overflow-x-auto md:overflow-x-visible snap-x snap-mandatory md:snap-none scrollbar-hide pb-1 md:pb-0 md:grid-cols-2'
                 }
               `}>
                 {variants.map((variant) => (
@@ -183,20 +184,20 @@ export function ProductCard({ product }: ProductCardProps) {
                       setSelectedVariant(variant);
                     }}
                     className={`
-                      ${variants.length > 2 ? 'min-w-[140px] snap-start' : ''}
-                      flex flex-col items-center justify-center p-3 rounded-lg border-2 transition-all
+                      ${variants.length > 2 ? 'min-w-[120px] md:min-w-0 snap-start' : ''}
+                      flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md border-2 transition-all
                       ${selectedVariant?.id === variant.id
-                        ? 'border-verde-bosque bg-verde-bosque/10 shadow-md'
-                        : 'border-gray-300 bg-white hover:border-verde-bosque/50 hover:shadow-sm'
+                        ? 'border-verde-bosque bg-verde-bosque/10 shadow-sm'
+                        : 'border-gray-300 bg-white hover:border-verde-bosque/50'
                       }
                     `}
                   >
-                    <span className={`text-sm font-semibold ${
+                    <span className={`text-xs font-semibold truncate ${
                       selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
                     }`}>
                       {variant.variant_value}
                     </span>
-                    <span className={`text-xs mt-1 font-mono ${
+                    <span className={`text-xs font-mono whitespace-nowrap ${
                       selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
                     }`}>
                       {formatPrice(variant.price)}
@@ -205,13 +206,13 @@ export function ProductCard({ product }: ProductCardProps) {
                 ))}
               </div>
 
-              {/* Indicadores para scroll (solo si hay 3+ variantes) */}
+              {/* Indicadores para scroll (solo móvil con 3+ variantes) */}
               {variants.length > 2 && (
-                <div className="flex justify-center gap-1 mt-2">
+                <div className="flex md:hidden justify-center gap-1 mt-1.5">
                   {variants.map((_, index) => (
                     <div
                       key={index}
-                      className={`h-1 rounded-full transition-all ${
+                      className={`h-0.5 rounded-full transition-all ${
                         index === 0 ? 'w-2 bg-verde-bosque' : 'w-1 bg-gray-300'
                       }`}
                     />
@@ -221,20 +222,20 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           )}
 
-          {/* Precio */}
-          <div className="flex items-end justify-between mb-3">
-            <div>
+          {/* Precio compacto */}
+          <div className="flex items-end justify-between mb-2">
+            <div className="flex-1">
               {hasDiscount ? (
                 <>
-                  <div className="text-2xl font-bold font-mono text-verde-bosque">
+                  <div className="text-xl font-bold font-mono text-verde-bosque">
                     {formatPrice(product.discount_price!)}
                   </div>
-                  <div className="text-sm text-gray-500 line-through">
+                  <div className="text-xs text-gray-500 line-through">
                     {formatPrice(displayPrice)}
                   </div>
                 </>
               ) : (
-                <div className="text-2xl font-bold font-mono text-verde-bosque">
+                <div className="text-xl font-bold font-mono text-verde-bosque">
                   {formatPrice(displayPrice)}
                 </div>
               )}
@@ -242,14 +243,14 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Botón Agregar al Carrito */}
+          {/* Botón Agregar al Carrito - Rectangular horizontal (más ancho, menos alto) */}
           <button
             onClick={handleAddToCart}
             disabled={(product.stock || 0) === 0}
-            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400"
+            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
           >
             <ShoppingCart className="w-4 h-4" />
-            {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
+            {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
           </button>
         </div>
       </div>
