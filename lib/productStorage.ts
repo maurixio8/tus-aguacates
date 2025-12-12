@@ -126,13 +126,24 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 
 
 export const getProducts = async (): Promise<Product[]> => {
-  // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
-  const baseProducts = await loadProductsFromJSON();
-
-  // 2. Cargar datos locales (que pueden tener fotos actualizadas)
+  // 1. Cargar datos locales primero (pueden tener UUIDs de Supabase)
   const localProducts = getProductsSync();
 
-  // 3. Si hay datos locales, realizar FUSIÓN INTELIGENTE
+  // 2. Si hay productos locales con UUIDs de Supabase, usarlos directamente
+  // Esto ocurre despues de syncSupabaseToLocal()
+  const hasSupabaseProducts = localProducts.some(p =>
+    p.id && !p.id.startsWith('product-') && !p.id.startsWith('prod-')
+  );
+
+  if (hasSupabaseProducts && localProducts.length > 0) {
+    console.log(`✅ Usando ${localProducts.length} productos de Supabase (UUIDs reales)`);
+    return localProducts;
+  }
+
+  // 3. Fallback: Cargar catalogo base del JSON (IDs sinteticos)
+  const baseProducts = await loadProductsFromJSON();
+
+  // 4. Si hay datos locales sin UUIDs, realizar FUSION INTELIGENTE
   if (localProducts.length > 0 && baseProducts.length > 0) {
     console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
 
@@ -154,10 +165,20 @@ export const getProducts = async (): Promise<Product[]> => {
       });
 
       if (localMatch) {
+        // Determinar si el ID local es un UUID real de Supabase (no sintetico)
+        const isLocalIdUUID = localMatch.id && !localMatch.id.startsWith('product-') && !localMatch.id.startsWith('prod-');
+
+        // Debug: log cuando usamos UUID de Supabase
+        if (isLocalIdUUID && baseProd.id !== localMatch.id) {
+          console.log(`🔄 Usando UUID de Supabase para "${baseProd.name}": ${localMatch.id}`);
+        }
+
         // Mantener base pero sobrescribir con datos locales importantes
         return {
           ...baseProd,
-          // ✅ CRÍTICO: Usar la imagen local si existe (prioridad máxima)
+          // ✅ CRITICO: Si local tiene UUID de Supabase, usarlo en lugar del ID sintetico
+          id: isLocalIdUUID ? localMatch.id : baseProd.id,
+          // ✅ CRITICO: Usar la imagen local si existe (prioridad maxima)
           image: localMatch.image || localMatch.main_image_url || baseProd.image,
           main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
 
@@ -165,8 +186,8 @@ export const getProducts = async (): Promise<Product[]> => {
           is_active: localMatch.is_active ?? baseProd.is_active,
           price: localMatch.price || baseProd.price,
           description: localMatch.description || baseProd.description,
-          // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
-          // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
+          // Preservar category_id de Supabase si existe
+          category_id: localMatch.category_id || baseProd.category_id,
         };
       }
       return baseProd;
@@ -405,8 +426,8 @@ export const slugToCategory = (slug: string): string => {
   return categories[slug] || slug;
 };
 
-// 🔧 FUNCIÓN DE SINCRONIZACIÓN - OPCIÓN B
-// Sincroniza datos de Supabase a localStorage como única fuente de verdad
+// 🔧 FUNCION DE SINCRONIZACION
+// Sincroniza datos de Supabase a localStorage como unica fuente de verdad
 export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
     console.log('🔄 Starting Supabase to localStorage sync...');
@@ -424,8 +445,8 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
     console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
 
-    // 2. Obtener datos actuales de localStorage
-    const localProducts = await getProducts();
+    // 2. Obtener datos actuales de localStorage (sincrono para evitar recursion)
+    const localProducts = getProductsSync();
     console.log(`📦 Found ${localProducts.length} products in localStorage`);
 
     // 3. Mapear y combinar datos
