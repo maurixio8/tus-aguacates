@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "outputDirectory": ".next",
+        "buildCommand": "npm run build"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/((?!api|_next|static|public|favicon.ico).*)",
+      "dest": "/"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_SUPABASE_URL": "",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "",
+    "SUPABASE_SERVICE_ROLE_KEY": "",
+    "STRIPE_PUBLISHABLE_KEY": "",
+    "STRIPE_SECRET_KEY": ""
+  },
+  "framework": "nextjs"
+}

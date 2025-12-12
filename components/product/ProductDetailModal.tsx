@@ -5,6 +5,8 @@ import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from 'lucid
 import type { Product } from '@/lib/productStorage';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
+import { useAuth } from '@/lib/auth-context';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
 
 interface ProductVariant {
@@ -23,11 +25,15 @@ interface ProductDetailModalProps {
 
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
   const { addItem } = useCartStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { user } = useAuth();
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  
+  const isWishlisted = isInWishlist(product.id);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
@@ -43,6 +49,37 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
       setSelectedVariant(variantsWithPrice[0]);
     }
   }, [product, isOpen]);
+
+  // Manejar clic en el botón de favoritos
+  const handleWishlistClick = async () => {
+    if (!user) {
+      // Si no está logueado, redirigir a login
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    setIsWishlistLoading(true);
+
+    try {
+      if (isWishlisted) {
+        // Eliminar de favoritos
+        const success = await removeFromWishlist(product.id, user.id);
+        if (success) {
+          console.log('✅ Producto eliminado de favoritos');
+        }
+      } else {
+        // Agregar a favoritos
+        const success = await addToWishlist(product, user.id);
+        if (success) {
+          console.log('✅ Producto agregado a favoritos');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error al gestionar favoritos:', error);
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -133,16 +170,17 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 {/* Acciones en imagen (Mobile-friendly) */}
                 <div className="flex gap-3">
                   <button
-                    onClick={() => setIsWishlisted(!isWishlisted)}
+                    onClick={handleWishlistClick}
+                    disabled={isWishlistLoading}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all ${
                       isWishlisted
                         ? 'bg-red-50 border-red-300 text-red-600'
                         : 'border-gray-300 text-gray-700 hover:border-red-300'
-                    }`}
+                    } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
                     <span className="hidden sm:inline text-sm font-medium">
-                      {isWishlisted ? 'Guardado' : 'Guardar'}
+                      {isWishlistLoading ? 'Procesando...' : (isWishlisted ? 'Guardado' : 'Guardar')}
                     </span>
                   </button>
 

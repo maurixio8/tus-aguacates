@@ -7,6 +7,8 @@ import { ShoppingCart, Heart } from 'lucide-react';
 import type { Product } from '@/lib/productStorage';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
+import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
 import { ProductDetailModal } from './ProductDetailModal';
@@ -25,13 +27,17 @@ interface ProductCardProps {
 
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { user } = useAuth();
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
+  const isProductInWishlist = isInWishlist(product.id);
 
   // Cargar variantes del producto (locales o Supabase)
   useEffect(() => {
@@ -71,6 +77,40 @@ export function ProductCard({ product }: ProductCardProps) {
       loadVariantsFromSupabase();
     }
   }, [product.id, product.price, product.discount_price, product.base_price, product.variants]);
+
+  // Manejar clic en el botón de favoritos
+  const handleWishlistClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      // Si no está logueado, redirigir a login
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    setIsWishlistLoading(true);
+
+    try {
+      if (isProductInWishlist) {
+        // Eliminar de favoritos
+        const success = await removeFromWishlist(product.id, user.id);
+        if (success) {
+          console.log('✅ Producto eliminado de favoritos');
+        }
+      } else {
+        // Agregar a favoritos
+        const success = await addToWishlist(product, user.id);
+        if (success) {
+          console.log('✅ Producto agregado a favoritos');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error al gestionar favoritos:', error);
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -135,10 +175,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Botón Favorito */}
           <button
-            className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all"
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+            className={`absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all ${
+              isProductInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-red-500'
+            } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            onClick={handleWishlistClick}
+            disabled={isWishlistLoading}
           >
-            <Heart className="w-4 h-4 text-gray-600" />
+            <Heart className={`w-4 h-4 ${isProductInWishlist ? 'fill-current' : ''}`} />
           </button>
 
           {/* Hover overlay */}
