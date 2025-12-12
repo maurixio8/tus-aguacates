@@ -10,8 +10,24 @@
       "destination": "/api/wishlist"
     },
     {
-      "source": "/api/wishlist/:id",
-      "destination": "/api/wishlist/:id"
+      "source": "/api/wishlist/:path*",
+      "destination": "/api/wishlist/:path*"
+    },
+    {
+      "source": "/perfil/mis-pedidos",
+      "destination": "/perfil/mis-pedidos"
+    },
+    {
+      "source": "/faq",
+      "destination": "/faq"
+    },
+    {
+      "source": "/devoluciones",
+      "destination": "/devoluciones"
+    },
+    {
+      "source": "/politicas",
+      "destination": "/politicas"
     }
   ],
   "headers": [

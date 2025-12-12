@@ -16,12 +16,16 @@ export async function OPTIONS(request: NextRequest) {
 
 // GET - Obtener todos los favoritos del usuario
 export async function GET(request: NextRequest) {
-  console.log('🔍 [WISHLIST-API] GET request received');
+  const startTime = Date.now();
+  console.log('🔍 [WISHLIST-API] GET request received at:', new Date().toISOString());
+  console.log('🌐 [WISHLIST-API] Request URL:', request.url);
+  console.log('🔍 [WISHLIST-API] Request headers:', Object.fromEntries(request.headers.entries()));
   
   try {
     // Verificar autenticación
     const authHeader = request.headers.get('authorization');
     console.log('🔐 [WISHLIST-API] Auth header present:', !!authHeader);
+    console.log('🔐 [WISHLIST-API] Auth header value:', authHeader ? `${authHeader.substring(0, 20)}...` : 'null');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.log('❌ [WISHLIST-API] No valid authorization header');
@@ -33,11 +37,13 @@ export async function GET(request: NextRequest) {
 
     const token = authHeader.split(' ')[1];
     console.log('🔑 [WISHLIST-API] Verifying token...');
+    console.log('🔑 [WISHLIST-API] Token length:', token?.length || 0);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       console.error('❌ [WISHLIST-API] Auth error:', authError);
+      console.error('❌ [WISHLIST-API] User data:', user);
       return NextResponse.json(
         { error: 'Token inválido' },
         { status: 401 }
@@ -45,6 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('✅ [WISHLIST-API] User authenticated:', user.id);
+    console.log('✅ [WISHLIST-API] User email:', user.email);
 
     // Obtener favoritos del usuario
     console.log('📊 [WISHLIST-API] Fetching wishlist for user:', user.id);
@@ -59,13 +66,16 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('❌ [WISHLIST-API] Error fetching wishlist:', error);
+      console.error('❌ [WISHLIST-API] Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
         { error: 'Error al obtener favoritos' },
         { status: 500 }
       );
     }
 
+    const duration = Date.now() - startTime;
     console.log('✅ [WISHLIST-API] Wishlist fetched successfully:', data?.length || 0, 'items');
+    console.log('⏱️ [WISHLIST-API] Request duration:', duration, 'ms');
     
     return NextResponse.json({
       success: true,
@@ -73,7 +83,11 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    const duration = Date.now() - startTime;
     console.error('❌ [WISHLIST-API] Error in wishlist GET:', error);
+    console.error('❌ [WISHLIST-API] Error stack:', error instanceof Error ? error.stack : 'No stack available');
+    console.error('⏱️ [WISHLIST-API] Error occurred after:', duration, 'ms');
+    
     return NextResponse.json(
       { error: 'Error del servidor' },
       { status: 500 }
@@ -83,12 +97,16 @@ export async function GET(request: NextRequest) {
 
 // POST - Agregar un producto a favoritos
 export async function POST(request: NextRequest) {
-  console.log('🔍 [WISHLIST-API] POST request received');
+  const startTime = Date.now();
+  console.log('🔍 [WISHLIST-API] POST request received at:', new Date().toISOString());
+  console.log('🌐 [WISHLIST-API] Request URL:', request.url);
+  console.log('🔍 [WISHLIST-API] Request headers:', Object.fromEntries(request.headers.entries()));
   
   try {
     // Verificar autenticación
     const authHeader = request.headers.get('authorization');
     console.log('🔐 [WISHLIST-API] Auth header present:', !!authHeader);
+    console.log('🔐 [WISHLIST-API] Auth header value:', authHeader ? `${authHeader.substring(0, 20)}...` : 'null');
     
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       console.log('❌ [WISHLIST-API] No valid authorization header in POST');
@@ -100,11 +118,13 @@ export async function POST(request: NextRequest) {
 
     const token = authHeader.split(' ')[1];
     console.log('🔑 [WISHLIST-API] Verifying token in POST...');
+    console.log('🔑 [WISHLIST-API] Token length:', token?.length || 0);
     
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
       console.error('❌ [WISHLIST-API] Auth error in POST:', authError);
+      console.error('❌ [WISHLIST-API] User data:', user);
       return NextResponse.json(
         { error: 'Token inválido' },
         { status: 401 }
@@ -112,6 +132,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('✅ [WISHLIST-API] User authenticated in POST:', user.id);
+    console.log('✅ [WISHLIST-API] User email:', user.email);
 
     // Obtener datos del request
     const body = await request.json();
@@ -138,6 +159,7 @@ export async function POST(request: NextRequest) {
 
     if (productError || !product) {
       console.error('❌ [WISHLIST-API] Product not found:', productError);
+      console.error('❌ [WISHLIST-API] Product error details:', JSON.stringify(productError, null, 2));
       return NextResponse.json(
         { error: 'Producto no encontrado' },
         { status: 404 }
@@ -179,13 +201,16 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('❌ [WISHLIST-API] Error adding to wishlist:', error);
+      console.error('❌ [WISHLIST-API] Error details:', JSON.stringify(error, null, 2));
       return NextResponse.json(
         { error: 'Error al agregar a favoritos' },
         { status: 500 }
       );
     }
 
+    const duration = Date.now() - startTime;
     console.log('✅ [WISHLIST-API] Product added to wishlist successfully:', data);
+    console.log('⏱️ [WISHLIST-API] POST request duration:', duration, 'ms');
     
     return NextResponse.json({
       success: true,
@@ -193,7 +218,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    const duration = Date.now() - startTime;
     console.error('❌ [WISHLIST-API] Error in wishlist POST:', error);
+    console.error('❌ [WISHLIST-API] Error stack:', error instanceof Error ? error.stack : 'No stack available');
+    console.error('⏱️ [WISHLIST-API] Error occurred after:', duration, 'ms');
+    
     return NextResponse.json(
       { error: 'Error del servidor' },
       { status: 500 }

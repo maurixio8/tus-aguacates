@@ -290,18 +290,31 @@ export async function getUserStats(userId: string) {
  */
 export async function getLastOrder(userId: string) {
   try {
+    console.log('🔍 [RECOMMENDATIONS] Getting last order for user:', userId);
+    
     const { data, error } = await supabase
       .from('orders')
-      .select('*')
+      .select(`
+        *,
+        order_items (
+          *,
+          product:products (*)
+        )
+      `)
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(1)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ [RECOMMENDATIONS] Error getting last order:', error);
+      throw error;
+    }
+    
+    console.log('✅ [RECOMMENDATIONS] Last order retrieved successfully:', data?.id);
     return data;
   } catch (error) {
-    console.error('Error getting last order:', error);
+    console.error('❌ [RECOMMENDATIONS] Error getting last order:', error);
     return null;
   }
 }
