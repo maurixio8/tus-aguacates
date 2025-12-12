@@ -1,17 +1,26 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // =====================================================
-// SUPABASE ADMIN CLIENT
+// SUPABASE ADMIN CLIENT (lazy initialization)
 // =====================================================
 
-const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } }
-    )
-    : null;
+let supabaseAdmin: SupabaseClient | null = null;
+
+function getSupabaseAdmin(): SupabaseClient | null {
+    if (supabaseAdmin) return supabaseAdmin;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) return null;
+
+    supabaseAdmin = createClient(url, key, {
+        auth: { persistSession: false },
+    });
+
+    return supabaseAdmin;
+}
 
 // =====================================================
 // HELPER: Generate embedding via OpenAI
@@ -56,7 +65,8 @@ async function generateEmbedding(text: string): Promise<number[] | null> {
 // =====================================================
 
 export async function POST(req: Request) {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
@@ -77,7 +87,7 @@ export async function POST(req: Request) {
         }
 
         // Vector search using the match_products function
-        const { data, error } = await supabaseAdmin.rpc('match_products', {
+        const { data, error } = await supabase.rpc('match_products', {
             query_embedding: `[${embedding.join(',')}]`,
             match_threshold: threshold,
             match_count: limit,
@@ -119,7 +129,8 @@ export async function POST(req: Request) {
 // =====================================================
 
 export async function GET(req: Request) {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
@@ -152,12 +163,13 @@ async function fallbackTextSearch(
     category: string | null,
     limit: number
 ): Promise<NextResponse> {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
     try {
-        let queryBuilder = supabaseAdmin
+        let queryBuilder = supabase
             .from('product_embeddings')
             .select('product_id, product_name, product_description, category, price, metadata')
             .ilike('search_text', `%${query}%`)

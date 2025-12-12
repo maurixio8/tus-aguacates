@@ -1,24 +1,34 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // =====================================================
-// SUPABASE ADMIN CLIENT
+// SUPABASE ADMIN CLIENT (lazy initialization)
 // =====================================================
 
-const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } }
-    )
-    : null;
+let supabaseAdmin: SupabaseClient | null = null;
+
+function getSupabaseAdmin(): SupabaseClient | null {
+    if (supabaseAdmin) return supabaseAdmin;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) return null;
+
+    supabaseAdmin = createClient(url, key, {
+        auth: { persistSession: false },
+    });
+
+    return supabaseAdmin;
+}
 
 // =====================================================
 // POST /api/chat/session - Create new chat session
 // =====================================================
 
 export async function POST(req: Request) {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
@@ -26,7 +36,7 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { userId, guestId, initialPage, deviceType, isProactive } = body;
 
-        const { data, error } = await supabaseAdmin
+        const { data, error } = await supabase
             .from('chat_sessions')
             .insert({
                 user_id: userId || null,
@@ -59,7 +69,8 @@ export async function POST(req: Request) {
 // =====================================================
 
 export async function GET(req: Request) {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
@@ -72,7 +83,7 @@ export async function GET(req: Request) {
         }
 
         // Get session
-        const { data: session, error: sessionError } = await supabaseAdmin
+        const { data: session, error: sessionError } = await supabase
             .from('chat_sessions')
             .select('*')
             .eq('id', sessionId)
@@ -83,7 +94,7 @@ export async function GET(req: Request) {
         }
 
         // Get messages
-        const { data: messages } = await supabaseAdmin
+        const { data: messages } = await supabase
             .from('chat_history')
             .select('id, role, content, message_type, metadata, created_at')
             .eq('session_id', sessionId)
@@ -114,7 +125,8 @@ export async function GET(req: Request) {
 // =====================================================
 
 export async function PATCH(req: Request) {
-    if (!supabaseAdmin) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
         return NextResponse.json({ error: 'Database not configured' }, { status: 500 });
     }
 
@@ -126,7 +138,7 @@ export async function PATCH(req: Request) {
             return NextResponse.json({ error: 'sessionId required' }, { status: 400 });
         }
 
-        const { error } = await supabaseAdmin
+        const { error } = await supabase
             .from('chat_sessions')
             .update({ ended_at: new Date().toISOString() })
             .eq('id', sessionId);

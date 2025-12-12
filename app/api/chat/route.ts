@@ -1,18 +1,27 @@
 import { NextResponse } from 'next/server';
 import xss from 'xss';
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // =====================================================
-// SUPABASE ADMIN CLIENT (Server-side only)
+// SUPABASE ADMIN CLIENT (Server-side only, lazy init)
 // =====================================================
 
-const supabaseAdmin = process.env.SUPABASE_SERVICE_ROLE_KEY
-    ? createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY,
-        { auth: { persistSession: false } }
-    )
-    : null;
+let supabaseAdmin: SupabaseClient | null = null;
+
+function getSupabaseAdmin(): SupabaseClient | null {
+    if (supabaseAdmin) return supabaseAdmin;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) return null;
+
+    supabaseAdmin = createClient(url, key, {
+        auth: { persistSession: false },
+    });
+
+    return supabaseAdmin;
+}
 
 // =====================================================
 // HELPER: Save message to history
@@ -27,10 +36,11 @@ async function saveMessageToHistory(
     metadata: Record<string, unknown> = {},
     cartContext: unknown = null
 ): Promise<void> {
-    if (!supabaseAdmin || !sessionId) return;
+    const supabase = getSupabaseAdmin();
+    if (!supabase || !sessionId) return;
 
     try {
-        await supabaseAdmin.from('chat_history').insert({
+        await supabase.from('chat_history').insert({
             session_id: sessionId,
             user_id: userId,
             guest_id: userId ? null : guestId,
@@ -54,20 +64,21 @@ async function getUserContextForRAG(userId: string | null): Promise<{
     recentPurchases: Array<{ id: string; total: number; products: string[] }>;
     recentMessages: Array<{ role: string; content: string }>;
 }> {
-    if (!supabaseAdmin || !userId) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase || !userId) {
         return { userPreferences: null, recentPurchases: [], recentMessages: [] };
     }
 
     try {
         // Obtener contexto del usuario
-        const { data: contextData } = await supabaseAdmin
+        const { data: contextData } = await supabase
             .from('user_context')
             .select('*')
             .eq('user_id', userId)
             .single();
 
         // Obtener últimas 3 órdenes con productos
-        const { data: ordersData } = await supabaseAdmin
+        const { data: ordersData } = await supabase
             .from('orders')
             .select('id, total, created_at, order_items(product_name)')
             .eq('user_id', userId)
@@ -75,7 +86,7 @@ async function getUserContextForRAG(userId: string | null): Promise<{
             .limit(3);
 
         // Obtener últimos 5 mensajes del usuario
-        const { data: messagesData } = await supabaseAdmin
+        const { data: messagesData } = await supabase
             .from('chat_history')
             .select('role, content')
             .eq('user_id', userId)
