@@ -4,9 +4,10 @@ import { useAuth } from '@/lib/auth-context';
 import { useEffect, useState } from 'react';
 import { getUserStats } from '@/lib/recommendations';
 import Link from 'next/link';
-import { ShoppingBag, TrendingUp } from 'lucide-react';
+import { ShoppingBag, TrendingUp, Heart } from 'lucide-react';
 import { supabase, Profile } from '@/lib/supabase';
 import { getDashboardGreeting } from '@/lib/greetings';
+import { useWishlistStore } from '@/lib/wishlist-store';
 
 interface UserStats {
   totalOrders: number;
@@ -16,10 +17,24 @@ interface UserStats {
 
 export function PersonalizedHero() {
   const { user, loading } = useAuth();
+  const { getWishlistCount, loadWishlist } = useWishlistStore();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Esperar hidratacion del store
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Cargar wishlist cuando hay usuario
+  useEffect(() => {
+    if (user && mounted) {
+      loadWishlist(user.id);
+    }
+  }, [user, mounted, loadWishlist]);
 
   useEffect(() => {
     async function loadStats() {
@@ -115,13 +130,15 @@ export function PersonalizedHero() {
                 <p className="text-sm text-gray-600">Total invertido</p>
               </div>
 
-              <div className="bg-white rounded-xl shadow-md p-6 text-center">
-                <span className="text-3xl mb-2 block">❤️</span>
-                <p className="text-lg font-bold text-verde-bosque-700">
-                  {userStats.favoriteCategory}
+              <Link href="/cuenta" className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-lg transition-shadow">
+                <Heart className="w-8 h-8 mx-auto mb-2 text-red-500 fill-red-500" />
+                <p className="text-3xl font-bold text-verde-bosque-700">
+                  {mounted ? getWishlistCount() : 0}
                 </p>
-                <p className="text-sm text-gray-600">Categoría favorita</p>
-              </div>
+                <p className="text-sm text-gray-600">
+                  {getWishlistCount() === 1 ? 'Producto favorito' : 'Productos favoritos'}
+                </p>
+              </Link>
             </div>
 
             {/* CTA Buttons */}
