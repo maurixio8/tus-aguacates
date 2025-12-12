@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+// Force Node.js runtime (not Edge) for compatibility
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 // OPTIONS - Manejar solicitudes CORS
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
@@ -211,11 +215,20 @@ export async function POST(request: NextRequest) {
     const duration = Date.now() - startTime;
     console.log('✅ [WISHLIST-API] Product added to wishlist successfully:', data);
     console.log('⏱️ [WISHLIST-API] POST request duration:', duration, 'ms');
-    
-    return NextResponse.json({
-      success: true,
-      data
-    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        data
+      },
+      {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Credentials': 'true',
+        }
+      }
+    );
 
   } catch (error) {
     const duration = Date.now() - startTime;

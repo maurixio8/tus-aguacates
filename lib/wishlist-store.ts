@@ -145,8 +145,12 @@ export const useWishlistStore = create<WishlistState>()(
           }));
 
           // Usar API route con autenticación
-          console.log('📡 [WISHLIST-STORE] Sending POST request to /api/wishlist for product:', product.id);
-          const response = await fetch('/api/wishlist', {
+          const apiUrl = '/api/wishlist';
+          console.log('📡 [WISHLIST-STORE] Sending POST request to', apiUrl, 'for product:', product.id);
+          console.log('📡 [WISHLIST-STORE] Full URL:', window.location.origin + apiUrl);
+          console.log('📡 [WISHLIST-STORE] Auth token present:', !!token);
+
+          const response = await fetch(apiUrl, {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -155,9 +159,11 @@ export const useWishlistStore = create<WishlistState>()(
             body: JSON.stringify({
               product_id: product.id
             }),
+            cache: 'no-store', // Disable caching
           });
 
           console.log('📡 [WISHLIST-STORE] Add to wishlist API response status:', response.status);
+          console.log('📡 [WISHLIST-STORE] Response headers:', Object.fromEntries(response.headers.entries()));
 
           if (!response.ok) {
             // Rollback optimistic update
@@ -165,9 +171,21 @@ export const useWishlistStore = create<WishlistState>()(
             set(state => ({
               items: state.items.filter(item => item.id !== tempItem.id),
             }));
-            
-            const errorData = await response.json();
-            console.error('❌ [WISHLIST-STORE] API Error:', errorData);
+
+            let errorData;
+            try {
+              errorData = await response.json();
+              console.error('❌ [WISHLIST-STORE] API Error:', errorData);
+              console.error('❌ [WISHLIST-STORE] Full response:', {
+                status: response.status,
+                statusText: response.statusText,
+                url: response.url,
+                headers: Object.fromEntries(response.headers.entries())
+              });
+            } catch (e) {
+              console.error('❌ [WISHLIST-STORE] Could not parse error response:', e);
+              errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+            }
             set({ error: errorData.error || 'Error al agregar a favoritos' });
             return false;
           }
