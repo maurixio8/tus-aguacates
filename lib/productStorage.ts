@@ -432,29 +432,16 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
     console.log('🔄 Starting Supabase to localStorage sync...');
 
-    // 1. Obtener categorias primero para mapear category_id -> category name
-    const { data: categories, error: catError } = await supabase
-      .from('categories')
-      .select('id, name, slug')
-      .eq('is_active', true);
-
-    if (catError) {
-      console.warn('⚠️ Could not fetch categories:', catError);
-    }
-
-    // Crear mapa de category_id -> category name
-    const categoryMap = new Map<string, string>();
-    if (categories) {
-      categories.forEach(cat => {
-        categoryMap.set(cat.id, cat.name);
-      });
-      console.log(`📂 Loaded ${categories.length} categories for mapping`);
-    }
-
-    // 2. Obtener productos de Supabase
+    // 1. Obtener productos con categoria JOIN (una sola query)
     const { data: supabaseProducts, error } = await supabase
       .from('products')
-      .select('*')
+      .select(`
+        *,
+        categories:category_id (
+          name,
+          slug
+        )
+      `)
       .eq('is_active', true);
 
     if (error) {
@@ -462,27 +449,21 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
       return false;
     }
 
-    console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
+    console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase (with category join)`);
 
-    // 3. Obtener datos actuales de localStorage (sincrono para evitar recursion)
+    // 2. Obtener datos actuales de localStorage (sincrono para evitar recursion)
     const localProducts = getProductsSync();
     console.log(`📦 Found ${localProducts.length} products in localStorage`);
 
-    // 4. Mapear y combinar datos
+    // 3. Mapear y combinar datos
     let mergedProducts: Product[] = [];
 
     if (supabaseProducts && supabaseProducts.length > 0) {
       // Convertir productos de Supabase al formato local
       const convertedProducts: Product[] = supabaseProducts.map(sp => {
-        // Resolver categoria: usar campo category directo, o mapear desde category_id
-        let resolvedCategory = sp.category;
-        if (!resolvedCategory && sp.category_id && categoryMap.has(sp.category_id)) {
-          resolvedCategory = categoryMap.get(sp.category_id);
-        }
-        // Fallback: buscar en localStorage si existe
-        if (!resolvedCategory) {
-          resolvedCategory = localProducts.find(lp => lp.id === sp.id)?.category;
-        }
+        // Categoria viene del JOIN directo, o fallback a campo category si existe
+        const joinedCategory = sp.categories as { name: string; slug: string } | null;
+        const resolvedCategory = joinedCategory?.name || sp.category || 'Sin categoria';
 
         return {
           id: sp.id,
