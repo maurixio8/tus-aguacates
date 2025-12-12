@@ -8,6 +8,7 @@ import { supabase, Profile, Order, Product } from '@/lib/supabase';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
 import FavoriteButton from '@/components/FavoriteButton';
+import { ProductCard } from '@/components/product/ProductCard';
 import {
   User,
   Mail,
@@ -71,7 +72,7 @@ export default function CuentaPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -658,64 +659,11 @@ export default function CuentaPage() {
                 {favoriteProducts.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {favoriteProducts.map((product) => (
-                      <div
+                      <ProductCard
                         key={product.id}
-                        className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <Link href={`/productos/${product.id}`} className="block">
-                          <div className="aspect-square relative">
-                            {product.main_image_url ? (
-                              <img
-                                src={product.main_image_url}
-                                alt={product.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                <Package className="w-12 h-12 text-gray-400" />
-                              </div>
-                            )}
-                            <div className="absolute top-2 right-2" onClick={(e) => e.preventDefault()}>
-                              <FavoriteButton productId={product.id} size="sm" />
-                            </div>
-                          </div>
-                          <div className="p-3 pb-0">
-                            <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                            <p className="text-verde-bosque font-bold mt-1">
-                              {formatCurrency(product.discount_price || product.price)}
-                            </p>
-                          </div>
-                        </Link>
-                        <div className="p-3 pt-2">
-                          <button
-                            onClick={() => {
-                              addItem({
-                                id: product.id,
-                                name: product.name,
-                                price: product.discount_price || product.price,
-                                main_image_url: product.main_image_url,
-                                unit: product.unit || 'unidad',
-                                slug: product.slug || product.id,
-                                stock: product.stock || 100,
-                                is_active: true,
-                                is_featured: product.is_featured || false,
-                                rating: product.rating || 0,
-                                review_count: product.review_count || 0,
-                                min_quantity: product.min_quantity || 1,
-                                reserved_stock: product.reserved_stock || 0,
-                                category_id: product.category_id,
-                                description: product.description || '',
-                                created_at: product.created_at || '',
-                                updated_at: product.updated_at || '',
-                              }, 1);
-                            }}
-                            className="w-full flex items-center justify-center gap-2 bg-verde-bosque text-white py-2 rounded-lg hover:bg-verde-bosque/90 transition-colors text-sm font-medium"
-                          >
-                            <ShoppingBag className="w-4 h-4" />
-                            Agregar al carrito
-                          </button>
-                        </div>
-                      </div>
+                        product={product as any}
+                        disableModal={true}
+                      />
                     ))}
                   </div>
                 ) : (

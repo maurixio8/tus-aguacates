@@ -23,9 +23,10 @@ interface ProductVariant {
 
 interface ProductCardProps {
   product: Product;
+  disableModal?: boolean; // Desactiva el modal y hace la imagen no clickeable
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, disableModal = false }: ProductCardProps) {
   const { addItem } = useCartStore();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuth();
@@ -150,10 +151,10 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <>
       <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1">
-        {/* Imagen con ProductImagePlaceholder - Clickable */}
+        {/* Imagen con ProductImagePlaceholder - Clickable solo si no está deshabilitado */}
         <div
-          className="relative aspect-square overflow-hidden cursor-pointer"
-          onClick={handleImageClick}
+          className={`relative aspect-square overflow-hidden ${disableModal ? '' : 'cursor-pointer'}`}
+          onClick={disableModal ? undefined : handleImageClick}
         >
           <ProductImagePlaceholder
             productName={product.name}
@@ -184,12 +185,14 @@ export function ProductCard({ product }: ProductCardProps) {
             <Heart className={`w-4 h-4 ${isProductInWishlist ? 'fill-current' : ''}`} />
           </button>
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700">
-              Ver detalles
+          {/* Hover overlay - Solo si modal no está deshabilitado */}
+          {!disableModal && (
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+                Ver detalles
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Contenido - Padding reducido para tarjeta más compacta */}
@@ -306,12 +309,14 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       )}
 
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        product={product}
-      />
+      {/* Product Detail Modal - Solo si no está deshabilitado */}
+      {!disableModal && (
+        <ProductDetailModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          product={product}
+        />
+      )}
     </>
   );
 }
