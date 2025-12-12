@@ -77,7 +77,7 @@ export const useWishlistStore = create<WishlistState>()(
           const { data } = await response.json();
 
           // Transform data to match our interface
-          const wishlistItems: WishlistItem[] = (data || []).map(item => ({
+          const wishlistItems: WishlistItem[] = (data || []).map((item: any) => ({
             id: item.id,
             user_id: item.user_id,
             product_id: item.product_id,
