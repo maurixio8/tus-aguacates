@@ -3,6 +3,17 @@ import { persist } from 'zustand/middleware';
 import type { Product } from './productStorage';
 import { supabase } from './supabase';
 
+// Función para obtener el token de autenticación
+async function getAuthToken(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session?.access_token || null;
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+}
+
 export interface WishlistItem {
   id: string;
   user_id: string;
@@ -42,20 +53,28 @@ export const useWishlistStore = create<WishlistState>()(
         set({ isLoading: true, error: null });
         
         try {
-          const { data, error } = await supabase
-            .from('wishlist')
-            .select(`
-              *,
-              product:products(*)
-            `)
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false });
-
-          if (error) {
-            console.error('Error loading wishlist:', error);
-            set({ error: error.message });
+          // Obtener token de autenticación
+          const token = await getAuthToken();
+          if (!token) {
+            set({ error: 'No hay sesión activa', isLoading: false });
             return;
           }
+
+          // Usar API route con autenticación
+          const response = await fetch('/api/wishlist', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Error al cargar favoritos');
+          }
+
+          const { data } = await response.json();
 
           // Transform data to match our interface
           const wishlistItems: WishlistItem[] = (data || []).map(item => ({
@@ -69,7 +88,7 @@ export const useWishlistStore = create<WishlistState>()(
           set({ items: wishlistItems, isLoading: false });
         } catch (error) {
           console.error('Error loading wishlist:', error);
-          set({ error: 'Error al cargar favoritos', isLoading: false });
+          set({ error: error instanceof Error ? error.message : 'Error al cargar favoritos', isLoading: false });
         }
       },
 
@@ -85,6 +104,13 @@ export const useWishlistStore = create<WishlistState>()(
         }
 
         try {
+          // Obtener token de autenticación
+          const token = await getAuthToken();
+          if (!token) {
+            set({ error: 'No hay sesión activa' });
+            return false;
+          }
+
           // Optimistic update
           const tempItem: WishlistItem = {
             id: `temp-${Date.now()}`,
@@ -99,29 +125,35 @@ export const useWishlistStore = create<WishlistState>()(
             error: null
           }));
 
-          // Add to Supabase
-          const { data, error } = await supabase
-            .from('wishlist')
-            .insert({
-              user_id: userId,
+          // Usar API route con autenticación
+          const response = await fetch('/api/wishlist', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
               product_id: product.id
-            })
-            .select()
-            .single();
+            }),
+          });
 
-          if (error) {
+          if (!response.ok) {
             // Rollback optimistic update
             set(state => ({
               items: state.items.filter(item => item.id !== tempItem.id),
-              error: error.message
             }));
+            
+            const errorData = await response.json();
+            set({ error: errorData.error || 'Error al agregar a favoritos' });
             return false;
           }
 
+          const { data } = await response.json();
+
           // Update with real data
           set(state => ({
-            items: state.items.map(item => 
-              item.id === tempItem.id 
+            items: state.items.map(item =>
+              item.id === tempItem.id
                 ? { ...item, id: data.id, created_at: data.created_at }
                 : item
             )
@@ -130,7 +162,7 @@ export const useWishlistStore = create<WishlistState>()(
           return true;
         } catch (error) {
           console.error('Error adding to wishlist:', error);
-          set({ error: 'Error al agregar a favoritos' });
+          set({ error: error instanceof Error ? error.message : 'Error al agregar a favoritos' });
           return false;
         }
       },
@@ -147,32 +179,43 @@ export const useWishlistStore = create<WishlistState>()(
         }
 
         try {
+          // Obtener token de autenticación
+          const token = await getAuthToken();
+          if (!token) {
+            set({ error: 'No hay sesión activa' });
+            return false;
+          }
+
           // Optimistic update
           set(state => ({
             items: state.items.filter(item => item.product_id !== productId),
             error: null
           }));
 
-          // Remove from Supabase
-          const { error } = await supabase
-            .from('wishlist')
-            .delete()
-            .eq('user_id', userId)
-            .eq('product_id', productId);
+          // Usar API route con autenticación
+          const response = await fetch(`/api/wishlist/${productId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
 
-          if (error) {
+          if (!response.ok) {
             // Rollback optimistic update
             set(state => ({
               items: [...state.items, existingItem],
-              error: error.message
             }));
+            
+            const errorData = await response.json();
+            set({ error: errorData.error || 'Error al eliminar de favoritos' });
             return false;
           }
 
           return true;
         } catch (error) {
           console.error('Error removing from wishlist:', error);
-          set({ error: 'Error al eliminar de favoritos' });
+          set({ error: error instanceof Error ? error.message : 'Error al eliminar de favoritos' });
           return false;
         }
       },
