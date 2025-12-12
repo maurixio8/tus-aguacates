@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 // DELETE - Eliminar un producto de favoritos
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Verificar autenticación
@@ -26,7 +26,7 @@ export async function DELETE(
       );
     }
 
-    const productId = params.id;
+    const { id: productId } = await params;
 
     if (!productId) {
       return NextResponse.json(
