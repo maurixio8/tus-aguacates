@@ -4,6 +4,16 @@
   "framework": "nextjs",
   "cleanUrls": false,
   "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/api/wishlist",
+      "destination": "/api/wishlist"
+    },
+    {
+      "source": "/api/wishlist/:id",
+      "destination": "/api/wishlist/:id"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",

@@ -21,26 +21,49 @@ export interface RecommendationScore {
  */
 export async function getUserPurchaseHistory(userId: string): Promise<UserPurchaseHistory[]> {
   try {
+    console.log('🔍 [RECOMMENDATIONS] Getting purchase history for user:', userId);
+    
+    // Obtener órdenes con sus items usando join
     const { data: orders, error } = await supabase
       .from('orders')
-      .select('order_data, created_at')
+      .select(`
+        id,
+        created_at,
+        order_items!inner(
+          product_id,
+          quantity,
+          unit_price,
+          subtotal,
+          product_snapshot
+        )
+      `)
       .eq('user_id', userId)
+      .eq('status', 'delivered') // Solo considerar órdenes entregadas
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ [RECOMMENDATIONS] Error fetching orders:', error);
+      throw error;
+    }
+
+    console.log('📊 [RECOMMENDATIONS] Found orders:', orders?.length || 0);
 
     const purchaseMap = new Map<string, UserPurchaseHistory>();
 
     orders?.forEach((order) => {
-      const items = order.order_data?.items || [];
+      const items = order.order_items || [];
       items.forEach((item: any) => {
-        const productId = item.productId;
+        const productId = item.product_id;
         if (!productId) return;
+
+        // Extraer información del producto desde product_snapshot
+        const productSnapshot = item.product_snapshot || {};
+        const productName = productSnapshot.name || 'Producto desconocido';
 
         const existing = purchaseMap.get(productId);
         if (existing) {
           existing.quantity += item.quantity || 1;
-          existing.totalSpent += item.price || 0;
+          existing.totalSpent += item.subtotal || 0;
           // Keep most recent purchase date
           if (new Date(order.created_at) > new Date(existing.lastPurchaseDate)) {
             existing.lastPurchaseDate = order.created_at;
@@ -48,19 +71,21 @@ export async function getUserPurchaseHistory(userId: string): Promise<UserPurcha
         } else {
           purchaseMap.set(productId, {
             productId,
-            productName: item.productName,
-            categoryId: '', // Will be filled later
+            productName,
+            categoryId: productSnapshot.category_id || '', // Will be filled later
             quantity: item.quantity || 1,
-            totalSpent: item.price || 0,
+            totalSpent: item.subtotal || 0,
             lastPurchaseDate: order.created_at,
           });
         }
       });
     });
 
-    return Array.from(purchaseMap.values());
+    const result = Array.from(purchaseMap.values());
+    console.log('✅ [RECOMMENDATIONS] Purchase history processed:', result.length, 'products');
+    return result;
   } catch (error) {
-    console.error('Error getting purchase history:', error);
+    console.error('❌ [RECOMMENDATIONS] Error getting purchase history:', error);
     return [];
   }
 }
@@ -181,15 +206,30 @@ async function getFallbackRecommendations(limit: number = 6): Promise<Product[]>
  */
 export async function getUserStats(userId: string) {
   try {
+    console.log('🔍 [RECOMMENDATIONS] Getting user stats for:', userId);
+    
+    // Obtener órdenes con sus items
     const { data: orders, error } = await supabase
       .from('orders')
-      .select('total_amount, created_at, status, order_data')
+      .select(`
+        total,
+        created_at,
+        status,
+        order_items!inner(
+          product_snapshot
+        )
+      `)
       .eq('user_id', userId);
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ [RECOMMENDATIONS] Error fetching user stats:', error);
+      throw error;
+    }
+
+    console.log('📊 [RECOMMENDATIONS] Found orders for stats:', orders?.length || 0);
 
     const totalOrders = orders?.length || 0;
-    const totalSpent = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+    const totalSpent = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
 
     const completedOrders = orders?.filter(o =>
       o.status === 'completado' || o.status === 'entregado' || o.status === 'pagado'
@@ -198,9 +238,11 @@ export async function getUserStats(userId: string) {
     // Calculate favorite category
     const categoryCount = new Map<string, number>();
     orders?.forEach(order => {
-      const items = order.order_data?.items || [];
+      const items = order.order_items || [];
       items.forEach((item: any) => {
-        const category = item.productName?.split(' ')[0] || 'Otros'; // Simple heuristic
+        const productSnapshot = item.product_snapshot || {};
+        const productName = productSnapshot.name || '';
+        const category = productName?.split(' ')[0] || 'Otros'; // Simple heuristic
         categoryCount.set(category, (categoryCount.get(category) || 0) + 1);
       });
     });
@@ -219,7 +261,7 @@ export async function getUserStats(userId: string) {
       ? new Date(Math.max(...orders.map(o => new Date(o.created_at).getTime())))
       : null;
 
-    return {
+    const result = {
       totalOrders,
       completedOrders,
       totalSpent,
@@ -227,8 +269,11 @@ export async function getUserStats(userId: string) {
       lastOrderDate: lastOrderDate ? lastOrderDate.toISOString() : null,
       averageOrderValue: totalOrders > 0 ? Math.round(totalSpent / totalOrders) : 0,
     };
+    
+    console.log('✅ [RECOMMENDATIONS] User stats calculated:', result);
+    return result;
   } catch (error) {
-    console.error('Error getting user stats:', error);
+    console.error('❌ [RECOMMENDATIONS] Error getting user stats:', error);
     return {
       totalOrders: 0,
       completedOrders: 0,

@@ -19,10 +19,15 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  console.log('🔍 [WISHLIST-API] DELETE request received');
+  
   try {
     // Verificar autenticación
     const authHeader = request.headers.get('authorization');
+    console.log('🔐 [WISHLIST-API] Auth header present:', !!authHeader);
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('❌ [WISHLIST-API] No valid authorization header in DELETE');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
@@ -30,23 +35,32 @@ export async function DELETE(
     }
 
     const token = authHeader.split(' ')[1];
+    console.log('🔑 [WISHLIST-API] Verifying token in DELETE...');
+    
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
+      console.error('❌ [WISHLIST-API] Auth error in DELETE:', authError);
       return NextResponse.json(
         { error: 'Token inválido' },
         { status: 401 }
       );
     }
 
+    console.log('✅ [WISHLIST-API] User authenticated in DELETE:', user.id);
+
     const { id: productId } = await params;
+    console.log('🗑️ [WISHLIST-API] Deleting product from wishlist:', productId);
 
     if (!productId) {
+      console.log('❌ [WISHLIST-API] No productId provided in DELETE');
       return NextResponse.json(
         { error: 'El ID del producto es requerido' },
         { status: 400 }
       );
     }
+
+    console.log('🔍 [WISHLIST-API] Checking if product exists in wishlist:', productId);
 
     // Verificar si el producto está en favoritos del usuario
     const { data: existingItem, error: checkError } = await supabase
@@ -57,11 +71,14 @@ export async function DELETE(
       .single();
 
     if (checkError || !existingItem) {
+      console.log('❌ [WISHLIST-API] Product not found in wishlist:', checkError);
       return NextResponse.json(
         { error: 'El producto no está en favoritos' },
         { status: 404 }
       );
     }
+
+    console.log('✅ [WISHLIST-API] Product found in wishlist, deleting...');
 
     // Eliminar de favoritos
     const { error } = await supabase
@@ -71,20 +88,22 @@ export async function DELETE(
       .eq('product_id', productId);
 
     if (error) {
-      console.error('Error removing from wishlist:', error);
+      console.error('❌ [WISHLIST-API] Error removing from wishlist:', error);
       return NextResponse.json(
         { error: 'Error al eliminar de favoritos' },
         { status: 500 }
       );
     }
 
+    console.log('✅ [WISHLIST-API] Product removed from wishlist successfully:', productId);
+    
     return NextResponse.json({
       success: true,
       message: 'Producto eliminado de favoritos correctamente'
     });
 
   } catch (error) {
-    console.error('Error in wishlist DELETE:', error);
+    console.error('❌ [WISHLIST-API] Error in wishlist DELETE:', error);
     return NextResponse.json(
       { error: 'Error del servidor' },
       { status: 500 }
