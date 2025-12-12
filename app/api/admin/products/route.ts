@@ -1,9 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Create Supabase client directly to avoid import issues
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Usar SUPABASE_SERVICE_ROLE_KEY si existe, si no usar ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey
+    });
+    throw new Error('Missing Supabase configuration');
+  }
+
+  console.log('✅ Supabase client created with URL:', supabaseUrl.substring(0, 30) + '...');
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+}
+
+// Configuración CORS para permitir el dashboard
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
+};
+
+// Manejar solicitudes OPTIONS para CORS
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, { headers: corsHeaders });
+}
 
 // Helper function to verify admin authentication
 async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
@@ -130,13 +168,20 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
 // GET - List products with filtering
 export async function GET(request: NextRequest) {
   try {
-    // Verify admin authentication
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: 401 }
-      );
+    // Check if request is from same origin (integrated dashboard) or has valid auth
+    const origin = request.headers.get('origin');
+    const referer = request.headers.get('referer');
+    const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
+
+    // Only verify auth for cross-origin requests
+    if (!isSameOrigin) {
+      const auth = await verifyAdminAuth(request);
+      if (!auth.success) {
+        return NextResponse.json(
+          { error: auth.error },
+          { status: 401, headers: corsHeaders }
+        );
+      }
     }
 
     // Parse query parameters
@@ -149,8 +194,18 @@ export async function GET(request: NextRequest) {
 
     console.log('🔍 API: Fetching products with params:', { search, category, status, page, limit });
 
-    const supabase = createSupabaseClient();
+    let supabase;
+    try {
+      supabase = getSupabaseClient();
+    } catch (configError) {
+      console.error('❌ Supabase configuration error:', configError);
+      return NextResponse.json(
+        { error: 'Error de configuración del servidor', details: String(configError) },
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
+    // Try to include variants, fallback to without if table doesn't exist
     let query = supabase
       .from('products')
       .select(`
@@ -159,6 +214,16 @@ export async function GET(request: NextRequest) {
           id,
           name,
           slug
+        ),
+        product_variants (
+          id,
+          variant_name,
+          variant_value,
+          price,
+          price_adjustment,
+          stock_quantity,
+          is_active,
+          sort_order
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -185,7 +250,47 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+
+    console.log('🔍 Initial query result:', {
+      dataCount: data?.length || 0,
+      hasVariants: data?.[0]?.product_variants?.length || 0,
+      error: error?.message
+    });
+
+    // If error is about product_variants not existing, retry without variants
+    if (error && error.message?.includes('product_variants')) {
+      console.log('⚠️ product_variants table not found, fetching without variants');
+      const fallbackQuery = supabase
+        .from('products')
+        .select(`
+          *,
+          categories:category_id (
+            id,
+            name,
+            slug
+          )
+        `, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range((page - 1) * limit, page * limit - 1);
+
+      if (search) {
+        fallbackQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+      }
+      if (category && category !== 'all') {
+        fallbackQuery.eq('category_id', category);
+      }
+      if (status && status !== 'all') {
+        if (status === 'active') fallbackQuery.eq('is_active', true);
+        else if (status === 'inactive') fallbackQuery.eq('is_active', false);
+        else if (status === 'featured') fallbackQuery.eq('is_featured', true);
+      }
+
+      const fallbackResult = await fallbackQuery;
+      data = fallbackResult.data;
+      error = fallbackResult.error;
+      count = fallbackResult.count;
+    }
 
     console.log('📊 API: Products response:', {
       data: data?.length || 0,
@@ -197,15 +302,39 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('❌ API: Error fetching products:', error);
       return NextResponse.json(
-        { error: 'Error al cargar productos' },
-        { status: 500 }
+        { error: 'Error al cargar productos', details: error.message, code: error.code },
+        { status: 500, headers: corsHeaders }
       );
     }
 
-    // Transform data to include category_name
+    // Get product IDs for separate variants query
+    const productIds = data?.map(item => item.id) || [];
+
+    // Fetch variants separately to avoid Supabase schema cache issues
+    let variantsMap: Record<string, any[]> = {};
+    if (productIds.length > 0) {
+      const { data: variants, error: variantsError } = await supabase
+        .from('product_variants')
+        .select('*')
+        .in('product_id', productIds);
+
+      if (!variantsError && variants) {
+        variants.forEach(v => {
+          if (!variantsMap[v.product_id]) {
+            variantsMap[v.product_id] = [];
+          }
+          variantsMap[v.product_id].push(v);
+        });
+      }
+      console.log('📦 Variants fetched:', variants?.length || 0);
+    }
+
+    // Transform data to include category_name and variants
     const products = data?.map(item => ({
       ...item,
-      category_name: item.categories?.name || 'Sin categoría'
+      category_name: item.categories?.name || 'Sin categoría',
+      variants: variantsMap[item.id] || item.product_variants || [],
+      hasVariants: (variantsMap[item.id]?.length || item.product_variants?.length || 0) > 0
     })) || [];
 
     return NextResponse.json({
@@ -217,13 +346,13 @@ export async function GET(request: NextRequest) {
         total: count || 0,
         totalPages: Math.ceil((count || 0) / limit)
       }
-    });
+    }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }
@@ -236,7 +365,7 @@ export async function POST(request: NextRequest) {
     if (!auth.success) {
       return NextResponse.json(
         { error: auth.error },
-        { status: 401 }
+        { status: 401, headers: corsHeaders }
       );
     }
 
@@ -249,7 +378,7 @@ export async function POST(request: NextRequest) {
       if (!body[field]) {
         return NextResponse.json(
           { error: `El campo ${field} es requerido` },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
     }
@@ -258,14 +387,14 @@ export async function POST(request: NextRequest) {
     if (typeof body.price !== 'number' || body.price < 0) {
       return NextResponse.json(
         { error: 'El precio debe ser un número válido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
     if (typeof body.stock !== 'number' || body.stock < 0) {
       return NextResponse.json(
         { error: 'El stock debe ser un número válido' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
@@ -280,7 +409,7 @@ export async function POST(request: NextRequest) {
     // Generate SKU if not provided
     const sku = body.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
 
-    const supabase = createSupabaseClient();
+    const supabase = getSupabaseClient();
 
     // Create the product
     const { data, error } = await supabase
@@ -321,20 +450,20 @@ export async function POST(request: NextRequest) {
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Ya existe un producto con ese SKU o slug' },
-          { status: 409 }
+          { status: 409, headers: corsHeaders }
         );
       }
 
       if (error.code === '23503') {
         return NextResponse.json(
           { error: 'La categoría especificada no existe' },
-          { status: 400 }
+          { status: 400, headers: corsHeaders }
         );
       }
 
       return NextResponse.json(
         { error: 'Error al crear el producto' },
-        { status: 500 }
+        { status: 500, headers: corsHeaders }
       );
     }
 
@@ -344,13 +473,13 @@ export async function POST(request: NextRequest) {
       success: true,
       data,
       message: 'Producto creado exitosamente'
-    }, { status: 201 });
+    }, { status: 201, headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error creating product:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

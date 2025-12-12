@@ -1,437 +1,269 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import {
-  ShoppingBag,
-  Users,
-  DollarSign,
-  TrendingUp,
-  Package,
-  Clock,
-  CheckCircle,
-  Download,
-  Trash2,
-  X,
-  User,
-  Phone,
-  MapPin,
-  Calendar,
-  Package as PackageIcon,
-  CreditCard
-} from 'lucide-react';
+import { TrendingUp, ShoppingBag, Clock, Package, DollarSign, Users } from 'lucide-react';
 
-interface GuestOrder {
-  id: string;
-  guest_name: string;
-  guest_email: string;
-  guest_phone: string;
-  guest_address: string;
-  order_data: any;
-  total_amount: number;
-  status: string;
-  delivery_date: string | null;
-  created_at: string;
+interface Metrics {
+  today: {
+    orders: number;
+    revenue: number;
+    topProducts: Array<{ name: string; quantity: number; revenue: number }>;
+  };
+  pending: {
+    count: number;
+  };
+  tomorrow: {
+    ordersCount: number;
+    products: Array<{ name: string; quantity: number }>;
+  };
+  week: {
+    orders: number;
+    revenue: number;
+  };
+  categoryStats: Record<string, number>;
 }
 
-interface OrderStats {
-  total: number;
-  pending: number;
-  completed: number;
-  revenue: number;
-}
+export default function AdminDashboardPage() {
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-interface AdminUser {
-  id: string;
-  email: string;
-  name: string;
-  role: string;
-}
-
-export default function AdminDashboard() {
-  const router = useRouter();
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-  const [orders, setOrders] = useState<GuestOrder[]>([]);
-  const [stats, setStats] = useState<OrderStats>({
-    total: 2,
-    pending: 1,
-    completed: 1,
-    revenue: 21000
-  });
-  const [loading, setLoading] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<string>('all');
-
-  
   useEffect(() => {
-    checkAuth();
+    loadMetrics();
   }, []);
 
-  useEffect(() => {
-    if (adminUser) {
-      loadOrders();
-    }
-  }, [adminUser, selectedStatus]);
-
-  const checkAuth = async () => {
+  const loadMetrics = async () => {
     try {
-      // Add timeout to prevent hanging
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-      const response = await fetch('/api/auth/admin/me', {
-        signal: controller.signal
+      const response = await fetch('/api/admin/metrics', {
+        credentials: 'include',
       });
-      clearTimeout(timeoutId);
-
       const data = await response.json();
 
-      if (data.success && data.user) {
-        setAdminUser(data.user);
+      if (data.success) {
+        setMetrics(data.metrics);
       } else {
-        router.push('/admin/login');
+        setError(data.error || 'Error al cargar métricas');
       }
-    } catch (error) {
-      console.error('Auth check error:', error);
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Auth check timed out - redirecting to login');
-      }
-      router.push('/admin/login');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/admin/logout', { method: 'POST' });
-      router.push('/admin/login');
-    } catch (error) {
-      console.error('Logout error:', error);
-      router.push('/admin/login');
-    }
-  };
-
-  const loadOrders = async () => {
-    setLoading(true);
-    try {
-      // Usar datos de ejemplo para el dashboard demo
-      const sampleOrders: GuestOrder[] = [
-        {
-          id: 'sample-1',
-          guest_name: 'Juan Pérez',
-          guest_email: 'juan@email.com',
-          guest_phone: '3011234567',
-          guest_address: 'Calle 123 #45-67, Bogotá',
-          order_data: {
-            items: [
-              { productName: 'Aguacate Hass', quantity: 2, price: 5000 },
-              { productName: 'Aguacate Criollo', quantity: 1, price: 3000 }
-            ]
-          },
-          total_amount: 13000,
-          status: 'pendiente',
-          delivery_date: null,
-          created_at: new Date().toISOString()
-        },
-        {
-          id: 'sample-2',
-          guest_name: 'María García',
-          guest_email: 'maria@email.com',
-          guest_phone: '3109876543',
-          guest_address: 'Av. Principal #89-12, Medellín',
-          order_data: {
-            items: [
-              { productName: 'Aguacate Hass Premium', quantity: 3, price: 7000 }
-            ]
-          },
-          total_amount: 21000,
-          status: 'completado',
-          delivery_date: new Date().toISOString().split('T')[0],
-          created_at: new Date(Date.now() - 86400000).toISOString()
-        }
-      ];
-
-      // Filtrar por status si es necesario
-      const filteredOrders = selectedStatus === 'all'
-        ? sampleOrders
-        : sampleOrders.filter(o => o.status === selectedStatus);
-
-      setOrders(filteredOrders);
-
-      // Calcular estadísticas basadas en todos los pedidos
-      const allOrders = sampleOrders;
-      setStats({
-        total: allOrders.length,
-        pending: allOrders.filter(o => o.status === 'pendiente').length,
-        completed: allOrders.filter(o => o.status === 'completado').length,
-        revenue: allOrders
-          .filter(o => o.status === 'completado')
-          .reduce((sum, o) => sum + Number(o.total_amount), 0)
-      });
-
-    } catch (error) {
-      console.error('Error loading orders:', error);
-      setOrders([]);
-      setStats({ total: 0, pending: 0, completed: 0, revenue: 0 });
+    } catch (err) {
+      console.error('Error cargando métricas:', err);
+      setError('Error de conexión');
     } finally {
       setLoading(false);
     }
   };
 
-  
-  const exportToCSV = () => {
-    const csvContent = [
-      ['Fecha', 'Cliente', 'Email', 'Telefono', 'Total', 'Estado'].join(','),
-      ...orders.map(order => [
-        new Date(order.created_at).toLocaleDateString('es-CO'),
-        order.guest_name,
-        order.guest_email,
-        order.guest_phone,
-        order.total_amount,
-        order.status
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `pedidos-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+    }).format(value);
   };
 
-  if (authLoading || !adminUser) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-          <p>Cargando dashboard...</p>
-        </div>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
       </div>
     );
   }
 
-  const filteredOrders = selectedStatus === 'all'
-    ? orders
-    : orders.filter(o => o.status === selectedStatus);
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <p className="text-red-700">{error}</p>
+        <button
+          onClick={loadMetrics}
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
+
+  const stats = [
+    {
+      name: 'Ventas Hoy',
+      value: formatCurrency(metrics?.today?.revenue || 0),
+      subtext: `${metrics?.today?.orders || 0} pedidos`,
+      icon: TrendingUp,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-700',
+    },
+    {
+      name: 'Pedidos Pendientes',
+      value: metrics?.pending?.count || 0,
+      subtext: 'Requieren atención',
+      icon: Clock,
+      color: 'from-yellow-500 to-yellow-600',
+      bgColor: 'bg-yellow-50',
+      textColor: 'text-yellow-700',
+    },
+    {
+      name: 'Entregas Mañana',
+      value: metrics?.tomorrow?.ordersCount || 0,
+      subtext: 'Pedidos programados',
+      icon: Package,
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
+    },
+    {
+      name: 'Ventas Semana',
+      value: formatCurrency(metrics?.week?.revenue || 0),
+      subtext: `${metrics?.week?.orders || 0} pedidos`,
+      icon: DollarSign,
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
+    },
+  ];
 
   return (
-    <div>
-      {/* Dashboard Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">📊 Dashboard Administrativo</h1>
-            <p className="text-gray-600">
-              Resumen de pedidos y gestión de la tienda
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 font-medium flex items-center gap-2">
-              📥 Exportar Reporte
-            </button>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2">
-              🔄 Actualizar Datos
-            </button>
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Dashboard</h1>
+        <p className="text-gray-600 mt-1">Resumen ejecutivo de Tus Aguacates</p>
+      </div>
 
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.name}
+              className="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-sm text-gray-500 mt-1">{stat.subtext}</p>
+                </div>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-sm`}>
+                  <Icon className="w-6 h-6 text-white" />
+                </div>
               </div>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Total Pedidos</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">📦</span>
-            </div>
+      {/* Grid de contenido */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Productos Más Vendidos Hoy */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <ShoppingBag className="w-5 h-5 text-green-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Productos Más Vendidos Hoy</h2>
           </div>
+          {metrics?.today?.topProducts && metrics.today.topProducts.length > 0 ? (
+            <div className="space-y-3">
+              {metrics.today.topProducts.slice(0, 5).map((product, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 text-xs font-bold flex items-center justify-center">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium text-gray-900">{product.name}</p>
+                      <p className="text-sm text-gray-500">{product.quantity} unidades</p>
+                    </div>
+                  </div>
+                  <p className="font-semibold text-green-600">{formatCurrency(product.revenue)}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No hay ventas hoy</p>
+          )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Pendientes</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.pending}</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">⏰</span>
-            </div>
+        {/* Productos para Entregar Mañana */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Package className="w-5 h-5 text-blue-600" />
+            <h2 className="text-lg font-semibold text-gray-900">Entregas para Mañana</h2>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Completados</p>
-              <p className="text-2xl font-bold text-green-600">{stats.completed}</p>
+          {metrics?.tomorrow?.products && metrics.tomorrow.products.length > 0 ? (
+            <div className="grid grid-cols-2 gap-3">
+              {metrics.tomorrow.products.map((product, index) => (
+                <div
+                  key={index}
+                  className="p-3 bg-blue-50 rounded-lg border border-blue-100"
+                >
+                  <p className="font-medium text-gray-900 text-sm">{product.name}</p>
+                  <p className="text-xl font-bold text-blue-600 mt-1">
+                    {product.quantity} <span className="text-sm font-normal">unidades</span>
+                  </p>
+                </div>
+              ))}
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">✅</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Ingresos</p>
-              <p className="text-2xl font-bold text-gray-900">
-                ${stats.revenue.toLocaleString('es-CO')}
-              </p>
-            </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <span className="text-2xl">💰</span>
-            </div>
-          </div>
+          ) : (
+            <p className="text-gray-500 text-center py-8">No hay entregas programadas</p>
+          )}
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="flex gap-2">
-            <button
-              onClick={() => setSelectedStatus('all')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedStatus === 'all'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Todos
-            </button>
-            <button
-              onClick={() => setSelectedStatus('pendiente')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedStatus === 'pendiente'
-                  ? 'bg-orange-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Pendientes
-            </button>
-            <button
-              onClick={() => setSelectedStatus('completado')}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedStatus === 'completado'
-                  ? 'bg-green-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Completados
-            </button>
+      {/* Ventas por Categoría */}
+      {metrics?.categoryStats && Object.keys(metrics.categoryStats).length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Ventas por Categoría (Últimos 7 días)</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Object.entries(metrics.categoryStats)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 8)
+              .map(([category, revenue]) => (
+                <div key={category} className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 truncate">{category}</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">{formatCurrency(revenue)}</p>
+                </div>
+              ))}
           </div>
+        </div>
+      )}
 
-          <button
-            onClick={exportToCSV}
-            className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+      {/* Acciones Rápidas */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <a
+            href="/admin/crear-pedido"
+            className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors border border-green-200"
           >
-            <Download className="w-4 h-4" />
-            Exportar CSV
-          </button>
+            <ShoppingBag className="w-8 h-8 text-green-600 mb-2" />
+            <span className="text-sm font-medium text-green-700">Nuevo Pedido</span>
+          </a>
+          <a
+            href="/admin/pedidos?status=pendiente"
+            className="flex flex-col items-center justify-center p-4 bg-yellow-50 hover:bg-yellow-100 rounded-xl transition-colors border border-yellow-200"
+          >
+            <Clock className="w-8 h-8 text-yellow-600 mb-2" />
+            <span className="text-sm font-medium text-yellow-700">Ver Pendientes</span>
+          </a>
+          <a
+            href="/admin/productos"
+            className="flex flex-col items-center justify-center p-4 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors border border-blue-200"
+          >
+            <Package className="w-8 h-8 text-blue-600 mb-2" />
+            <span className="text-sm font-medium text-blue-700">Productos</span>
+          </a>
+          <a
+            href="/admin/reportes"
+            className="flex flex-col items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors border border-purple-200"
+          >
+            <TrendingUp className="w-8 h-8 text-purple-600 mb-2" />
+            <span className="text-sm font-medium text-purple-700">Reportes</span>
+          </a>
         </div>
       </div>
-
-      {/* Orders Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Fecha</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Cliente</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Contacto</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Productos</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Total</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Estado</th>
-                <th className="px-6 py-4 text-left text-sm font-bold text-gray-900">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    No hay pedidos para mostrar
-                  </td>
-                </tr>
-              ) : (
-                filteredOrders.map((order) => (
-                  <tr
-                    key={order.id}
-                    className="border-b hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4 text-sm">
-                      {new Date(order.created_at).toLocaleDateString('es-CO')}
-                      <br />
-                      <span className="text-xs text-gray-500">
-                        {new Date(order.created_at).toLocaleTimeString('es-CO', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-medium">{order.guest_name}</p>
-                      <p className="text-sm text-gray-600">{order.guest_address}</p>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <p>{order.guest_phone}</p>
-                      <p className="text-gray-600">{order.guest_email}</p>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      {order.order_data?.items?.slice(0, 2).map((item: any, idx: number) => (
-                        <p key={idx} className="text-gray-700">
-                          {item.productName} x{item.quantity}
-                        </p>
-                      ))}
-                      {order.order_data?.items?.length > 2 && (
-                        <p className="text-gray-500 text-xs">
-                          +{order.order_data.items.length - 2} más
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-green-600">
-                        ${Number(order.total_amount).toLocaleString('es-CO')}
-                      </p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                        order.status === 'completado'
-                          ? 'bg-green-100 text-green-800'
-                          : order.status === 'pendiente'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <button className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 font-medium">
-                          📄 Ver
-                        </button>
-                        {order.status === 'pendiente' && (
-                          <button className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 font-medium">
-                            ✅ Completar
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-          </div>
+    </div>
   );
 }

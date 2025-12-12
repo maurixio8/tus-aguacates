@@ -1,0 +1,197 @@
+{
+    "name": "Mayordomo Digital - Tus Aguacates",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "chat",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "dataType": "string",
+                "value1": "={{ $json.body.message }}",
+                "rules": {
+                    "rules": [
+                        {
+                            "value2": "intent_market",
+                            "output": 0
+                        },
+                        {
+                            "value2": "intent_avocados",
+                            "output": 1
+                        },
+                        {
+                            "value2": "intent_offers",
+                            "output": 2
+                        },
+                        {
+                            "value2": "greeting",
+                            "output": 3
+                        }
+                    ]
+                },
+                "fallbackOutput": 3
+            },
+            "name": "Router (Switch)",
+            "type": "n8n-nodes-base.switch",
+            "typeVersion": 1,
+            "position": [
+                700,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "timeline",
+                            "value": "={{ [ {\"type\": \"text\", \"content\": \"¡Excelente decisión! 🌟 Para la semana, lo mejor es nuestro Combo Full.\", \"delay\": 500}, {\"type\": \"products\", \"items\": [{\"id\": \"combo-semanal\", \"name\": \"Combo Mercado Semanal\", \"price\": 68900, \"image\": \"https://tus-aguacates.com/images/combo-semanal.jpg\"}]}, {\"type\": \"options\", \"options\": [{\"label\": \"🛒 Agregar\", \"value\": \"add_weekly\"}]} ] }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Response: Market",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "timeline",
+                            "value": "={{ [ {\"type\": \"text\", \"content\": \"Si es solo un antojo, te recomiendo nuestros Hass Premium.\"}, {\"type\": \"products\", \"items\": [{\"id\": \"pack-4\", \"name\": \"Pack x4 Premium\", \"price\": 9900, \"image\": \"https://tus-aguacates.com/images/pack-4.jpg\"}]}, {\"type\": \"options\", \"options\": [{\"label\": \"🛒 Agregar\", \"value\": \"add_pack4\"}]} ] }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Response: Avocados",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "timeline",
+                            "value": "={{ [ {\"type\": \"text\", \"content\": \"¡Hola! 👋 Soy tu Mayordomo Digital.\"}, {\"type\": \"text\", \"content\": \"¿Cómo te puedo servir hoy?\"}, {\"type\": \"options\", \"options\": [{\"label\": \"🥑 Aguacates Hass\", \"value\": \"intent_avocados\"}, {\"label\": \" Combos & Mercado\", \"value\": \"intent_market\"}, {\"label\": \"🔥 Ofertas Flash\", \"value\": \"intent_offers\"}]} ] }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "name": "Response: Greeting",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                700
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1400,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Router (Switch)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Router (Switch)": {
+            "main": [
+                [
+                    {
+                        "node": "Response: Market",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Response: Avocados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                null,
+                [
+                    {
+                        "node": "Response: Greeting",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Response: Market": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Response: Avocados": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Response: Greeting": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

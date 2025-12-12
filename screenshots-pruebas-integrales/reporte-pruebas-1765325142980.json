@@ -1,0 +1,40 @@
+{
+  "fecha": "2025-12-10T00:05:42.979Z",
+  "urlBase": "http://localhost:3001",
+  "resultados": {
+    "personalizacionSaludos": {
+      "estado": "❌ FALLIDO",
+      "descripcion": "Pruebas de personalización de saludos usando nombres de usuario"
+    },
+    "checkoutAutocompletado": {
+      "estado": "❌ FALLIDO",
+      "descripcion": "Pruebas de checkout con autocompletado para clientes registrados"
+    },
+    "sistemaSuscripciones": {
+      "estado": "❌ FALLIDO",
+      "descripcion": "Pruebas de sistema de pedidos recurrentes automáticos"
+    },
+    "integracion": {
+      "estado": "❌ FALLIDO",
+      "descripcion": "Pruebas de integración entre las tres funcionalidades"
+    },
+    "rendimientoSeguridad": {
+      "estado": "❌ FALLIDO",
+      "descripcion": "Pruebas de rendimiento y seguridad"
+    }
+  },
+  "resumen": {
+    "totalPruebas": 5,
+    "pruebasExitosas": 0,
+    "pruebasFallidas": 5,
+    "porcentajeExito": 0
+  },
+  "screenshots": 5,
+  "recomendaciones": [
+    "Revisar implementación de saludos personalizados en greetings.ts",
+    "Verificar lógica de autocompletado en EnhancedAuthenticatedCheckoutForm.tsx",
+    "Revisar configuración de suscripciones en SubscriptionConfigModal.tsx",
+    "Mejorar integración entre componentes y consistencia de datos",
+    "Optimizar tiempos de carga y reforzar seguridad de datos"
+  ]
+}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, CheckCircle, Check, X } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RegistroPage() {
@@ -19,20 +19,97 @@ export default function RegistroPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  // Estados para validación en tiempo real
+  const [nameValid, setNameValid] = useState<boolean | null>(null);
+  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  const [passwordValid, setPasswordValid] = useState<boolean | null>(null);
+  const [confirmPasswordValid, setConfirmPasswordValid] = useState<boolean | null>(null);
+  const [nameTouched, setNameTouched] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [passwordTouched, setPasswordTouched] = useState(false);
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
+
+  // Validación de nombre en tiempo real
+  useEffect(() => {
+    if (!nameTouched) return;
+    
+    if (formData.fullName === '') {
+      setNameValid(null);
+    } else if (formData.fullName.length >= 3) {
+      setNameValid(true);
+    } else {
+      setNameValid(false);
+    }
+  }, [formData.fullName, nameTouched]);
+
+  // Validación de email en tiempo real
+  useEffect(() => {
+    if (!emailTouched) return;
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email === '') {
+      setEmailValid(null);
+    } else if (emailRegex.test(formData.email)) {
+      setEmailValid(true);
+    } else {
+      setEmailValid(false);
+    }
+  }, [formData.email, emailTouched]);
+
+  // Validación de contraseña en tiempo real
+  useEffect(() => {
+    if (!passwordTouched) return;
+    
+    if (formData.password === '') {
+      setPasswordValid(null);
+    } else if (formData.password.length >= 6) {
+      setPasswordValid(true);
+    } else {
+      setPasswordValid(false);
+    }
+  }, [formData.password, passwordTouched]);
+
+  // Validación de confirmación de contraseña en tiempo real
+  useEffect(() => {
+    if (!confirmPasswordTouched) return;
+    
+    if (formData.confirmPassword === '') {
+      setConfirmPasswordValid(null);
+    } else if (formData.confirmPassword === formData.password && formData.password.length >= 6) {
+      setConfirmPasswordValid(true);
+    } else {
+      setConfirmPasswordValid(false);
+    }
+  }, [formData.confirmPassword, formData.password, confirmPasswordTouched]);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    // Validaciones
-    if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+    // Validaciones completas
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    if (formData.fullName.length < 3) {
+      setError('El nombre debe tener al menos 3 caracteres');
+      setLoading(false);
+      return;
+    }
+
+    if (!emailRegex.test(formData.email)) {
+      setError('Por favor, ingresa un correo electrónico válido');
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setError('Las contraseñas no coinciden');
       setLoading(false);
       return;
     }
@@ -49,6 +126,26 @@ export default function RegistroPage() {
       setLoading(false);
     }
   }
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value });
+    
+    // Marcar como tocado el campo correspondiente
+    switch (field) {
+      case 'fullName':
+        if (!nameTouched) setNameTouched(true);
+        break;
+      case 'email':
+        if (!emailTouched) setEmailTouched(true);
+        break;
+      case 'password':
+        if (!passwordTouched) setPasswordTouched(true);
+        break;
+      case 'confirmPassword':
+        if (!confirmPasswordTouched) setConfirmPasswordTouched(true);
+        break;
+    }
+  };
 
   if (success) {
     return (
@@ -108,15 +205,37 @@ export default function RegistroPage() {
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="fullName"
-                  type="text"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="Juan Pérez"
-                />
+                <div className="relative">
+                  <input
+                    id="fullName"
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    onBlur={() => setNameTouched(true)}
+                    required
+                    autoComplete="name"
+                    className={`w-full pl-11 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                      nameValid === true
+                        ? 'border-green-500 bg-green-50'
+                        : nameValid === false
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="Juan Pérez"
+                  />
+                  {nameTouched && nameValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {nameValid ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {nameTouched && nameValid === false && (
+                  <p className="mt-1 text-sm text-red-600">El nombre debe tener al menos 3 caracteres</p>
+                )}
               </div>
             </div>
 
@@ -127,15 +246,37 @@ export default function RegistroPage() {
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="tu@ejemplo.com"
-                />
+                <div className="relative">
+                  <input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    onBlur={() => setEmailTouched(true)}
+                    required
+                    autoComplete="email"
+                    className={`w-full pl-11 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                      emailValid === true
+                        ? 'border-green-500 bg-green-50'
+                        : emailValid === false
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="tu@ejemplo.com"
+                  />
+                  {emailTouched && emailValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {emailValid ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {emailTouched && emailValid === false && (
+                  <p className="mt-1 text-sm text-red-600">Por favor, ingresa un correo electrónico válido</p>
+                )}
               </div>
             </div>
 
@@ -146,16 +287,38 @@ export default function RegistroPage() {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  minLength={6}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    onBlur={() => setPasswordTouched(true)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    className={`w-full pl-11 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                      passwordValid === true
+                        ? 'border-green-500 bg-green-50'
+                        : passwordValid === false
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="••••••••"
+                  />
+                  {passwordTouched && passwordValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {passwordValid ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {passwordTouched && passwordValid === false && (
+                  <p className="mt-1 text-sm text-red-600">La contraseña debe tener al menos 6 caracteres</p>
+                )}
               </div>
             </div>
 
@@ -166,16 +329,40 @@ export default function RegistroPage() {
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                  minLength={6}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all"
-                  placeholder="••••••••"
-                />
+                <div className="relative">
+                  <input
+                    id="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    onBlur={() => setConfirmPasswordTouched(true)}
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    className={`w-full pl-11 pr-10 py-3 border rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent transition-all ${
+                      confirmPasswordValid === true
+                        ? 'border-green-500 bg-green-50'
+                        : confirmPasswordValid === false
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-300'
+                    }`}
+                    placeholder="••••••••"
+                  />
+                  {confirmPasswordTouched && confirmPasswordValid !== null && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {confirmPasswordValid ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <X className="w-5 h-5 text-red-600" />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {confirmPasswordTouched && confirmPasswordValid === false && (
+                  <p className="mt-1 text-sm text-red-600">
+                    {formData.password.length >= 6 ? 'Las contraseñas no coinciden' : 'La contraseña debe tener al menos 6 caracteres'}
+                  </p>
+                )}
               </div>
             </div>
 

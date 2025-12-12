@@ -170,24 +170,39 @@ export const handlers = [
       );
     }
 
-    // Lógica de shipping
+    // Lógica de shipping - Solo Bogotá, Soacha y Chía
     let shippingCost = 7400; // Default Bogotá
-    if (location === 'Medellín') {
-      shippingCost = 8900;
-    } else if (location === 'Cali') {
-      shippingCost = 9500;
+    let estimatedDays = 1;
+
+    // Normalizar ubicación (case insensitive)
+    const normalizedLocation = (location || 'Bogotá').toLowerCase();
+
+    if (normalizedLocation.includes('soacha')) {
+      shippingCost = 8000; // Soacha: un poco más que Bogotá
+      estimatedDays = 1;
+    } else if (normalizedLocation.includes('chía') || normalizedLocation.includes('chia')) {
+      shippingCost = 8000; // Chía: similar a Soacha
+      estimatedDays = 1;
+    } else if (normalizedLocation.includes('bogotá') || normalizedLocation.includes('bogota')) {
+      shippingCost = 7400;
+      estimatedDays = 1;
     }
 
     const freeShippingMin = 68900;
     const freeShipping = subtotal >= freeShippingMin;
+    const finalCost = freeShipping ? 0 : shippingCost;
+    const amountForFreeShipping = freeShipping ? 0 : Math.max(0, freeShippingMin - subtotal);
+    const message = freeShipping ? '¡Envío GRATIS en tu pedido!' : `Envío: $${shippingCost.toLocaleString('es-CO')}`;
 
     return HttpResponse.json({
       success: true,
-      data: {
-        shippingCost: freeShipping ? 0 : shippingCost,
+      shipping: {
+        cost: finalCost,
         freeShipping,
-        location: location || 'Bogotá',
-        estimatedDelivery: '2-3 días hábiles'
+        freeShippingMin,
+        amountForFreeShipping,
+        estimatedDays,
+        message
       }
     });
   }),

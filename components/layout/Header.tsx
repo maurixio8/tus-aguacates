@@ -7,17 +7,47 @@ import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
 import branding from '@/lib/config/branding';
 import { SearchModal } from '../search/SearchModal';
+import { supabase, Profile } from '@/lib/supabase';
+import { getHeaderGreeting } from '@/lib/greetings';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
   const { user } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
   const itemCount = getItemCount();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      setLoadingProfile(true);
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      } finally {
+        setLoadingProfile(false);
+      }
+    }
+
+    loadProfile();
+  }, [user]);
 
   return (
     <header className="hidden md:block bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
@@ -80,7 +110,9 @@ export function Header() {
                 title="Mi Cuenta"
               >
                 <User className="w-5 h-5" />
-                <span className="hidden lg:inline text-sm">Mi Cuenta</span>
+                <span className="hidden lg:inline text-sm">
+                  {loadingProfile ? 'Cargando...' : getHeaderGreeting(profile, user)}
+                </span>
               </Link>
             ) : (
               <Link
@@ -89,20 +121,12 @@ export function Header() {
                 title="Iniciar Sesión"
               >
                 <LogIn className="w-5 h-5" />
-                <span className="hidden lg:inline text-sm">Ingresar</span>
+                <span className="hidden lg:inline text-sm">
+                  Iniciar Sesión
+                </span>
               </Link>
             )}
 
-            <Link
-              href="https://admin-dashboard-k3gytk5nw-mauricio-s-projects-2bf4b7a2.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-amarillo-400 transition-colors flex items-center gap-2 bg-verde-aguacate-600 hover:bg-verde-aguacate-700 px-3 py-2 rounded-lg"
-              title="Panel de Administrador"
-            >
-              <Shield className="w-5 h-5" />
-              <span className="hidden lg:inline text-sm font-medium">Admin</span>
-            </Link>
 
             <button
               onClick={toggleCart}

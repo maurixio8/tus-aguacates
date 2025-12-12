@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
+// Configuración CORS para permitir el dashboard
+const corsHeaders = {
+  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
+};
+
+// Manejar solicitudes OPTIONS para CORS
+export async function OPTIONS(request: NextRequest) {
+  // Forzar respuesta directa sin redirect
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      'Content-Length': '0'
+    }
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     console.log('🔑 [Login API] Recibida petición de login');
@@ -19,12 +40,12 @@ export async function POST(request: NextRequest) {
       console.warn('⚠️  [Login API] Faltan email o password en request');
       return NextResponse.json(
         { error: 'Email y contraseña son requeridos' },
-        { status: 400 }
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    // VALIDACIÓN TEMPORAL HARDCODEADA
-    if (email === 'admin@tusaguacates.com' && password === 'admin123') {
+    // VALIDACIÓN CON CREDENCIALES REALES (acepta ambas contraseñas)
+    if (email === 'admin@tusaguacates.com' && (password === '7FdX9Zq-hson&j39' || password === 'admin123')) {
       console.log('✅ [Login API] Credenciales válidas - Admin verificado');
 
       const adminUser = {
@@ -68,7 +89,7 @@ export async function POST(request: NextRequest) {
           role: adminUser.role,
           last_login: new Date().toISOString()
         }
-      });
+      }, { headers: corsHeaders });
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
       const isProduction = process.env.NODE_ENV === 'production';
@@ -112,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Credenciales inválidas' },
-      { status: 401 }
+      { status: 401, headers: corsHeaders }
     );
 
   } catch (error) {
@@ -124,7 +145,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: 'Error interno del servidor' },
-      { status: 500 }
+      { status: 500, headers: corsHeaders }
     );
   }
 }

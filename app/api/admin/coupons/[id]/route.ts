@@ -103,7 +103,7 @@ export async function GET(
   }
 }
 
-// PUT - Update coupon by ID
+// PUT/PATCH - Update coupon by ID
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -309,4 +309,12 @@ export async function DELETE(
       { status: 500 }
     );
   }
+}
+
+// PATCH - Also support PATCH for partial updates (same as PUT)
+export async function PATCH(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  return PUT(request, context);
 }

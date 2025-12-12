@@ -126,16 +126,83 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 
 
 export const getProducts = async (): Promise<Product[]> => {
-  // ✅ CARGAR SIEMPRE desde productos tus_aguacates.json (217 productos)
-  const products = await loadProductsFromJSON();
+  // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
+  const baseProducts = await loadProductsFromJSON();
 
-  if (products.length > 0) {
-    console.log(`✅ ${products.length} productos cargados desde JSON`);
-    return products;
+  // 2. Cargar datos locales (que pueden tener fotos actualizadas)
+  const localProducts = getProductsSync();
+
+  // 3. Si hay datos locales, realizar FUSIÓN INTELIGENTE
+  if (localProducts.length > 0 && baseProducts.length > 0) {
+    console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
+
+    // Helper para normalizar nombres
+    const normalize = (str: string) => str.trim().toLowerCase();
+
+    const mergedProducts = baseProducts.map(baseProd => {
+      // Buscar coincidencia por ID (preferido) o Nombre (fallback robusto)
+      const localMatch = localProducts.find(lp => {
+        const idMatch = lp.id === baseProd.id;
+        const nameMatch = normalize(lp.name) === normalize(baseProd.name);
+
+        // Debug para el primer producto si falla
+        if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
+          console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
+        }
+
+        return idMatch || nameMatch;
+      });
+
+      if (localMatch) {
+        // Mantener base pero sobrescribir con datos locales importantes
+        return {
+          ...baseProd,
+          // ✅ CRÍTICO: Usar la imagen local si existe (prioridad máxima)
+          image: localMatch.image || localMatch.main_image_url || baseProd.image,
+          main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
+
+          // Actualizar otros campos si cambiaron
+          is_active: localMatch.is_active ?? baseProd.is_active,
+          price: localMatch.price || baseProd.price,
+          description: localMatch.description || baseProd.description,
+          // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
+          // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
+        };
+      }
+      return baseProd;
+    });
+
+    // Agregar productos COMPLETAMENTE NUEVOS (que no estén en el JSON ni por ID ni por nombre)
+    const baseIds = new Set(baseProducts.map(p => p.id));
+    const baseNames = new Set(baseProducts.map(p => normalize(p.name)));
+
+    const newLocalProducts = localProducts.filter(lp => {
+      const isIdKnown = baseIds.has(lp.id);
+      const isNameKnown = baseNames.has(normalize(lp.name));
+      // Solo agregar si NO es conocido ni por ID ni por Nombre
+      return !isIdKnown && !isNameKnown;
+    });
+
+    if (newLocalProducts.length > 0) {
+      console.log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
+      return [...mergedProducts, ...newLocalProducts];
+    }
+
+    return mergedProducts;
   }
 
-  // Fallback si falla
-  console.log('❌ No se pudieron cargar productos');
+  // Fallbacks simples si una fuente falla
+  if (baseProducts.length > 0) {
+    console.log('⚠️ Usando solo JSON base (sin datos locales)');
+    return baseProducts;
+  }
+
+  if (localProducts.length > 0) {
+    console.log('⚠️ Usando solo LocalStorage (JSON falló)');
+    return localProducts;
+  }
+
+  console.log('❌ No se pudieron cargar productos de ninguna fuente');
   return DEFAULT_PRODUCTS;
 };
 
@@ -397,7 +464,22 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
       // 4. Combinar con productos locales que no están en Supabase
       const supabaseIds = new Set(convertedProducts.map(p => p.id));
-      const localOnly = localProducts.filter(lp => !supabaseIds.has(lp.id));
+      // Helper para normalizar (usamos el mismo criterio que en getProducts)
+      const normalize = (str: string) => str ? str.trim().toLowerCase() : '';
+      const supabaseNames = new Set(convertedProducts.map(p => normalize(p.name)));
+
+      const localOnly = localProducts.filter(lp => {
+        // Excluir si ya existe por ID
+        if (supabaseIds.has(lp.id)) return false;
+
+        // Excluir si ya existe por NOMBRE (priorizar la versión de base de datos)
+        if (supabaseNames.has(normalize(lp.name))) {
+          console.log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
+          return false;
+        }
+
+        return true;
+      });
 
       mergedProducts = [...convertedProducts, ...localOnly];
 
@@ -432,7 +514,15 @@ export const initializeProducts = async (): Promise<Product[]> => {
   }
 
   // Retornar productos actualizados (ahora es asíncrono)
-  return await getProducts();
+  const products = await getProducts();
+
+  // 🔥 Notificar a la UI que hay datos nuevos
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('products-updated'));
+    console.log('📢 Evento products-updated enviado');
+  }
+
+  return products;
 };
 
 // 🚀 FUNCIÓN DE IMPORTACIÓN CSV

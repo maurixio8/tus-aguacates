@@ -2,12 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { supabase, configureExtendedSession } from './supabase';
+import { migrateGuestOrders } from './migrations';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signIn: (email: string, password: string) => Promise<any>;
+  signIn: (email: string, password: string, rememberMe?: boolean) => Promise<any>;
   signUp: (email: string, password: string, fullName: string) => Promise<any>;
   signOut: () => Promise<void>;
 }
@@ -43,13 +44,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Métodos de autenticación
-  async function signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({ 
-      email, 
-      password 
+  async function signIn(email: string, password: string, rememberMe: boolean = false) {
+    // Configurar persistencia extendida antes del inicio de sesión
+    configureExtendedSession(rememberMe);
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: {
+        // Configurar persistencia de sesión según "Recordarme"
+        // Si rememberMe es true, la sesión persiste por más tiempo
+        // Por defecto, Supabase usa persistencia 'session' (persistente hasta que se cierra el navegador)
+        // Con rememberMe, usaremos 'local' para persistencia más larga
+        // Sin rememberMe, usaremos 'session' para sesión temporal
+      }
     });
-    
+
     if (error) throw error;
+
+    // Si "Recordarme" está activado, guardar preferencia en localStorage
+    if (rememberMe && typeof window !== 'undefined') {
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('userEmail', email);
+    } else if (typeof window !== 'undefined') {
+      localStorage.removeItem('rememberMe');
+      localStorage.removeItem('userEmail');
+    }
+
+    // Migrar pedidos de invitado automáticamente
+    if (data.user) {
+      try {
+        const result = await migrateGuestOrders(data.user.id, email);
+        if (result.success && result.migratedCount > 0) {
+          console.log(`Migrated ${result.migratedCount} orders for user ${email}`);
+        }
+      } catch (migrationError) {
+        // No bloquear el login si falla la migración
+        console.error('Error migrating guest orders:', migrationError);
+      }
+    }
+
     return data;
   }
 
@@ -58,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       email,
       password,
       options: {
-        emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
+        emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || (typeof window !== 'undefined' ? window.location.origin : '')}/auth/callback`,
         data: {
           full_name: fullName,
         }
@@ -72,8 +106,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('profiles').insert({
         id: data.user.id,
         full_name: fullName,
+        preferred_name: null, // Se puede configurar después
         role: 'customer',
       });
+
+      // Migrar pedidos de invitado automáticamente
+      try {
+        const result = await migrateGuestOrders(data.user.id, email);
+        if (result.success && result.migratedCount > 0) {
+          console.log(`Migrated ${result.migratedCount} orders for new user ${email}`);
+        }
+      } catch (migrationError) {
+        // No bloquear el registro si falla la migración
+        console.error('Error migrating guest orders during signup:', migrationError);
+      }
     }
 
     return data;

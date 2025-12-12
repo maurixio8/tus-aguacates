@@ -6,16 +6,44 @@ import { useAuth } from '@/lib/auth-context';
 import { useCartStore } from '@/lib/cart-store';
 import { ShoppingBag } from 'lucide-react';
 import { GuestCheckoutForm } from '@/components/checkout/GuestCheckoutForm';
+import { AuthenticatedCheckoutForm } from '@/components/checkout/AuthenticatedCheckoutForm';
+import { EnhancedAuthenticatedCheckoutForm } from '@/components/checkout/EnhancedAuthenticatedCheckoutForm';
+import { supabase, Profile } from '@/lib/supabase';
+import { getDisplayName } from '@/lib/greetings';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const { items, getTotal } = useCartStore();
   const [mounted, setMounted] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    async function loadProfile() {
+      if (!user) {
+        setProfile(null);
+        return;
+      }
+
+      try {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        setProfile(profileData);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+      }
+    }
+
+    loadProfile();
+  }, [user]);
 
   // Redirigir si carrito vacío
   useEffect(() => {
@@ -54,25 +82,18 @@ export default function CheckoutPage() {
               Finalizar Pedido
             </h1>
             <p className="text-gray-600">
-              {user ? `Bienvenido ${user.email}` : 'Completa tu información para continuar'}
+              {user ? `Bienvenido ${getDisplayName(profile, user)}` : 'Completa tu información para continuar'}
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             {!user ? (
               <GuestCheckoutForm onSuccess={handleOrderSuccess} />
             ) : (
-              <div className="text-center py-12">
-                <p className="text-gray-600 mb-4">
-                  Funcionalidad de checkout para usuarios registrados en desarrollo
-                </p>
-                <button
-                  onClick={() => router.push('/productos')}
-                  className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
-                >
-                  Volver a Productos
-                </button>
-              </div>
+              <EnhancedAuthenticatedCheckoutForm
+                onSuccess={handleOrderSuccess}
+                profile={profile}
+              />
             )}
           </div>
         </div>

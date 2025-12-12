@@ -1,32 +1,18 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "cleanUrls": false,
+  "trailingSlash": false,
+  "headers": [
     {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "outputDirectory": ".next",
-        "buildCommand": "npm run build"
-      }
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cookie, Set-Cookie" }
+      ]
     }
-  ],
-  "routes": [
-    {
-      "src": "/((?!api|_next|static|public|favicon.ico).*)",
-      "dest": "/"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
-  ],
-  "env": {
-    "NODE_ENV": "production",
-    "NEXT_PUBLIC_SUPABASE_URL": "",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "",
-    "SUPABASE_SERVICE_ROLE_KEY": "",
-    "STRIPE_PUBLISHABLE_KEY": "",
-    "STRIPE_SECRET_KEY": ""
-  },
-  "framework": "nextjs"
+  ]
 }
