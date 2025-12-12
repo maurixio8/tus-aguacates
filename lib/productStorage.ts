@@ -157,6 +157,9 @@ export const getProducts = async (): Promise<Product[]> => {
         // Mantener base pero sobrescribir con datos locales importantes
         return {
           ...baseProd,
+          // ✅ CRÍTICO: Usar el ID de Supabase si existe (para que wishlist funcione)
+          id: localMatch.id || baseProd.id,
+
           // ✅ CRÍTICO: Usar la imagen local si existe (prioridad máxima)
           image: localMatch.image || localMatch.main_image_url || baseProd.image,
           main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
@@ -165,8 +168,6 @@ export const getProducts = async (): Promise<Product[]> => {
           is_active: localMatch.is_active ?? baseProd.is_active,
           price: localMatch.price || baseProd.price,
           description: localMatch.description || baseProd.description,
-          // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
-          // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
         };
       }
       return baseProd;
