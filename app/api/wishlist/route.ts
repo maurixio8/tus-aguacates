@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-// Force Node.js runtime (not Edge) for compatibility
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
-
 // OPTIONS - Manejar solicitudes CORS
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
@@ -101,6 +97,7 @@ export async function GET(request: NextRequest) {
 
 // POST - Agregar un producto a favoritos
 export async function POST(request: NextRequest) {
+  console.log('🚀🚀🚀 [WISHLIST-API] POST HANDLER CALLED! 🚀🚀🚀');
   const startTime = Date.now();
   console.log('🔍 [WISHLIST-API] POST request received at:', new Date().toISOString());
   console.log('🌐 [WISHLIST-API] Request URL:', request.url);
