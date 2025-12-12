@@ -52,7 +52,7 @@ export function PersonalizedHero() {
           .from('profiles')
           .select('*')
           .eq('id', user.id)
-          .single();
+          .maybeSingle();
 
         setProfile(profileData);
       } catch (error) {

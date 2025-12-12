@@ -73,7 +73,7 @@ export function ChatBot() {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       user = authUser;
       if (user) {
-        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
         profile = profileData;
       }
     } catch (e) { console.error(e); }

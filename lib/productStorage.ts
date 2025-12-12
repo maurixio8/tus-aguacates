@@ -523,24 +523,48 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
   }
 };
 
-// Función de inicialización que asegura la sincronización
+// Funcion de inicializacion que asegura la sincronizacion
 export const initializeProducts = async (): Promise<Product[]> => {
-  // Intentar sincronizar primero
+  // Detectar si hay IDs sinteticos en localStorage (indica datos viejos)
+  const localProducts = getProductsSync();
+  const hasSyntheticIds = localProducts.some(p =>
+    p.id && (p.id.startsWith('product-') || p.id.startsWith('prod-'))
+  );
+
+  if (hasSyntheticIds && localProducts.length > 0) {
+    console.log('⚠️ [INIT] Detectados IDs sinteticos en localStorage, limpiando para forzar sync...');
+    // Limpiar localStorage para forzar sincronizacion fresca
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('tus_aguacates_products');
+    }
+  }
+
+  // Intentar sincronizar con Supabase
   const syncSuccess = await syncSupabaseToLocal();
 
   if (syncSuccess) {
-    console.log('🎉 Products initialized from Supabase sync');
+    console.log('✅ [INIT] Products initialized from Supabase sync');
   } else {
-    console.log('⚠️ Products initialized from localStorage (fallback)');
+    console.log('⚠️ [INIT] Products initialized from localStorage (fallback)');
   }
 
-  // Retornar productos actualizados (ahora es asíncrono)
+  // Retornar productos actualizados
   const products = await getProducts();
 
-  // 🔥 Notificar a la UI que hay datos nuevos
+  // Verificar que tenemos UUIDs reales
+  const hasRealUUIDs = products.some(p =>
+    p.id && !p.id.startsWith('product-') && !p.id.startsWith('prod-')
+  );
+
+  if (hasRealUUIDs) {
+    console.log('✅ [INIT] Productos con UUIDs reales listos:', products.length);
+  } else if (products.length > 0) {
+    console.warn('⚠️ [INIT] ADVERTENCIA: Productos sin UUIDs de Supabase. Wishlist podria fallar.');
+  }
+
+  // Notificar a la UI que hay datos nuevos
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('products-updated'));
-    console.log('📢 Evento products-updated enviado');
   }
 
   return products;

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { Product } from './productStorage';
 import { supabase } from './supabase';
 
-// Función para obtener el token de autenticación
+// Funcion para obtener el token de autenticacion
 async function getAuthToken(): Promise<string | null> {
   try {
     const { data: { session } } = await supabase.auth.getSession();
@@ -26,7 +26,10 @@ interface WishlistState {
   items: WishlistItem[];
   isLoading: boolean;
   error: string | null;
-  
+  // Dedupe state
+  _lastLoadedUserId: string | null;
+  _loadingPromise: Promise<void> | null;
+
   // Actions
   loadWishlist: (userId: string) => Promise<void>;
   addToWishlist: (product: Product, userId: string) => Promise<boolean>;
@@ -43,89 +46,113 @@ export const useWishlistStore = create<WishlistState>()(
       items: [],
       isLoading: false,
       error: null,
+      _lastLoadedUserId: null,
+      _loadingPromise: null,
 
       loadWishlist: async (userId: string) => {
-        console.log('🔍 [WISHLIST-STORE] Loading wishlist for user:', userId);
-        
-        if (!userId) {
-          console.log('⚠️ [WISHLIST-STORE] No userId provided, clearing wishlist');
-          set({ items: [], error: null });
+        // Dedupe: si ya cargamos para este usuario, no volver a cargar
+        const state = get();
+        if (state._lastLoadedUserId === userId && state.items.length >= 0 && !state.error) {
+          console.log('[WISHLIST-STORE] Skipping load - already loaded for user:', userId);
           return;
         }
 
-        set({ isLoading: true, error: null });
-        
-        try {
-          // Obtener token de autenticación
-          console.log('🔐 [WISHLIST-STORE] Getting auth token...');
-          const token = await getAuthToken();
-          if (!token) {
-            console.log('❌ [WISHLIST-STORE] No auth token available');
-            set({ error: 'No hay sesión activa', isLoading: false });
-            return;
-          }
-
-          console.log('✅ [WISHLIST-STORE] Auth token obtained, fetching wishlist...');
-          
-          // Usar API route con autenticación
-          const response = await fetch('/api/wishlist', {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          console.log('📡 [WISHLIST-STORE] Wishlist API response status:', response.status);
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            console.error('❌ [WISHLIST-STORE] API Error:', errorData);
-            throw new Error(errorData.error || 'Error al cargar favoritos');
-          }
-
-          const { data } = await response.json();
-          console.log('📊 [WISHLIST-STORE] Wishlist data received:', data?.length || 0, 'items');
-
-          // Transform data to match our interface
-          const wishlistItems: WishlistItem[] = (data || []).map((item: any) => ({
-            id: item.id,
-            user_id: item.user_id,
-            product_id: item.product_id,
-            product: item.product as Product,
-            created_at: item.created_at
-          }));
-
-          console.log('✅ [WISHLIST-STORE] Wishlist loaded successfully:', wishlistItems.length, 'items');
-          set({ items: wishlistItems, isLoading: false });
-        } catch (error) {
-          console.error('❌ [WISHLIST-STORE] Error loading wishlist:', error);
-          set({ error: error instanceof Error ? error.message : 'Error al cargar favoritos', isLoading: false });
+        // Dedupe: si ya hay una carga en progreso, reutilizarla
+        if (state._loadingPromise && state.isLoading) {
+          console.log('[WISHLIST-STORE] Reusing existing loading promise');
+          return state._loadingPromise;
         }
+
+        if (!userId) {
+          console.log('[WISHLIST-STORE] No userId provided, clearing wishlist');
+          set({ items: [], error: null, _lastLoadedUserId: null });
+          return;
+        }
+
+        console.log('[WISHLIST-STORE] Loading wishlist for user:', userId);
+
+        const loadPromise = (async () => {
+          set({ isLoading: true, error: null });
+
+          try {
+            const token = await getAuthToken();
+            if (!token) {
+              console.log('[WISHLIST-STORE] No auth token available');
+              set({ error: 'No hay sesion activa', isLoading: false, _loadingPromise: null });
+              return;
+            }
+
+            const response = await fetch('/api/wishlist', {
+              method: 'GET',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              console.error('[WISHLIST-STORE] API Error:', errorData);
+              throw new Error(errorData.error || 'Error al cargar favoritos');
+            }
+
+            const { data } = await response.json();
+            console.log('[WISHLIST-STORE] Loaded', data?.length || 0, 'items');
+
+            const wishlistItems: WishlistItem[] = (data || []).map((item: any) => ({
+              id: item.id,
+              user_id: item.user_id,
+              product_id: item.product_id,
+              product: item.product as Product,
+              created_at: item.created_at
+            }));
+
+            set({
+              items: wishlistItems,
+              isLoading: false,
+              _lastLoadedUserId: userId,
+              _loadingPromise: null
+            });
+          } catch (error) {
+            console.error('[WISHLIST-STORE] Error loading wishlist:', error);
+            set({
+              error: error instanceof Error ? error.message : 'Error al cargar favoritos',
+              isLoading: false,
+              _loadingPromise: null
+            });
+          }
+        })();
+
+        set({ _loadingPromise: loadPromise });
+        return loadPromise;
       },
 
       addToWishlist: async (product: Product, userId: string) => {
-        console.log('🔍 [WISHLIST-STORE] Adding product to wishlist:', product.name, 'for user:', userId);
-        
+        console.log('[WISHLIST-STORE] Adding product:', product.name, '(ID:', product.id, ')');
+
         if (!userId) {
-          console.log('❌ [WISHLIST-STORE] No userId provided for addToWishlist');
           set({ error: 'Debes estar logueado para agregar favoritos' });
           return false;
         }
 
-        // Check if already in wishlist
+        // Validar que el ID no sea sintetico
+        if (product.id.startsWith('product-') || product.id.startsWith('prod-')) {
+          console.error('[WISHLIST-STORE] ERROR: ID sintetico detectado:', product.id);
+          console.error('[WISHLIST-STORE] Esto indica que la sincronizacion con Supabase no funciono.');
+          console.error('[WISHLIST-STORE] Intenta limpiar localStorage y recargar la pagina.');
+          set({ error: 'Error: producto no sincronizado con la base de datos. Recarga la pagina.' });
+          return false;
+        }
+
         if (get().isInWishlist(product.id)) {
-          console.log('⚠️ [WISHLIST-STORE] Product already in wishlist:', product.id);
-          return true; // Already in wishlist
+          console.log('[WISHLIST-STORE] Product already in wishlist:', product.id);
+          return true;
         }
 
         try {
-          // Obtener token de autenticación
-          console.log('🔐 [WISHLIST-STORE] Getting auth token for addToWishlist...');
           const token = await getAuthToken();
           if (!token) {
-            console.log('❌ [WISHLIST-STORE] No auth token available for addToWishlist');
-            set({ error: 'No hay sesión activa' });
+            set({ error: 'No hay sesion activa' });
             return false;
           }
 
@@ -138,14 +165,12 @@ export const useWishlistStore = create<WishlistState>()(
             created_at: new Date().toISOString()
           };
 
-          console.log('📝 [WISHLIST-STORE] Performing optimistic update for product:', product.id);
           set(state => ({
             items: [tempItem, ...state.items],
             error: null
           }));
 
-          // Usar API route con autenticación
-          console.log('📡 [WISHLIST-STORE] Sending POST request to /api/wishlist for product:', product.id);
+          console.log('[WISHLIST-STORE] POST /api/wishlist with product_id:', product.id);
           const response = await fetch('/api/wishlist', {
             method: 'POST',
             headers: {
@@ -157,25 +182,21 @@ export const useWishlistStore = create<WishlistState>()(
             }),
           });
 
-          console.log('📡 [WISHLIST-STORE] Add to wishlist API response status:', response.status);
-
           if (!response.ok) {
-            // Rollback optimistic update
-            console.log('❌ [WISHLIST-STORE] API error, rolling back optimistic update');
+            // Rollback
             set(state => ({
               items: state.items.filter(item => item.id !== tempItem.id),
             }));
-            
+
             const errorData = await response.json();
-            console.error('❌ [WISHLIST-STORE] API Error:', errorData);
+            console.error('[WISHLIST-STORE] API Error:', response.status, errorData);
             set({ error: errorData.error || 'Error al agregar a favoritos' });
             return false;
           }
 
           const { data } = await response.json();
-          console.log('✅ [WISHLIST-STORE] Product added to wishlist successfully:', data);
+          console.log('[WISHLIST-STORE] Added successfully:', data?.id);
 
-          // Update with real data
           set(state => ({
             items: state.items.map(item =>
               item.id === tempItem.id
@@ -186,73 +207,61 @@ export const useWishlistStore = create<WishlistState>()(
 
           return true;
         } catch (error) {
-          console.error('❌ [WISHLIST-STORE] Error adding to wishlist:', error);
+          console.error('[WISHLIST-STORE] Error:', error);
           set({ error: error instanceof Error ? error.message : 'Error al agregar a favoritos' });
           return false;
         }
       },
 
       removeFromWishlist: async (productId: string, userId: string) => {
-        console.log('🔍 [WISHLIST-STORE] Removing product from wishlist:', productId, 'for user:', userId);
-        
+        console.log('[WISHLIST-STORE] Removing product:', productId);
+
         if (!userId) {
-          console.log('❌ [WISHLIST-STORE] No userId provided for removeFromWishlist');
           set({ error: 'Debes estar logueado para eliminar favoritos' });
           return false;
         }
 
         const existingItem = get().items.find(item => item.product_id === productId);
         if (!existingItem) {
-          console.log('⚠️ [WISHLIST-STORE] Product not in wishlist:', productId);
-          return true; // Not in wishlist
+          return true;
         }
 
         try {
-          // Obtener token de autenticación
-          console.log('🔐 [WISHLIST-STORE] Getting auth token for removeFromWishlist...');
           const token = await getAuthToken();
           if (!token) {
-            console.log('❌ [WISHLIST-STORE] No auth token available for removeFromWishlist');
-            set({ error: 'No hay sesión activa' });
+            set({ error: 'No hay sesion activa' });
             return false;
           }
 
           // Optimistic update
-          console.log('📝 [WISHLIST-STORE] Performing optimistic update to remove product:', productId);
           set(state => ({
             items: state.items.filter(item => item.product_id !== productId),
             error: null
           }));
 
-          // Usar API route con autenticación
-          console.log('📡 [WISHLIST-STORE] Sending DELETE request to /api/wishlist/', productId);
           const response = await fetch(`/api/wishlist/${productId}`, {
             method: 'DELETE',
             headers: {
               'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
             },
           });
 
-          console.log('📡 [WISHLIST-STORE] Remove from wishlist API response status:', response.status);
-
           if (!response.ok) {
-            // Rollback optimistic update
-            console.log('❌ [WISHLIST-STORE] API error, rolling back optimistic update');
+            // Rollback
             set(state => ({
               items: [...state.items, existingItem],
             }));
-            
+
             const errorData = await response.json();
-            console.error('❌ [WISHLIST-STORE] API Error:', errorData);
+            console.error('[WISHLIST-STORE] Delete error:', errorData);
             set({ error: errorData.error || 'Error al eliminar de favoritos' });
             return false;
           }
 
-          console.log('✅ [WISHLIST-STORE] Product removed from wishlist successfully:', productId);
+          console.log('[WISHLIST-STORE] Removed successfully');
           return true;
         } catch (error) {
-          console.error('❌ [WISHLIST-STORE] Error removing from wishlist:', error);
+          console.error('[WISHLIST-STORE] Error:', error);
           set({ error: error instanceof Error ? error.message : 'Error al eliminar de favoritos' });
           return false;
         }
@@ -263,7 +272,7 @@ export const useWishlistStore = create<WishlistState>()(
       },
 
       clearWishlist: () => {
-        set({ items: [], error: null });
+        set({ items: [], error: null, _lastLoadedUserId: null, _loadingPromise: null });
       },
 
       getWishlistCount: () => {
@@ -276,8 +285,9 @@ export const useWishlistStore = create<WishlistState>()(
     }),
     {
       name: 'tus-aguacates-wishlist',
-      partialize: (state) => ({ 
-        items: state.items 
+      partialize: (state) => ({
+        items: state.items,
+        _lastLoadedUserId: state._lastLoadedUserId
       })
     }
   )
