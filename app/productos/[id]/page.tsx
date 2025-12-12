@@ -1,4 +1,4 @@
-import { getProducts } from '@/lib/productStorage';
+import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Shield, Truck } from 'lucide-react';
@@ -12,9 +12,59 @@ interface ProductPageProps {
   }>;
 }
 
+// Buscar producto directamente en Supabase (server-side)
 async function getProductById(id: string) {
-  const allProducts = await getProducts();
-  return allProducts.find(p => p.id === id);
+  const { data: product, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories:category_id (
+        name,
+        slug
+      )
+    `)
+    .eq('id', id)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (error || !product) {
+    return null;
+  }
+
+  // Mapear categoria del JOIN
+  const joinedCategory = product.categories as { name: string; slug: string } | null;
+
+  return {
+    ...product,
+    category: joinedCategory?.name || product.category || 'Sin categoria',
+    image: product.main_image_url
+  };
+}
+
+// Obtener productos relacionados de la misma categoria
+async function getRelatedProducts(categoryId: string, excludeId: string) {
+  const { data: products } = await supabase
+    .from('products')
+    .select(`
+      *,
+      categories:category_id (
+        name,
+        slug
+      )
+    `)
+    .eq('category_id', categoryId)
+    .eq('is_active', true)
+    .neq('id', excludeId)
+    .limit(3);
+
+  return (products || []).map(p => {
+    const joinedCategory = p.categories as { name: string; slug: string } | null;
+    return {
+      ...p,
+      category: joinedCategory?.name || 'Sin categoria',
+      image: p.main_image_url
+    };
+  });
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
@@ -25,11 +75,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const allProducts = await getProducts();
-  // Get 3 related products from same category
-  const relatedProducts = allProducts
-    .filter(p => p.category === product.category && p.id !== product.id)
-    .slice(0, 3);
+  // Get related products from same category
+  const relatedProducts = product.category_id
+    ? await getRelatedProducts(product.category_id, product.id)
+    : [];
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? Math.round(((product.price - product.discount_price!) / product.price) * 100) : 0;
