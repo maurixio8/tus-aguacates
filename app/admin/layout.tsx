@@ -48,21 +48,21 @@ export default function AdminLayout({
     // Verificar autenticación
     const checkAuth = () => {
       const savedAdmin = localStorage.getItem('admin');
-      console.log('🔐 Verificando auth, savedAdmin:', savedAdmin ? 'existe' : 'no existe');
+      console.log('🔐 [AdminLayout] Verificando auth, savedAdmin:', savedAdmin ? 'existe' : 'no existe');
 
       if (savedAdmin) {
         try {
           const adminData = JSON.parse(savedAdmin);
-          console.log('✅ Admin data parsed:', adminData.email);
+          console.log('✅ [AdminLayout] Admin data parsed:', adminData.email);
           setAdmin(adminData);
           setLoading(false);
         } catch (error) {
-          console.error('❌ Error parsing admin data:', error);
+          console.error('❌ [AdminLayout] Error parsing admin data:', error);
           localStorage.removeItem('admin');
           window.location.href = '/admin/login';
         }
       } else {
-        console.log('⚠️ No admin en localStorage, redirigiendo a login');
+        console.log('⚠️ [AdminLayout] No admin en localStorage, redirigiendo a login');
         window.location.href = '/admin/login';
       }
     };

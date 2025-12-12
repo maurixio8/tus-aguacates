@@ -88,6 +88,9 @@ export default function ProductsPage() {
 
   // New Image Audit State
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  
+  // Estado para el producto que está actualizando su categoría
+  const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
   const [uploadStep, setUploadStep] = useState<'select' | 'optimizing' | 'review'>('select');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
@@ -102,8 +105,23 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
+    console.log('🚀 [ProductsPage] Component mounted, loading categories...');
     loadCategories();
   }, []);
+
+  // También cargar categorías cuando el componente se enfoca (para asegurar carga en cliente)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🎯 [ProductsPage] Window focused, checking categories...');
+      if (categories.length === 0 && !loadingCategories) {
+        console.log('🔄 [ProductsPage] No categories loaded, retrying...');
+        loadCategories();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [categories.length, loadingCategories]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -113,15 +131,44 @@ export default function ProductsPage() {
   }, [search, selectedCategory, status, pagination.page]);
 
   const loadCategories = async () => {
+    console.log('🔄 [Categories] Starting to load categories...');
     try {
-      const response = await fetch('/api/categories');
+      console.log('📡 [Categories] Making request to /api/categories');
+      const response = await fetch('/api/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+      console.log('📊 [Categories] Response status:', response.status);
+      console.log('📊 [Categories] Response ok:', response.ok);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('📦 [Categories] Response data:', data);
+      
       if (data.success || Array.isArray(data)) {
-        setCategories(data.categories || data || []);
+        const categoriesData = data.categories || data || [];
+        console.log('✅ [Categories] Categories loaded successfully:', categoriesData.length, 'categories');
+        setCategories(categoriesData);
+      } else {
+        console.error('❌ [Categories] Invalid response format:', data);
+        // Fallback: intentar usar los datos directamente si vienen en un formato inesperado
+        if (Array.isArray(data)) {
+          console.log('🔄 [Categories] Using fallback for array data');
+          setCategories(data);
+        }
       }
     } catch (error) {
-      console.error('Error cargando categorías:', error);
+      console.error('❌ [Categories] Error cargando categorías:', error);
+      // Set categories vacío para evitar que el componente se quede cargando
+      setCategories([]);
     } finally {
+      console.log('🏁 [Categories] Loading categories completed');
       setLoadingCategories(false);
     }
   };
@@ -290,6 +337,40 @@ export default function ProductsPage() {
     } catch (error) {
       console.error('Error eliminando producto:', error);
       alert('Error al eliminar el producto');
+    }
+  };
+
+  const handleUpdateCategory = async (productId: string, categoryId: string) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ category_id: categoryId }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Actualizar el producto localmente para evitar recargar la página
+        setProducts(prev => prev.map(p =>
+          p.id === productId
+            ? {
+                ...p,
+                category_id: categoryId,
+                category_name: categories.find(c => c.id === categoryId)?.name || 'Sin categoría'
+              }
+            : p
+        ));
+        showToast('Categoría actualizada correctamente', 'success');
+      } else {
+        showToast(data.error || 'Error al actualizar la categoría', 'error');
+      }
+    } catch (error) {
+      console.error('Error actualizando categoría:', error);
+      showToast('Error de conexión', 'error');
+    } finally {
+      setUpdatingCategory(null);
     }
   };
 
@@ -773,9 +854,27 @@ export default function ProductsPage() {
                         </div>
                       </td>
                       <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                          {product.category_name || product.categories?.name || 'Sin categoría'}
-                        </span>
+                        {updatingCategory === product.id ? (
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                            <span className="text-xs text-gray-500">Actualizando...</span>
+                          </div>
+                        ) : (
+                          <select
+                            value={product.category_id}
+                            onChange={(e) => {
+                              setUpdatingCategory(product.id);
+                              handleUpdateCategory(product.id, e.target.value);
+                            }}
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
+                          >
+                            {categories.map((cat) => (
+                              <option key={cat.id} value={cat.id}>
+                                {cat.name}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td className="px-4 lg:px-6 py-4">
                         <div>
