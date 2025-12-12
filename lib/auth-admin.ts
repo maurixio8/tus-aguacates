@@ -25,18 +25,35 @@ export interface AuthResult {
 export function createSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  console.log('🔍 [AUTH-ADMIN] Environment variables check:', {
+    hasUrl: !!supabaseUrl,
+    hasServiceKey: !!serviceRoleKey,
+    hasAnonKey: !!anonKey,
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 20) + '...' : 'null',
+    serviceKeyPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 20) + '...' : 'null',
+    anonKeyPrefix: anonKey ? anonKey.substring(0, 20) + '...' : 'null'
+  });
+
+  // Priorizar service role key si está disponible, sino usar anon key
+  const keyToUse = serviceRoleKey || anonKey;
+  const keyType = serviceRoleKey ? 'service_role' : 'anon';
+
+  if (!supabaseUrl || !keyToUse) {
     console.error('❌ Missing Supabase credentials:', {
       hasUrl: !!supabaseUrl,
-      hasServiceKey: !!serviceRoleKey
+      hasServiceKey: !!serviceRoleKey,
+      hasAnonKey: !!anonKey
     });
     throw new Error('Missing Supabase configuration');
   }
 
+  console.log(`✅ [AUTH-ADMIN] Creating Supabase client with ${keyType} key`);
+
   return createClient(
     supabaseUrl,
-    serviceRoleKey, // Usar service role para operaciones de servidor y bypass RLS
+    keyToUse,
     {
       auth: {
         autoRefreshToken: false,
