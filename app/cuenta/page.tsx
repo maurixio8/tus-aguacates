@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, Profile, Order, Product } from '@/lib/supabase';
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
 import FavoriteButton from '@/components/FavoriteButton';
 import {
@@ -62,7 +62,7 @@ interface Coupon {
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { favorites } = useFavoritesStore();
+  const { items: wishlistItems, loadWishlist, getWishlistCount } = useWishlistStore();
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -88,16 +88,17 @@ export default function CuentaPage() {
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadWishlist(user.id);
     }
-  }, [user]);
+  }, [user, loadWishlist]);
 
   useEffect(() => {
-    if (favorites.length > 0) {
+    if (wishlistItems.length > 0) {
       loadFavoriteProducts();
     } else {
       setFavoriteProducts([]);
     }
-  }, [favorites]);
+  }, [wishlistItems]);
 
   async function loadUserData() {
     try {
@@ -150,10 +151,18 @@ export default function CuentaPage() {
 
   async function loadFavoriteProducts() {
     try {
+      // wishlistItems tiene { product_id, product } - extraer IDs
+      const productIds = wishlistItems.map(item => item.product_id);
+
+      if (productIds.length === 0) {
+        setFavoriteProducts([]);
+        return;
+      }
+
       const { data: products } = await supabase
         .from('products')
         .select('*')
-        .in('id', favorites)
+        .in('id', productIds)
         .eq('is_active', true);
 
       if (products) {
@@ -452,7 +461,7 @@ export default function CuentaPage() {
                   <p className="text-xs text-gray-500">Pedidos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{favorites.length}</p>
+                  <p className="text-2xl font-bold text-red-500">{getWishlistCount()}</p>
                   <p className="text-xs text-gray-500">Favoritos</p>
                 </div>
                 <div className="text-center">
@@ -488,11 +497,11 @@ export default function CuentaPage() {
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
-                {favorites.length > 0 && (
+                {getWishlistCount() > 0 && (
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
                   }`}>
-                    {favorites.length}
+                    {getWishlistCount()}
                   </span>
                 )}
               </button>
