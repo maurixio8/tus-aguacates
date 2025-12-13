@@ -5,10 +5,26 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
 
   images: {
-    domains: [
-      'qxoqgpdqgroyxkwsjtii.supabase.co', // Supabase storage
-      'localhost', // Development
-      'res.cloudinary.com', // Cloudinary si se usa
+    // Reemplazamos domains obsoleto por remotePatterns para Next.js 16
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'qxoqgpdqgroyxkwsjtii.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'], // Formatos modernos
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -54,7 +70,18 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Optimización del bundle
+  // Configuración de Turbopack para Next.js 16
+  turbopack: {
+    // Configuración específica para Turbopack
+    rules: {
+      // Reglas para manejar módulos grandes de forma similar a webpack
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+  // Optimización del bundle (mantenemos para compatibilidad con webpack)
   webpack: (config, { isServer, dev }) => {
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
