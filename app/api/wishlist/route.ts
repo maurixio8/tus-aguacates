@@ -35,9 +35,10 @@ export async function GET(request: NextRequest) {
     // Crear cliente scoped al usuario para RLS
     const sb = createSupabaseRequestClient(token);
 
+    // Nota: No hacemos join con products porque los productos vienen del JSON local
     const { data, error } = await sb
       .from('wishlist')
-      .select('*, product:products(*)')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -117,20 +118,8 @@ export async function POST(request: NextRequest) {
 
     console.log('[WISHLIST-API] POST: Adding product', product_id, 'for user', user.id);
 
-    // Verificar que el producto existe (usando cliente scoped)
-    const { data: product, error: productError } = await sb
-      .from('products')
-      .select('id')
-      .eq('id', product_id)
-      .single();
-
-    if (productError || !product) {
-      console.log('[WISHLIST-API] POST: Product not found', product_id);
-      return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404 }
-      );
-    }
+    // Nota: Los productos vienen del JSON local, no de Supabase
+    // Por lo tanto, no verificamos si el producto existe en la tabla products
 
     // Verificar si ya existe en wishlist del usuario (usando cliente scoped)
     const { data: existingItem, error: checkError } = await sb
@@ -157,13 +146,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Insertar en wishlist (usando cliente scoped para que RLS funcione con auth.uid())
+    // Nota: No hacemos join con products porque los productos vienen del JSON local
     const { data, error } = await sb
       .from('wishlist')
       .insert({
         user_id: user.id,
         product_id
       })
-      .select('*, product:products(*)')
+      .select('*')
       .single();
 
     if (error) {
