@@ -7,6 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, Profile, Order } from '@/lib/supabase';
 import { UnifiedProduct, getProductImageUrl, normalizeProductForCart } from '@/lib/types';
 import { useWishlistStore } from '@/lib/wishlist-store';
+import { convertLegacyIdsToUuids } from '@/lib/legacyIdMapper';
 import { useCartStore } from '@/lib/cart-store';
 import { ProductCard } from '@/components/product/ProductCard';
 import {
@@ -156,10 +157,14 @@ export default function CuentaPage() {
 
   async function loadFavoriteProducts() {
     try {
+      // Convertir IDs legacy (product-N) a UUIDs reales
+      const legacyIds = wishlist.map(item => item.product_id);
+      const { uuids } = convertLegacyIdsToUuids(legacyIds);
+
       const { data: products } = await supabase
         .from('products')
         .select('*')
-        .in('id', wishlist.map(item => item.product_id))
+        .in('id', uuids)
         .eq('is_active', true);
 
       if (products) {
