@@ -292,7 +292,7 @@ export default function CuentaPage() {
               productName={product.name}
               price={displayPrice}
               category={product.category_id || 'productos'}
-              imageUrl={product.main_image_url || product.image}
+              imageUrl={product.main_image_url}
               showPrice={false}
               className="w-full h-full"
             />
