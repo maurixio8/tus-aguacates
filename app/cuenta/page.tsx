@@ -7,6 +7,8 @@ import { useAuth } from '@/lib/auth-context';
 import { supabase, Profile, Order, Product } from '@/lib/supabase';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
+import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
+import type { ProductVariant } from '@/lib/productStorage';
 import {
   User,
   Mail,
@@ -25,7 +27,8 @@ import {
   Package,
   Calendar,
   Copy,
-  Gift
+  Gift,
+  ShoppingCart
 } from 'lucide-react';
 
 interface OrderItem {
@@ -235,6 +238,122 @@ export default function CuentaPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  // Componente para tarjeta de producto en favoritos
+  function FavoriteProductCard({ product, onRemove, onAddToCart }: {
+    product: Product;
+    onRemove: () => void;
+    onAddToCart: (product: Product, variant: ProductVariant | null) => void;
+  }) {
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+    const [showToast, setShowToast] = useState(false);
+
+    // Cargar variantes del producto
+    useEffect(() => {
+      if (product.variants && product.variants.length > 0) {
+        const variantsWithPrice = product.variants.map(v => ({
+          ...v,
+          price: (product.discount_price || product.base_price || product.price) + v.price_adjustment
+        }));
+        setSelectedVariant(variantsWithPrice[0]);
+      }
+    }, [product]);
+
+    const handleAddToCart = () => {
+      onAddToCart(product, selectedVariant);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    };
+
+    const displayPrice = selectedVariant
+      ? selectedVariant.price
+      : (product.discount_price || product.price);
+
+    const hasVariants = product.variants && product.variants.length > 0;
+
+    return (
+      <div className="group bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all">
+        {/* Toast de éxito */}
+        {showToast && (
+          <div className="fixed bottom-4 right-4 bg-verde-bosque text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
+            <Check className="w-5 h-5" />
+            Agregado al carrito
+          </div>
+        )}
+
+        <Link href={`/productos/${product.id}`} className="block">
+          <div className="aspect-square relative overflow-hidden">
+            <ProductImagePlaceholder
+              productName={product.name}
+              price={displayPrice}
+              category={product.category || 'productos'}
+              imageUrl={product.main_image_url || product.image}
+              showPrice={false}
+              className="w-full h-full"
+            />
+          </div>
+          <div className="p-3">
+            <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2">
+              {product.name}
+            </h4>
+            <p className="text-verde-bosque font-bold text-lg">
+              {formatCurrency(displayPrice)}
+            </p>
+          </div>
+        </Link>
+
+        {/* Selector de variantes si existen */}
+        {hasVariants && (
+          <div className="px-3 pb-2">
+            <select
+              value={selectedVariant?.id || ''}
+              onChange={(e) => {
+                const variant = product.variants?.find(v => v.id === e.target.value);
+                if (variant) {
+                  setSelectedVariant({
+                    ...variant,
+                    price: (product.discount_price || product.base_price || product.price) + variant.price_adjustment
+                  });
+                }
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {product.variants?.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.variant_name || variant.variant_value}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Botones de acción */}
+        <div className="px-3 pb-3 space-y-2">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleAddToCart();
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 text-white py-2.5 rounded-lg transition-colors text-sm font-medium"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Agregar al carrito
+          </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onRemove();
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <X className="w-4 h-4" />
+            Eliminar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('es-CO', {
@@ -620,43 +739,21 @@ export default function CuentaPage() {
                     <Loader2 className="w-8 h-8 text-verde-bosque animate-spin" />
                   </div>
                 ) : getWishlistProducts().length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {getWishlistProducts().map((product) => (
-                      <div key={product.id} className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                        <Link
-                          href={`/productos/${product.id}`}
-                          className="block"
-                        >
-                          <div className="aspect-square relative">
-                            {product.main_image_url ? (
-                              <img
-                                src={product.main_image_url}
-                                alt={product.name}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                <Package className="w-12 h-12 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="p-3">
-                            <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                            <p className="text-verde-bosque font-bold mt-1">
-                              {formatCurrency(product.discount_price || product.price)}
-                            </p>
-                          </div>
-                        </Link>
-                        <div className="px-3 pb-3">
-                          <button
-                            onClick={() => user && removeFromWishlist(product.id, user.id)}
-                            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg transition-colors text-sm font-medium"
-                          >
-                            <X className="w-4 h-4" />
-                            Eliminar de favoritos
-                          </button>
-                        </div>
-                      </div>
+                      <FavoriteProductCard
+                        key={product.id}
+                        product={product}
+                        onRemove={() => user && removeFromWishlist(product.id, user.id)}
+                        onAddToCart={(product, variant) => {
+                          const itemToAdd = {
+                            ...product,
+                            category_id: product.category_id || product.category || 'general',
+                            variant: variant ?? undefined
+                          };
+                          addItem(itemToAdd as any, 1);
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
