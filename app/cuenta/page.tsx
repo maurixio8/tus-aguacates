@@ -4,11 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { supabase, Profile, Order, Product } from '@/lib/supabase';
+import { supabase, Profile, Order, Product as SupabaseProduct } from '@/lib/supabase';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
-import type { ProductVariant } from '@/lib/productStorage';
+import type { Product, ProductVariant } from '@/lib/productStorage';
 import {
   User,
   Mail,
