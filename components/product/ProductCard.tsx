@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
-import type { Product } from '@/lib/productStorage';
+import type { UnifiedProduct } from '@/lib/types';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
+import { getProductImageUrl } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuth } from '@/lib/auth-context';
@@ -22,7 +23,7 @@ interface ProductVariant {
 }
 
 interface ProductCardProps {
-  product: Product;
+  product: UnifiedProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
@@ -159,7 +160,7 @@ export function ProductCard({ product }: ProductCardProps) {
             productName={product.name}
             price={displayPrice}
             category="aguacates"
-            imageUrl={product.main_image_url}
+            imageUrl={getProductImageUrl(product)}
             showPrice={false} // El precio se mostrará en la sección de abajo
             className="w-full h-full"
           />

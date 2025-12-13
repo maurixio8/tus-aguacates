@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Product } from './productStorage';
+import type { UnifiedProduct, Product } from './types';
 
 /**
  * Default shipping information fallback
@@ -36,7 +36,7 @@ export interface ProductVariant {
 }
 
 export interface CartItemWithProduct {
-  product: Product;
+  product: UnifiedProduct;
   quantity: number;
   price: number;
   variant?: ProductVariant;
@@ -74,7 +74,7 @@ interface CartState {
   isOpen: boolean;
   appliedCoupon: AppliedCoupon | null;
   shipping: ShippingInfo;
-  addItem: (product: Product & { variant?: ProductVariant }, quantity?: number) => void;
+  addItem: (product: UnifiedProduct & { variant?: ProductVariant }, quantity?: number) => void;
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;

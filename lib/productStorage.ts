@@ -2,62 +2,21 @@
 // Sistema unificado de almacenamiento de productos
 
 import { supabase } from './supabase';
+import type { UnifiedProduct, UnifiedProductVariant } from './types';
 
-export interface ProductVariant {
-  id: string;
-  product_id: string;
-  variant_name: string;
-  variant_value: string;
-  price_adjustment: number;
-  is_active: boolean;
-  stock_quantity?: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Product {
-  // ✅ REQUERIDOS (mínimo necesario):
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-
-  // ✅ OPCIONALES (todos con '?'):
-  category?: string;
-  category_id?: string;
-  discount_price?: number;
-  unit?: string;
-  weight?: number;
-  min_quantity?: number;
-  main_image_url?: string;
-  image?: string;
-  images?: string[];
-  stock?: number;
-  reserved_stock?: number;
-  is_featured?: boolean;
-  is_organic?: boolean;
-  is_active?: boolean;
-  benefits?: string[];
-  rating?: number;
-  review_count?: number;
-  slug?: string;
-  sku?: string;
-  created_at?: string;
-  updated_at?: string;
-  variants?: ProductVariant[];
-  hasVariants?: boolean;
-  base_price?: number;
-}
+// Re-exportar para compatibilidad
+export type Product = UnifiedProduct;
+export type ProductVariant = UnifiedProductVariant;
 
 // Productos por defecto si no hay datos guardados
-const DEFAULT_PRODUCTS: Product[] = [];
+const DEFAULT_PRODUCTS: UnifiedProduct[] = [];
 
-export const getDefaultProducts = (): Product[] => {
+export const getDefaultProducts = (): UnifiedProduct[] => {
   return DEFAULT_PRODUCTS;
 };
 
 // ✅ ÚNICA FUENTE DE VERDAD: productos tus_aguacates.json (217 productos)
-const loadProductsFromJSON = async (): Promise<Product[]> => {
+const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
   try {
     console.log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
 
@@ -82,7 +41,7 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
       console.log('✅ JSON cargado desde fetch (cliente)');
     }
 
-    const products: Product[] = [];
+    const products: UnifiedProduct[] = [];
     let productId = 1;
 
     // Procesar cada categoría del JSON
@@ -138,7 +97,7 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 };
 
 
-export const getProducts = async (): Promise<Product[]> => {
+export const getProducts = async (): Promise<UnifiedProduct[]> => {
   // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
   const baseProducts = await loadProductsFromJSON();
 
@@ -220,7 +179,7 @@ export const getProducts = async (): Promise<Product[]> => {
 };
 
 // Versión síncrona para el admin que solo lee del localStorage
-export const getProductsSync = (): Product[] => {
+export const getProductsSync = (): UnifiedProduct[] => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
   const saved = localStorage.getItem('tus_aguacates_products');
@@ -236,7 +195,7 @@ export const getProductsSync = (): Product[] => {
   return DEFAULT_PRODUCTS;
 };
 
-export const saveProducts = (products: Product[]): void => {
+export const saveProducts = (products: UnifiedProduct[]): void => {
   if (typeof window === 'undefined') return;
 
   try {
@@ -247,7 +206,7 @@ export const saveProducts = (products: Product[]): void => {
   }
 };
 
-export const updateProductImage = (productId: string, imageData: string): Product[] => {
+export const updateProductImage = (productId: string, imageData: string): UnifiedProduct[] => {
   const products = getProductsSync();
   const updated = products.map(p =>
     p.id === productId ? { ...p, image: imageData } : p
@@ -278,7 +237,7 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
   }
 };
 
-export const getProductsByCategory = async (categorySlugOrName: string): Promise<Product[]> => {
+export const getProductsByCategory = async (categorySlugOrName: string): Promise<UnifiedProduct[]> => {
   try {
     console.log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
 
@@ -442,7 +401,7 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
     console.log(`📦 Found ${localProducts.length} products in localStorage`);
 
     // 3. Mapear y combinar datos
-    let mergedProducts: Product[] = [];
+    let mergedProducts: UnifiedProduct[] = [];
 
     if (supabaseProducts && supabaseProducts.length > 0) {
       // Convertir productos de Supabase al formato local
@@ -516,7 +475,7 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 };
 
 // Función de inicialización que asegura la sincronización
-export const initializeProducts = async (): Promise<Product[]> => {
+export const initializeProducts = async (): Promise<UnifiedProduct[]> => {
   // Intentar sincronizar primero
   const syncSuccess = await syncSupabaseToLocal();
 
@@ -539,7 +498,7 @@ export const initializeProducts = async (): Promise<Product[]> => {
 };
 
 // 🚀 FUNCIÓN DE IMPORTACIÓN CSV
-export async function importProductsFromCSV(file: File): Promise<Product[]> {
+export async function importProductsFromCSV(file: File): Promise<UnifiedProduct[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -549,13 +508,13 @@ export async function importProductsFromCSV(file: File): Promise<Product[]> {
         const lines = csv.split('\n');
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
 
-        const products: Product[] = [];
+        const products: UnifiedProduct[] = [];
 
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
 
           const values = lines[i].split(',').map(v => v.trim());
-          const product: Product = {
+          const product: UnifiedProduct = {
             id: values[headers.indexOf('id')] || `prod-${Date.now()}-${i}`,
             name: values[headers.indexOf('name')] || 'Producto sin nombre',
             description: values[headers.indexOf('description')] || '',

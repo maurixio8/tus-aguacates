@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Product } from './productStorage';
+import type { UnifiedProduct, Product } from './types';
 import { supabase } from './supabase';
 
 // Función para obtener el token de autenticación
@@ -18,7 +18,7 @@ export interface WishlistItem {
   id: string;
   user_id: string;
   product_id: string;
-  product: Product;
+  product: UnifiedProduct;
   created_at: string;
 }
 
@@ -29,12 +29,12 @@ interface WishlistState {
   
   // Actions
   loadWishlist: (userId: string) => Promise<void>;
-  addToWishlist: (product: Product, userId: string) => Promise<boolean>;
+  addToWishlist: (product: UnifiedProduct, userId: string) => Promise<boolean>;
   removeFromWishlist: (productId: string, userId: string) => Promise<boolean>;
   isInWishlist: (productId: string) => boolean;
   clearWishlist: () => void;
   getWishlistCount: () => number;
-  getWishlistProducts: () => Product[];
+  getWishlistProducts: () => UnifiedProduct[];
 }
 
 export const useWishlistStore = create<WishlistState>()(
@@ -92,7 +92,7 @@ export const useWishlistStore = create<WishlistState>()(
             id: item.id,
             user_id: item.user_id,
             product_id: item.product_id,
-            product: item.product as Product,
+            product: item.product as UnifiedProduct,
             created_at: item.created_at
           }));
 
@@ -104,7 +104,7 @@ export const useWishlistStore = create<WishlistState>()(
         }
       },
 
-      addToWishlist: async (product: Product, userId: string) => {
+      addToWishlist: async (product: UnifiedProduct, userId: string) => {
         console.log('🔍 [WISHLIST-STORE] Adding product to wishlist:', product.name, 'for user:', userId);
         
         if (!userId) {
