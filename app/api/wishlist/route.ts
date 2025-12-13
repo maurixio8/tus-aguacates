@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { createSupabaseRequestClient, extractBearerToken } from '@/lib/supabaseRequestClient';
 
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
 
 // GET - Obtener favoritos del usuario
 export async function GET(request: NextRequest) {

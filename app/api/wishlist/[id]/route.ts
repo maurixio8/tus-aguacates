@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createSupabaseRequestClient, extractBearerToken } from '@/lib/supabaseRequestClient';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 // OPTIONS - Manejar solicitudes CORS
 export async function OPTIONS() {
   return new NextResponse(null, {
