@@ -34,24 +34,59 @@ export async function GET(request: NextRequest) {
     // Crear cliente scoped al usuario para RLS
     const sb = createSupabaseRequestClient(token);
 
-    const { data, error } = await sb
+    // Primero obtenemos los items del wishlist
+    const { data: wishlistItems, error: wishlistError } = await sb
       .from('wishlist')
-      .select('*, product:products(*)')
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('[WISHLIST-API] GET: Error fetching wishlist:', error.code, error.message);
+    if (wishlistError) {
+      console.error('[WISHLIST-API] GET: Error fetching wishlist:', wishlistError.code, wishlistError.message);
       return NextResponse.json(
-        { error: 'Error al obtener favoritos', code: error.code },
+        { error: 'Error al obtener favoritos', code: wishlistError.code },
         { status: 500 }
       );
     }
 
-    console.log('[WISHLIST-API] GET: Returning', data?.length || 0, 'items');
+    // Si no hay items, retornamos array vacío
+    if (!wishlistItems || wishlistItems.length === 0) {
+      console.log('[WISHLIST-API] GET: No items found');
+      return NextResponse.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Obtenemos los IDs de productos
+    const productIds = wishlistItems.map(item => item.product_id);
+
+    // Obtenemos los productos por separado
+    const { data: products, error: productsError } = await sb
+      .from('products')
+      .select('*')
+      .in('id', productIds);
+
+    if (productsError) {
+      console.error('[WISHLIST-API] GET: Error fetching products:', productsError.code, productsError.message);
+      // Retornamos los items sin los datos de producto
+      console.log('[WISHLIST-API] GET: Returning wishlist without product data');
+      return NextResponse.json({
+        success: true,
+        data: wishlistItems
+      });
+    }
+
+    // Combinamos wishlist items con product data
+    const wishlistWithProducts = wishlistItems.map(item => ({
+      ...item,
+      product: products?.find(p => p.id === item.product_id) || null
+    }));
+
+    console.log('[WISHLIST-API] GET: Returning', wishlistWithProducts.length, 'items with product data');
     return NextResponse.json({
       success: true,
-      data: data || []
+      data: wishlistWithProducts
     });
 
   } catch (error) {
@@ -116,19 +151,20 @@ export async function POST(request: NextRequest) {
 
     console.log('[WISHLIST-API] POST: Adding product', product_id, 'for user', user.id);
 
-    // Verificar que el producto existe (usando cliente scoped)
+    // Verificar que el producto existe (opcional - permitir productos locales)
     const { data: product, error: productError } = await sb
       .from('products')
       .select('id')
       .eq('id', product_id)
-      .single();
+      .maybeSingle();
 
-    if (productError || !product) {
-      console.log('[WISHLIST-API] POST: Product not found', product_id);
-      return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404 }
-      );
+    if (productError && productError.code !== 'PGRST116') {
+      // Solo loguear error si no es "no rows returned"
+      console.log('[WISHLIST-API] POST: Error checking product:', productError.message);
+    }
+
+    if (!product) {
+      console.log('[WISHLIST-API] POST: Product not in Supabase, but allowing anyway:', product_id);
     }
 
     // Verificar si ya existe en wishlist del usuario (usando cliente scoped)
@@ -156,13 +192,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Insertar en wishlist (usando cliente scoped para que RLS funcione con auth.uid())
-    const { data, error } = await sb
+    const { data: newItem, error } = await sb
       .from('wishlist')
       .insert({
         user_id: user.id,
         product_id
       })
-      .select('*, product:products(*)')
+      .select('*')
       .single();
 
     if (error) {
@@ -173,10 +209,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('[WISHLIST-API] POST: Successfully added product to wishlist:', data?.id);
+    // Intentar obtener los datos del producto
+    let productData = product;
+    if (!productData) {
+      // Si no obtuvimos el producto antes, intentar ahora
+      const { data: fetchedProduct } = await sb
+        .from('products')
+        .select('*')
+        .eq('id', product_id)
+        .maybeSingle();
+
+      productData = fetchedProduct;
+    }
+
+    // Combinar datos
+    const itemWithProduct = {
+      ...newItem,
+      product: productData || null
+    };
+
+    console.log('[WISHLIST-API] POST: Successfully added product to wishlist:', newItem?.id);
     return NextResponse.json({
       success: true,
-      data
+      data: itemWithProduct
     }, { status: 201 });
 
   } catch (error) {
