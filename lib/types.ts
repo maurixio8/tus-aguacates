@@ -80,9 +80,9 @@ export interface ProductStorage extends UnifiedProduct {
 }
 
 // Helper para obtener la URL de imagen correcta
-export function getProductImageUrl(product: UnifiedProduct): string | undefined {
-  // Prioridad: main_image_url (Supabase) > image (productStorage) > undefined
-  return product.main_image_url || product.image;
+export function getProductImageUrl(product: UnifiedProduct): string {
+  // Prioridad: main_image_url (Supabase) > image (productStorage) > string vacío
+  return product.main_image_url || product.image || '';
 }
 
 // Helper para verificar si un producto tiene imagen válida

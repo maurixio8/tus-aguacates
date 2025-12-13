@@ -81,8 +81,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//res.cloudinary.com" />
         <link rel="dns-prefetch" href="//www.googletagmanager.com" />
 
-        {/* Preload imágenes críticas */}
-        <link rel="preload" as="image" href="/images/hero-banner.jpg" imageSizes="(max-width: 768px) 100vw, 50vw" />
+        {/* Preload imágenes críticas - removido temporalmente para solucionar errores */}
+        {/* <link rel="preload" as="image" href="/images/hero-optimized.png" imageSizes="(max-width: 768px) 100vw, 50vw" /> */}
       </head>
       <body className={`${inter.variable} ${plusJakarta.variable} antialiased`}>
         {/* Componente de Web Vitals para monitoreo */}

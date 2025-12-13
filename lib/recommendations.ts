@@ -298,7 +298,8 @@ export async function getLastOrder(userId: string) {
         *,
         order_items (
           *,
-          product:products (*)
+          product_id,
+          product_snapshot
         )
       `)
       .eq('user_id', userId)

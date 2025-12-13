@@ -99,7 +99,7 @@ export function Header() {
               <Search className="w-5 h-5" />
             </button>
 
-            <Link href="/perfil/favoritos" className="hover:text-verde-aguacate-200 transition-colors">
+            <Link href="/cuenta#favoritos" className="hover:text-verde-aguacate-200 transition-colors">
               <Heart className="w-5 h-5" />
             </Link>
 

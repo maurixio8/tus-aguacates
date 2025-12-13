@@ -44,6 +44,9 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
     const products: UnifiedProduct[] = [];
     let productId = 1;
 
+    // No generar URLs de imágenes - dejar que ProductImagePlaceholder maneje los placeholders
+    // Las imágenes de productos no existen en Supabase Storage actualmente
+
     // Procesar cada categoría del JSON
     for (const category of jsonData.categories || []) {
       const categoryName = category.name || 'General';
@@ -64,7 +67,8 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
           description: description,
           price: basePrice,
           category: categoryName,
-          image: '',
+          image: '', // Dejar vacío para que ProductImagePlaceholder maneje el placeholder
+          main_image_url: '', // Dejar vacío para que ProductImagePlaceholder maneje el placeholder
           is_active: true,
           stock: 100,
           unit: 'unidad',

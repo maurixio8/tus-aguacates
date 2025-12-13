@@ -26,7 +26,7 @@ interface WishlistState {
   items: WishlistItem[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   loadWishlist: (userId: string) => Promise<void>;
   addToWishlist: (product: UnifiedProduct, userId: string) => Promise<boolean>;
@@ -35,6 +35,7 @@ interface WishlistState {
   clearWishlist: () => void;
   getWishlistCount: () => number;
   getWishlistProducts: () => UnifiedProduct[];
+  clearOldData: () => void;
 }
 
 export const useWishlistStore = create<WishlistState>()(
@@ -274,13 +275,29 @@ export const useWishlistStore = create<WishlistState>()(
         return get().items
           .map(item => item.product)
           .filter(product => product != null);
+      },
+
+      clearOldData: () => {
+        // Limpiar datos antiguos del sistema de favoritos simples
+        console.log('🧹 [WISHLIST-STORE] Cleaning old favorites data...');
+        localStorage.removeItem('favorites-storage');
+        localStorage.removeItem('wishlist-storage');
+        console.log('✅ [WISHLIST-STORE] Old data cleaned successfully');
       }
     }),
     {
       name: 'tus-aguacates-wishlist',
-      partialize: (state) => ({ 
-        items: state.items 
+      partialize: (state) => ({
+        items: state.items
       })
     }
   )
 );
+
+// Limpiar datos antiguos al iniciar la aplicación
+if (typeof window !== 'undefined') {
+  setTimeout(() => {
+    const store = useWishlistStore.getState();
+    store.clearOldData();
+  }, 1000);
+}

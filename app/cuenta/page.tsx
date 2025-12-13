@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, Profile, Order } from '@/lib/supabase';
 import { UnifiedProduct, getProductImageUrl, normalizeProductForCart } from '@/lib/types';
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
-import FavoriteButton from '@/components/FavoriteButton';
+import { ProductCard } from '@/components/product/ProductCard';
 import {
   User,
   Mail,
@@ -77,7 +77,7 @@ interface Coupon {
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { favorites } = useFavoritesStore();
+  const { items: wishlist } = useWishlistStore();
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -107,12 +107,12 @@ export default function CuentaPage() {
   }, [user]);
 
   useEffect(() => {
-    if (favorites.length > 0) {
+    if (wishlist.length > 0) {
       loadFavoriteProducts();
     } else {
       setFavoriteProducts([]);
     }
-  }, [favorites]);
+  }, [wishlist]);
 
   async function loadUserData() {
     try {
@@ -132,46 +132,17 @@ export default function CuentaPage() {
         });
       }
 
-      // Load orders with items and products using JOIN
+      // Load orders with basic information to avoid 400 errors
       const { data: ordersData } = await supabase
         .from('orders')
-        .select(`
-          *,
-          order_items (
-            *,
-            products (
-              id,
-              name,
-              main_image_url,
-              image,
-              price,
-              discount_price,
-              unit,
-              slug,
-              is_active,
-              stock
-            )
-          )
-        `)
+        .select('*')
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (ordersData) {
-        // Procesar los datos para asegurar compatibilidad
-        const processedOrders = ordersData.map(order => ({
-          ...order,
-          items: order.order_items?.map((item: any) => ({
-            ...item,
-            product: item.products ? {
-              ...item.products,
-              // Asegurar que ambos campos de imagen estén presentes
-              main_image_url: item.products.main_image_url || item.products.image,
-              image: item.products.image || item.products.main_image_url,
-            } : undefined
-          })) || []
-        }));
-        setOrders(processedOrders);
+        // Set orders without complex processing to avoid errors
+        setOrders(ordersData);
       }
 
       // Load available coupons
@@ -188,7 +159,7 @@ export default function CuentaPage() {
       const { data: products } = await supabase
         .from('products')
         .select('*')
-        .in('id', favorites)
+        .in('id', wishlist.map(item => item.product_id))
         .eq('is_active', true);
 
       if (products) {
@@ -503,7 +474,7 @@ export default function CuentaPage() {
                   <p className="text-xs text-gray-500">Pedidos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{favorites.length}</p>
+                  <p className="text-2xl font-bold text-red-500">{wishlist.length}</p>
                   <p className="text-xs text-gray-500">Favoritos</p>
                 </div>
                 <div className="text-center">
@@ -539,11 +510,11 @@ export default function CuentaPage() {
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
-                {favorites.length > 0 && (
+                {wishlist.length > 0 && (
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
                   }`}>
-                    {favorites.length}
+                    {wishlist.length}
                   </span>
                 )}
               </button>
@@ -691,58 +662,14 @@ export default function CuentaPage() {
                   <h3 className="font-display font-bold text-xl">Mis Favoritos</h3>
                 </div>
 
-                {favoriteProducts.length > 0 ? (
+                {wishlist.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {favoriteProducts.map((product) => {
-                      const imageUrl = getProductImageUrl(product);
-                      return (
-                        <div
-                          key={product.id}
-                          className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                        >
-                          <Link
-                            href={`/productos/${product.id}`}
-                            className="block"
-                          >
-                            <div className="aspect-square relative">
-                              {imageUrl ? (
-                                <img
-                                  src={imageUrl}
-                                  alt={product.name}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                />
-                              ) : (
-                                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                  <Package className="w-12 h-12 text-gray-400" />
-                                </div>
-                              )}
-                              <div className="absolute top-2 right-2">
-                                <FavoriteButton productId={product.id} size="sm" />
-                              </div>
-                            </div>
-                          </Link>
-                          <div className="p-3">
-                            <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                            <p className="text-verde-bosque font-bold mt-1">
-                              {formatCurrency(product.discount_price || product.price)}
-                            </p>
-                            {/* Botón agregar al carrito con el mismo estilo que ProductCard */}
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleAddToFavorites(product);
-                              }}
-                              disabled={(product.stock || 0) === 0}
-                              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm mt-2"
-                            >
-                              <ShoppingCart className="w-4 h-4" />
-                              {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {wishlist.map((item) => (
+                      <ProductCard
+                        key={item.id}
+                        product={item.product}
+                      />
+                    ))}
                   </div>
                 ) : (
                   <div className="text-center py-12">
