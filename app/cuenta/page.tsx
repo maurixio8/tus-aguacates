@@ -43,8 +43,31 @@ interface OrderItem {
   subtotal: number;
 }
 
+// Items from order_data JSONB field
+interface OrderDataItem {
+  productName: string;
+  productId: string;
+  variantName?: string | null;
+  variantId?: string | null;
+  quantity: number;
+  price: number;
+  image?: string;
+}
+
+interface OrderData {
+  items: OrderDataItem[];
+  subtotal: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  appliedCoupon?: any;
+  shippingInfo?: any;
+}
+
 interface OrderWithItems extends Order {
   items?: OrderItem[];
+  order_data?: OrderData;
+  total_amount?: number;
 }
 
 interface Coupon {
@@ -276,7 +299,8 @@ export default function CuentaPage() {
         return 'bg-green-100 text-green-700';
       case 'confirmed':
       case 'confirmado':
-        return 'bg-blue-100 text-blue-700';
+      case 'pagado':
+        return 'bg-green-100 text-green-700';
       case 'cancelled':
       case 'cancelado':
         return 'bg-red-100 text-red-700';
@@ -285,6 +309,7 @@ export default function CuentaPage() {
         return 'bg-purple-100 text-purple-700';
       case 'shipped':
       case 'en_camino':
+      case 'pendiente_entrega':
         return 'bg-orange-100 text-orange-700';
       default:
         return 'bg-yellow-100 text-yellow-700';
@@ -305,8 +330,69 @@ export default function CuentaPage() {
       entregado: 'Entregado',
       cancelled: 'Cancelado',
       cancelado: 'Cancelado',
+      pagado: 'Pagado',
+      pendiente_entrega: 'Pendiente Entrega',
     };
     return labels[status] || status;
+  };
+
+  // Helper function to get order items count (from order_items table or order_data JSONB)
+  const getOrderItemsCount = (order: OrderWithItems): number => {
+    if (order.items && order.items.length > 0) {
+      return order.items.length;
+    }
+    if (order.order_data?.items && order.order_data.items.length > 0) {
+      return order.order_data.items.length;
+    }
+    return 0;
+  };
+
+  // Helper function to get order total (from total, total_amount, or order_data)
+  const getOrderTotal = (order: OrderWithItems): number => {
+    if (order.total_amount && order.total_amount > 0) {
+      return order.total_amount;
+    }
+    if (order.total && order.total > 0) {
+      return order.total;
+    }
+    if (order.order_data?.total && order.order_data.total > 0) {
+      return order.order_data.total;
+    }
+    return 0;
+  };
+
+  // Helper function to get order items for display
+  const getOrderItems = (order: OrderWithItems): Array<{
+    id: string;
+    name: string;
+    quantity: number;
+    price: number;
+    subtotal: number;
+    image?: string;
+  }> => {
+    // First try order_items table
+    if (order.items && order.items.length > 0) {
+      return order.items.map(item => ({
+        id: item.id,
+        name: item.product_snapshot?.name || 'Producto',
+        quantity: item.quantity,
+        price: item.unit_price,
+        subtotal: item.subtotal,
+        image: item.product_snapshot?.main_image_url,
+      }));
+    }
+    // Fallback to order_data JSONB
+    if (order.order_data?.items && order.order_data.items.length > 0) {
+      return order.order_data.items.map((item, index) => ({
+        id: `${order.id}-${index}`,
+        name: item.productName + (item.variantName ? ` (${item.variantName})` : ''),
+        quantity: item.quantity,
+        price: item.price,
+        subtotal: item.price * item.quantity,
+        image: item.image,
+      }));
+    }
+    return [];
   };
 
   if (authLoading || loading) {
@@ -559,25 +645,25 @@ export default function CuentaPage() {
                           </div>
                           <div className="flex justify-between items-center">
                             <p className="text-sm text-gray-600">
-                              {order.items?.length || 0} productos
+                              {getOrderItemsCount(order)} productos
                             </p>
                             <p className="font-bold text-verde-bosque">
-                              {formatCurrency(order.total)}
+                              {formatCurrency(getOrderTotal(order))}
                             </p>
                           </div>
                         </div>
 
                         {/* Expanded Order Details */}
-                        {expandedOrder === order.id && order.items && (
+                        {expandedOrder === order.id && getOrderItemsCount(order) > 0 && (
                           <div className="border-t border-gray-200 bg-gray-50 p-4">
                             <div className="space-y-3 mb-4">
-                              {order.items.map((item) => (
+                              {getOrderItems(order).map((item) => (
                                 <div key={item.id} className="flex items-center gap-3">
                                   <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                    {item.product_snapshot?.main_image_url ? (
+                                    {item.image ? (
                                       <img
-                                        src={item.product_snapshot.main_image_url}
-                                        alt={item.product_snapshot.name}
+                                        src={item.image}
+                                        alt={item.name}
                                         className="w-full h-full object-cover"
                                       />
                                     ) : (
@@ -588,10 +674,10 @@ export default function CuentaPage() {
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <p className="font-medium text-gray-900 truncate">
-                                      {item.product_snapshot?.name || 'Producto'}
+                                      {item.name}
                                     </p>
                                     <p className="text-sm text-gray-500">
-                                      {item.quantity} x {formatCurrency(item.unit_price)}
+                                      {item.quantity} x {formatCurrency(item.price)}
                                     </p>
                                   </div>
                                   <p className="font-medium text-gray-900">
@@ -601,8 +687,32 @@ export default function CuentaPage() {
                               ))}
                             </div>
 
-                            {/* Repeat Order Button */}
-                            <button
+                            {/* Order Summary */}
+                            {order.order_data && (
+                              <div className="border-t border-gray-200 pt-3 mb-4 space-y-1 text-sm">
+                                <div className="flex justify-between text-gray-600">
+                                  <span>Subtotal</span>
+                                  <span>{formatCurrency(order.order_data.subtotal || 0)}</span>
+                                </div>
+                                {order.order_data.discount > 0 && (
+                                  <div className="flex justify-between text-green-600">
+                                    <span>Descuento</span>
+                                    <span>-{formatCurrency(order.order_data.discount)}</span>
+                                  </div>
+                                )}
+                                <div className="flex justify-between text-gray-600">
+                                  <span>Envío</span>
+                                  <span>{formatCurrency(order.order_data.shipping || 0)}</span>
+                                </div>
+                                <div className="flex justify-between font-bold text-gray-900 pt-1 border-t">
+                                  <span>Total</span>
+                                  <span>{formatCurrency(getOrderTotal(order))}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Repeat Order Button - disabled for now since products are from JSON */}
+                            {/*<button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleRepeatOrder(order);
@@ -611,7 +721,7 @@ export default function CuentaPage() {
                             >
                               <RefreshCw className="w-5 h-5" />
                               Repetir este pedido
-                            </button>
+                            </button>*/}
                           </div>
                         )}
                       </div>
