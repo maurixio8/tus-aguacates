@@ -2,8 +2,6 @@
 // Sistema unificado de almacenamiento de productos
 
 import { supabase } from './supabase';
-import fs from 'fs';
-import path from 'path';
 
 export interface ProductVariant {
   id: string;
@@ -67,7 +65,9 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 
     // Detectar si estamos en servidor (Node.js) o cliente (browser)
     if (typeof window === 'undefined') {
-      // Servidor: leer del filesystem
+      // Servidor: leer del filesystem usando imports dinámicos
+      const fs = await import('fs');
+      const path = await import('path');
       const filePath = path.join(process.cwd(), 'public', 'productos tus_aguacates.json');
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       jsonData = JSON.parse(fileContent);
