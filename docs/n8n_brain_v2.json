@@ -1,0 +1,88 @@
+{
+    "name": "Cerebro Inteligente - Mayordomo v2",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "chat",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                380,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o-mini",
+                "options": {
+                    "systemMessage": "Eres el Mayordomo Digital de 'Tus Aguacates'. \n\nTU OBJETIVO:\nAyudar a vender aguacates, frutas y combos.\n\nREGLA DE ORO (Output JSON):\nSIEMPRE debes responder en formato JSON estricto con esta estructura:\n{\n  \"timeline\": [\n    { \"type\": \"text\", \"content\": \"Tu respuesta amable aquí\" },\n    { \"type\": \"products\", \"items\": [] },\n    { \"type\": \"options\", \"options\": [] }\n  ]\n}\n\nCATÁLOGO (Usa estos IDs):\n- Aguacate Hass: \"hass-premium\"\n- Combo Semanal: \"combo-semanal\"\n- Fresas: \"fresa-premium\"\n\nSI EL USUARIO PIDE PRODUCTOS:\n1. Agrega un bloque type: \"products\" con la info del catálogo.\n2. Agrega type: \"options\" con botones para comprar.\n\nSI SALUDA:\nResponde cortésmente y ofrece el menú."
+                }
+            },
+            "name": "AI Agent (OpenAI)",
+            "type": "n8n-nodes-base.openAiChat",
+            "typeVersion": 1,
+            "position": [
+                780,
+                300
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "YOUR_OPENAI_CREDENTIAL_ID",
+                    "name": "OpenAI account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// MOCK DE RESPUESTA INTELIGENTE (Por si falla la AI)\n// Si la AI falla o no tienes API Key configurada, este nodo asegura que el chat no se rompa.\n\nconst userMessage = $json.body.message || '';\nlet response = {};\n\nif (userMessage.includes('intent_avocados') || userMessage.toLowerCase().includes('aguacate')) {\n  response = {\n    timeline: [\n      { type: 'text', content: '¡Los Hass están cremosos hoy! Aquí tienes:' },\n      { type: 'products', items: [{ id: 'hass-1', name: 'Aguacate Hass Premium', price: 5500, image: 'https://tus-aguacates.vercel.app/images/hass.jpg' }] },\n      { type: 'options', options: [{ label: '🛒 Comprar', value: 'add_hass' }] }\n    ]\n  };\n} else {\n  response = {\n    timeline: [\n      { type: 'text', content: 'Entendido. Como Mayordomo Inteligente, estoy buscando eso para ti...' },\n      { type: 'text', content: '(Nota: Para que yo piense de verdad, debes configurar mi nodo OpenAI en n8n)' }\n    ]\n  };\n}\n\nreturn response;"
+            },
+            "name": "Fallback Logic (JS)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                600,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "AI Agent (OpenAI)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Agent (OpenAI)": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

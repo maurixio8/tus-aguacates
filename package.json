@@ -21,7 +21,9 @@
     "whatsapp:deploy": "cross-env-shell-supabase cmd /c \"set SUPABASE_ACCESS_TOKEN=sbp_1a25d98bf7d9594396577ebdbb7bbf332b13daa0 && supabase functions deploy dual-whatsapp-notification\"",
     "deploy:functions": "cross-env-shell-supabase supabase functions deploy --no-verify-jwt",
     "deploy:all": "npm run build && npm run deploy:functions",
-    "test:wishlist": "node scripts/test-wishlist-api.mjs"
+    "test:wishlist": "node scripts/test-wishlist-api.mjs",
+    "analyze:bundle": "ANALYZE=true npm run build",
+    "analyze:deps": "node scripts/analyze-bundle.js"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
@@ -38,7 +40,6 @@
     "lucide-react": "^0.552.0",
     "next": "^16.0.7",
     "postcss": "^8.5.6",
-    "puppeteer": "^24.32.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "sharp": "^0.34.5",
@@ -48,6 +49,7 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^16.0.10",
     "@playwright/test": "^1.40.1",
     "@swc/core": "^1.15.1",
     "@tailwindcss/postcss": "^4",
@@ -68,8 +70,10 @@
     "eslint-config-next": "^15.5.6",
     "jsdom": "^23.0.1",
     "msw": "^2.0.11",
+    "puppeteer": "^24.32.1",
     "tailwindcss": "^3.4.18",
     "typescript": "^5",
-    "vitest": "^1.0.4"
+    "vitest": "^1.0.4",
+    "web-vitals": "^5.1.0"
   }
 }

@@ -3,11 +3,60 @@
 import Link from 'next/link';
 import { ArrowRight, Leaf, Truck, Shield } from 'lucide-react';
 import Image from 'next/image';
-import PromotionSlider from '@/components/promotions/PromotionSlider';
-import UnifiedCategories from '@/components/categories/UnifiedCategories';
-import { PersonalizedHero } from '@/components/home/PersonalizedHero';
-import { RecommendedProducts } from '@/components/home/RecommendedProducts';
-import { LastOrderSummary } from '@/components/home/LastOrderSummary';
+import dynamic from 'next/dynamic';
+
+// Lazy loading de componentes pesados para mejor rendimiento
+const PromotionSlider = dynamic(
+  () => import('@/components/promotions/PromotionSlider'),
+  {
+    loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: true
+  }
+);
+
+const UnifiedCategories = dynamic(
+  () => import('@/components/categories/UnifiedCategories'),
+  {
+    loading: () => (
+      <div className="flex gap-4 overflow-x-auto">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} className="w-24 h-24 bg-gray-100 animate-pulse rounded-lg flex-shrink-0" />
+        ))}
+      </div>
+    ),
+    ssr: true
+  }
+);
+
+const PersonalizedHero = dynamic(
+  () => import('@/components/home/PersonalizedHero').then(mod => ({ default: mod.PersonalizedHero })),
+  {
+    loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: false // No renderizar en servidor por contenido personalizado
+  }
+);
+
+const RecommendedProducts = dynamic(
+  () => import('@/components/home/RecommendedProducts').then(mod => ({ default: mod.RecommendedProducts })),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-lg" />
+        ))}
+      </div>
+    ),
+    ssr: false
+  }
+);
+
+const LastOrderSummary = dynamic(
+  () => import('@/components/home/LastOrderSummary').then(mod => ({ default: mod.LastOrderSummary })),
+  {
+    loading: () => <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />,
+    ssr: false
+  }
+);
 
 export default function Home() {
 
