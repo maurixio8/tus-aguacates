@@ -5,13 +5,13 @@
   "framework": "nextjs",
   "functions": {
     "app/**/*.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "nodejs18.x"
     }
   },
   "build": {
     "env": {
       "NEXT_PUBLIC_SITE_URL": "https://tus-aguacates.vercel.app",
-      "NEXT_PUBLIC_SUPABASE_URL": "https://qxoqgpdqgroyxkwsjtii.supabase.co",
+      "NEXT_PUBLIC_SUPABASE_URL": "https://gxqkmaaqoehydulksudj.supabase.co",
       "NEXT_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9",
       "NEXT_RUNTIME": "nodejs"
     }
