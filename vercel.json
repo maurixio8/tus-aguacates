@@ -6,6 +6,9 @@
   "functions": {
     "app/**/*.ts": {
       "runtime": "nodejs18.x"
+    },
+    "supabase/functions/**/*.ts": {
+      "runtime": "deno"
     }
   },
   "rewrites": [
