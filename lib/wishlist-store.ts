@@ -271,7 +271,9 @@ export const useWishlistStore = create<WishlistState>()(
       },
 
       getWishlistProducts: () => {
-        return get().items.map(item => item.product);
+        return get().items
+          .map(item => item.product)
+          .filter(product => product != null);
       }
     }),
     {

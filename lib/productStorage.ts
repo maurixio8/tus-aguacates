@@ -61,13 +61,26 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
   try {
     console.log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
 
-    const response = await fetch('/productos tus_aguacates.json');
-    if (!response.ok) {
-      throw new Error('No se pudo cargar el JSON de productos');
-    }
+    let jsonData;
 
-    const jsonData = await response.json();
-    console.log('✅ JSON cargado exitosamente');
+    // Detectar si estamos en servidor (Node.js) o cliente (browser)
+    if (typeof window === 'undefined') {
+      // Servidor: leer del filesystem usando imports dinámicos
+      const fs = await import('fs');
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'public', 'productos tus_aguacates.json');
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      jsonData = JSON.parse(fileContent);
+      console.log('✅ JSON cargado desde filesystem (servidor)');
+    } else {
+      // Cliente: usar fetch
+      const response = await fetch('/productos tus_aguacates.json');
+      if (!response.ok) {
+        throw new Error('No se pudo cargar el JSON de productos');
+      }
+      jsonData = await response.json();
+      console.log('✅ JSON cargado desde fetch (cliente)');
+    }
 
     const products: Product[] = [];
     let productId = 1;
