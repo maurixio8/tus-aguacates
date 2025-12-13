@@ -5,9 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { supabase, Profile, Order, Product } from '@/lib/supabase';
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
-import FavoriteButton from '@/components/FavoriteButton';
 import {
   User,
   Mail,
@@ -62,15 +61,14 @@ interface Coupon {
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { favorites } = useFavoritesStore();
+  const { items: wishlistItems, isLoading: wishlistLoading, loadWishlist, getWishlistProducts, getWishlistCount, removeFromWishlist } = useWishlistStore();
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
-  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -88,16 +86,9 @@ export default function CuentaPage() {
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadWishlist(user.id);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (favorites.length > 0) {
-      loadFavoriteProducts();
-    } else {
-      setFavoriteProducts([]);
-    }
-  }, [favorites]);
+  }, [user, loadWishlist]);
 
   async function loadUserData() {
     try {
@@ -145,22 +136,6 @@ export default function CuentaPage() {
       console.error('Error cargando datos:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function loadFavoriteProducts() {
-    try {
-      const { data: products } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', favorites)
-        .eq('is_active', true);
-
-      if (products) {
-        setFavoriteProducts(products);
-      }
-    } catch (error) {
-      console.error('Error cargando favoritos:', error);
     }
   }
 
@@ -452,7 +427,7 @@ export default function CuentaPage() {
                   <p className="text-xs text-gray-500">Pedidos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{favorites.length}</p>
+                  <p className="text-2xl font-bold text-red-500">{getWishlistCount()}</p>
                   <p className="text-xs text-gray-500">Favoritos</p>
                 </div>
                 <div className="text-center">
@@ -488,11 +463,11 @@ export default function CuentaPage() {
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
-                {favorites.length > 0 && (
+                {getWishlistCount() > 0 && (
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
                   }`}>
-                    {favorites.length}
+                    {getWishlistCount()}
                   </span>
                 )}
               </button>
@@ -640,37 +615,48 @@ export default function CuentaPage() {
                   <h3 className="font-display font-bold text-xl">Mis Favoritos</h3>
                 </div>
 
-                {favoriteProducts.length > 0 ? (
+                {wishlistLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-verde-bosque animate-spin" />
+                  </div>
+                ) : getWishlistProducts().length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {favoriteProducts.map((product) => (
-                      <Link
-                        key={product.id}
-                        href={`/productos/${product.id}`}
-                        className="group block bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="aspect-square relative">
-                          {product.main_image_url ? (
-                            <img
-                              src={product.main_image_url}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <Package className="w-12 h-12 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2">
-                            <FavoriteButton productId={product.id} size="sm" />
+                    {getWishlistProducts().map((product) => (
+                      <div key={product.id} className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        <Link
+                          href={`/productos/${product.id}`}
+                          className="block"
+                        >
+                          <div className="aspect-square relative">
+                            {product.main_image_url ? (
+                              <img
+                                src={product.main_image_url}
+                                alt={product.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                                <Package className="w-12 h-12 text-gray-400" />
+                              </div>
+                            )}
                           </div>
+                          <div className="p-3">
+                            <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
+                            <p className="text-verde-bosque font-bold mt-1">
+                              {formatCurrency(product.discount_price || product.price)}
+                            </p>
+                          </div>
+                        </Link>
+                        <div className="px-3 pb-3">
+                          <button
+                            onClick={() => user && removeFromWishlist(product.id, user.id)}
+                            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg transition-colors text-sm font-medium"
+                          >
+                            <X className="w-4 h-4" />
+                            Eliminar de favoritos
+                          </button>
                         </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                          <p className="text-verde-bosque font-bold mt-1">
-                            {formatCurrency(product.discount_price || product.price)}
-                          </p>
-                        </div>
-                      </Link>
+                      </div>
                     ))}
                   </div>
                 ) : (
@@ -678,7 +664,7 @@ export default function CuentaPage() {
                     <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4">No tienes productos favoritos</p>
                     <Link
-                      href="/productos"
+                      href="/tienda"
                       className="inline-block bg-verde-bosque hover:bg-verde-bosque/90 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
                     >
                       Explorar Productos
