@@ -1,6 +1,7 @@
 'use client';
 
-import { Truck, ShoppingBag, DollarSign, Tag, Check, Calendar } from 'lucide-react';
+import Image from 'next/image';
+import { Truck, ShoppingBag, Tag } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 
 export default function CheckoutSummary() {
@@ -8,27 +9,12 @@ export default function CheckoutSummary() {
     items,
     appliedCoupon,
     shipping,
-    getSubtotal,
     getTotals,
     getItemCount
   } = useCartStore();
 
   const totals = getTotals();
   const itemCount = getItemCount();
-
-  // Debug logs for shipping calculation
-  console.log('🚚 CheckoutSummary Debug:', {
-    subtotal: totals.subtotal,
-    shipping: {
-      cost: shipping?.cost,
-      freeShipping: shipping?.freeShipping,
-      freeShippingMin: shipping?.freeShippingMin,
-      amountForFreeShipping: shipping?.amountForFreeShipping,
-      message: shipping?.message
-    },
-    total: totals.total,
-    itemCount
-  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -37,20 +23,12 @@ export default function CheckoutSummary() {
     }).format(amount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
   if (itemCount === 0) {
     return (
       <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
         <div className="text-center text-gray-500">
           <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-          <p>Tu carrito está vacío</p>
+          <p>Tu carrito esta vacio</p>
           <p className="text-sm mt-2">Agrega productos para continuar con tu compra</p>
         </div>
       </div>
@@ -59,74 +37,78 @@ export default function CheckoutSummary() {
 
   return (
     <div className="bg-white rounded-2xl shadow-soft overflow-hidden">
-      <div className="bg-gradient-to-r from-verde-bosque to-verde-aguacate p-4">
-        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-          <ShoppingBag className="w-5 h-5" />
-          Resumen del Pedido
+      <div className="bg-gradient-to-r from-verde-bosque to-verde-aguacate p-3">
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <ShoppingBag className="w-4 h-4" />
+          Resumen del Pedido ({itemCount})
         </h2>
       </div>
 
-      <div className="p-6 space-y-4">
-        {/* Items Summary */}
-        <div className="space-y-3">
-          {items.slice(0, 3).map((item, index) => (
-            <div key={`${item.product.id}-${item.variant?.id || 'no-variant'}-${index}`} className="flex justify-between items-start gap-3 py-2 border-b border-gray-100 last:border-0">
-              <div className="flex-1">
-                <p className="font-medium text-gray-900">
+      <div className="p-4 space-y-3">
+        {/* Items Summary con fotos */}
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={`${item.product.id}-${item.variant?.id || 'no-variant'}-${index}`} className="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+              {/* Imagen del producto */}
+              <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                {item.product.main_image_url ? (
+                  <Image
+                    src={item.product.main_image_url}
+                    alt={item.product.name}
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                    Sin img
+                  </div>
+                )}
+              </div>
+
+              {/* Info del producto */}
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-gray-900 text-sm truncate">
                   {item.product.name}
                   {item.variant && (
-                    <span className="text-sm text-gray-500 ml-1">
+                    <span className="text-gray-500 ml-1">
                       ({item.variant.variant_name})
                     </span>
                   )}
                 </p>
-                <p className="text-sm text-gray-500">
+                <p className="text-xs text-gray-500">
                   {item.quantity} x {formatCurrency(item.price)}
                 </p>
               </div>
-              <p className="font-bold text-gray-900 text-right">
+
+              {/* Precio */}
+              <p className="font-bold text-gray-900 text-sm">
                 {formatCurrency(item.price * item.quantity)}
               </p>
             </div>
           ))}
-          {items.length > 3 && (
-            <p className="text-sm text-gray-500 text-center py-2">
-              +{items.length - 3} productos más
-            </p>
-          )}
         </div>
 
-        {/* Coupon Applied */}
+        {/* Cupon Aplicado (compacto) */}
         {appliedCoupon && (
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+          <div className="bg-green-50 rounded-lg p-2 border border-green-200">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-green-600" />
-                <span className="font-medium text-green-800">
-                  Cupón Aplicado: {appliedCoupon.code}
+                <Tag className="w-3 h-3 text-green-600" />
+                <span className="font-medium text-green-800 text-xs">
+                  {appliedCoupon.code}
                 </span>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-green-700">
-                  -{formatCurrency(totals.discount)}
-                </p>
-              </div>
+              <span className="text-green-700 text-xs font-medium">
+                -{formatCurrency(totals.discount)}
+              </span>
             </div>
-            <p className="text-xs text-green-600 mt-1">
-              {appliedCoupon.description}
-            </p>
-            <p className="text-xs text-green-600 mt-1">
-              Tipo: {appliedCoupon.discount_type === 'percentage'
-                ? `${appliedCoupon.discount_value}% de descuento`
-                : `${formatCurrency(appliedCoupon.discount_value)} de descuento fijo`
-              }
-            </p>
           </div>
         )}
 
         {/* Totals Breakdown */}
-        <div className="space-y-3 pt-4 border-t border-gray-200">
-          <div className="flex justify-between items-center">
+        <div className="space-y-2 pt-3 border-t border-gray-200">
+          <div className="flex justify-between items-center text-sm">
             <span className="text-gray-600">Subtotal</span>
             <span className="font-medium text-gray-900">
               {formatCurrency(totals.subtotal)}
@@ -134,7 +116,7 @@ export default function CheckoutSummary() {
           </div>
 
           {totals.discount > 0 && (
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center text-sm">
               <span className="text-green-600">Descuento</span>
               <span className="font-medium text-green-600">
                 -{formatCurrency(totals.discount)}
@@ -143,75 +125,42 @@ export default function CheckoutSummary() {
           )}
 
           {shipping && (
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-blue-600" />
-                <span className="text-gray-600">Envío</span>
-                {shipping.freeShipping && (
-                  <span className="text-xs text-green-600 font-medium ml-1">
-                    (GRATIS)
-                  </span>
-                )}
+            <div className="flex justify-between items-center text-sm">
+              <div className="flex items-center gap-1">
+                <Truck className="w-3 h-3 text-blue-600" />
+                <span className="text-gray-600">Envio</span>
               </div>
               <div className="text-right">
                 {shipping.freeShipping ? (
-                  <span className="font-medium text-green-600">
-                    GRATIS
-                  </span>
+                  <span className="font-medium text-green-600">GRATIS</span>
                 ) : (
-                  <>
-                    {shipping.amountForFreeShipping > 0 && (
-                      <p className="text-xs text-blue-600 line-through">
-                        {formatCurrency(totals.subtotal)}
-                      </p>
-                    )}
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(totals.shipping)}
-                    </span>
-                    {shipping.amountForFreeShipping > 0 && (
-                      <p className="text-xs text-blue-600">
-                        ¡Te faltan {formatCurrency(shipping.amountForFreeShipping)} para envío gratis!
-                      </p>
-                    )}
-                  </>
+                  <span className="font-medium text-gray-900">
+                    {formatCurrency(totals.shipping)}
+                  </span>
                 )}
               </div>
             </div>
           )}
 
-          <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-            <span className="text-lg font-bold text-gray-900">Total</span>
-            <span className="text-xl font-bold text-verde-bosque">
+          {/* Mensaje de envio gratis faltante */}
+          {shipping && !shipping.freeShipping && shipping.amountForFreeShipping > 0 && (
+            <p className="text-xs text-blue-600 text-right">
+              Te faltan {formatCurrency(shipping.amountForFreeShipping)} para envio gratis
+            </p>
+          )}
+
+          <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+            <span className="text-base font-bold text-gray-900">Total</span>
+            <span className="text-lg font-bold text-verde-bosque">
               {formatCurrency(totals.total)}
             </span>
           </div>
         </div>
 
-        {/* Delivery Information */}
-        {shipping && (
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Truck className="w-4 h-4 text-blue-600" />
-              <span className="font-medium text-blue-800">Información de Entrega</span>
-            </div>
-            <div className="text-sm text-blue-700 space-y-1">
-              <p>{shipping.message}</p>
-              <p>Entrega estimada en {shipping.estimatedDays} día{shipping.estimatedDays !== 1 ? 's' : ''}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Estimated Delivery */}
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4 text-gray-600" />
-            <span className="font-medium text-gray-800">Entrega</span>
-          </div>
+        {/* Entrega - Solo dias disponibles */}
+        <div className="bg-gray-50 rounded-lg p-3 text-center">
           <p className="text-sm text-gray-700">
-            Entregas disponibles: Martes y Viernes en Bogotá
-          </p>
-          <p className="text-xs text-gray-600 mt-1">
-            El horario de entrega es 8am-12pm y 2pm-6pm
+            Entregas: <strong>Martes y Viernes</strong> en Bogota
           </p>
         </div>
       </div>

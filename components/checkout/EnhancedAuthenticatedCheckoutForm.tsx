@@ -20,12 +20,8 @@ import {
   CheckCircle,
   Edit,
   CreditCard,
-  Clock,
-  ArrowRight,
-  Repeat,
-  Check
+  ArrowRight
 } from 'lucide-react';
-import { SubscriptionConfigModal } from './SubscriptionConfigModal';
 
 interface EnhancedAuthenticatedCheckoutFormProps {
   onSuccess: (orderId: string) => void;
@@ -46,13 +42,12 @@ export function EnhancedAuthenticatedCheckoutForm({
   const [step, setStep] = useState<CheckoutStep>('review');
   const [orderId, setOrderId] = useState<string>('');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'efectivo'>('daviplata');
+  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'nequi' | 'efectivo'>('daviplata');
   const [userAddresses, setUserAddresses] = useState<Address[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [editingPersonalInfo, setEditingPersonalInfo] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [personalInfo, setPersonalInfo] = useState({
     full_name: '',
     preferred_name: '',
@@ -218,7 +213,7 @@ export function EnhancedAuthenticatedCheckoutForm({
           shipping_address: addressSnapshot,
           payment_method: paymentMethod,
           status: 'pendiente',
-          payment_status: paymentMethod === 'daviplata' ? 'pagado' : 'pendiente',
+          payment_status: (paymentMethod === 'daviplata' || paymentMethod === 'nequi') ? 'pagado' : 'pendiente',
           coupon_code: useCartStore.getState().appliedCoupon?.code || null,
         })
         .select()
@@ -275,7 +270,7 @@ ${orderData.appliedCoupon.description}
 
 *Entrega:* Por coordinar
 
-*Método de pago:* ${paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
+*Metodo de pago:* ${paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
 
 ¡Gracias por tu compra! 🥑`;
 
@@ -304,19 +299,6 @@ ${orderData.appliedCoupon.description}
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCreateSubscription = () => {
-    if (!selectedAddress) {
-      setError('Debes seleccionar una dirección para crear una suscripción');
-      return;
-    }
-    setShowSubscriptionModal(true);
-  };
-
-  const handleSubscriptionCreated = (subscription: any) => {
-    setShowSubscriptionModal(false);
-    // Opcional: mostrar mensaje de éxito o redirigir a panel de suscripciones
   };
 
   if (!user || !profile) {
@@ -355,9 +337,6 @@ ${orderData.appliedCoupon.description}
                     customMessage: 'ya hemos preparado tu información'
                   })}
                 </h2>
-                <p className="text-green-700 text-sm">
-                  Tu experiencia de compra será rápida y sin fricción
-                </p>
               </div>
             </div>
           </CardContent>
@@ -568,19 +547,21 @@ ${orderData.appliedCoupon.description}
               <CardContent>
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    paymentMethod === 'daviplata' 
-                      ? 'bg-purple-100 text-purple-700' 
+                    paymentMethod === 'daviplata'
+                      ? 'bg-purple-100 text-purple-700'
+                      : paymentMethod === 'nequi'
+                      ? 'bg-pink-100 text-pink-700'
                       : 'bg-green-100 text-green-700'
                   }`}>
-                    {paymentMethod === 'daviplata' ? 'D' : '$'}
+                    {paymentMethod === 'daviplata' ? 'D' : paymentMethod === 'nequi' ? 'N' : '$'}
                   </div>
                   <div>
                     <p className="font-medium capitalize">
-                      {paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}
+                      {paymentMethod === 'daviplata' ? 'Daviplata' : paymentMethod === 'nequi' ? 'Nequi' : 'Efectivo'}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {paymentMethod === 'daviplata' 
-                        ? 'Transferencia bancaria instantánea'
+                      {paymentMethod === 'daviplata' || paymentMethod === 'nequi'
+                        ? 'Transferencia bancaria instantanea'
                         : 'Paga cuando recibas tu pedido'
                       }
                     </p>
@@ -595,7 +576,7 @@ ${orderData.appliedCoupon.description}
               className="w-full"
               size="lg"
             >
-              Continuar al Pago
+              Continuar el pago
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </>
@@ -622,7 +603,7 @@ ${orderData.appliedCoupon.description}
                   disabled={!selectedAddress}
                   className="w-full"
                 >
-                  Continuar al Pago
+                  Continuar el pago
                 </Button>
               </div>
             </CardContent>
@@ -680,6 +661,46 @@ ${orderData.appliedCoupon.description}
                   </div>
                 </div>
 
+                {/* Nequi Option */}
+                <div
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                    paymentMethod === 'nequi'
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setPaymentMethod('nequi')}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="nequi"
+                      checked={paymentMethod === 'nequi'}
+                      onChange={(e) => setPaymentMethod(e.target.value as 'nequi')}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1">Nequi</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Transferencia bancaria instantanea
+                      </p>
+
+                      {paymentMethod === 'nequi' && (
+                        <div className="mt-3 p-3 bg-pink-50 rounded-md text-sm">
+                          <p className="font-semibold mb-2">Instrucciones:</p>
+                          <ol className="list-decimal list-inside space-y-1">
+                            <li>Abre tu app Nequi</li>
+                            <li>Selecciona "Enviar dinero"</li>
+                            <li>Ingresa el numero: <strong className="text-primary">320 306 2007</strong></li>
+                            <li>Monto: <strong className="text-primary">$ {totals.total.toLocaleString('es-CO')} COP</strong></li>
+                            <li>Confirma tu pago</li>
+                          </ol>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Efectivo Option */}
                 <div
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
@@ -706,7 +727,7 @@ ${orderData.appliedCoupon.description}
 
                       {paymentMethod === 'efectivo' && (
                         <div className="mt-3 p-3 bg-green-50 rounded-md text-sm">
-                          <p className="font-semibold mb-2">💵 Instrucciones:</p>
+                          <p className="font-semibold mb-2">Instrucciones:</p>
                           <ul className="list-disc list-inside space-y-1">
                             <li>Prepara el dinero exacto si es posible</li>
                             <li>Paga directamente al repartidor</li>
@@ -731,7 +752,7 @@ ${orderData.appliedCoupon.description}
                     disabled={loading}
                     className="flex-1"
                   >
-                    {loading ? 'Procesando...' : `Confirmar Pedido - ${paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}`}
+                    {loading ? 'Procesando...' : `Confirmar Pedido - ${paymentMethod === 'daviplata' ? 'Daviplata' : paymentMethod === 'nequi' ? 'Nequi' : 'Efectivo'}`}
                   </Button>
                 </div>
               </CardContent>
@@ -756,72 +777,8 @@ ${orderData.appliedCoupon.description}
         <div className="sticky top-4 space-y-4">
           <CouponInput />
           <CheckoutSummary />
-          
-          {/* Quick Info */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">Tiempo estimado</h4>
-              </div>
-              <p className="text-sm text-blue-700">
-                Tu pedido estará listo en <strong>15-20 minutos</strong> después de confirmar.
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                Entregas disponibles en Bogotá
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Opción de Suscripción */}
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <Repeat className="w-4 h-4 text-white" />
-                </div>
-                <h4 className="font-semibold text-green-900">¿Pedido recurrente?</h4>
-              </div>
-              <p className="text-sm text-green-700 mb-4">
-                Ahorra tiempo y nunca te quedes sin tus productos favoritos.
-                Configura entregas automáticas cada 15 días.
-              </p>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Descuento especial en suscripciones</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Modifica productos antes de cada entrega</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Cancela cuando quieras sin costo</span>
-                </div>
-              </div>
-              <Button
-                onClick={handleCreateSubscription}
-                disabled={!selectedAddress}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                variant="default"
-              >
-                <Repeat className="w-4 h-4 mr-2" />
-                Hacer este pedido recurrente
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
-
-      {/* Modal de Configuración de Suscripción */}
-      <SubscriptionConfigModal
-        isOpen={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        selectedAddress={selectedAddress}
-        paymentMethod={paymentMethod}
-        onSubscriptionCreated={handleSubscriptionCreated}
-      />
     </div>
   );
 }
