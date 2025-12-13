@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { supabase, Profile, Order, Product } from '@/lib/supabase';
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { supabase, Profile, Order, Product as SupabaseProduct } from '@/lib/supabase';
+import { useWishlistStore } from '@/lib/wishlist-store';
 import { useCartStore } from '@/lib/cart-store';
-import FavoriteButton from '@/components/FavoriteButton';
+import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
+import type { Product, ProductVariant } from '@/lib/productStorage';
 import {
   User,
   Mail,
@@ -26,7 +27,8 @@ import {
   Package,
   Calendar,
   Copy,
-  Gift
+  Gift,
+  ShoppingCart
 } from 'lucide-react';
 
 interface OrderItem {
@@ -62,15 +64,14 @@ interface Coupon {
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { favorites } = useFavoritesStore();
+  const { items: wishlistItems, isLoading: wishlistLoading, loadWishlist, getWishlistProducts, getWishlistCount, removeFromWishlist } = useWishlistStore();
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
-  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -88,16 +89,9 @@ export default function CuentaPage() {
   useEffect(() => {
     if (user) {
       loadUserData();
+      loadWishlist(user.id);
     }
-  }, [user]);
-
-  useEffect(() => {
-    if (favorites.length > 0) {
-      loadFavoriteProducts();
-    } else {
-      setFavoriteProducts([]);
-    }
-  }, [favorites]);
+  }, [user, loadWishlist]);
 
   async function loadUserData() {
     try {
@@ -145,22 +139,6 @@ export default function CuentaPage() {
       console.error('Error cargando datos:', error);
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function loadFavoriteProducts() {
-    try {
-      const { data: products } = await supabase
-        .from('products')
-        .select('*')
-        .in('id', favorites)
-        .eq('is_active', true);
-
-      if (products) {
-        setFavoriteProducts(products);
-      }
-    } catch (error) {
-      console.error('Error cargando favoritos:', error);
     }
   }
 
@@ -260,6 +238,127 @@ export default function CuentaPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  // Interfaz local para variante con precio calculado
+  interface ProductVariantWithPrice extends ProductVariant {
+    price: number;
+  }
+
+  // Componente para tarjeta de producto en favoritos
+  function FavoriteProductCard({ product, onRemove, onAddToCart }: {
+    product: Product;
+    onRemove: () => void;
+    onAddToCart: (product: Product, variant: ProductVariant | null) => void;
+  }) {
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariantWithPrice | null>(null);
+    const [showToast, setShowToast] = useState(false);
+
+    // Cargar variantes del producto
+    useEffect(() => {
+      if (product.variants && product.variants.length > 0) {
+        const variantsWithPrice = product.variants.map(v => ({
+          ...v,
+          price: (product.discount_price || product.price) + v.price_adjustment
+        }));
+        setSelectedVariant(variantsWithPrice[0]);
+      }
+    }, [product]);
+
+    const handleAddToCart = () => {
+      onAddToCart(product, selectedVariant);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 2000);
+    };
+
+    const displayPrice = selectedVariant
+      ? selectedVariant.price
+      : (product.discount_price || product.price);
+
+    const hasVariants = product.variants && product.variants.length > 0;
+
+    return (
+      <div className="group bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all">
+        {/* Toast de éxito */}
+        {showToast && (
+          <div className="fixed bottom-4 right-4 bg-verde-bosque text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
+            <Check className="w-5 h-5" />
+            Agregado al carrito
+          </div>
+        )}
+
+        <Link href={`/productos/${product.id}`} className="block">
+          <div className="aspect-square relative overflow-hidden">
+            <ProductImagePlaceholder
+              productName={product.name}
+              price={displayPrice}
+              category={product.category_id || 'productos'}
+              imageUrl={product.main_image_url}
+              showPrice={false}
+              className="w-full h-full"
+            />
+          </div>
+          <div className="p-3">
+            <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2">
+              {product.name}
+            </h4>
+            <p className="text-verde-bosque font-bold text-lg">
+              {formatCurrency(displayPrice)}
+            </p>
+          </div>
+        </Link>
+
+        {/* Selector de variantes si existen */}
+        {hasVariants && (
+          <div className="px-3 pb-2">
+            <select
+              value={selectedVariant?.id || ''}
+              onChange={(e) => {
+                const variant = product.variants?.find(v => v.id === e.target.value);
+                if (variant) {
+                  setSelectedVariant({
+                    ...variant,
+                    price: (product.discount_price || product.price) + variant.price_adjustment
+                  });
+                }
+              }}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {product.variants?.map((variant) => (
+                <option key={variant.id} value={variant.id}>
+                  {variant.variant_name || variant.variant_value}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Botones de acción */}
+        <div className="px-3 pb-3 space-y-2">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              handleAddToCart();
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 text-white py-2.5 rounded-lg transition-colors text-sm font-medium"
+          >
+            <ShoppingCart className="w-4 h-4" />
+            Agregar al carrito
+          </button>
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onRemove();
+            }}
+            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg transition-colors text-sm font-medium"
+          >
+            <X className="w-4 h-4" />
+            Eliminar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('es-CO', {
@@ -452,7 +551,7 @@ export default function CuentaPage() {
                   <p className="text-xs text-gray-500">Pedidos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{favorites.length}</p>
+                  <p className="text-2xl font-bold text-red-500">{getWishlistCount()}</p>
                   <p className="text-xs text-gray-500">Favoritos</p>
                 </div>
                 <div className="text-center">
@@ -488,11 +587,11 @@ export default function CuentaPage() {
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
-                {favorites.length > 0 && (
+                {getWishlistCount() > 0 && (
                   <span className={`px-2 py-0.5 text-xs rounded-full ${
                     activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
                   }`}>
-                    {favorites.length}
+                    {getWishlistCount()}
                   </span>
                 )}
               </button>
@@ -640,37 +739,26 @@ export default function CuentaPage() {
                   <h3 className="font-display font-bold text-xl">Mis Favoritos</h3>
                 </div>
 
-                {favoriteProducts.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {favoriteProducts.map((product) => (
-                      <Link
+                {wishlistLoading ? (
+                  <div className="flex justify-center py-12">
+                    <Loader2 className="w-8 h-8 text-verde-bosque animate-spin" />
+                  </div>
+                ) : getWishlistProducts().length > 0 ? (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {getWishlistProducts().map((product) => (
+                      <FavoriteProductCard
                         key={product.id}
-                        href={`/productos/${product.id}`}
-                        className="group block bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="aspect-square relative">
-                          {product.main_image_url ? (
-                            <img
-                              src={product.main_image_url}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <Package className="w-12 h-12 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2">
-                            <FavoriteButton productId={product.id} size="sm" />
-                          </div>
-                        </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                          <p className="text-verde-bosque font-bold mt-1">
-                            {formatCurrency(product.discount_price || product.price)}
-                          </p>
-                        </div>
-                      </Link>
+                        product={product}
+                        onRemove={() => user && removeFromWishlist(product.id, user.id)}
+                        onAddToCart={(product, variant) => {
+                          const itemToAdd = {
+                            ...product,
+                            category_id: product.category_id || 'general',
+                            variant: variant ?? undefined
+                          };
+                          addItem(itemToAdd as any, 1);
+                        }}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -678,7 +766,7 @@ export default function CuentaPage() {
                     <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                     <p className="text-gray-600 mb-4">No tienes productos favoritos</p>
                     <Link
-                      href="/productos"
+                      href="/tienda"
                       className="inline-block bg-verde-bosque hover:bg-verde-bosque/90 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
                     >
                       Explorar Productos
