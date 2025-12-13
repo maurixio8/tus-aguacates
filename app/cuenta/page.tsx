@@ -239,13 +239,18 @@ export default function CuentaPage() {
     }).format(value);
   };
 
+  // Interfaz local para variante con precio calculado
+  interface ProductVariantWithPrice extends ProductVariant {
+    price: number;
+  }
+
   // Componente para tarjeta de producto en favoritos
   function FavoriteProductCard({ product, onRemove, onAddToCart }: {
     product: Product;
     onRemove: () => void;
     onAddToCart: (product: Product, variant: ProductVariant | null) => void;
   }) {
-    const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariantWithPrice | null>(null);
     const [showToast, setShowToast] = useState(false);
 
     // Cargar variantes del producto
