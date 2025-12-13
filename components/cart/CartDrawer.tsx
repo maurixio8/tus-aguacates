@@ -154,9 +154,10 @@ export function CartDrawer() {
               </Link>
 
               <Link
-                href="/productos"
+                href="/tienda"
                 onClick={toggleCart}
                 className="block w-full text-center text-verde-bosque hover:text-verde-bosque-600 font-semibold py-2"
+                prefetch={false}
               >
                 Continuar comprando
               </Link>

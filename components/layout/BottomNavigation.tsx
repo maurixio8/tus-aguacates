@@ -30,8 +30,8 @@ export default function BottomNavigation() {
     {
       label: 'Productos',
       icon: Search,
-      path: '/productos',
-      active: pathname === '/productos' || pathname.startsWith('/producto/')
+      path: '/tienda',
+      active: pathname === '/tienda' || pathname.startsWith('/tienda/') || pathname === '/productos' || pathname.startsWith('/producto/')
     },
     {
       label: 'Ofertas',

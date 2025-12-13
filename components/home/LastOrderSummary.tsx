@@ -153,8 +153,9 @@ export function LastOrderSummary() {
                 Ver Detalles
               </Link>
               <Link
-                href="/productos"
+                href="/tienda"
                 className="flex-1 bg-white hover:bg-gray-50 text-verde-bosque-700 font-bold py-2 px-4 rounded-lg transition-all border-2 border-verde-aguacate text-center flex items-center justify-center gap-2"
+                prefetch={false}
               >
                 <RefreshCw className="w-4 h-4" />
                 Pedir Nuevamente

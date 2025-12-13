@@ -108,7 +108,7 @@ function OfertasContent() {
               No hay productos con descuento en este momento
             </p>
             <button
-              onClick={() => window.location.href = '/productos'}
+              onClick={() => window.location.href = '/tienda'}
               className="inline-block bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold px-8 py-3 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
             >
               Ver todos los productos

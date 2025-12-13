@@ -160,7 +160,8 @@ export function RecommendedProducts() {
 
         <div className="text-center mt-8">
           <Link
-            href="/productos"
+            href="/tienda"
+            prefetch={false}
             className="inline-block bg-white text-verde-bosque-700 hover:bg-gray-50 font-bold px-8 py-3 rounded-xl transition-all shadow-md hover:shadow-lg border-2 border-verde-aguacate"
           >
             Ver Todos los Productos

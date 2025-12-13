@@ -138,7 +138,8 @@ export default function TiendaPage() {
           Explora nuestro catálogo completo y descubre la calidad que nos caracteriza
         </p>
         <Link
-          href="/tienda/todos"
+          href="/tienda"
+          prefetch={false}
           className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           Ver Todos los Productos
