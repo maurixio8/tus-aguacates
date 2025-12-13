@@ -75,7 +75,7 @@ export default function RootLayout({
         {/* Preload critical resources */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link rel="preconnect" href="https://qxoqgpdqgroyxkwsjtii.supabase.co" />
+        <link rel="preconnect" href="https://gxqkmaaqoehydulksudj.supabase.co" />
 
         {/* DNS prefetch para recursos externos */}
         <link rel="dns-prefetch" href="//res.cloudinary.com" />
