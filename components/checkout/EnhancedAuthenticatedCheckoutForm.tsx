@@ -178,7 +178,8 @@ export function EnhancedAuthenticatedCheckoutForm({
           variantName: item.variant?.variant_value || null,
           variantId: item.variant?.id || null,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          image: item.product.main_image_url || item.product.image || null
         })),
         subtotal: totals.subtotal,
         discount: totals.discount,
