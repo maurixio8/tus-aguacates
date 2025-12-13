@@ -253,7 +253,7 @@ export default function CuentaPage() {
       if (product.variants && product.variants.length > 0) {
         const variantsWithPrice = product.variants.map(v => ({
           ...v,
-          price: (product.discount_price || product.base_price || product.price) + v.price_adjustment
+          price: (product.discount_price || product.price) + v.price_adjustment
         }));
         setSelectedVariant(variantsWithPrice[0]);
       }
@@ -312,7 +312,7 @@ export default function CuentaPage() {
                 if (variant) {
                   setSelectedVariant({
                     ...variant,
-                    price: (product.discount_price || product.base_price || product.price) + variant.price_adjustment
+                    price: (product.discount_price || product.price) + variant.price_adjustment
                   });
                 }
               }}
