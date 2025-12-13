@@ -275,85 +275,135 @@ export default function CuentaPage() {
       : (product.discount_price || product.price);
 
     const hasVariants = product.variants && product.variants.length > 0;
+    const hasDiscount = product.discount_price && product.discount_price < product.price;
 
     return (
-      <div className="group bg-white rounded-lg overflow-hidden border border-gray-200 hover:shadow-lg transition-all">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1">
         {/* Toast de éxito */}
         {showToast && (
-          <div className="fixed bottom-4 right-4 bg-verde-bosque text-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2">
-            <Check className="w-5 h-5" />
-            Agregado al carrito
+          <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
+            <span className="text-lg">🛒</span>
+            <span className="font-medium">¡Agregado al carrito!</span>
           </div>
         )}
 
         <Link href={`/productos/${product.id}`} className="block">
-          <div className="aspect-square relative overflow-hidden">
+          <div className="relative aspect-square overflow-hidden">
             <ProductImagePlaceholder
               productName={product.name}
               price={displayPrice}
-              category={product.category_id || 'productos'}
+              category="aguacates"
               imageUrl={product.main_image_url}
               showPrice={false}
               className="w-full h-full"
             />
+
+            {/* Badge de descuento */}
+            {hasDiscount && (
+              <div className="absolute top-3 left-3">
+                <span className="bg-naranja-frutal text-white px-2 py-1 text-xs font-bold rounded">
+                  -OFERTA
+                </span>
+              </div>
+            )}
+
+            {/* Botón eliminar de favoritos */}
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all text-red-500 hover:text-red-600"
+            >
+              <Heart className="w-4 h-4 fill-current" />
+            </button>
           </div>
+
           <div className="p-3">
-            <h4 className="font-semibold text-gray-900 text-sm line-clamp-2 mb-2">
+            {/* Nombre centrado */}
+            <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
               {product.name}
-            </h4>
-            <p className="text-verde-bosque font-bold text-lg">
-              {formatCurrency(displayPrice)}
-            </p>
+            </h3>
+
+            {/* Selector de variantes si existen - Estilo botones toggle */}
+            {hasVariants && product.variants && (
+              <div className="mb-2" onClick={(e) => e.preventDefault()}>
+                <div className={`gap-1.5 ${product.variants.length <= 2 ? 'grid grid-cols-2' : 'flex overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-1'}`}>
+                  {product.variants.map((variant) => {
+                    const variantPrice = (product.discount_price || product.price) + variant.price_adjustment;
+                    return (
+                      <button
+                        key={variant.id}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedVariant({
+                            ...variant,
+                            price: variantPrice
+                          });
+                        }}
+                        className={`
+                          ${product.variants && product.variants.length > 2 ? 'min-w-[120px] snap-start' : ''}
+                          flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md border-2 transition-all
+                          ${selectedVariant?.id === variant.id
+                            ? 'border-verde-bosque bg-verde-bosque/10 shadow-sm'
+                            : 'border-gray-300 bg-white hover:border-verde-bosque/50'
+                          }
+                        `}
+                      >
+                        <span className={`text-xs font-semibold truncate ${
+                          selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
+                        }`}>
+                          {variant.variant_value}
+                        </span>
+                        <span className={`text-xs font-mono whitespace-nowrap ${
+                          selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
+                        }`}>
+                          {formatCurrency(variantPrice)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Precio */}
+            <div className="flex items-end justify-between mb-2">
+              <div className="flex-1">
+                {hasDiscount ? (
+                  <>
+                    <div className="text-xl font-bold font-mono text-verde-bosque">
+                      {formatCurrency(product.discount_price!)}
+                    </div>
+                    <div className="text-xs text-gray-500 line-through">
+                      {formatCurrency(displayPrice)}
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-xl font-bold font-mono text-verde-bosque">
+                    {formatCurrency(displayPrice)}
+                  </div>
+                )}
+                <div className="text-xs text-gray-500">Por {product.unit}</div>
+              </div>
+            </div>
           </div>
         </Link>
 
-        {/* Selector de variantes si existen */}
-        {hasVariants && (
-          <div className="px-3 pb-2">
-            <select
-              value={selectedVariant?.id || ''}
-              onChange={(e) => {
-                const variant = product.variants?.find(v => v.id === e.target.value);
-                if (variant) {
-                  setSelectedVariant({
-                    ...variant,
-                    price: (product.discount_price || product.price) + variant.price_adjustment
-                  });
-                }
-              }}
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-bosque focus:border-transparent"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {product.variants?.map((variant) => (
-                <option key={variant.id} value={variant.id}>
-                  {variant.variant_name || variant.variant_value}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {/* Botones de acción */}
-        <div className="px-3 pb-3 space-y-2">
+        {/* Botón Agregar al Carrito - Mismo estilo que la tienda */}
+        <div className="px-3 pb-3">
           <button
             onClick={(e) => {
               e.preventDefault();
               handleAddToCart();
             }}
-            className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 text-white py-2.5 rounded-lg transition-colors text-sm font-medium"
+            disabled={(product.stock || 0) === 0}
+            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
           >
             <ShoppingCart className="w-4 h-4" />
-            Agregar al carrito
-          </button>
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              onRemove();
-            }}
-            className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg transition-colors text-sm font-medium"
-          >
-            <X className="w-4 h-4" />
-            Eliminar
+            {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
           </button>
         </div>
       </div>
