@@ -291,7 +291,7 @@ export default function CuentaPage() {
             <ProductImagePlaceholder
               productName={product.name}
               price={displayPrice}
-              category={product.category || 'productos'}
+              category={product.category_id || 'productos'}
               imageUrl={product.main_image_url || product.image}
               showPrice={false}
               className="w-full h-full"
@@ -753,7 +753,7 @@ export default function CuentaPage() {
                         onAddToCart={(product, variant) => {
                           const itemToAdd = {
                             ...product,
-                            category_id: product.category_id || product.category || 'general',
+                            category_id: product.category_id || 'general',
                             variant: variant ?? undefined
                           };
                           addItem(itemToAdd as any, 1);
