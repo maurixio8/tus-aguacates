@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createSupabaseRequestClient, extractBearerToken } from '@/lib/supabaseRequestClient';
-import { getProducts } from '@/lib/productStorage';
+import { getProducts, type Product } from '@/lib/productStorage';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
     const productIds = wishlistItems.map(item => item.product_id);
 
     // Obtenemos los productos desde productStorage (carga del JSON)
-    let products = [];
+    let products: Product[] = [];
     try {
       const allProducts = await getProducts();
       products = allProducts.filter(p => productIds.includes(p.id));
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Obtener los datos del producto desde productStorage (carga del JSON)
-    let productData = null;
+    let productData: Product | null = null;
     try {
       const allProducts = await getProducts();
       productData = allProducts.find(p => p.id === product_id) || null;
