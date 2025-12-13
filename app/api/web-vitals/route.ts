@@ -82,9 +82,10 @@ function getRating(name: string, value: number): 'good' | 'needs-improvement' | 
       if (value <= 4000) return 'needs-improvement';
       return 'poor';
 
-    case 'FID': // First Input Delay
-      if (value <= 100) return 'good';
-      if (value <= 300) return 'needs-improvement';
+    case 'FID': // First Input Delay (legacy)
+    case 'INP': // Interaction to Next Paint
+      if (value <= 200) return 'good'; // INP tiene threshold más alto
+      if (value <= 500) return 'needs-improvement';
       return 'poor';
 
     case 'CLS': // Cumulative Layout Shift

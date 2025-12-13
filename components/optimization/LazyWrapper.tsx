@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, ComponentType } from 'react';
+import { lazy, Suspense } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface LazyWrapperProps {
@@ -19,57 +19,29 @@ export function LazyWrapper({ children, fallback = <DefaultFallback /> }: LazyWr
   return <Suspense fallback={fallback}>{children}</Suspense>;
 }
 
-// Higher-order component para lazy loading
-export function withLazyLoading<T extends object>(
-  importFunc: () => Promise<{ default: ComponentType<T> }>,
-  fallback?: React.ReactNode
-) {
-  const LazyComponent = lazy(importFunc);
-
-  return function LazyComponentWrapper(props: T) {
-    return (
-      <LazyWrapper fallback={fallback}>
-        <LazyComponent {...props} />
-      </LazyWrapper>
-    );
-  };
-}
-
-// Componentes pre-configurados para lazy loading
-export const LazyPromotionSlider = withLazyLoading(
-  () => import('@/components/promotions/PromotionSlider'),
-  <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />
+// Componentes lazy simples sin TypeScript complejo
+export const LazyPromotionSlider = lazy(() =>
+  import('@/components/promotions/PromotionSlider')
 );
 
-export const LazyPersonalizedHero = withLazyLoading(
-  () => import('@/components/home/PersonalizedHero'),
-  <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />
+export const LazyPersonalizedHero = lazy(() =>
+  import('@/components/home/PersonalizedHero').then(module => ({
+    default: module.PersonalizedHero
+  }))
 );
 
-export const LazyRecommendedProducts = withLazyLoading(
-  () => import('@/components/home/RecommendedProducts'),
-  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-    {[1, 2, 3].map((i) => (
-      <div key={i} className="h-64 bg-gray-100 animate-pulse rounded-lg" />
-    ))}
-  </div>
+export const LazyRecommendedProducts = lazy(() =>
+  import('@/components/home/RecommendedProducts').then(module => ({
+    default: module.RecommendedProducts
+  }))
 );
 
-export const LazyLastOrderSummary = withLazyLoading(
-  () => import('@/components/home/LastOrderSummary'),
-  <div className="h-32 bg-gray-100 animate-pulse rounded-lg" />
+export const LazyLastOrderSummary = lazy(() =>
+  import('@/components/home/LastOrderSummary').then(module => ({
+    default: module.LastOrderSummary
+  }))
 );
 
-export const LazyUnifiedCategories = withLazyLoading(
-  () => import('@/components/categories/UnifiedCategories'),
-  <div className="flex gap-4 overflow-x-auto">
-    {[1, 2, 3, 4, 5].map((i) => (
-      <div key={i} className="w-24 h-24 bg-gray-100 animate-pulse rounded-lg flex-shrink-0" />
-    ))}
-  </div>
-);
-
-export const LazyAddressAutocomplete = withLazyLoading(
-  () => import('@/components/checkout/AddressAutocomplete'),
-  <div className="h-10 bg-gray-100 animate-pulse rounded" />
+export const LazyUnifiedCategories = lazy(() =>
+  import('@/components/categories/UnifiedCategories')
 );

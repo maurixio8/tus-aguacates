@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { getCLS, getFID, getFCP, getLCP, getTTFB } from 'web-vitals';
+import { onCLS, onINP, onFCP, onLCP, onTTFB } from 'web-vitals';
 
 interface Metric {
   name: string;
@@ -49,11 +49,11 @@ export function WebVitals({ onMetric }: WebVitalsProps) {
         }
       };
 
-      getCLS(handleMetric);
-      getFID(handleMetric);
-      getFCP(handleMetric);
-      getLCP(handleMetric);
-      getTTFB(handleMetric);
+      onCLS(handleMetric);
+      onINP(handleMetric);
+      onFCP(handleMetric);
+      onLCP(handleMetric);
+      onTTFB(handleMetric);
     }
   }, [onMetric]);
 
