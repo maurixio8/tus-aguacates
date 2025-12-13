@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { createSupabaseRequestClient, extractBearerToken } from '@/lib/supabaseRequestClient';
+import { getProducts } from '@/lib/productStorage';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,26 +62,21 @@ export async function GET(request: NextRequest) {
     // Obtenemos los IDs de productos
     const productIds = wishlistItems.map(item => item.product_id);
 
-    // Obtenemos los productos por separado
-    const { data: products, error: productsError } = await sb
-      .from('products')
-      .select('*')
-      .in('id', productIds);
-
-    if (productsError) {
-      console.error('[WISHLIST-API] GET: Error fetching products:', productsError.code, productsError.message);
-      // Retornamos los items sin los datos de producto
-      console.log('[WISHLIST-API] GET: Returning wishlist without product data');
-      return NextResponse.json({
-        success: true,
-        data: wishlistItems
-      });
+    // Obtenemos los productos desde productStorage (carga del JSON)
+    let products = [];
+    try {
+      const allProducts = await getProducts();
+      products = allProducts.filter(p => productIds.includes(p.id));
+      console.log('[WISHLIST-API] GET: Loaded', products.length, 'products from productStorage');
+    } catch (error) {
+      console.error('[WISHLIST-API] GET: Error loading products from storage:', error);
+      // Continuar sin product data
     }
 
     // Combinamos wishlist items con product data
     const wishlistWithProducts = wishlistItems.map(item => ({
       ...item,
-      product: products?.find(p => p.id === item.product_id) || null
+      product: products.find(p => p.id === item.product_id) || null
     }));
 
     console.log('[WISHLIST-API] GET: Returning', wishlistWithProducts.length, 'items with product data');
@@ -209,23 +205,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Intentar obtener los datos del producto
-    let productData = product;
-    if (!productData) {
-      // Si no obtuvimos el producto antes, intentar ahora
-      const { data: fetchedProduct } = await sb
-        .from('products')
-        .select('*')
-        .eq('id', product_id)
-        .maybeSingle();
-
-      productData = fetchedProduct;
+    // Obtener los datos del producto desde productStorage (carga del JSON)
+    let productData = null;
+    try {
+      const allProducts = await getProducts();
+      productData = allProducts.find(p => p.id === product_id) || null;
+      console.log('[WISHLIST-API] POST: Product data loaded from storage:', productData ? 'found' : 'not found');
+    } catch (error) {
+      console.error('[WISHLIST-API] POST: Error loading product from storage:', error);
     }
 
     // Combinar datos
     const itemWithProduct = {
       ...newItem,
-      product: productData || null
+      product: productData
     };
 
     console.log('[WISHLIST-API] POST: Successfully added product to wishlist:', newItem?.id);
