@@ -121,10 +121,10 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
         const idMatch = lp.id === baseProd.id;
         const nameMatch = normalize(lp.name) === normalize(baseProd.name);
 
-        // Debug para el primer producto si falla
-        if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
-          console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
-        }
+        // Debug comentado para evitar spam en consola
+        // if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
+        //   console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
+        // }
 
         return idMatch || nameMatch;
       });

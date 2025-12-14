@@ -40,6 +40,7 @@ export const LEGACY_TO_UUID_MAP: { [key: string]: string } = {
   "product-95": "76367741-325e-4e32-9864-569edb4f4736", // Uchuvas
   "product-96": "b8542aaa-1de6-4e83-aa53-c11697631090", // Mangostinos kilo
   "product-97": "fe106635-478c-44d7-843e-7936be4af2db", // Granadillas
+  "product-98": "27662ae5-dccf-489b-af78-066884d9ada1", // Uchuvas (UUID temporal, verificar)
   "product-113": "b48fc001-94aa-4b3e-b8cc-bddab9ce0fec", // Gulupa
   "product-114": "50f11706-6611-4be4-93b6-3f23761fcb4e", // Pitaya
 
