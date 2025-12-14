@@ -86,7 +86,7 @@ export default function CuentaPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<UnifiedProduct[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -159,7 +159,11 @@ export default function CuentaPage() {
     try {
       // Convertir IDs legacy (product-N) a UUIDs reales
       const legacyIds = wishlist.map(item => item.product_id);
-      const { uuids } = convertLegacyIdsToUuids(legacyIds);
+      console.log('🔍 [DEBUG] Legacy IDs from wishlist:', legacyIds);
+
+      const { uuids, unmapped } = convertLegacyIdsToUuids(legacyIds);
+      console.log('🔍 [DEBUG] Converted UUIDs:', uuids);
+      console.log('⚠️ [DEBUG] Unmapped IDs:', unmapped);
 
       const { data: products } = await supabase
         .from('products')
@@ -167,7 +171,16 @@ export default function CuentaPage() {
         .in('id', uuids)
         .eq('is_active', true);
 
+      console.log('📊 [DEBUG] Products from Supabase:', products?.length || 0);
+
       if (products) {
+        console.log('✅ [DEBUG] Raw products from DB:', products.map(p => ({
+          id: p.id,
+          name: p.name,
+          image: p.image,
+          main_image_url: p.main_image_url
+        })));
+
         // Convertir a UnifiedProduct para asegurar compatibilidad
         const unifiedProducts: UnifiedProduct[] = products.map(product => ({
           ...product,
@@ -175,6 +188,15 @@ export default function CuentaPage() {
           main_image_url: product.main_image_url || product.image,
           image: product.image || product.main_image_url,
         }));
+
+        console.log('🎯 [DEBUG] Final unified products:', unifiedProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          image: p.image,
+          main_image_url: p.main_image_url,
+          imageUrl: getProductImageUrl(p)
+        })));
+
         setFavoriteProducts(unifiedProducts);
       }
     } catch (error) {
