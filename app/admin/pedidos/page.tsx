@@ -393,7 +393,7 @@ export default function OrdersPage() {
               console.log(`📦 [DEBUG] Pedido ${order.order_number}:`, {
                 id: order.id,
                 orderItemsCount: orderItems.length,
-                orderItems: orderItems.map(item => ({
+                orderItems: orderItems.map((item: any) => ({
                   id: item.id,
                   product_id: item.product_id,
                   quantity: item.quantity,
