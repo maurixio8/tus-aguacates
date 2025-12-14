@@ -521,7 +521,7 @@ export default function OrdersPage() {
                           <div>
                             <p className="text-sm font-medium text-gray-700 mb-2">Productos del Pedido</p>
                             <div className="space-y-2">
-                              {orderItems.map((item, index) => (
+                              {orderItems.map((item: any, index: number) => (
                                 <div
                                   key={index}
                                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
