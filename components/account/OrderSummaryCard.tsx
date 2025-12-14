@@ -51,6 +51,7 @@ export function OrderSummaryCard({
 }: OrderSummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'delivered':

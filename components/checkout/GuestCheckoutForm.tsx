@@ -18,10 +18,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const router = useRouter();
   const { items, getTotal, clearCart, getTotals, calculateShipping } = useCartStore();
   const totals = getTotals();
-  
+
   const [step, setStep] = useState<CheckoutStep>('info');
   const [orderId, setOrderId] = useState<string>('');
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -31,9 +31,21 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     password: '',
     paymentMethod: 'daviplata'
   });
-  
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Función mejorada para extraer mensaje de error de Supabase
+  const extractErrorMessage = (error: any): string => {
+    if (typeof error === 'string') return error;
+    if (error?.message) return error.message;
+    if (error?.error?.message) return error.error.message;
+    if (error?.details) return error.details;
+    if (error?.code === '409') return 'Hubo un conflicto al crear el pedido. Por favor intenta de nuevo.';
+    if (error?.code === '42501') return 'No tienes permisos para crear pedidos. Por favor contacta soporte.';
+    if (error?.code === '23505') return 'El número de pedido ya existe. Por favor intenta de nuevo.';
+    return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
+  };
 
   // Initialize shipping calculation when component mounts
   useEffect(() => {
@@ -88,7 +100,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
-      setError(err.message || 'Error al procesar el pedido');
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -228,7 +240,7 @@ ${orderData.appliedCoupon.description}
 
     } catch (err: any) {
       console.error('Error al finalizar pedido:', err);
-      setError(err.message || 'Error al finalizar el pedido');
+      setError(extractErrorMessage(err));
     }
   };
 
@@ -358,7 +370,7 @@ ${orderData.appliedCoupon.description}
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
-      setError(err.message || 'Error al procesar el pedido');
+      setError(extractErrorMessage(err));
     } finally {
       setLoading(false);
     }

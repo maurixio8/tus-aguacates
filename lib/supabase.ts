@@ -131,6 +131,7 @@ export interface Order {
   payment_method?: string;
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   notes?: string;
+  order_data?: any; // JSON con items, subtotal, discount, shipping, total, etc.
   created_at: string;
   updated_at: string;
   confirmed_at?: string;

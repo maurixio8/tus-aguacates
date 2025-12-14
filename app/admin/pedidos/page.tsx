@@ -15,30 +15,51 @@ import {
   CheckCircle,
   XCircle,
   Truck,
-  ChefHat
+  ChefHat,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 
 interface OrderItem {
+  id: string;
+  product_id: string;
+  product_snapshot?: {
+    name?: string;
+    price?: number;
+    main_image_url?: string;
+    image?: string;
+  };
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  products?: {
+    name?: string;
+    main_image_url?: string;
+  };
   product_name?: string;
   productName?: string;
   variantName?: string;
-  quantity: number;
-  price: number;
+  price?: number;
 }
 
 interface Order {
   id: string;
-  customer_name: string;
-  customer_phone: string;
+  order_number: string;
+  customer_name?: string;
+  customer_phone?: string;
   customer_email?: string;
-  delivery_address: string;
+  delivery_address?: string;
   delivery_notes?: string;
+  notes?: string;
   order_status: string;
-  total_amount: number;
+  total: number;
+  total_amount?: number;
   created_at: string;
   delivery_date?: string;
   order_items?: OrderItem[];
   items?: OrderItem[];
+  user_id?: string;
+  shipping_address?: string;
 }
 
 interface Pagination {
@@ -179,11 +200,69 @@ export default function OrdersPage() {
     });
   };
 
+  // Función para obtener datos del cliente
+  const getCustomerInfo = (order: Order) => {
+    // Primero intentar con los datos directos del pedido
+    if (order.customer_name) {
+      return {
+        name: order.customer_name,
+        phone: order.customer_phone,
+        email: order.customer_email
+      };
+    }
+
+    // Si hay shipping_address, extraer de allí
+    if (order.shipping_address) {
+      try {
+        const address = JSON.parse(order.shipping_address);
+        return {
+          name: 'Cliente',
+          phone: address.phone || null,
+          email: order.customer_email
+        };
+      } catch {
+        // Error parseando JSON
+      }
+    }
+
+    // Valor por defecto
+    return {
+      name: 'Cliente',
+      phone: null,
+      email: order.customer_email
+    };
+  };
+
   const clearFilters = () => {
     setStatus('');
     setDateFrom('');
     setDateTo('');
     setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const deleteOrder = async (orderId: string, orderNumber: string) => {
+    if (!confirm(`¿Estás seguro de que deseas eliminar el pedido ${orderNumber}?\n\nEsta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('Pedido eliminado exitosamente');
+        loadOrders();
+      } else {
+        alert(data.error || 'Error al eliminar el pedido');
+      }
+    } catch (error) {
+      console.error('Error eliminando pedido:', error);
+      alert('Error al eliminar el pedido');
+    }
   };
 
   return (
@@ -274,7 +353,58 @@ export default function OrdersPage() {
             {orders.map((order) => {
               const statusInfo = statusConfig[order.order_status] || statusConfig.pendiente;
               const StatusIcon = statusInfo.icon;
-              const orderItems = order.order_items || order.items || [];
+
+              // Función para extraer items de order_data si no hay order_items
+              const extractItemsFromOrderData = (order: any) => {
+                // Primero intentar con order_items
+                if (order.order_items && order.order_items.length > 0) {
+                  return order.order_items;
+                }
+
+                // Luego con items
+                if (order.items && order.items.length > 0) {
+                  return order.items;
+                }
+
+                // Finalmente extraer desde order_data
+                if (order.order_data?.items) {
+                  return order.order_data.items.map((item: any, index: number) => ({
+                    id: `item-${index}`,
+                    product_id: item.productId,
+                    product_snapshot: {
+                      name: item.productName,
+                      price: item.price,
+                      main_image_url: null,
+                      unit: null
+                    },
+                    quantity: item.quantity,
+                    unit_price: item.price,
+                    subtotal: item.quantity * item.price
+                  }));
+                }
+
+                return [];
+              };
+
+              const orderItems = extractItemsFromOrderData(order);
+              const customerInfo = getCustomerInfo(order);
+
+              // Debug log
+              console.log(`📦 [DEBUG] Pedido ${order.order_number}:`, {
+                id: order.id,
+                orderItemsCount: orderItems.length,
+                orderItems: orderItems.map(item => ({
+                  id: item.id,
+                  product_id: item.product_id,
+                  quantity: item.quantity,
+                  has_snapshot: !!item.product_snapshot,
+                  snapshot_name: item.product_snapshot?.name,
+                  has_products: !!item.products,
+                  products_name: item.products?.name,
+                  unit_price: item.unit_price,
+                  price: item.price
+                }))
+              });
 
               return (
                 <div
@@ -290,7 +420,7 @@ export default function OrdersPage() {
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-gray-900">
-                            Pedido #{order.id.substring(0, 8)}
+                            Pedido #{order.order_number || order.id.substring(0, 8)}
                           </h3>
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
                             {statusInfo.label}
@@ -299,7 +429,7 @@ export default function OrdersPage() {
                       </div>
                       <div className="text-right">
                         <p className="text-2xl font-bold text-green-600">
-                          {formatCurrency(order.total_amount)}
+                          {formatCurrency(order.total || order.total_amount || 0)}
                         </p>
                         <p className="text-sm text-gray-500">
                           {formatDate(order.created_at)} - {formatTime(order.created_at)}
@@ -313,21 +443,23 @@ export default function OrdersPage() {
                         <User className="w-4 h-4 text-gray-400 mt-0.5" />
                         <div>
                           <p className="text-sm text-gray-500">Cliente</p>
-                          <p className="font-medium text-gray-900">{order.customer_name}</p>
+                          <p className="font-medium text-gray-900">{customerInfo.name}</p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-2">
-                        <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-500">Teléfono</p>
-                          <a
-                            href={`tel:${order.customer_phone}`}
-                            className="font-medium text-green-600 hover:text-green-700"
-                          >
-                            {order.customer_phone}
-                          </a>
+                      {customerInfo.phone && (
+                        <div className="flex items-start gap-2">
+                          <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <div>
+                            <p className="text-sm text-gray-500">Teléfono</p>
+                            <a
+                              href={`tel:${customerInfo.phone}`}
+                              className="font-medium text-green-600 hover:text-green-700"
+                            >
+                              {customerInfo.phone}
+                            </a>
+                          </div>
                         </div>
-                      </div>
+                      )}
                       {order.delivery_date && (
                         <div className="flex items-start gap-2">
                           <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
@@ -347,10 +479,38 @@ export default function OrdersPage() {
                           <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
                             <p className="text-sm text-gray-500">Dirección de Entrega</p>
-                            <p className="text-gray-900">{order.delivery_address}</p>
+                            {(() => {
+                              // Intentar obtener la dirección del shipping_address (JSON)
+                              if (order.shipping_address) {
+                                try {
+                                  const address = JSON.parse(order.shipping_address);
+                                  return (
+                                    <div className="text-gray-900">
+                                      <p>{address.address}</p>
+                                      <p>{address.city}, {address.department}</p>
+                                      {address.postal_code && <p>Código Postal: {address.postal_code}</p>}
+                                    </div>
+                                  );
+                                } catch {
+                                  // Error parseando JSON, mostrar como texto
+                                  return <p className="text-gray-900">{order.shipping_address}</p>;
+                                }
+                              }
+                              // Si no hay shipping_address, usar delivery_address
+                              if (order.delivery_address) {
+                                return <p className="text-gray-900">{order.delivery_address}</p>;
+                              }
+                              // Si no hay ninguna dirección
+                              return <p className="text-gray-500">No hay dirección registrada</p>;
+                            })()}
                             {order.delivery_notes && (
                               <p className="text-sm text-gray-600 mt-1">
                                 <strong>Notas:</strong> {order.delivery_notes}
+                              </p>
+                            )}
+                            {order.notes && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                <strong>Notas del pedido:</strong> {order.notes}
                               </p>
                             )}
                           </div>
@@ -368,7 +528,11 @@ export default function OrdersPage() {
                                 >
                                   <div>
                                     <p className="font-medium text-gray-900">
-                                      {item.product_name || item.productName}
+                                      {item.product_snapshot?.name ||
+                                       item.products?.name ||
+                                       item.product_name ||
+                                       item.productName ||
+                                       'Producto'}
                                     </p>
                                     {item.variantName && (
                                       <p className="text-sm text-gray-600">{item.variantName}</p>
@@ -376,10 +540,10 @@ export default function OrdersPage() {
                                   </div>
                                   <div className="text-right">
                                     <p className="font-semibold text-gray-900">
-                                      {item.quantity} × {formatCurrency(item.price)}
+                                      {item.quantity} × {formatCurrency(item.unit_price || item.price || 0)}
                                     </p>
                                     <p className="text-sm text-gray-600">
-                                      {formatCurrency(item.price * item.quantity)}
+                                      {formatCurrency(item.subtotal || ((item.price || 0) * item.quantity) || 0)}
                                     </p>
                                   </div>
                                 </div>
@@ -419,14 +583,25 @@ export default function OrdersPage() {
                       )}
 
                       {/* WhatsApp button */}
-                      <a
-                        href={`https://wa.me/57${order.customer_phone.replace(/\D/g, '')}?text=Hola ${order.customer_name}, te escribimos de Tus Aguacates sobre tu pedido #${order.id.substring(0, 8)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
+                      {customerInfo.phone && (
+                        <a
+                          href={`https://wa.me/57${customerInfo.phone.replace(/\D/g, '')}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
+                        >
+                          WhatsApp
+                        </a>
+                      )}
+
+                      {/* Delete button */}
+                      <button
+                        onClick={() => deleteOrder(order.id, order.id.substring(0, 8))}
+                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
                       >
-                        WhatsApp
-                      </a>
+                        <Trash2 className="w-4 h-4" />
+                        Eliminar
+                      </button>
                     </div>
                   </div>
                 </div>

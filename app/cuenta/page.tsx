@@ -141,20 +141,6 @@ export default function CuentaPage() {
       }
 
       // Load orders with their items
-      console.log('🔍 [DEBUG] Loading orders for user:', user!.id);
-
-      // First, try a simple query without joins to test basic access
-      console.log('🔍 [DEBUG] Testing simple query...');
-      const { data: simpleOrders, error: simpleError } = await supabase
-        .from('orders')
-        .select('id, user_id, order_number, status, total, created_at')
-        .eq('user_id', user!.id)
-        .limit(5);
-
-      console.log('🔍 [DEBUG] Simple query result:', { data: simpleOrders, error: simpleError });
-
-      // Now try the full query with order_items
-      console.log('🔍 [DEBUG] Testing full query with order_items...');
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
@@ -173,31 +159,45 @@ export default function CuentaPage() {
         .order('created_at', { ascending: false })
         .limit(10);
 
-      console.log('🔍 [DEBUG] Full orders query result:', { data: ordersData, error: ordersError });
-
       if (ordersError) {
-        console.error('❌ [ERROR] Error fetching orders:', ordersError);
+        console.error('Error fetching orders:', ordersError);
       }
 
       if (ordersData) {
-        console.log('✅ [DEBUG] Raw orders data:', ordersData);
-        // Check if orders have order_items
-        ordersData.forEach((order, index) => {
-          console.log(`🔍 [DEBUG] Order ${index + 1}:`, {
-            id: order.id,
-            order_number: order.order_number,
-            has_order_items: !!order.order_items,
-            order_items_count: Array.isArray(order.order_items) ? order.order_items.length : 0
-          });
-        });
 
-        // Map order_items to items property
+        // Función para extraer items de order_data si no hay order_items
+        const extractOrderItems = (order: any) => {
+          // Primero intentar con order_items
+          if (order.order_items && order.order_items.length > 0) {
+            return order.order_items;
+          }
+
+          // Luego extraer desde order_data
+          if (order.order_data?.items) {
+            return order.order_data.items.map((item: any, index: number) => ({
+              id: `item-${index}`,
+              product_id: item.productId,
+              product_snapshot: {
+                name: item.productName,
+                price: item.price,
+                main_image_url: null,
+                unit: null
+              },
+              quantity: item.quantity,
+              unit_price: item.price,
+              subtotal: item.quantity * item.price
+            }));
+          }
+
+          return [];
+        };
+
+        // Map order_items to items property con fallback a order_data
         const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
           ...order,
-          items: order.order_items || []
+          items: extractOrderItems(order)
         }));
-        console.log('✅ [DEBUG] Orders with items mapped:', ordersWithItems);
-        setOrders(ordersWithItems);
+                setOrders(ordersWithItems);
       }
 
       // Load available coupons

@@ -34,9 +34,9 @@ interface EnhancedAuthenticatedCheckoutFormProps {
 
 type CheckoutStep = 'review' | 'address' | 'payment-method' | 'processing';
 
-export function EnhancedAuthenticatedCheckoutForm({ 
-  onSuccess, 
-  profile 
+export function EnhancedAuthenticatedCheckoutForm({
+  onSuccess,
+  profile
 }: EnhancedAuthenticatedCheckoutFormProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -59,6 +59,18 @@ export function EnhancedAuthenticatedCheckoutForm({
     phone: '',
     email: ''
   });
+
+  // Función mejorada para extraer mensaje de error de Supabase
+  const extractErrorMessage = (error: any): string => {
+    if (typeof error === 'string') return error;
+    if (error?.message) return error.message;
+    if (error?.error?.message) return error.error.message;
+    if (error?.details) return error.details;
+    if (error?.code === '409') return 'Hubo un conflicto al crear el pedido. Por favor intenta de nuevo.';
+    if (error?.code === '42501') return 'No tienes permisos para crear pedidos. Por favor contacta soporte.';
+    if (error?.code === '23505') return 'El número de pedido ya existe. Por favor intenta de nuevo.';
+    return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
+  };
 
   // Initialize shipping calculation when component mounts
   useEffect(() => {
@@ -299,7 +311,7 @@ ${orderData.appliedCoupon.description}
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
-      setError(err.message || 'Error al procesar el pedido');
+      setError(extractErrorMessage(err));
       setStep('payment-method');
     } finally {
       setLoading(false);
