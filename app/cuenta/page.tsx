@@ -140,17 +140,32 @@ export default function CuentaPage() {
         });
       }
 
-      // Load orders with basic information to avoid 400 errors
+      // Load orders with their items
       const { data: ordersData } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_id,
+            quantity,
+            unit_price,
+            subtotal,
+            product_snapshot,
+            created_at
+          )
+        `)
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
       if (ordersData) {
-        // Set orders without complex processing to avoid errors
-        setOrders(ordersData);
+        // Map order_items to items property
+        const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+          ...order,
+          items: order.order_items || []
+        }));
+        setOrders(ordersWithItems);
       }
 
       // Load available coupons
