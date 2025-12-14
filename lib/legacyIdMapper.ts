@@ -47,23 +47,17 @@ export const LEGACY_TO_UUID_MAP: { [key: string]: string } = {
   "product-21": "d7c708a2-3e5f-4a2a-95e7-7a5a9a2b5c6d", // Cebolla Ocañera
   "product-22": "8f7f3d1c-4c5b-4b3a-8e2f-1a9b8c7d6e5f", // Raíces chinas
   "product-23": "9a1b2c3d-4e5f-6a7b-8c9d-0e1f2a3b4c5d", // Guisantes Bandeja
-  "product-24": "5e4d3c2b-1a9f-8e7d-6c5b-4a3b2c1d0e9f", // Zumo Limón concentrado
-  "product-25": "6a5b4c3d-9e8f-7a6b-5c4d-3e2f1a0b9c8d", // Zumo mango concentrado
-  "product-26": "7d6c5b4a-0f1e-2d3c-4b5a-6d7e8f9a0b1c", // Zumo coco concentrado
-  "product-27": "8e7d6c5b-1f2a-3e4d-5c6b-7a8d9e0f1a2b", // Zumo lulo concentrado
-  "product-28": "9f8e7d6c-2a3b-4f5e-6d7c-8b9a0c1d2e3f", // Zumo cereza concentrado
-  "product-29": "a09f8e7d-3b4c-5a6f-7e8d-9c0b1a2c3d4e", // Zumo maracuya concentrado
-  "product-30": "b1a09f8e-4c5d-6b7a-8f9e-0d1c2b3a4c5d", // Datiles
-  "product-31": "c2b1a09f-5d6e-7c8b-9a0f-1e2d3b4c5d6e", // Lechuga morada
-  "product-32": "d3c2b1a0-6e7f-8d9c-0b1a-2f3e4d5c6e7f", // Ciruela importada bandeja
-  "product-33": "e4d3c2b1-7f80-9e0d-1c2b-3a4f5e6d7c8e", // Sandía Baby
-  "product-34": "f5e4d3c2-8091-0f1e-2d3c-4b5a6d7e8f9a", // Anón
-  "product-35": "06f5e4d3-9102-102f-3e4d-5c6b7a8d9e0f", // Ciruela Importada
-  "product-36": "1706f5e4-0213-2130-4f5e-6d7c8b9a0c1d", // Arveja en vaina
-  "product-37": "281706f5-1324-3241-5e6f-7a8b9c0d1e2f", // Habichuela
-  "product-38": "39281706-2435-4352-6f70-8b9c0d1e2f3a", // Germinados Cilantro
-  "product-39": "4a392817-3546-5463-7071-9c0d1e2f3a4b", // Germinados Remolacha
-  "product-40": "5b4a3928-4657-6574-8182-0d1e2f3a4b5c", // Germinados Alfalfa
+  "product-41": "6c5b4a39-5768-6987-7a8b-9c0d1e2f3a4b", // Datiles
+  "product-42": "7d6c5b4a-6879-7098-8b9c-0d1e2f3a4b5c", // Lechuga morada
+  "product-43": "8e7d6c5b-798a-8b9c-9c0d-1e2f3a4b5c6d", // Ciruela importada bandeja
+  "product-44": "9f8e7d6c-809b-9c0d-0d1e-2f3a4b5c6d7e", // Sandía Baby
+  "product-45": "a09f8e7d-910c-0d1e-1e2f-3a4b5c6d7e8f", // Anón
+  "product-46": "b1a09f8e-021d-1e2f-2f3a-4b5c6d7e8f9a", // Ciruela Importada
+  "product-47": "c2b1a09f-132e-2f3a-3a4b-5c6d7e8f9a0b", // Arveja en vaina
+  "product-48": "d3c2b1a0-243f-3a4b-4b5c-6d7e8f9a0b1c", // Habichuela
+  "product-49": "e4d3c2b1-3540-4b5c-5c6d-7e8f9a0b1c2d", // Germinados Cilantro
+  "product-50": "f5e4d3c2-4651-5c6d-6d7e-8f9a0b1c2d3e", // Germinados Remolacha
+  "product-51": "06f5e4d3-5762-6d7e-7e8f-9a0b1c2d3e4f", // Germinados Alfalfa
 
   // Nota: Se pueden agregar más mapeos según sea necesario
   // Para obtener el UUID de un producto específico, ejecutar:
