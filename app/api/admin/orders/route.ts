@@ -272,6 +272,13 @@ export async function POST(request: NextRequest) {
       customer_phone: body.customer_phone,
       customer_email: body.customer_email || null,
       delivery_address: body.delivery_address,
+      shipping_address: {
+        street_address: body.delivery_address,
+        city: body.city || '',
+        state: body.state || '',
+        postal_code: body.postal_code || null,
+        additional_info: body.delivery_notes || null
+      },
       delivery_notes: body.delivery_notes || null,
       subtotal: subtotal, // Subtotal sin domicilio
       total: finalTotal, // Total con domicilio (columna requerida)

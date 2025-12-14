@@ -132,7 +132,7 @@ export function OrderSummaryCard({
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-lg font-bold text-verde-bosque">
-                {formatCurrency(order.total)}
+                {formatCurrency(order.total || order.total_amount || order.order_data?.total || 0)}
               </p>
               <p className="text-xs text-gray-500">
                 {totalItems} producto{totalItems !== 1 ? 's' : ''}
