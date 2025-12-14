@@ -75,17 +75,27 @@ export function convertLegacyIdsToUuids(legacyIds: string[]) {
   const unmapped: string[] = [];
 
   legacyIds.forEach(id => {
-    const mappedId = LEGACY_TO_UUID_MAP[id];
-    if (mappedId) {
-      uuids.push(mappedId);
+    // Si es un UUID válido (formato xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+    if (id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      uuids.push(id);
+    } else if (id.startsWith('product-')) {
+      // Es un ID legacy, buscar en el mapa
+      const mappedId = LEGACY_TO_UUID_MAP[id];
+      if (mappedId) {
+        uuids.push(mappedId);
+      } else {
+        unmapped.push(id);
+        console.warn(`⚠️ No se encontró UUID para legacy ID: ${id}`);
+      }
     } else {
+      // Formato no reconocido
       unmapped.push(id);
-      console.warn(`⚠️ No se encontró UUID para legacy ID: ${id}`);
+      console.warn(`⚠️ Formato de ID no reconocido: ${id}`);
     }
   });
 
   if (unmapped.length > 0) {
-    console.warn(`⚠️ IDs sin mapeo: ${unmapped.join(', ')}`);
+    console.warn(`⚠️ IDs sin mapear: ${unmapped.join(', ')}`);
     console.warn('Por favor, agrega estos IDs al LEGACY_TO_UUID_MAP');
   }
 
