@@ -141,7 +141,8 @@ export default function CuentaPage() {
       }
 
       // Load orders with their items
-      const { data: ordersData } = await supabase
+      console.log('🔍 [DEBUG] Loading orders for user:', user!.id);
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select(`
           *,
@@ -159,12 +160,20 @@ export default function CuentaPage() {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      console.log('🔍 [DEBUG] Orders query result:', { data: ordersData, error: ordersError });
+
+      if (ordersError) {
+        console.error('❌ [ERROR] Error fetching orders:', ordersError);
+      }
+
       if (ordersData) {
+        console.log('✅ [DEBUG] Raw orders data:', ordersData);
         // Map order_items to items property
         const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
           ...order,
           items: order.order_items || []
         }));
+        console.log('✅ [DEBUG] Orders with items mapped:', ordersWithItems);
         setOrders(ordersWithItems);
       }
 
