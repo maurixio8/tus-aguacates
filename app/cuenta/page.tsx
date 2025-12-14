@@ -689,12 +689,12 @@ export default function CuentaPage() {
                   <h3 className="font-display font-bold text-xl">Mis Favoritos</h3>
                 </div>
 
-                {wishlist.length > 0 ? (
+                {favoriteProducts.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {wishlist.map((item) => (
+                    {favoriteProducts.map((product) => (
                       <ProductCard
-                        key={item.id}
-                        product={item.product}
+                        key={product.id}
+                        product={product}
                       />
                     ))}
                   </div>
