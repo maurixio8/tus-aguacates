@@ -51,7 +51,7 @@ interface Order {
   delivery_address?: string;
   delivery_notes?: string;
   notes?: string;
-  order_status: string;
+  status: string;
   total: number;
   total_amount?: number;
   created_at: string;
@@ -70,31 +70,37 @@ interface Pagination {
 }
 
 const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  pendiente: {
+  pending: {
     label: 'Pendiente',
     color: 'text-yellow-700',
     bgColor: 'bg-yellow-100 border-yellow-200',
     icon: Clock,
   },
-  en_preparacion: {
-    label: 'En Preparación',
+  confirmed: {
+    label: 'Confirmado',
     color: 'text-blue-700',
     bgColor: 'bg-blue-100 border-blue-200',
     icon: ChefHat,
   },
-  listo_entrega: {
-    label: 'Listo para Entrega',
+  processing: {
+    label: 'En Preparación',
     color: 'text-purple-700',
     bgColor: 'bg-purple-100 border-purple-200',
     icon: Truck,
   },
-  entregado: {
+  shipped: {
+    label: 'En Camino',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100 border-blue-200',
+    icon: Truck,
+  },
+  delivered: {
     label: 'Entregado',
     color: 'text-green-700',
     bgColor: 'bg-green-100 border-green-200',
     icon: CheckCircle,
   },
-  cancelado: {
+  cancelled: {
     label: 'Cancelado',
     color: 'text-red-700',
     bgColor: 'bg-red-100 border-red-200',
@@ -159,7 +165,7 @@ export default function OrdersPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ order_status: newStatus }),
+        body: JSON.stringify({ status: newStatus }),
       });
 
       const data = await response.json();
@@ -288,11 +294,12 @@ export default function OrdersPage() {
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
             >
               <option value="">Todos los estados</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="en_preparacion">En Preparación</option>
-              <option value="listo_entrega">Listo para Entrega</option>
-              <option value="entregado">Entregado</option>
-              <option value="cancelado">Cancelado</option>
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="processing">En Preparación</option>
+              <option value="shipped">En Camino</option>
+              <option value="delivered">Entregado</option>
+              <option value="cancelled">Cancelado</option>
             </select>
           </div>
 
@@ -351,7 +358,7 @@ export default function OrdersPage() {
         ) : (
           <>
             {orders.map((order) => {
-              const statusInfo = statusConfig[order.order_status] || statusConfig.pendiente;
+              const statusInfo = statusConfig[order.status] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
 
               // Función para extraer items de order_data si no hay order_items
@@ -565,12 +572,12 @@ export default function OrdersPage() {
 
                       <div className="flex-1 sm:flex-none">
                         <select
-                          value={order.order_status || 'pendiente'}
+                          value={order.status || 'pending'}
                           onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
                           disabled={updatingOrder === order.id}
                           className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:opacity-50"
                         >
-                          <option value="pendiente">Pendiente</option>
+                          <option value="pending">Pendiente</option>
                           <option value="en_preparacion">En Preparación</option>
                           <option value="listo_entrega">Listo para Entrega</option>
                           <option value="entregado">Entregado</option>

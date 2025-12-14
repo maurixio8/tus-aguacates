@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter
     if (status && status !== 'all') {
-      query = query.eq('order_status', status);
+      query = query.eq('status', status);
     }
 
     // Apply date filters
@@ -283,7 +283,7 @@ export async function POST(request: NextRequest) {
       subtotal: subtotal, // Subtotal sin domicilio
       total: finalTotal, // Total con domicilio (columna requerida)
       total_amount: finalTotal,
-      order_status: 'pendiente',
+      status: 'pending',
       payment_method: mappedPaymentMethod,
       payment_status: 'pending',
       user_id: null, // Pedidos manuales no tienen usuario asociado
@@ -383,9 +383,9 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { order_status } = body;
+    const { status } = body;
 
-    if (!order_status) {
+    if (!status) {
       return NextResponse.json(
         { error: 'El estado del pedido es requerido' },
         { status: 400, headers: corsHeaders }
@@ -397,7 +397,7 @@ export async function PATCH(request: NextRequest) {
     const { data, error } = await supabase
       .from('orders')
       .update({
-        order_status,
+        status,
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId)
