@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Order, OrderItem } from '@/lib/supabase';
+import type { Order } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import {
   X,
@@ -10,6 +10,30 @@ import {
   CheckCircle,
   Package
 } from 'lucide-react';
+
+// Usamos el mismo OrderItem que está definido en la página de cuenta
+interface OrderItem {
+  id: string;
+  product_id: string;
+  product_snapshot: {
+    name: string;
+    price: number;
+    main_image_url?: string;
+    image?: string;
+    unit?: string;
+  };
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  product?: {
+    id: string;
+    name: string;
+    price: number;
+    main_image_url?: string;
+    image?: string;
+    unit?: string;
+  };
+}
 
 interface ReorderConfirmDialogProps {
   isOpen: boolean;

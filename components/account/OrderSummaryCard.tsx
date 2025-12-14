@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import type { Order, OrderItem } from '@/lib/supabase';
+import type { Order } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import {
   ChevronRight,
@@ -14,9 +14,33 @@ import {
   ShoppingBag
 } from 'lucide-react';
 
+// Usamos el mismo OrderItem que está definido en la página de cuenta
+interface OrderItem {
+  id: string;
+  product_id: string;
+  product_snapshot: {
+    name: string;
+    price: number;
+    main_image_url?: string;
+    image?: string;
+    unit?: string;
+  };
+  quantity: number;
+  unit_price: number;
+  subtotal: number;
+  product?: {
+    id: string;
+    name: string;
+    price: number;
+    main_image_url?: string;
+    image?: string;
+    unit?: string;
+  };
+}
+
 interface OrderSummaryCardProps {
   order: Order & { items?: OrderItem[] };
-  onRepeatOrder?: (order: Order) => void;
+  onRepeatOrder?: (order: Order & { items?: OrderItem[] }) => void;
   isRepeating?: boolean;
 }
 
@@ -30,19 +54,15 @@ export function OrderSummaryCard({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'delivered':
-      case 'entregado':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'shipped':
-      case 'en_camino':
         return <Truck className="w-5 h-5 text-blue-500" />;
       case 'processing':
-      case 'en_preparacion':
+      case 'confirmed':
         return <Package className="w-5 h-5 text-yellow-500" />;
       case 'pending':
-      case 'pendiente':
         return <Clock className="w-5 h-5 text-orange-500" />;
       case 'cancelled':
-      case 'cancelado':
         return <Package className="w-5 h-5 text-red-500" />;
       default:
         return <Package className="w-5 h-5 text-gray-500" />;
@@ -52,17 +72,11 @@ export function OrderSummaryCard({
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
       pending: 'Pendiente',
-      pendiente: 'Pendiente',
       confirmed: 'Confirmado',
-      confirmado: 'Confirmado',
       processing: 'En preparación',
-      en_preparacion: 'En preparación',
       shipped: 'En camino',
-      en_camino: 'En camino',
       delivered: 'Entregado',
-      entregado: 'Entregado',
       cancelled: 'Cancelado',
-      cancelado: 'Cancelado',
     };
     return labels[status] || status;
   };
@@ -101,10 +115,10 @@ export function OrderSummaryCard({
                 </h3>
                 <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                   order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                  order.status === 'shipped' || order.status === 'en_camino' ? 'bg-blue-100 text-blue-700' :
-                  order.status === 'processing' || order.status === 'en_preparacion' ? 'bg-yellow-100 text-yellow-700' :
-                  order.status === 'pending' || order.status === 'pendiente' ? 'bg-orange-100 text-orange-700' :
-                  order.status === 'cancelled' || order.status === 'cancelado' ? 'bg-red-100 text-red-700' :
+                  order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                  order.status === 'processing' || order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
+                  order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                  order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
                   'bg-gray-100 text-gray-700'
                 }`}>
                   {getStatusLabel(order.status)}
