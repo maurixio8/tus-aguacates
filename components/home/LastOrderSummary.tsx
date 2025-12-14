@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { getLastOrder } from '@/lib/recommendations';
+import { supabase } from '@/lib/supabase';
 import type { Order } from '@/lib/supabase';
 import Link from 'next/link';
 import { Package, Clock, CheckCircle, RefreshCw } from 'lucide-react';
@@ -11,6 +12,7 @@ export function LastOrderSummary() {
   const { user } = useAuth();
   const [lastOrder, setLastOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
+  const [orderItems, setOrderItems] = useState<any[]>([]);
 
   useEffect(() => {
     async function loadLastOrder() {
@@ -20,6 +22,18 @@ export function LastOrderSummary() {
       try {
         const order = await getLastOrder(user.id);
         setLastOrder(order);
+
+        // Cargar los items del pedido
+        if (order) {
+          const { data: items, error } = await supabase
+            .from('order_items')
+            .select('*')
+            .eq('order_id', order.id);
+
+          if (!error && items) {
+            setOrderItems(items);
+          }
+        }
       } catch (error) {
         console.error('Error loading last order:', error);
       } finally {
@@ -67,34 +81,44 @@ export function LastOrderSummary() {
     }).format(date);
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'completado':
-      case 'entregado':
-      case 'pagado':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'en_preparacion':
-      case 'pendiente':
-        return <Clock className="w-5 h-5 text-yellow-500" />;
-      default:
-        return <Package className="w-5 h-5 text-gray-500" />;
+  const getStatusIcon = (status: string, paymentStatus?: string) => {
+    // Si el estado del pedido es entregado/completado, mostramos check
+    if (status === 'delivered' || status === 'entregado' || status === 'delivered') {
+      return <CheckCircle className="w-5 h-5 text-green-500" />;
     }
+    // Si está pendiente o en preparación, mostramos reloj
+    if (status === 'pending' || status === 'pendiente' ||
+        status === 'processing' || status === 'en_preparacion') {
+      return <Clock className="w-5 h-5 text-yellow-500" />;
+    }
+    // Si está cancelado, mostramos paquete gris
+    if (status === 'cancelled' || status === 'cancelado') {
+      return <Package className="w-5 h-5 text-gray-500" />;
+    }
+    // Por defecto, mostramos paquete
+    return <Package className="w-5 h-5 text-blue-500" />;
   };
 
   const getStatusText = (status: string) => {
     const statusMap: Record<string, string> = {
+      pending: 'Pendiente',
       pendiente: 'Pendiente',
+      processing: 'En preparación',
       en_preparacion: 'En preparación',
-      pagado: 'Pagado',
-      completado: 'Completado',
+      confirmed: 'Confirmado',
+      confirmado: 'Confirmado',
+      shipped: 'En camino',
+      en_camino: 'En camino',
+      delivered: 'Entregado',
       entregado: 'Entregado',
+      cancelled: 'Cancelado',
       cancelado: 'Cancelado',
     };
     return statusMap[status] || status;
   };
 
-  // Como los items están en una tabla separada, usamos un valor por defecto
-  const itemCount = 1; // Por ahora asumimos que hay al menos 1 item
+  // Calcular el total de items
+  const totalItems = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
 
   return (
     <section className="py-8 bg-gray-50">
@@ -108,7 +132,7 @@ export function LastOrderSummary() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
-                  {getStatusIcon(lastOrder.status)}
+                  {getStatusIcon(lastOrder.status, lastOrder.payment_status)}
                   <span className="font-semibold text-lg text-verde-bosque-700">
                     Pedido #{lastOrder.id.slice(0, 8)}
                   </span>
@@ -122,23 +146,41 @@ export function LastOrderSummary() {
                   {formatPrice(lastOrder.total)}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {itemCount} {itemCount === 1 ? 'producto' : 'productos'}
+                  {totalItems} {totalItems === 1 ? 'producto' : 'productos'} ({orderItems.length} tipos)
                 </p>
               </div>
             </div>
 
             <div className="border-t pt-4 mb-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Estado:</span>
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-gray-600">Estado del pedido:</span>
                 <span className="font-semibold text-verde-bosque-700">
                   {getStatusText(lastOrder.status)}
                 </span>
               </div>
+              {lastOrder.payment_status && (
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-gray-600">Estado del pago:</span>
+                  <span className={`font-semibold ${
+                    lastOrder.payment_status === 'completed' ? 'text-green-600' :
+                    lastOrder.payment_status === 'failed' ? 'text-red-600' :
+                    'text-yellow-600'
+                  }`}>
+                    {lastOrder.payment_status === 'completed' ? 'Completado' :
+                     lastOrder.payment_status === 'failed' ? 'Fallido' :
+                     lastOrder.payment_status === 'pending' ? 'Pendiente' :
+                     lastOrder.payment_status === 'refunded' ? 'Reembolsado' :
+                     lastOrder.payment_status}
+                  </span>
+                </div>
+              )}
               {lastOrder.payment_method && (
-                <div className="flex items-center justify-between text-sm mt-2">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Método de pago:</span>
                   <span className="font-semibold text-verde-bosque-700 capitalize">
-                    {lastOrder.payment_method}
+                    {lastOrder.payment_method === 'daviplata' ? 'Daviplata' :
+                     lastOrder.payment_method === 'efectivo' ? 'Efectivo contra entrega' :
+                     lastOrder.payment_method}
                   </span>
                 </div>
               )}

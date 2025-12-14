@@ -10,6 +10,8 @@ import { useWishlistStore } from '@/lib/wishlist-store';
 import { convertLegacyIdsToUuids } from '@/lib/legacyIdMapper';
 import { useCartStore } from '@/lib/cart-store';
 import { ProductCard } from '@/components/product/ProductCard';
+import { OrderSummaryCard } from '@/components/account/OrderSummaryCard';
+import { ReorderConfirmDialog } from '@/components/account/ReorderConfirmDialog';
 import {
   User,
   Mail,
@@ -89,6 +91,11 @@ export default function CuentaPage() {
   const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
+
+  // Reorder dialog state
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
+  const [isRepeatingOrder, setIsRepeatingOrder] = useState(false);
 
   // Edit profile state
   const [isEditing, setIsEditing] = useState(false);
@@ -247,39 +254,63 @@ export default function CuentaPage() {
     }
   }
 
-  function handleRepeatOrder(order: OrderWithItems) {
+  function handleRepeatOrderClick(order: OrderWithItems) {
     if (!order.items || order.items.length === 0) return;
 
-    order.items.forEach((item) => {
-      // Priorizar datos del producto del JOIN sobre el snapshot
-      const productData = (item as any).product || item.product_snapshot;
-      
-      if (productData) {
-        const productForCart = {
-          id: item.product_id,
-          name: productData.name,
-          price: productData.price,
-          main_image_url: productData.main_image_url || productData.image,
-          image: productData.image || productData.main_image_url,
-          unit: productData.unit || 'unidad',
-          slug: productData.slug || item.product_id,
-          stock: productData.stock || 100,
-          is_active: productData.is_active ?? true,
-          is_featured: false,
-          rating: 0,
-          review_count: 0,
-          min_quantity: 1,
-          reserved_stock: 0,
-          category_id: '',
-          description: productData.description || '',
-          created_at: productData.created_at || new Date().toISOString(),
-          updated_at: productData.updated_at || new Date().toISOString(),
-        };
-        addItem(productForCart, item.quantity);
-      }
-    });
+    // Abrir diálogo de confirmación
+    setSelectedOrder(order);
+    setIsReorderDialogOpen(true);
+  }
 
-    router.push('/cart');
+  async function confirmReorderOrder() {
+    if (!selectedOrder || !selectedOrder.items) return;
+
+    setIsRepeatingOrder(true);
+
+    try {
+      // Limpiar carrito primero
+      const { clearCart } = useCartStore.getState();
+      clearCart();
+
+      // Agregar items del pedido al carrito
+      selectedOrder.items.forEach((item) => {
+        // Priorizar datos del producto del JOIN sobre el snapshot
+        const productData = (item as any).product || item.product_snapshot;
+
+        if (productData) {
+          const productForCart = {
+            id: item.product_id,
+            name: productData.name,
+            price: productData.price,
+            main_image_url: productData.main_image_url || productData.image,
+            image: productData.image || productData.main_image_url,
+            unit: productData.unit || 'unidad',
+            slug: productData.slug || item.product_id,
+            stock: productData.stock || 100,
+            is_active: productData.is_active ?? true,
+            is_featured: false,
+            rating: 0,
+            review_count: 0,
+            min_quantity: 1,
+            reserved_stock: 0,
+            category_id: '',
+            description: productData.description || '',
+            created_at: productData.created_at || new Date().toISOString(),
+            updated_at: productData.updated_at || new Date().toISOString(),
+          };
+          addItem(productForCart, item.quantity);
+        }
+      });
+
+      // Cerrar diálogo y redirigir al carrito
+      setIsReorderDialogOpen(false);
+      setSelectedOrder(null);
+      router.push('/cart');
+    } catch (error) {
+      console.error('Error al repetir pedido:', error);
+    } finally {
+      setIsRepeatingOrder(false);
+    }
   }
 
   function handleAddToFavorites(product: UnifiedProduct) {
@@ -576,94 +607,12 @@ export default function CuentaPage() {
                 {orders.length > 0 ? (
                   <div className="space-y-4">
                     {orders.map((order) => (
-                      <div
+                      <OrderSummaryCard
                         key={order.id}
-                        className="border border-gray-200 rounded-lg overflow-hidden hover:border-verde-bosque/50 transition-colors"
-                      >
-                        {/* Order Header */}
-                        <div
-                          className="p-4 cursor-pointer"
-                          onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Pedido #{order.order_number}
-                              </p>
-                              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                <Calendar className="w-4 h-4" />
-                                {formatDate(order.created_at)}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-                                {getStatusLabel(order.status)}
-                              </span>
-                              <ChevronRight
-                                className={`w-5 h-5 text-gray-400 transition-transform ${
-                                  expandedOrder === order.id ? 'rotate-90' : ''
-                                }`}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-600">
-                              {order.items?.length || 0} productos
-                            </p>
-                            <p className="font-bold text-verde-bosque">
-                              {formatCurrency(order.total)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Expanded Order Details */}
-                        {expandedOrder === order.id && order.items && (
-                          <div className="border-t border-gray-200 bg-gray-50 p-4">
-                            <div className="space-y-3 mb-4">
-                              {order.items.map((item) => (
-                                <div key={item.id} className="flex items-center gap-3">
-                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                    {((item as any).product?.main_image_url || (item as any).product?.image || item.product_snapshot?.main_image_url || item.product_snapshot?.image) ? (
-                                      <img
-                                        src={(item as any).product?.main_image_url || (item as any).product?.image || item.product_snapshot?.main_image_url || item.product_snapshot?.image}
-                                        alt={(item as any).product?.name || item.product_snapshot?.name || 'Producto'}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <Package className="w-6 h-6 text-gray-400" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 truncate">
-                                      {(item as any).product?.name || item.product_snapshot?.name || 'Producto'}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {item.quantity} x {formatCurrency(item.unit_price)}
-                                    </p>
-                                  </div>
-                                  <p className="font-medium text-gray-900">
-                                    {formatCurrency(item.subtotal)}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Repeat Order Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRepeatOrder(order);
-                              }}
-                              className="w-full flex items-center justify-center gap-2 bg-verde-bosque text-white py-3 rounded-lg hover:bg-verde-bosque/90 transition-colors font-medium"
-                            >
-                              <RefreshCw className="w-5 h-5" />
-                              Repetir este pedido
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                        order={order}
+                        onRepeatOrder={handleRepeatOrderClick}
+                        isRepeating={isRepeatingOrder && selectedOrder?.id === order.id}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -803,6 +752,20 @@ export default function CuentaPage() {
           </div>
         </div>
       </div>
+
+      {/* Diálogo de confirmación para repetir pedido */}
+      {selectedOrder && (
+        <ReorderConfirmDialog
+          isOpen={isReorderDialogOpen}
+          onClose={() => {
+            setIsReorderDialogOpen(false);
+            setSelectedOrder(null);
+          }}
+          onConfirm={confirmReorderOrder}
+          order={selectedOrder}
+          isProcessing={isRepeatingOrder}
+        />
+      )}
     </div>
   );
 }
