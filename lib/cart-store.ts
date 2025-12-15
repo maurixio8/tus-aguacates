@@ -240,7 +240,14 @@ export const useCartStore = create<CartState>()(
             return;
           }
 
-          const response = await fetch('/api/shipping/calculate', {
+          console.log('📦 Enviando a shipping API:', {
+          subtotal,
+          subtotalType: typeof subtotal,
+          location,
+          url: '/api/shipping/calculate'
+        });
+
+        const response = await fetch('/api/shipping/calculate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -249,7 +256,7 @@ export const useCartStore = create<CartState>()(
               subtotal,
               location
             })
-          });
+        });
 
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
