@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Store,
   Users,
-  Ticket
+  Ticket,
+  Image as ImageIcon
 } from 'lucide-react';
 
 interface AdminUser {
@@ -105,6 +106,7 @@ export default function AdminLayout({
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
+    { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
     { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   ];
@@ -142,11 +144,10 @@ export default function AdminLayout({
                   key={item.name}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                    active
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
                       ? 'bg-green-100 text-green-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   {item.name}
@@ -182,11 +183,10 @@ export default function AdminLayout({
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                    active
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
                       ? 'bg-green-100 text-green-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   {item.name}

@@ -19,6 +19,38 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { headers: corsHeaders });
 }
 
+// Función para parsear dirección y extraer componentes
+function parseAddress(address: string): { city: string; state: string; street: string } {
+  if (!address || typeof address !== 'string') {
+    return { city: 'Bogotá', state: 'Cundinamarca', street: 'Dirección no proporcionada' };
+  }
+
+  // Lógica inteligente para extraer ciudad de la dirección
+  const parts = address.split(',');
+  const lastPart = parts[parts.length - 1]?.trim() || '';
+
+  // Intentar identificar patrones comunes de direcciones colombianas
+  const cityPatterns = ['bogotá', 'medellín', 'cali', 'barranquilla', 'cartagena'];
+  const detectedCity = cityPatterns.find(city =>
+    lastPart.toLowerCase().includes(city)
+  ) || 'Bogotá';
+
+  const state = detectedCity === 'Bogotá' ? 'Cundinamarca' :
+                detectedCity === 'Medellín' ? 'Antioquia' :
+                detectedCity === 'Cali' ? 'Valle del Cauca' :
+                detectedCity === 'Barranquilla' ? 'Atlántico' :
+                detectedCity === 'Cartagena' ? 'Bolívar' :
+                'Cundinamarca';
+
+  const street = parts[0]?.trim() || address;
+
+  return {
+    city: detectedCity,
+    state,
+    street
+  };
+}
+
 // Helper function to verify admin authentication
 async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
   try {
@@ -241,20 +273,48 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 API: Creating order:', body);
 
-    // Validate required fields
-    const requiredFields = ['customer_name', 'customer_phone', 'delivery_address', 'items'];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { error: `El campo ${field} es requerido` },
-          { status: 400, headers: corsHeaders }
-        );
-      }
+    // Validaciones robustas al inicio
+    const validationErrors = [];
+
+    if (!body.customer_name?.trim()) {
+      validationErrors.push('El nombre del cliente es requerido');
+    }
+
+    if (!body.customer_phone?.trim()) {
+      validationErrors.push('El teléfono del cliente es requerido');
+    }
+
+    if (!body.delivery_address?.trim()) {
+      validationErrors.push('La dirección de entrega es requerida');
     }
 
     if (!Array.isArray(body.items) || body.items.length === 0) {
+      validationErrors.push('Debe incluir al menos un producto');
+    }
+
+    // Validar que los productos tengan la estructura correcta
+    if (Array.isArray(body.items)) {
+      for (let i = 0; i < body.items.length; i++) {
+        const item = body.items[i];
+        if (!item.product_id) {
+          validationErrors.push(`El producto en posición ${i + 1} no tiene product_id`);
+        }
+        if (!item.quantity || item.quantity <= 0) {
+          validationErrors.push(`El producto en posición ${i + 1} debe tener cantidad válida`);
+        }
+        if (!item.price || item.price <= 0) {
+          validationErrors.push(`El producto en posición ${i + 1} debe tener precio válido`);
+        }
+      }
+    }
+
+    if (validationErrors.length > 0) {
       return NextResponse.json(
-        { error: 'Debe incluir al menos un producto' },
+        {
+          error: 'Validation failed',
+          details: validationErrors,
+          receivedFields: Object.keys(body)
+        },
         { status: 400, headers: corsHeaders }
       );
     }
@@ -348,24 +408,29 @@ export async function POST(request: NextRequest) {
     };
     const mappedPaymentMethod = paymentMethodMap[body.payment_method] || body.payment_method || 'cash';
 
+    // Parsear dirección para extraer componentes
+    const address = parseAddress(body.delivery_address);
+    const shippingCost = finalTotal - subtotal;
+
     // Create the order - user_id es null para pedidos manuales de admin
-    // Nota: Asegurarse de que la columna user_id sea nullable en Supabase
-    // ALTER TABLE orders ALTER COLUMN user_id DROP NOT NULL;
     const orderInsertData: Record<string, unknown> = {
-      customer_name: body.customer_name,
-      customer_phone: body.customer_phone,
-      customer_email: body.customer_email || null,
-      delivery_address: body.delivery_address,
+      customer_name: body.customer_name?.trim(),
+      customer_phone: body.customer_phone?.trim(),
+      customer_email: body.customer_email?.trim() || null,
+      delivery_address: body.delivery_address?.trim(),
       shipping_address: {
-        street_address: body.delivery_address,
-        city: body.city || '',
-        state: body.state || '',
-        postal_code: body.postal_code || null,
-        additional_info: body.delivery_notes || null
+        street_address: address.street,
+        city: address.city,
+        state: address.state,
+        postal_code: null, // Campo opcional
+        additional_info: body.delivery_notes?.trim() || null
       },
-      delivery_notes: body.delivery_notes || null,
-      subtotal: subtotal, // Subtotal sin domicilio
-      total: finalTotal, // Total con domicilio (columna requerida)
+      delivery_notes: body.delivery_notes?.trim() || null,
+      subtotal: subtotal,
+      tax: 0, // Valor por defecto para pedidos manuales
+      discount: 0, // Valor por defecto para pedidos manuales
+      shipping_fee: shippingCost,
+      total: finalTotal,
       total_amount: finalTotal,
       status: 'pending',
       payment_method: mappedPaymentMethod,
@@ -375,6 +440,18 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString()
     };
 
+    // Agregar logging detallado antes y después de la inserción
+    console.log('📝 Order creation attempt:', {
+      orderData: orderInsertData,
+      receivedBody: body,
+      calculatedValues: {
+        subtotal,
+        shippingCost,
+        finalTotal,
+        parsedAddress: address
+      }
+    });
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert(orderInsertData)
@@ -382,10 +459,24 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (orderError) {
-      console.error('❌ API: Error creating order:', orderError);
-      console.error('❌ API: Order data was:', orderInsertData);
+      console.error('❌ Detailed order creation error:', {
+        error: orderError,
+        details: orderError.details,
+        hint: orderError.hint,
+        code: orderError.code,
+        orderData: orderInsertData,
+        receivedFields: Object.keys(body),
+        orderDataFields: Object.keys(orderInsertData)
+      });
       return NextResponse.json(
-        { error: 'Error al crear el pedido', details: orderError.message },
+        {
+          error: 'Error al crear el pedido',
+          details: orderError.message,
+          debug: {
+            receivedFields: Object.keys(body),
+            orderDataFields: Object.keys(orderInsertData)
+          }
+        },
         { status: 500, headers: corsHeaders }
       );
     }

@@ -17,8 +17,10 @@ import {
   Truck,
   ChefHat,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  FileText
 } from 'lucide-react';
+import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
 
 interface OrderItem {
   id: string;
@@ -54,12 +56,20 @@ interface Order {
   status: string;
   total: number;
   total_amount?: number;
+  subtotal?: number;
+  shipping_fee?: number;
+  shipping_cost?: number;
+  discount?: number;
+  discount_amount?: number;
+  coupon_code?: string;
   created_at: string;
   delivery_date?: string;
   order_items?: OrderItem[];
   items?: OrderItem[];
   user_id?: string;
   shipping_address?: string;
+  order_type?: 'registered' | 'guest';
+  order_data?: any;
 }
 
 interface Pagination {
@@ -236,6 +246,58 @@ export default function OrdersPage() {
       name: 'Cliente',
       phone: null,
       email: order.customer_email
+    };
+  };
+
+  const calculateOrderSummary = (order: Order, orderItems: OrderItem[]) => {
+    // Calcular subtotal desde items si no está disponible
+    const itemsSubtotal = orderItems.reduce((sum, item) => {
+      const itemTotal = (item.unit_price || item.price || 0) * item.quantity;
+      return sum + itemTotal;
+    }, 0);
+
+    // Usar subtotal de la orden si existe, sino calcular desde items
+    const subtotal = order.subtotal || itemsSubtotal;
+
+    // Para pedidos de invitados, intentar extraer costo de envío y descuento del order_data
+    let shippingFee = 0;
+    let discount = 0;
+    let couponCode = null;
+
+    if (order.order_type === 'guest' && order.order_data) {
+      // Para invitados, extraer datos del order_data si existen
+      const orderData = order.order_data as any;
+      shippingFee = orderData.shipping_cost || orderData.shippingFee || 0;
+      discount = orderData.discount || orderData.discount_amount || 0;
+      couponCode = orderData.coupon_code || orderData.couponCode || null;
+    } else {
+      // Para usuarios registrados, usar campos directos
+      shippingFee = (order as any).shipping_fee || (order as any).shipping_cost || 0;
+      discount = (order as any).discount || (order as any).discount_amount || 0;
+      couponCode = (order as any).coupon_code || null;
+    }
+
+    // Calcular total o usar existente
+    const calculatedTotal = subtotal + shippingFee - discount;
+    const total = order.total || order.total_amount || calculatedTotal;
+
+    // Verificar si hay inconsistencia
+    const hasDiscrepancy = Math.abs(calculatedTotal - total) > 100; // Diferencia mayor a $100
+
+    // Determinar si es un pedido calculado (invitado con datos limitados)
+    const isEstimated = order.order_type === 'guest' && !order.subtotal && !order.shipping_fee;
+
+    return {
+      subtotal,
+      shippingFee,
+      discount,
+      couponCode,
+      total,
+      hasDiscount: discount > 0,
+      hasFreeShipping: shippingFee === 0 && subtotal > 0,
+      hasDiscrepancy,
+      isEstimated,
+      calculatedTotal
     };
   };
 
@@ -558,6 +620,72 @@ export default function OrdersPage() {
                             </div>
                           </div>
                         )}
+
+                        {/* Resumen Financiero Integrado */}
+                        {orderItems.length > 0 && (() => {
+                          const calculations = calculateOrderSummary(order, orderItems);
+                          return (
+                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                              <p className="text-sm font-medium text-gray-700 mb-3">Resumen del Pedido</p>
+
+                              {/* Subtotal de productos */}
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-600">Subtotal productos:</span>
+                                <span className="font-medium text-gray-900">
+                                  {formatCurrency(calculations.subtotal)}
+                                </span>
+                              </div>
+
+                              {/* Costo de envío */}
+                              <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-600">Envío:</span>
+                                <span className={`font-medium ${calculations.shippingFee > 0 ? 'text-gray-900' : 'text-green-600'}`}>
+                                  {calculations.shippingFee > 0 ? formatCurrency(calculations.shippingFee) : 'GRATIS'}
+                                </span>
+                              </div>
+
+                              {/* Descuentos (si aplica) */}
+                              {calculations.discount > 0 && (
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600">
+                                    Descuento{calculations.couponCode ? ` (${calculations.couponCode})` : ''}:
+                                  </span>
+                                  <span className="font-medium text-red-600">
+                                    -{formatCurrency(calculations.discount)}
+                                  </span>
+                                </div>
+                              )}
+
+                              {/* Total final */}
+                              <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+                                <span className="text-base font-semibold text-gray-900">Total a pagar:</span>
+                                <span className="text-lg font-bold text-green-600">
+                                  {formatCurrency(calculations.total)}
+                                </span>
+                              </div>
+
+                              {/* Indicadores especiales para el administrador */}
+                              {calculations.isEstimated && (
+                                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                  <strong>Nota:</strong> Valores calculados (pedido de invitado)
+                                </div>
+                              )}
+
+                              {calculations.hasDiscrepancy && (
+                                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
+                                  <strong>Advertencia:</strong> Hay una diferencia de {formatCurrency(Math.abs(calculations.calculatedTotal - calculations.total))} entre el total calculado y el guardado
+                                </div>
+                              )}
+
+                              {calculations.hasFreeShipping && calculations.subtotal > 0 && (
+                                <div className="flex justify-between items-center text-xs text-green-600 mt-1">
+                                  <span>Envío gratis aplicado</span>
+                                  <span>✓</span>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </div>
                     )}
 
@@ -589,16 +717,39 @@ export default function OrdersPage() {
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
                       )}
 
-                      {/* WhatsApp button */}
+                      {/* WhatsApp buttons wrapper */}
                       {customerInfo.phone && (
-                        <a
-                          href={`https://wa.me/57${customerInfo.phone.replace(/\D/g, '')}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
-                        >
-                          WhatsApp
-                        </a>
+                        <div className="flex gap-2">
+                          {/* Basic WhatsApp button */}
+                          <a
+                            href={`https://wa.me/57${customerInfo.phone.replace(/\D/g, '')}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
+                          >
+                            WhatsApp
+                          </a>
+
+                          {/* Order Summary WhatsApp button */}
+                          <a
+                            href={generateWhatsAppURL(
+                              customerInfo.phone,
+                              generateOrderSummary({
+                                ...order,
+                                order_type: order.user_id ? 'registered' : 'guest',
+                                customer_name: customerInfo.name,
+                                customer_phone: customerInfo.phone
+                              })
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm text-center flex items-center gap-2"
+                            title="Enviar resumen completo del pedido"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Resumen
+                          </a>
+                        </div>
                       )}
 
                       {/* Delete button */}
