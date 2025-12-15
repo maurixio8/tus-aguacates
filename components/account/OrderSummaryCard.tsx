@@ -51,22 +51,22 @@ export function OrderSummaryCard({
 }: OrderSummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'delivered':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-500" />;
       case 'shipped':
-        return <Truck className="w-5 h-5 text-blue-500" />;
+        return <Truck className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />;
       case 'processing':
       case 'confirmed':
-        return <Package className="w-5 h-5 text-yellow-500" />;
+        return <Package className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />;
       case 'pending':
-        return <Clock className="w-5 h-5 text-orange-500" />;
+        return <Clock className="w-4 h-4 md:w-5 md:h-5 text-orange-500" />;
       case 'cancelled':
-        return <Package className="w-5 h-5 text-red-500" />;
+        return <Package className="w-4 h-4 md:w-5 md:h-5 text-red-500" />;
       default:
-        return <Package className="w-5 h-5 text-gray-500" />;
+        return <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />;
     }
   };
 
@@ -88,8 +88,6 @@ export function OrderSummaryCard({
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
     }).format(date);
   };
 
@@ -101,71 +99,83 @@ export function OrderSummaryCard({
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-200 hover:shadow-md">
       {/* Resumen del pedido (siempre visible) */}
       <div
-        className="p-4 cursor-pointer select-none"
+        className="p-3 md:p-4 cursor-pointer select-none"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gray-50 rounded-lg">
+        {/* Header del pedido - Layout móvil optimizado */}
+        <div className="flex items-start justify-between gap-2 mb-2">
+          {/* Lado izquierdo: icono + info */}
+          <div className="flex items-start gap-2 md:gap-3 min-w-0 flex-1">
+            <div className="p-1.5 md:p-2 bg-gray-50 rounded-lg flex-shrink-0">
               {getStatusIcon(order.status)}
             </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <h3 className="font-semibold text-gray-900">
-                  Pedido #{order.order_number || order.id.slice(0, 8)}
-                </h3>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                  order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                  order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                  order.status === 'processing' || order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
-                  order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                  order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>
-                  {getStatusLabel(order.status)}
-                </span>
-              </div>
-              <p className="text-sm text-gray-500">{formatDate(order.created_at)}</p>
+            <div className="min-w-0 flex-1">
+              {/* Número de pedido */}
+              <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">
+                Pedido #{order.order_number || order.id.slice(0, 8)}
+              </h3>
+              {/* Fecha */}
+              <p className="text-xs md:text-sm text-gray-500">{formatDate(order.created_at)}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Lado derecho: precio + chevron */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <div className="text-right">
-              <p className="text-lg font-bold text-verde-bosque">
+              <p className="text-sm md:text-lg font-bold text-verde-bosque">
                 {formatCurrency(order.total || order.total_amount || order.order_data?.total || 0)}
               </p>
-              <p className="text-xs text-gray-500">
-                {totalItems} producto{totalItems !== 1 ? 's' : ''}
+              <p className="text-[10px] md:text-xs text-gray-500">
+                {totalItems} {totalItems === 1 ? 'item' : 'items'}
               </p>
             </div>
-            <div className={`transition-transform duration-200 ${
-              isExpanded ? 'rotate-90' : ''
-            }`}>
-              <ChevronRight className="w-5 h-5 text-gray-400" />
+            <div className={`transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+              <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
             </div>
           </div>
         </div>
 
-        {/* Indicadores de información rápida */}
-        <div className="flex items-center gap-4 text-xs text-gray-600">
-          <span className="flex items-center gap-1">
-            <ShoppingBag className="w-3 h-3" />
-            {uniqueProducts} tipo{uniqueProducts !== 1 ? 's' : ''} de producto
-          </span>
-          {order.payment_method && (
-            <span className="flex items-center gap-1">
-              💳 {order.payment_method === 'daviplata' ? 'Daviplata' : 'Efectivo'}
-            </span>
-          )}
-          {order.payment_status && (
-            <span className={`font-medium ${
-              order.payment_status === 'completed' ? 'text-green-600' :
-              order.payment_status === 'failed' ? 'text-red-600' :
-              'text-orange-600'
+        {/* Badge de estado + info rápida - Segunda fila */}
+        <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-[10px] md:text-xs">
+          {/* Status badge */}
+          <span className={`px-2 py-0.5 rounded-full font-medium ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
+              order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+                order.status === 'processing' || order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
+                  order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                      'bg-gray-100 text-gray-700'
             }`}>
+            {getStatusLabel(order.status)}
+          </span>
+
+          {/* Separador */}
+          <span className="text-gray-300 hidden sm:inline">•</span>
+
+          {/* Tipos de producto */}
+          <span className="text-gray-600 hidden sm:flex items-center gap-1">
+            <ShoppingBag className="w-3 h-3" />
+            {uniqueProducts} tipo{uniqueProducts !== 1 ? 's' : ''}
+          </span>
+
+          {/* Método de pago (solo desktop) */}
+          {order.payment_method && (
+            <>
+              <span className="text-gray-300 hidden md:inline">•</span>
+              <span className="text-gray-600 hidden md:flex items-center gap-1">
+                💳 {order.payment_method === 'daviplata' ? 'Daviplata' : 'Efectivo'}
+              </span>
+            </>
+          )}
+
+          {/* Estado de pago */}
+          {order.payment_status && (
+            <span className={`font-medium ml-auto ${order.payment_status === 'completed' ? 'text-green-600' :
+                order.payment_status === 'failed' ? 'text-red-600' :
+                  'text-orange-600'
+              }`}>
               {order.payment_status === 'completed' ? '✓ Pagado' :
-               order.payment_status === 'failed' ? '✗ Fallido' :
-               '⏳ Pendiente'}
+                order.payment_status === 'failed' ? '✗ Fallido' :
+                  '⏳ Pago pendiente'}
             </span>
           )}
         </div>
@@ -174,13 +184,14 @@ export function OrderSummaryCard({
       {/* Detalles expandibles */}
       {isExpanded && order.items && order.items.length > 0 && (
         <div className="border-t border-gray-200 bg-gray-50">
-          <div className="p-4 space-y-3">
+          <div className="p-3 md:p-4 space-y-3">
             {/* Lista de productos */}
             <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Productos del pedido:</h4>
+              <h4 className="text-xs md:text-sm font-semibold text-gray-700">Productos:</h4>
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 bg-white p-2 rounded-lg">
-                  <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                <div key={item.id} className="flex items-center gap-2 md:gap-3 bg-white p-2 rounded-lg">
+                  {/* Imagen del producto */}
+                  <div className="w-8 h-8 md:w-10 md:h-10 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                     {item.product_snapshot?.main_image_url || item.product_snapshot?.image ? (
                       <img
                         src={item.product_snapshot.main_image_url || item.product_snapshot.image}
@@ -189,28 +200,29 @@ export function OrderSummaryCard({
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Package className="w-5 h-5 text-gray-400" />
+                        <Package className="w-4 h-4 md:w-5 md:h-5 text-gray-400" />
                       </div>
                     )}
                   </div>
+                  {/* Nombre y cantidad */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
                       {item.product_snapshot?.name || 'Producto'}
                     </p>
-                    <p className="text-xs text-gray-500">
+                    <p className="text-[10px] md:text-xs text-gray-500">
                       {item.quantity} × {formatCurrency(item.unit_price)}
-                      {item.product_snapshot?.unit && ` por ${item.product_snapshot.unit}`}
                     </p>
                   </div>
-                  <p className="text-sm font-semibold text-gray-900">
+                  {/* Subtotal */}
+                  <p className="text-xs md:text-sm font-semibold text-gray-900 flex-shrink-0">
                     {formatCurrency(item.subtotal)}
                   </p>
                 </div>
               ))}
             </div>
 
-            {/* Resumen de costos */}
-            <div className="bg-white p-3 rounded-lg border border-gray-200 text-sm space-y-1">
+            {/* Resumen de costos - Compacto en móvil */}
+            <div className="bg-white p-2 md:p-3 rounded-lg border border-gray-200 text-xs md:text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal:</span>
                 <span>{formatCurrency(order.subtotal)}</span>
@@ -234,7 +246,7 @@ export function OrderSummaryCard({
                 </div>
               )}
               <div className="border-t pt-1 mt-1">
-                <div className="flex justify-between font-semibold text-base">
+                <div className="flex justify-between font-semibold text-sm md:text-base">
                   <span>Total:</span>
                   <span className="text-verde-bosque">{formatCurrency(order.total)}</span>
                 </div>
@@ -249,10 +261,10 @@ export function OrderSummaryCard({
                   onRepeatOrder(order);
                 }}
                 disabled={isRepeating}
-                className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 disabled:bg-gray-300 text-white font-medium py-2.5 px-4 rounded-lg transition-colors"
+                className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 disabled:bg-gray-300 text-white font-medium py-2.5 md:py-3 px-4 rounded-lg transition-colors text-sm md:text-base"
               >
                 <RefreshCw className={`w-4 h-4 ${isRepeating ? 'animate-spin' : ''}`} />
-                {isRepeating ? 'Preparando pedido...' : 'Repetir este pedido'}
+                {isRepeating ? 'Preparando...' : 'Repetir pedido'}
               </button>
             )}
           </div>
