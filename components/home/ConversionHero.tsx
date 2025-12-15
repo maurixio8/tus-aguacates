@@ -13,6 +13,7 @@ export function ConversionHero() {
     if (loading || user) {
         return null
     }
+
     // Calcular próximo día de entrega
     const getNextDeliveryDay = () => {
         const now = new Date()
@@ -37,88 +38,95 @@ export function ConversionHero() {
     }
 
     return (
-        <section className="relative min-h-[85vh] md:min-h-[90vh] flex items-center">
+        <section className="relative min-h-[70vh] md:min-h-[90vh] flex items-center overflow-hidden">
             {/* Imagen de fondo */}
             <div className="absolute inset-0">
                 <Image
                     src="/images/hero-optimized.png"
                     fill
                     className="object-cover"
-                    priority
-                    alt="Aguacates Hass frescos del Eje Cafetero colombiano"
+                    style={{
+                        objectPosition: '50% 40%',
+                    }}
                     sizes="100vw"
+                    priority
+                    quality={85}
+                    alt="Aguacates Hass frescos del Eje Cafetero colombiano"
                 />
-                {/* Overlay gradiente para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-transparent" />
+                {/* Overlay gradiente - más oscuro en móvil para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/80 md:bg-gradient-to-r md:from-black/70 md:via-black/50 md:to-transparent" />
             </div>
 
             {/* Contenido */}
-            <div className="relative z-10 container mx-auto px-4 py-12">
+            <div className="relative z-10 container mx-auto px-4 py-8 md:py-12">
                 <div className="max-w-2xl">
                     {/* Badge de urgencia */}
-                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-4 py-2 rounded-full mb-6 shadow-lg">
-                        <Clock className="w-5 h-5" />
-                        <span className="font-semibold text-sm md:text-base">
-                            Próxima entrega: {getNextDeliveryDay()}
+                    <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-3 py-2 md:px-4 md:py-2 rounded-full mb-4 md:mb-6 shadow-lg text-xs md:text-base">
+                        <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                        <span className="font-semibold">
+                            <span className="hidden sm:inline">Próxima entrega: {getNextDeliveryDay()} • </span>
+                            <span className="sm:hidden">Entrega: </span>
+                            Ordena antes 8PM
                         </span>
                     </div>
 
                     {/* Headline principal */}
-                    <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
+                    <h1 className="text-4xl md:text-5xl lg:text-7xl font-display font-bold text-white mb-3 md:mb-4 leading-tight">
                         <span className="text-yellow-400">Aguacates Hass</span>
                         <br />
                         del Eje Cafetero
                     </h1>
 
                     {/* Subheadline con propuesta de valor */}
-                    <p className="text-xl md:text-2xl text-white/90 mb-6 leading-relaxed">
+                    <p className="text-lg md:text-2xl lg:text-3xl text-white/90 mb-4 md:mb-6 leading-relaxed">
                         Frescos en tu mesa en <strong className="text-yellow-400">48 horas</strong> o te devolvemos tu dinero.
-                        Directo de la finca, más fresco imposible.
+                        <span className="hidden sm:inline"> Directo de la finca, más fresco imposible.</span>
                     </p>
 
                     {/* Prueba social */}
-                    <div className="flex flex-wrap items-center gap-3 text-white/90 mb-8">
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 text-white/90 mb-6 md:mb-8">
                         <div className="flex">
                             {[...Array(5)].map((_, i) => (
-                                <Star key={i} className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                                <Star key={i} className="w-4 h-4 md:w-5 md:h-5 fill-yellow-400 text-yellow-400" />
                             ))}
                         </div>
-                        <span className="text-lg font-medium">
-                            4.8/5 • 500+ familias en Bogotá
+                        <span className="text-sm md:text-lg font-medium">
+                            4.8/5 • <span className="hidden sm:inline">500+ familias en Bogotá</span>
+                            <span className="sm:hidden">500+ clientes</span>
                         </span>
                     </div>
 
                     {/* CTAs */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                    <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mb-6 md:mb-8">
                         <Link
                             href="/tienda"
-                            className="group flex items-center justify-center gap-2 bg-gradient-to-r from-verde-aguacate to-verde-aguacate-600 hover:from-verde-aguacate-600 hover:to-verde-aguacate-700 text-white px-8 py-4 rounded-full text-lg md:text-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                            className="w-full sm:w-auto group flex items-center justify-center gap-2 bg-gradient-to-r from-verde-aguacate to-verde-aguacate-600 hover:from-verde-aguacate-600 hover:to-verde-aguacate-700 text-white px-6 md:px-8 py-3 md:py-4 rounded-full text-lg md:text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
                         >
                             🛒 Ver Productos
                         </Link>
 
                         <a
                             href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
-                            className="group flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-verde-bosque-700 px-8 py-4 rounded-full text-lg md:text-xl font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                            className="w-full sm:w-auto group flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-verde-bosque-700 px-6 md:px-8 py-3 md:py-4 rounded-full text-lg md:text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
                         >
-                            <MessageCircle className="w-6 h-6 text-green-600" />
+                            <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600" />
                             WhatsApp
                         </a>
                     </div>
 
                     {/* Trust badges */}
-                    <div className="flex flex-wrap gap-4 md:gap-6 text-white/90">
+                    <div className="grid grid-cols-1 sm:flex sm:flex-wrap gap-3 md:gap-4 text-white/90 text-sm md:text-base">
                         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
-                            <CheckCircle className="w-5 h-5 text-green-400" />
-                            <span className="text-sm md:text-base">Cosechado hoy</span>
+                            <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
+                            <span>Cosechado hoy</span>
                         </div>
                         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
-                            <Truck className="w-5 h-5 text-green-400" />
-                            <span className="text-sm md:text-base">Entrega en 48h</span>
+                            <Truck className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
+                            <span>Entrega en 48h</span>
                         </div>
                         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-3 py-2 rounded-lg">
-                            <Shield className="w-5 h-5 text-green-400" />
-                            <span className="text-sm md:text-base">100% garantizado</span>
+                            <Shield className="w-4 h-4 md:w-5 md:h-5 text-green-400 flex-shrink-0" />
+                            <span>100% garantizado</span>
                         </div>
                     </div>
                 </div>
