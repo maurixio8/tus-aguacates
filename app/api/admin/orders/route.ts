@@ -84,35 +84,107 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
-    let query = supabase
-      .from('orders')
-      .select(`
-        *,
-        order_items (
+    // Consultar ambos tipos de pedidos: normales y de invitados
+    const [ordersData, guestOrdersData] = await Promise.all([
+      // Pedidos de usuarios registrados
+      supabase
+        .from('orders')
+        .select(`
           *,
-          products:product_id (
-            name,
-            main_image_url
+          order_items (
+            *,
+            products:product_id (
+              name,
+              main_image_url
+            )
           )
-        )
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false })
-      .range((page - 1) * limit, page * limit - 1);
+        `)
+        .order('created_at', { ascending: false }),
 
-    // Apply status filter
+      // Pedidos de invitados
+      supabase
+        .from('guest_orders')
+        .select(`
+          *,
+          NULL as user_id,
+          NULL as order_items,
+          NULL as coupon_code,
+          NULL as address_id,
+          NULL as shipping_address_id,
+          NULL as shipping_address_snapshot,
+          guest_name as customer_name,
+          guest_email as customer_email,
+          guest_phone as customer_phone,
+          guest_address as delivery_address
+        `)
+        .order('created_at', { ascending: false })
+    ]);
+
+    // Combinar y formatear los resultados
+    let allOrders: any[] = [];
+
+    // Procesar pedidos normales
+    if (ordersData.data) {
+      const regularOrders = ordersData.data.map((order: any) => ({
+        ...order,
+        customer_name: null,
+        customer_email: null,
+        customer_phone: null,
+        delivery_address: null,
+        order_type: 'registered'
+      }));
+      allOrders.push(...regularOrders);
+    }
+
+    // Procesar pedidos de invitados
+    if (guestOrdersData.data) {
+      const guestOrders = guestOrdersData.data.map((order: any) => ({
+        id: order.id,
+        order_number: `INV-${order.id.toString().slice(-8)}`, // Formato INV-XXXXXXXX
+        user_id: null,
+        status: order.status,
+        subtotal: order.order_data?.subtotal || 0,
+        total: order.total_amount,
+        total_amount: order.total_amount,
+        customer_name: order.guest_name,
+        customer_email: order.guest_email,
+        customer_phone: order.guest_phone,
+        delivery_address: order.guest_address,
+        delivery_notes: null,
+        order_data: order.order_data,
+        created_at: order.created_at,
+        updated_at: order.updated_at,
+        order_type: 'guest',
+        payment_status: order.payment_status || 'pending',
+        payment_method: order.payment_method || null
+      }));
+      allOrders.push(...guestOrders);
+    }
+
+    // Ordenar todos los pedidos por fecha
+    allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Apply status filter a todos los pedidos
     if (status && status !== 'all') {
-      query = query.eq('status', status);
+      allOrders = allOrders.filter(order => order.status === status);
     }
 
     // Apply date filters
     if (dateFrom) {
-      query = query.gte('created_at', dateFrom);
+      allOrders = allOrders.filter(order => order.created_at >= dateFrom);
     }
     if (dateTo) {
-      query = query.lte('created_at', dateTo + 'T23:59:59');
+      allOrders = allOrders.filter(order => order.created_at <= dateTo + 'T23:59:59');
     }
 
-    const { data, error, count } = await query;
+    // Re-calcular paginación después de filtrar
+    const filteredStartIndex = (page - 1) * limit;
+    const filteredEndIndex = page * limit;
+    const paginatedOrders = allOrders.slice(filteredStartIndex, filteredEndIndex);
+
+    const data = paginatedOrders;
+    const error = null;
+    const count = allOrders.length;
 
     if (error) {
       console.error('❌ API: Error fetching orders:', error);
