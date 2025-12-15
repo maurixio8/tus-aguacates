@@ -197,7 +197,7 @@ export default function CuentaPage() {
           ...order,
           items: extractOrderItems(order)
         }));
-                setOrders(ordersWithItems);
+        setOrders(ordersWithItems);
       }
 
       // Load available coupons
@@ -596,47 +596,42 @@ export default function CuentaPage() {
             <div className="bg-white rounded-xl shadow-sm p-1 flex">
               <button
                 onClick={() => setActiveTab('pedidos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'pedidos'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'pedidos'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <ShoppingBag className="w-5 h-5" />
                 <span className="hidden sm:inline">Pedidos</span>
               </button>
               <button
                 onClick={() => setActiveTab('favoritos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'favoritos'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'favoritos'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
                 {wishlist.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
-                  }`}>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
+                    }`}>
                     {wishlist.length}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('cupones')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'cupones'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'cupones'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <Ticket className="w-5 h-5" />
                 <span className="hidden sm:inline">Cupones</span>
                 {availableCoupons.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeTab === 'cupones' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
-                  }`}>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'cupones' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
+                    }`}>
                     {availableCoupons.length}
                   </span>
                 )}
@@ -645,10 +640,10 @@ export default function CuentaPage() {
 
             {/* Tab Content: Pedidos */}
             {activeTab === 'pedidos' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <ShoppingBag className="w-6 h-6 text-verde-bosque" />
-                  <h3 className="font-display font-bold text-xl">Historial de Pedidos</h3>
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                  <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-verde-bosque" />
+                  <h3 className="font-display font-bold text-lg md:text-xl">Historial de Pedidos</h3>
                 </div>
 
                 {orders.length > 0 ? (
@@ -711,63 +706,67 @@ export default function CuentaPage() {
 
             {/* Tab Content: Cupones */}
             {activeTab === 'cupones' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Ticket className="w-6 h-6 text-purple-500" />
-                  <h3 className="font-display font-bold text-xl">Cupones Disponibles</h3>
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                  <Ticket className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
+                  <h3 className="font-display font-bold text-lg md:text-xl">Cupones Disponibles</h3>
                 </div>
 
                 {availableCoupons.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {availableCoupons.map((coupon) => (
                       <div
                         key={coupon.id}
-                        className="border-2 border-dashed border-purple-200 rounded-lg p-4 bg-purple-50/50"
+                        className="border-2 border-dashed border-purple-200 rounded-lg p-3 md:p-4 bg-purple-50/50"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono font-bold text-lg text-purple-700">
+                        {/* Layout: stack on mobile, row on desktop */}
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            {/* Código y badge */}
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-base md:text-lg text-purple-700">
                                 {coupon.code}
                               </span>
                               {coupon.is_welcome_coupon && (
-                                <span className="px-2 py-0.5 text-xs bg-purple-200 text-purple-700 rounded-full flex items-center gap-1">
+                                <span className="px-2 py-0.5 text-[10px] md:text-xs bg-purple-200 text-purple-700 rounded-full flex items-center gap-1">
                                   <Gift className="w-3 h-3" />
                                   Bienvenida
                                 </span>
                               )}
                             </div>
-                            <p className="text-gray-600 text-sm mb-2">{coupon.description}</p>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                              <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                            {/* Descripción */}
+                            <p className="text-gray-600 text-xs md:text-sm mb-2 line-clamp-2">{coupon.description}</p>
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-xs">
+                              <span className="px-2 py-0.5 md:py-1 bg-white rounded-full text-gray-600">
                                 {coupon.discount_type === 'percentage'
-                                  ? `${coupon.discount_value}% de descuento`
-                                  : `${formatCurrency(coupon.discount_value)} de descuento`}
+                                  ? `${coupon.discount_value}%`
+                                  : formatCurrency(coupon.discount_value)}
                               </span>
                               {coupon.min_purchase > 0 && (
-                                <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                                <span className="px-2 py-0.5 md:py-1 bg-white rounded-full text-gray-600">
                                   Mín: {formatCurrency(coupon.min_purchase)}
                                 </span>
                               )}
                               {coupon.free_shipping && (
-                                <span className="px-2 py-1 bg-green-100 rounded-full text-green-700">
-                                  + Envío gratis
+                                <span className="px-2 py-0.5 md:py-1 bg-green-100 rounded-full text-green-700">
+                                  Envío gratis
                                 </span>
                               )}
                               {coupon.valid_until && (
-                                <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                                <span className="hidden md:inline-block px-2 py-1 bg-white rounded-full text-gray-600">
                                   Hasta: {formatDate(coupon.valid_until)}
                                 </span>
                               )}
                             </div>
                           </div>
+                          {/* Botón copiar - full width en móvil */}
                           <button
                             onClick={() => copyCouponCode(coupon.code)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                              copiedCoupon === coupon.code
+                            className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors flex-shrink-0 ${copiedCoupon === coupon.code
                                 ? 'bg-green-500 text-white'
                                 : 'bg-purple-600 text-white hover:bg-purple-700'
-                            }`}
+                              }`}
                           >
                             {copiedCoupon === coupon.code ? (
                               <>
@@ -777,7 +776,7 @@ export default function CuentaPage() {
                             ) : (
                               <>
                                 <Copy className="w-4 h-4" />
-                                Copiar
+                                Copiar código
                               </>
                             )}
                           </button>
