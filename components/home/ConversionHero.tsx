@@ -38,7 +38,7 @@ export function ConversionHero() {
     }
 
     return (
-        <section className="relative min-h-[70vh] md:min-h-[90vh] flex items-center overflow-hidden">
+        <section className="relative min-h-[75vh] md:min-h-[90vh] flex items-end md:items-center overflow-hidden">
             {/* Imagen de fondo */}
             <div className="absolute inset-0">
                 <Image
@@ -46,15 +46,15 @@ export function ConversionHero() {
                     fill
                     className="object-cover"
                     style={{
-                        objectPosition: '50% 40%',
+                        objectPosition: '50% 30%',
                     }}
                     sizes="100vw"
                     priority
                     quality={85}
                     alt="Aguacates Hass frescos del Eje Cafetero colombiano"
                 />
-                {/* Overlay gradiente - más oscuro en móvil para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/70 to-black/80 md:bg-gradient-to-r md:from-black/70 md:via-black/50 md:to-transparent" />
+                {/* Overlay gradiente - transparente arriba para mostrar aguacates, oscuro abajo para texto */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-black/20 md:bg-gradient-to-r md:from-black/70 md:via-black/40 md:to-transparent" />
             </div>
 
             {/* Contenido */}
