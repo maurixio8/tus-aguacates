@@ -252,7 +252,9 @@ export const useCartStore = create<CartState>()(
           });
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Shipping calculation error:', errorData);
+            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
           }
 
           const data = await response.json();
