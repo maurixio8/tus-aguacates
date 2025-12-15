@@ -1,5 +1,6 @@
 -- ============================================================================
 -- TABLA: promotions (Slides/Banners de la página principal)
+-- Este script maneja tanto tablas nuevas como existentes
 -- ============================================================================
 
 -- Crear la tabla promotions si no existe
@@ -15,11 +16,78 @@ CREATE TABLE IF NOT EXISTS public.promotions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- ============================================================================
+-- AGREGAR COLUMNAS FALTANTES (si la tabla ya existía sin ellas)
+-- ============================================================================
+
+-- Agregar sort_order si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promotions' 
+        AND column_name = 'sort_order'
+    ) THEN
+        ALTER TABLE public.promotions ADD COLUMN sort_order INTEGER DEFAULT 0;
+        RAISE NOTICE 'Columna sort_order agregada';
+    END IF;
+END $$;
+
+-- Agregar is_active si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promotions' 
+        AND column_name = 'is_active'
+    ) THEN
+        ALTER TABLE public.promotions ADD COLUMN is_active BOOLEAN DEFAULT true;
+        RAISE NOTICE 'Columna is_active agregada';
+    END IF;
+END $$;
+
+-- Agregar updated_at si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promotions' 
+        AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE public.promotions ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+        RAISE NOTICE 'Columna updated_at agregada';
+    END IF;
+END $$;
+
+-- Agregar created_at si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_schema = 'public' 
+        AND table_name = 'promotions' 
+        AND column_name = 'created_at'
+    ) THEN
+        ALTER TABLE public.promotions ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+        RAISE NOTICE 'Columna created_at agregada';
+    END IF;
+END $$;
+
+-- ============================================================================
+-- ÍNDICE
+-- ============================================================================
+
 -- Crear índice para consultas de promociones activas
 CREATE INDEX IF NOT EXISTS idx_promotions_active 
 ON public.promotions (is_active, sort_order);
 
--- Habilitar RLS
+-- ============================================================================
+-- HABILITAR RLS
+-- ============================================================================
+
 ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
@@ -58,35 +126,18 @@ CREATE POLICY "Authenticated can delete promotions"
     USING (auth.role() = 'authenticated');
 
 -- ============================================================================
--- STORAGE BUCKET: promotion-images
+-- ACTUALIZAR REGISTROS EXISTENTES (poner valores por defecto)
 -- ============================================================================
 
--- Crear bucket para imágenes de promociones (usamos el mismo product-images)
--- Si prefieres un bucket separado, descomenta esto:
-/*
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES (
-    'promotion-images',
-    'promotion-images',
-    true,
-    5242880, -- 5MB máximo para banners
-    ARRAY['image/jpeg', 'image/png', 'image/webp']
-)
-ON CONFLICT (id) DO UPDATE SET
-    public = true,
-    file_size_limit = 5242880;
-*/
+-- Si hay registros sin sort_order, asignar orden basado en id
+UPDATE public.promotions 
+SET sort_order = 0 
+WHERE sort_order IS NULL;
 
--- ============================================================================
--- DATOS DE EJEMPLO (Opcionales - Descomenta si quieres datos iniciales)
--- ============================================================================
-
-/*
-INSERT INTO public.promotions (title, description, image_url, link, sort_order, is_active) VALUES
-('Aguacates Frescos', 'Directamente del campo a tu mesa', 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&h=400&fit=crop', '/tienda/aguacates', 1, true),
-('Frutas Tropicales', 'El sabor exótico que buscas', 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&h=400&fit=crop', '/tienda/frutas-tropicales', 2, true),
-('Envío Gratis', 'En pedidos mayores a $68.900', 'https://images.unsplash.com/photo-1604386494523-d60f124d0a65?w=1200&h=400&fit=crop', '/tienda', 3, true);
-*/
+-- Si hay registros sin is_active, activarlos
+UPDATE public.promotions 
+SET is_active = true 
+WHERE is_active IS NULL;
 
 -- ============================================================================
 -- COMENTARIOS DE DOCUMENTACIÓN
