@@ -110,12 +110,19 @@ export function OrderSummaryCard({
               {getStatusIcon(order.status)}
             </div>
             <div className="min-w-0 flex-1">
-              {/* Número de pedido */}
-              <h3 className="font-semibold text-gray-900 text-sm md:text-base truncate">
-                Pedido #{order.order_number || order.id.slice(0, 8)}
+              {/* Fecha - principal en móvil */}
+              <h3 className="font-semibold text-gray-900 text-sm md:text-base">
+                {formatDate(order.created_at)}
               </h3>
-              {/* Fecha */}
-              <p className="text-xs md:text-sm text-gray-500">{formatDate(order.created_at)}</p>
+              {/* Número de pedido - solo últimos 4 chars en móvil, completo en desktop */}
+              <p className="text-xs text-gray-500">
+                <span className="md:hidden">
+                  #{(order.order_number || order.id).slice(-4)}
+                </span>
+                <span className="hidden md:inline">
+                  Pedido #{order.order_number || order.id.slice(0, 8)}
+                </span>
+              </p>
             </div>
           </div>
 
@@ -139,11 +146,11 @@ export function OrderSummaryCard({
         <div className="flex flex-wrap items-center gap-1.5 md:gap-2 text-[10px] md:text-xs">
           {/* Status badge */}
           <span className={`px-2 py-0.5 rounded-full font-medium ${order.status === 'delivered' ? 'bg-green-100 text-green-700' :
-              order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                order.status === 'processing' || order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
-                  order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
-                    order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                      'bg-gray-100 text-gray-700'
+            order.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
+              order.status === 'processing' || order.status === 'confirmed' ? 'bg-yellow-100 text-yellow-700' :
+                order.status === 'pending' ? 'bg-orange-100 text-orange-700' :
+                  order.status === 'cancelled' ? 'bg-red-100 text-red-700' :
+                    'bg-gray-100 text-gray-700'
             }`}>
             {getStatusLabel(order.status)}
           </span>
@@ -170,8 +177,8 @@ export function OrderSummaryCard({
           {/* Estado de pago */}
           {order.payment_status && (
             <span className={`font-medium ml-auto ${order.payment_status === 'completed' ? 'text-green-600' :
-                order.payment_status === 'failed' ? 'text-red-600' :
-                  'text-orange-600'
+              order.payment_status === 'failed' ? 'text-red-600' :
+                'text-orange-600'
               }`}>
               {order.payment_status === 'completed' ? '✓ Pagado' :
                 order.payment_status === 'failed' ? '✗ Fallido' :
