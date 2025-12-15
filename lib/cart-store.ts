@@ -261,7 +261,9 @@ export const useCartStore = create<CartState>()(
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
             console.error('❌ Shipping calculation error:', errorData);
-            throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+            console.error('❌ Response status:', response.status);
+            console.error('❌ Response text:', await response.text());
+            throw new Error(`❌ Shipping API Error ${response.status}: ${errorData.error || 'Unknown error'}`);
           }
 
           const data = await response.json();
@@ -279,8 +281,12 @@ export const useCartStore = create<CartState>()(
             };
 
             set({ shipping: shippingInfo });
-          } else {
-            console.error('❌ Shipping calculation failed:', data.error || 'Invalid response structure');
+          } else if (!data.success) {
+            console.error('❌ Shipping calculation failed (API returned success=false):', data);
+            console.error('❌ API Response:', JSON.stringify(data, null, 2));
+            set({ shipping: getDefaultShippingInfo(subtotal) });
+          } else if (!data.shipping) {
+            console.error('❌ Shipping calculation failed (missing shipping object):', data);
             set({ shipping: getDefaultShippingInfo(subtotal) });
           }
         } catch (error) {
