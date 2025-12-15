@@ -233,10 +233,10 @@ export const useCartStore = create<CartState>()(
           console.log('📦 Calculating shipping:', { location, subtotal: get().getSubtotal() });
           const subtotal = get().getSubtotal();
 
-          // Validate subtotal
-          if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal)) {
-            console.error('❌ Invalid subtotal for shipping calculation:', { subtotal });
-            set({ shipping: getDefaultShippingInfo(0) });
+          // Validate subtotal - don't call API if cart is empty or subtotal is 0
+          if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal) || subtotal === 0) {
+            console.log('📦 Cart is empty or subtotal is 0, using default shipping:', { subtotal });
+            set({ shipping: getDefaultShippingInfo(subtotal) });
             return;
           }
 

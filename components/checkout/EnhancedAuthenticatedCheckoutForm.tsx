@@ -72,10 +72,13 @@ export function EnhancedAuthenticatedCheckoutForm({
     return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
   };
 
-  // Initialize shipping calculation when component mounts
+  // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
-    calculateShipping();
-  }, [calculateShipping]);
+    // Only calculate shipping if there are items in the cart
+    if (items.length > 0) {
+      calculateShipping();
+    }
+  }, [calculateShipping, items.length]);
 
   // Load user data and preferences
   useEffect(() => {
@@ -100,10 +103,10 @@ export function EnhancedAuthenticatedCheckoutForm({
 
   // Recalculate shipping when address changes
   useEffect(() => {
-    if (selectedAddress) {
+    if (selectedAddress && items.length > 0) {
       calculateShipping(selectedAddress.city);
     }
-  }, [selectedAddress, calculateShipping]);
+  }, [selectedAddress, calculateShipping, items.length]);
 
   const loadAddresses = async () => {
     try {

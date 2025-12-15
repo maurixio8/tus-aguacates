@@ -47,10 +47,13 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
   };
 
-  // Initialize shipping calculation when component mounts
+  // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
-    calculateShipping();
-  }, [calculateShipping]);
+    // Only calculate shipping if there are items in the cart
+    if (items.length > 0) {
+      calculateShipping();
+    }
+  }, [calculateShipping, items.length]);
 
   const handleSubmitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +61,50 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     setError('');
 
     try {
+      // 0. VALIDACIÓN: Verificar si ya existe un pedido hoy con este teléfono
+      const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+      console.log('🔍 Verificando pedidos existentes...', {
+        phone: formData.phone,
+        today: today
+      });
+
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('guest_orders')
+        .select('id, created_at, status, order_data')
+        .eq('guest_phone', formData.phone)
+        .gte('created_at', today + 'T00:00:00.000Z')
+        .lte('created_at', today + 'T23:59:59.999Z')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      console.log('🔍 Resultado búsqueda pedidos:', {
+        error: checkError,
+        found: existingOrder ? existingOrder.length : 0,
+        orders: existingOrder
+      });
+
+      if (checkError) {
+        console.error('Error checking existing orders:', checkError);
+      } else if (existingOrder && existingOrder.length > 0) {
+        const order = existingOrder[0];
+        const orderTime = new Date(order.created_at).toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        throw new Error(`⚠️ Límite de pedidos alcanzado\n\nEste número de teléfono ya tiene un pedido hoy:\n\n📋 Pedido: #${order.id.toString().slice(-8)}\n🕐 Hora: ${orderTime}\n📊 Estado: ${order.status}\n\n💡 ¿Qué puedes hacer?\n• Esperar hasta mañana para hacer otro pedido\n• Registrarte con tu email para tener más beneficios\n• Contactarnos por WhatsApp si necesitas modificar tu pedido actual\n\n🔒 Por seguridad: Solo 1 pedido por día por teléfono`);
+      }
+
       // 1. Crear pedido de invitado (sin procesar pago aún)
+      console.log('🛒 Creando pedido de invitado...', {
+        customer: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        items: items.length,
+        total: totals.total
+      });
+
       const orderData = {
         items: items.map(item => ({
           productName: item.product.name,
@@ -76,6 +122,8 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         shippingInfo: useCartStore.getState().shipping,
               };
 
+      console.log('📦 Order data prepared:', orderData);
+
       const { data: guestOrder, error: orderError } = await supabase
         .from('guest_orders')
         .insert({
@@ -92,7 +140,18 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         .select()
         .single();
 
-      if (orderError) throw orderError;
+      console.log('💾 Insert result:', {
+        success: !orderError,
+        error: orderError,
+        data: guestOrder ? `ID: ${guestOrder.id}` : 'No data'
+      });
+
+      if (orderError) {
+        console.error('❌ ERROR al crear pedido de invitado:', orderError);
+        throw orderError;
+      }
+
+      console.log('✅ Pedido de invitado creado exitosamente:', guestOrder.id);
 
       // Guardar order ID y pasar al paso de método de pago
       setOrderId(guestOrder.id);
@@ -177,11 +236,14 @@ ${orderData.appliedCoupon.description}
 
 ¡Gracias por tu compra! 🥑`;
 
-      // 3. Abrir WhatsApp con mensaje pre-completado
+      // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
+      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${orderId.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Método de pago: ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata (pagado)'}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
+
+      // 4. Abrir WhatsApp con mensaje pre-completado
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
       window.open(whatsappUrl, '_blank');
 
-      // 4. Actualizar estado del pedido con método de pago
+      // 5. Actualizar estado del pedido con método de pago
       const paymentStatus = formData.paymentMethod === 'efectivo' ? 'pendiente_pago' : 'pagado';
       await supabase
         .from('guest_orders')
@@ -195,7 +257,7 @@ ${orderData.appliedCoupon.description}
         })
         .eq('id', orderId);
 
-      // 5. Opcional: crear cuenta si el usuario lo solicitó
+      // 6. Opcional: crear cuenta si el usuario lo solicitó
       if (formData.createAccount && formData.password) {
         try {
           const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -234,9 +296,11 @@ ${orderData.appliedCoupon.description}
         }
       }
 
-      // 6. Limpiar carrito y redirigir
-      clearCart();
-      onSuccess(orderId);
+      // 7. Limpiar carrito y redirigir (con un pequeño retraso para que vea la confirmación)
+      setTimeout(() => {
+        clearCart();
+        onSuccess(orderId);
+      }, 1000);
 
     } catch (err: any) {
       console.error('Error al finalizar pedido:', err);
@@ -348,15 +412,18 @@ ${orderData.appliedCoupon.description}
 
 ¡Gracias por tu compra! 🥑`;
 
-      // 3. Abrir WhatsApp con mensaje pre-completado
+      // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
+      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${guestOrder.id.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
+
+      // 4. Abrir WhatsApp con mensaje pre-completado
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
       window.open(whatsappUrl, '_blank');
 
-      // 4. Actualizar estado del pedido
+      // 5. Actualizar estado del pedido
       await supabase
         .from('guest_orders')
         .update({
-          status: 'pendiente_entrega',
+          status: 'confirmado',
           payment_status: 'pendiente_pago',
           payment_method: 'efectivo',
           whatsapp_message: mensajeWhatsApp,
@@ -364,9 +431,11 @@ ${orderData.appliedCoupon.description}
         })
         .eq('id', guestOrder.id);
 
-      // Limpiar carrito y redirigir
-      clearCart();
-      onSuccess(guestOrder.id);
+      // 6. Limpiar carrito y redirigir (con un pequeño retraso para que vea la confirmación)
+      setTimeout(() => {
+        clearCart();
+        onSuccess(guestOrder.id);
+      }, 1000);
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
@@ -401,7 +470,23 @@ ${orderData.appliedCoupon.description}
           <form onSubmit={handleSubmitInfo} className="space-y-6">
         <div>
           <h3 className="text-lg font-semibold mb-4">Información de Contacto</h3>
-          
+
+          {/* Mensaje informativo sobre política de pedidos */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-800">
+                  <span className="font-semibold">Política de pedidos:</span> Por seguridad, permitimos <strong>1 pedido por día por número de teléfono</strong>. Si necesitas modificar tu pedido, por favor regístrate con tu email.
+                </p>
+              </div>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">Nombre Completo *</label>
