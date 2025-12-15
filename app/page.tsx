@@ -58,11 +58,42 @@ const LastOrderSummary = dynamic(
   }
 );
 
+// Sprint 1: Conversion Boost Components
+const UrgencyBanner = dynamic(
+  () => import('@/components/home/UrgencyBanner').then(mod => ({ default: mod.UrgencyBanner })),
+  {
+    loading: () => <div className="h-12 bg-red-500 animate-pulse" />,
+    ssr: false
+  }
+);
+
+const ConversionHero = dynamic(
+  () => import('@/components/home/ConversionHero').then(mod => ({ default: mod.ConversionHero })),
+  {
+    loading: () => <div className="h-[85vh] bg-gradient-to-r from-verde-bosque-700 to-verde-aguacate animate-pulse" />,
+    ssr: false
+  }
+);
+
+const Testimonials = dynamic(
+  () => import('@/components/home/Testimonials').then(mod => ({ default: mod.Testimonials })),
+  {
+    loading: () => <div className="h-96 bg-gray-50 animate-pulse" />,
+    ssr: true
+  }
+);
+
 export default function Home() {
 
   return (
     <div>
-      {/* Personalized Hero Section */}
+      {/* Sprint 1: Urgency Banner at top */}
+      <UrgencyBanner />
+
+      {/* Sprint 1: New Conversion Hero for guests, PersonalizedHero for authenticated users */}
+      <ConversionHero />
+
+      {/* Personalized content for authenticated users */}
       <PersonalizedHero />
 
       {/* Last Order Summary (Only for Authenticated Users) */}
@@ -70,6 +101,9 @@ export default function Home() {
 
       {/* Recommended Products (Only for Authenticated Users) */}
       <RecommendedProducts />
+
+      {/* Sprint 1: Testimonials Section - Social Proof */}
+      <Testimonials />
 
       {/* Beneficios */}
       <section className="py-12 bg-white">
