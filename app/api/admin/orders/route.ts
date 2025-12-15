@@ -84,6 +84,8 @@ export async function GET(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
+    console.log('🔍 API Admin: Consultando pedidos...');
+
     // Consultar ambos tipos de pedidos: normales y de invitados
     const [ordersData, guestOrdersData] = await Promise.all([
       // Pedidos de usuarios registrados
@@ -104,21 +106,31 @@ export async function GET(request: NextRequest) {
       // Pedidos de invitados
       supabase
         .from('guest_orders')
-        .select(`
-          *,
-          NULL as user_id,
-          NULL as order_items,
-          NULL as coupon_code,
-          NULL as address_id,
-          NULL as shipping_address_id,
-          NULL as shipping_address_snapshot,
-          guest_name as customer_name,
-          guest_email as customer_email,
-          guest_phone as customer_phone,
-          guest_address as delivery_address
-        `)
+        .select('*')
         .order('created_at', { ascending: false })
     ]);
+
+    console.log('📊 API Admin: Resultados de consultas:', {
+      ordersError: ordersData.error,
+      ordersCount: ordersData.data?.length || 0,
+      guestOrdersError: guestOrdersData.error,
+      guestOrdersCount: guestOrdersData.data?.length || 0
+    });
+
+    // Si hay error en guest_orders, mostrar detalles
+    if (guestOrdersData.error) {
+      console.error('❌ API Admin: Error en guest_orders:', {
+        error: guestOrdersData.error,
+        details: guestOrdersData.error.details,
+        hint: guestOrdersData.error.hint,
+        code: guestOrdersData.error.code
+      });
+    }
+
+    // Mostrar algunos datos de ejemplo
+    if (guestOrdersData.data && guestOrdersData.data.length > 0) {
+      console.log('👥 API Admin: Ejemplos de pedidos de invitados:', guestOrdersData.data.slice(0, 2));
+    }
 
     // Combinar y formatear los resultados
     let allOrders: any[] = [];
