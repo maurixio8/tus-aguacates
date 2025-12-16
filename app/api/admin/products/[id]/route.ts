@@ -288,9 +288,13 @@ export async function PATCH(
       main_image_url: data.main_image_url
     });
 
-    // Force cache invalidation
+    // Force cache invalidation for both admin and frontend
     revalidatePath('/admin/productos');
     revalidatePath('/api/admin/products');
+    revalidatePath('/tienda');
+    revalidatePath('/tienda/productos-nuevos');
+    revalidatePath('/tienda/[categoria]');
+    revalidatePath('/productos');
 
     return NextResponse.json({
       success: true,

@@ -102,6 +102,16 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
 
 
 export const getProducts = async (): Promise<UnifiedProduct[]> => {
+  // 0. Sincronizar con Supabase primero para asegurar datos actualizados
+  try {
+    // Intentar sincronizar en segundo plano para no bloquear la carga
+    syncSupabaseToLocal().catch(err => {
+      console.log('⚠️ Error en sincronización automática:', err);
+    });
+  } catch (error) {
+    console.log('⚠️ No se pudo sincronizar con Supabase:', error);
+  }
+
   // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
   const baseProducts = await loadProductsFromJSON();
 
@@ -388,11 +398,11 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
     console.log('🔄 Starting Supabase to localStorage sync...');
 
-    // 1. Obtener datos de Supabase
+    // 1. Obtener datos de Supabase (TODOS los productos, no solo activos)
+    // ⚠️ IMPORTANTE: Traer todos los productos para sincronizar correctamente los estados is_active
     const { data: supabaseProducts, error } = await supabase
       .from('products')
-      .select('*')
-      .eq('is_active', true);
+      .select('*');
 
     if (error) {
       console.error('❌ Error fetching from Supabase:', error);
