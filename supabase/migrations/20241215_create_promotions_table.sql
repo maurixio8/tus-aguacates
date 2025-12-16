@@ -1,10 +1,22 @@
 -- ============================================================================
 -- TABLA: promotions (Slides/Banners de la página principal)
--- Este script maneja tanto tablas nuevas como existentes
+-- ============================================================================
+-- IMPORTANTE: Este script elimina la tabla existente y la crea de nuevo.
+-- Si tienes datos importantes, haz backup primero.
 -- ============================================================================
 
--- Crear la tabla promotions si no existe
-CREATE TABLE IF NOT EXISTS public.promotions (
+-- Paso 1: Eliminar políticas RLS existentes
+DROP POLICY IF EXISTS "Public can view active promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Authenticated can view all promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Authenticated can insert promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Authenticated can update promotions" ON public.promotions;
+DROP POLICY IF EXISTS "Authenticated can delete promotions" ON public.promotions;
+
+-- Paso 2: Eliminar tabla existente
+DROP TABLE IF EXISTS public.promotions CASCADE;
+
+-- Paso 3: Crear tabla nueva con estructura correcta
+CREATE TABLE public.promotions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title VARCHAR(255) NOT NULL,
     description TEXT,
@@ -16,137 +28,58 @@ CREATE TABLE IF NOT EXISTS public.promotions (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- ============================================================================
--- AGREGAR COLUMNAS FALTANTES (si la tabla ya existía sin ellas)
--- ============================================================================
+-- Paso 4: Crear índice
+CREATE INDEX idx_promotions_active ON public.promotions (is_active, sort_order);
 
--- Agregar sort_order si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'promotions' 
-        AND column_name = 'sort_order'
-    ) THEN
-        ALTER TABLE public.promotions ADD COLUMN sort_order INTEGER DEFAULT 0;
-        RAISE NOTICE 'Columna sort_order agregada';
-    END IF;
-END $$;
-
--- Agregar is_active si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'promotions' 
-        AND column_name = 'is_active'
-    ) THEN
-        ALTER TABLE public.promotions ADD COLUMN is_active BOOLEAN DEFAULT true;
-        RAISE NOTICE 'Columna is_active agregada';
-    END IF;
-END $$;
-
--- Agregar updated_at si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'promotions' 
-        AND column_name = 'updated_at'
-    ) THEN
-        ALTER TABLE public.promotions ADD COLUMN updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        RAISE NOTICE 'Columna updated_at agregada';
-    END IF;
-END $$;
-
--- Agregar created_at si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_schema = 'public' 
-        AND table_name = 'promotions' 
-        AND column_name = 'created_at'
-    ) THEN
-        ALTER TABLE public.promotions ADD COLUMN created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
-        RAISE NOTICE 'Columna created_at agregada';
-    END IF;
-END $$;
-
--- ============================================================================
--- ÍNDICE
--- ============================================================================
-
--- Crear índice para consultas de promociones activas
-CREATE INDEX IF NOT EXISTS idx_promotions_active 
-ON public.promotions (is_active, sort_order);
-
--- ============================================================================
--- HABILITAR RLS
--- ============================================================================
-
+-- Paso 5: Habilitar RLS
 ALTER TABLE public.promotions ENABLE ROW LEVEL SECURITY;
 
--- ============================================================================
--- POLÍTICAS RLS
--- ============================================================================
+-- Paso 6: Crear políticas RLS
 
--- 1. Público puede ver promociones activas
-DROP POLICY IF EXISTS "Public can view active promotions" ON public.promotions;
+-- Público puede ver promociones activas
 CREATE POLICY "Public can view active promotions"
     ON public.promotions FOR SELECT
     USING (is_active = true);
 
--- 2. Usuarios autenticados ven todas las promociones
-DROP POLICY IF EXISTS "Authenticated can view all promotions" ON public.promotions;
+-- Usuarios autenticados ven todas las promociones
 CREATE POLICY "Authenticated can view all promotions"
     ON public.promotions FOR SELECT
     USING (auth.role() = 'authenticated');
 
--- 3. Usuarios autenticados pueden insertar
-DROP POLICY IF EXISTS "Authenticated can insert promotions" ON public.promotions;
+-- Usuarios autenticados pueden insertar
 CREATE POLICY "Authenticated can insert promotions"
     ON public.promotions FOR INSERT
     WITH CHECK (auth.role() = 'authenticated');
 
--- 4. Usuarios autenticados pueden actualizar
-DROP POLICY IF EXISTS "Authenticated can update promotions" ON public.promotions;
+-- Usuarios autenticados pueden actualizar
 CREATE POLICY "Authenticated can update promotions"
     ON public.promotions FOR UPDATE
     USING (auth.role() = 'authenticated')
     WITH CHECK (auth.role() = 'authenticated');
 
--- 5. Usuarios autenticados pueden eliminar
-DROP POLICY IF EXISTS "Authenticated can delete promotions" ON public.promotions;
+-- Usuarios autenticados pueden eliminar
 CREATE POLICY "Authenticated can delete promotions"
     ON public.promotions FOR DELETE
     USING (auth.role() = 'authenticated');
 
 -- ============================================================================
--- ACTUALIZAR REGISTROS EXISTENTES (poner valores por defecto)
+-- DATOS DE EJEMPLO (slides iniciales)
 -- ============================================================================
 
--- Si hay registros sin sort_order, asignar orden basado en id
-UPDATE public.promotions 
-SET sort_order = 0 
-WHERE sort_order IS NULL;
-
--- Si hay registros sin is_active, activarlos
-UPDATE public.promotions 
-SET is_active = true 
-WHERE is_active IS NULL;
+INSERT INTO public.promotions (title, description, image_url, link, sort_order, is_active) VALUES
+('Aguacates Frescos', 'Directamente del campo a tu mesa', 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=1200&h=400&fit=crop', '/tienda/aguacates', 1, true),
+('Frutas Tropicales', 'El sabor exótico que buscas', 'https://images.unsplash.com/photo-1550258987-190a2d41a8ba?w=1200&h=400&fit=crop', '/tienda/frutas-tropicales', 2, true),
+('Envío Gratis', 'En pedidos mayores a $68.900', 'https://images.unsplash.com/photo-1604386494523-d60f124d0a65?w=1200&h=400&fit=crop', '/tienda', 3, true);
 
 -- ============================================================================
--- COMENTARIOS DE DOCUMENTACIÓN
+-- VERIFICACIÓN
 -- ============================================================================
 
-COMMENT ON TABLE public.promotions IS 'Slides/Banners de la página principal administrables desde el dashboard';
-COMMENT ON COLUMN public.promotions.title IS 'Título del banner (máx 255 caracteres)';
-COMMENT ON COLUMN public.promotions.description IS 'Descripción opcional del banner';
-COMMENT ON COLUMN public.promotions.image_url IS 'URL de la imagen (1200x400px recomendado, formato WebP)';
-COMMENT ON COLUMN public.promotions.link IS 'URL a donde redirige el banner al hacer clic';
-COMMENT ON COLUMN public.promotions.sort_order IS 'Orden de aparición (menor = primero)';
-COMMENT ON COLUMN public.promotions.is_active IS 'Si el banner está visible en la página';
+-- Mostrar estructura de la tabla
+SELECT column_name, data_type, is_nullable, column_default
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'promotions'
+ORDER BY ordinal_position;
+
+-- Mostrar registros insertados
+SELECT id, title, is_active, sort_order FROM public.promotions ORDER BY sort_order;

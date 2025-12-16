@@ -71,8 +71,8 @@ export function Header() {
 
             {/* Navegación Desktop */}
             <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/tienda" className="hover:text-verde-aguacate-200 transition-colors">
-                Productos
+              <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
+                Categorías
               </Link>
               <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
                 Aguacates
@@ -184,12 +184,12 @@ export function Header() {
                 </Link>
 
                 <Link
-                  href="/tienda"
+                  href="/categorias"
                   onClick={closeMobileMenu}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
                 >
                   <Search className="w-5 h-5" />
-                  <span>Productos</span>
+                  <span>Categorías</span>
                 </Link>
 
                 <Link

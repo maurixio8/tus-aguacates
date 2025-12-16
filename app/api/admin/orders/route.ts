@@ -38,11 +38,11 @@ function parseAddress(address: string): { city: string; state: string; street: s
   ) || 'Bogotá';
 
   const state = detectedCity === 'Bogotá' ? 'Cundinamarca' :
-                detectedCity === 'Medellín' ? 'Antioquia' :
-                detectedCity === 'Cali' ? 'Valle del Cauca' :
-                detectedCity === 'Barranquilla' ? 'Atlántico' :
-                detectedCity === 'Cartagena' ? 'Bolívar' :
-                'Cundinamarca';
+    detectedCity === 'Medellín' ? 'Antioquia' :
+      detectedCity === 'Cali' ? 'Valle del Cauca' :
+        detectedCity === 'Barranquilla' ? 'Atlántico' :
+          detectedCity === 'Cartagena' ? 'Bolívar' :
+            'Cundinamarca';
 
   const street = parts[0]?.trim() || address;
 
@@ -724,7 +724,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH - Update order status
+// PATCH - Update order status or items
 export async function PATCH(request: NextRequest) {
   try {
     // Verify admin authentication
@@ -747,42 +747,114 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status } = body;
-
-    if (!status) {
-      return NextResponse.json(
-        { error: 'El estado del pedido es requerido' },
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    const { status, items, total } = body;
 
     const supabase = createSupabaseClient();
 
-    const { data, error } = await supabase
-      .from('orders')
-      .update({
-        status,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', orderId)
-      .select()
-      .single();
+    // If updating items
+    if (items && Array.isArray(items)) {
+      console.log('📝 API: Updating order items for order:', orderId);
 
-    if (error) {
-      console.error('❌ API: Error updating order:', error);
-      return NextResponse.json(
-        { error: 'Error al actualizar el pedido' },
-        { status: 500, headers: corsHeaders }
-      );
+      // Delete existing items
+      const { error: deleteError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (deleteError) {
+        console.error('❌ API: Error deleting old items:', deleteError);
+        return NextResponse.json(
+          { error: 'Error al eliminar items anteriores' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      // Insert new items
+      const newItems = items.map((item: any) => ({
+        order_id: orderId,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        subtotal: item.unit_price * item.quantity,
+        product_snapshot: {
+          name: item.product_name || 'Producto',
+          variant_name: item.variant_name || null
+        },
+        created_at: new Date().toISOString()
+      }));
+
+      const { error: insertError } = await supabase
+        .from('order_items')
+        .insert(newItems);
+
+      if (insertError) {
+        console.error('❌ API: Error inserting new items:', insertError);
+        return NextResponse.json(
+          { error: 'Error al insertar nuevos items' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      // Update order total
+      const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
+      const { error: updateError } = await supabase
+        .from('orders')
+        .update({
+          subtotal: subtotal,
+          total: total || subtotal,
+          total_amount: total || subtotal,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId);
+
+      if (updateError) {
+        console.error('❌ API: Error updating order total:', updateError);
+        return NextResponse.json(
+          { error: 'Error al actualizar total del pedido' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      console.log('✅ API: Order items updated successfully');
+      return NextResponse.json({
+        success: true,
+        message: 'Items del pedido actualizados exitosamente'
+      }, { headers: corsHeaders });
     }
 
-    console.log('✅ API: Order updated successfully:', data);
+    // If updating status only
+    if (status) {
+      const { data, error } = await supabase
+        .from('orders')
+        .update({
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select()
+        .single();
 
-    return NextResponse.json({
-      success: true,
-      data,
-      message: 'Pedido actualizado exitosamente'
-    }, { headers: corsHeaders });
+      if (error) {
+        console.error('❌ API: Error updating order:', error);
+        return NextResponse.json(
+          { error: 'Error al actualizar el pedido' },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      console.log('✅ API: Order updated successfully:', data);
+
+      return NextResponse.json({
+        success: true,
+        data,
+        message: 'Pedido actualizado exitosamente'
+      }, { headers: corsHeaders });
+    }
+
+    return NextResponse.json(
+      { error: 'Debe proporcionar status o items para actualizar' },
+      { status: 400, headers: corsHeaders }
+    );
 
   } catch (error) {
     console.error('❌ API: Unexpected error updating order:', error);

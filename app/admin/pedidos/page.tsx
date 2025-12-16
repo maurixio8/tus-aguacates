@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Filter,
@@ -21,6 +21,8 @@ import {
   FileText
 } from 'lucide-react';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
+import EditOrderModal from '@/components/admin/EditOrderModal';
+import { Edit } from 'lucide-react';
 
 interface OrderItem {
   id: string;
@@ -133,6 +135,7 @@ export default function OrdersPage() {
   });
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
+  const [editingOrder, setEditingOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     loadOrders();
@@ -330,6 +333,33 @@ export default function OrdersPage() {
     } catch (error) {
       console.error('Error eliminando pedido:', error);
       alert('Error al eliminar el pedido');
+    }
+  };
+
+  const handleSaveOrderEdit = async (items: any[], newTotal: number): Promise<boolean> => {
+    if (!editingOrder) return false;
+
+    try {
+      const response = await fetch(`/api/admin/orders?id=${editingOrder.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ items, total: newTotal }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        loadOrders();
+        return true;
+      } else {
+        alert(data.error || 'Error al guardar cambios');
+        return false;
+      }
+    } catch (error) {
+      console.error('Error guardando cambios:', error);
+      alert('Error al guardar los cambios del pedido');
+      return false;
     }
   };
 
@@ -549,27 +579,54 @@ export default function OrdersPage() {
                           <div>
                             <p className="text-sm text-gray-500">Dirección de Entrega</p>
                             {(() => {
-                              // Intentar obtener la dirección del shipping_address (JSON)
-                              if (order.shipping_address) {
-                                try {
-                                  const address = JSON.parse(order.shipping_address);
+                              // Función auxiliar para formatear dirección (objeto o string)
+                              const formatAddress = (addr: any): React.ReactElement => {
+                                if (!addr) return <p className="text-gray-500">No hay dirección registrada</p>;
+
+                                // Si es un string, intentar parsearlo como JSON
+                                if (typeof addr === 'string') {
+                                  try {
+                                    const parsed = JSON.parse(addr);
+                                    return formatAddress(parsed); // Recursivamente formatear el objeto
+                                  } catch {
+                                    // Es un string simple, mostrarlo tal cual
+                                    return <p className="text-gray-900">{addr}</p>;
+                                  }
+                                }
+
+                                // Si es un objeto, extraer las propiedades
+                                if (typeof addr === 'object') {
+                                  const streetAddress = addr.street_address || addr.address || addr.street || '';
+                                  const city = addr.city || '';
+                                  const state = addr.state || addr.department || '';
+                                  const postalCode = addr.postal_code || '';
+                                  const additionalInfo = addr.additional_info || '';
+
+                                  // Si no hay datos útiles, mostrar mensaje vacío
+                                  if (!streetAddress && !city) {
+                                    return <p className="text-gray-500">No hay dirección registrada</p>;
+                                  }
+
                                   return (
                                     <div className="text-gray-900">
-                                      <p>{address.address}</p>
-                                      <p>{address.city}, {address.department}</p>
-                                      {address.postal_code && <p>Código Postal: {address.postal_code}</p>}
+                                      {streetAddress && <p>{streetAddress}</p>}
+                                      {(city || state) && <p>{[city, state].filter(Boolean).join(', ')}</p>}
+                                      {postalCode && <p>Código Postal: {postalCode}</p>}
+                                      {additionalInfo && <p className="text-sm text-gray-600">Info: {additionalInfo}</p>}
                                     </div>
                                   );
-                                } catch {
-                                  // Error parseando JSON, mostrar como texto
-                                  return <p className="text-gray-900">{order.shipping_address}</p>;
                                 }
+
+                                return <p className="text-gray-500">No hay dirección registrada</p>;
+                              };
+
+                              // Intentar con shipping_address primero, luego delivery_address
+                              if (order.shipping_address) {
+                                return formatAddress(order.shipping_address);
                               }
-                              // Si no hay shipping_address, usar delivery_address
                               if (order.delivery_address) {
-                                return <p className="text-gray-900">{order.delivery_address}</p>;
+                                return formatAddress(order.delivery_address);
                               }
-                              // Si no hay ninguna dirección
                               return <p className="text-gray-500">No hay dirección registrada</p>;
                             })()}
                             {order.delivery_notes && (
@@ -598,10 +655,10 @@ export default function OrdersPage() {
                                   <div>
                                     <p className="font-medium text-gray-900">
                                       {item.product_snapshot?.name ||
-                                       item.products?.name ||
-                                       item.product_name ||
-                                       item.productName ||
-                                       'Producto'}
+                                        item.products?.name ||
+                                        item.product_name ||
+                                        item.productName ||
+                                        'Producto'}
                                     </p>
                                     {item.variantName && (
                                       <p className="text-sm text-gray-600">{item.variantName}</p>
@@ -752,6 +809,17 @@ export default function OrdersPage() {
                         </div>
                       )}
 
+                      {/* Edit button - only for registered orders with order_items */}
+                      {order.order_type === 'registered' && (
+                        <button
+                          onClick={() => setEditingOrder(order)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                        >
+                          <Edit className="w-4 h-4" />
+                          Editar
+                        </button>
+                      )}
+
                       {/* Delete button */}
                       <button
                         onClick={() => deleteOrder(order.id, order.id.substring(0, 8))}
@@ -795,6 +863,16 @@ export default function OrdersPage() {
           </>
         )}
       </div>
+
+      {/* Edit Order Modal */}
+      {editingOrder && (
+        <EditOrderModal
+          order={editingOrder}
+          isOpen={!!editingOrder}
+          onClose={() => setEditingOrder(null)}
+          onSave={handleSaveOrderEdit}
+        />
+      )}
     </div>
   );
 }
