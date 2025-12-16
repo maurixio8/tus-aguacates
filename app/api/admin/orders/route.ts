@@ -593,7 +593,7 @@ export async function POST(request: NextRequest) {
         ...orderInsertData,
         // Log basic info without sensitive data
         customer_name: orderInsertData.customer_name,
-        customer_phone: orderInsertData.customer_phone?.slice(-4), // Last 4 digits only
+        customer_phone: typeof orderInsertData.customer_phone === 'string' ? orderInsertData.customer_phone.slice(-4) : orderInsertData.customer_phone, // Last 4 digits only
         total_amount: orderInsertData.total_amount,
         status: orderInsertData.status,
         user_id: orderInsertData.user_id
