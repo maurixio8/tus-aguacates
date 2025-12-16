@@ -39,13 +39,13 @@ export function ConversionHero() {
                 {/* Contenido debajo de la imagen */}
                 <div className="bg-gradient-to-b from-verde-bosque-900 to-verde-bosque-800 px-4 py-6">
                     <div className="container mx-auto">
-                        {/* Badge de urgencia */}
-                        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-3 py-2 rounded-full mb-4 shadow-lg text-xs">
-                            <Clock className="w-4 h-4" />
-                            <span className="font-semibold">
-                                Entrega: Ordena antes 10AM
-                            </span>
-                        </div>
+                        {/* Botón de Ofertas - Solo móvil */}
+                        <Link
+                            href="/tienda?categoria=ofertas"
+                            className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full mb-4 shadow-lg text-sm font-bold animate-pulse hover:animate-none hover:scale-105 transition-transform"
+                        >
+                            🔥 Ver Ofertas
+                        </Link>
 
                         {/* Headline */}
                         <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
