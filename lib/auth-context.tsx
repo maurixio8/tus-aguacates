@@ -103,12 +103,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Crear perfil de usuario
     if (data.user) {
-      await supabase.from('profiles').insert({
+      console.log('🔄 Creando perfil de usuario para:', email);
+
+      const { error: profileError } = await supabase.from('profiles').insert({
         id: data.user.id,
         full_name: fullName,
         preferred_name: null, // Se puede configurar después
         role: 'customer',
       });
+
+      if (profileError) {
+        console.error('❌ Error al crear perfil:', profileError);
+        throw new Error(`Database error saving new user: ${profileError.message}`);
+      }
+
+      console.log('✅ Perfil creado exitosamente');
 
       // Migrar pedidos de invitado automáticamente
       try {
