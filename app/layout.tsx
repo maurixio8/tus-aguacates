@@ -20,11 +20,12 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Tus Aguacates | Frutas y Verduras Frescas del Eje Cafetero",
-  description: "Compra aguacates, frutas y verduras frescas directamente del Eje Cafetero. Calidad garantizada, entrega martes y viernes en Bogotá.",
-  keywords: "aguacates, frutas, verduras, eje cafetero, colombia, frescos, Bogotá",
+  title: "Tus Aguacates - Del Eje Cafetero a tu Mesa",
+  description: "Aguacates Hass frescos y frutas premium con entrega en 48h en Bogotá. ¡Pide hoy!",
+  keywords: "aguacates hass, frutas frescas, verduras, eje cafetero, colombia, bogotá, domicilio, frutas premium, combos mercado, entrega rapida",
   icons: {
     icon: '/favicon.ico',
+    apple: '/favicon.png',
   },
   // Optimización SEO
   robots: {
@@ -38,29 +39,34 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'tu-google-verification-code', // Agregar código de verificación
-  },
-  // Open Graph para redes sociales
+  // Open Graph para redes sociales (WhatsApp, Facebook, etc.)
   openGraph: {
     type: 'website',
     locale: 'es_CO',
-    url: 'https://tusaguacates.com',
-    title: 'Tus Aguacates | Frutas y Verduras Frescas del Eje Cafetero',
-    description: 'Compra aguacates, frutas y verduras frescas directamente del Eje Cafetero. Calidad garantizada, entrega martes y viernes en Bogotá.',
+    url: 'https://tus-aguacates.vercel.app',
+    siteName: 'Tus Aguacates',
+    title: 'Tus Aguacates - Del Eje Cafetero a tu Mesa',
+    description: 'Aguacates Hass frescos y frutas premium con entrega en 48h en Bogotá. ¡Pide hoy!',
     images: [
       {
-        url: '/images/og-image.jpg',
+        url: 'https://tus-aguacates.vercel.app/images/hero-optimized.png',
         width: 1200,
         height: 630,
-        alt: 'Tus Aguacates - Productos Frescos',
+        alt: 'Tus Aguacates - Aguacates frescos del Eje Cafetero',
       },
     ],
   },
-  // Preload critical resources
+  // Twitter Card (también funciona para WhatsApp)
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Tus Aguacates - Del Eje Cafetero a tu Mesa',
+    description: 'Aguacates Hass frescos y frutas premium con entrega en 48h en Bogotá. ¡Pide hoy!',
+    images: ['https://tus-aguacates.vercel.app/images/hero-optimized.png'],
+  },
+  // Otros metadatos
   other: {
-    'theme-color': '#10b981',
-    'msapplication-TileColor': '#10b981',
+    'theme-color': '#166534',
+    'msapplication-TileColor': '#166534',
   },
 };
 
