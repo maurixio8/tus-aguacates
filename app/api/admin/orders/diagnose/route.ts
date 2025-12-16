@@ -333,10 +333,10 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate overall status
-    const allChecks = Object.values(diagnostics.checks);
-    const passedChecks = allChecks.filter(c => c.status === 'pass').length;
-    const failedChecks = allChecks.filter(c => c.status === 'fail').length;
-    const skippedChecks = allChecks.filter(c => c.status === 'skip').length;
+    const allChecks = Object.values(diagnostics.checks) as any[];
+    const passedChecks = allChecks.filter((c: any) => c.status === 'pass').length;
+    const failedChecks = allChecks.filter((c: any) => c.status === 'fail').length;
+    const skippedChecks = allChecks.filter((c: any) => c.status === 'skip').length;
 
     let overallStatus = 'pass';
     let overallMessage = 'All systems operational';
