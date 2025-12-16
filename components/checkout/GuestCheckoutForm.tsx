@@ -494,13 +494,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium mb-1">Email *</label>
+                        <label className="block text-sm font-medium mb-1">Email (opcional)</label>
                         <input
                           type="email"
-                          required
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                          placeholder="ejemplo@correo.com"
                         />
                       </div>
 
@@ -573,18 +573,6 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                       className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
                     >
                       {loading ? 'Procesando...' : 'Continuar al Pago'}
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleConfirmOrder}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-                    >
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016.393 7H3a2 2 0 00-1.997 1.884zM4.5 6.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm7.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                      </svg>
-                      <span>Pagar Contra Entrega (Envío por WhatsApp)</span>
                     </button>
                   </div>
 

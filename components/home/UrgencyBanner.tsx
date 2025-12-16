@@ -2,31 +2,26 @@
 
 import { useState, useEffect } from 'react'
 import { Clock, Package, TrendingUp } from 'lucide-react'
+import { defaultScheduler, DeliverySchedule } from '@/lib/services/delivery-scheduler'
+import { defaultMessageEngine, RenderedMessage } from '@/lib/services/banner-message-engine'
 
 export function UrgencyBanner() {
-    const [timeLeft, setTimeLeft] = useState('')
+    const [deliverySchedule, setDeliverySchedule] = useState<DeliverySchedule | null>(null)
     const [viewing, setViewing] = useState(0)
+    const [dynamicMessage, setDynamicMessage] = useState<RenderedMessage | null>(null)
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
-        // Timer para 8PM (hora de corte de pedidos)
-        const updateTimer = () => {
-            const now = new Date()
-            const deadline = new Date()
-            deadline.setHours(20, 0, 0, 0)
+        setMounted(true)
 
-            if (now > deadline) {
-                deadline.setDate(deadline.getDate() + 1)
-            }
-
-            const diff = deadline.getTime() - now.getTime()
-            const hours = Math.floor(diff / (1000 * 60 * 60))
-            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-
-            setTimeLeft(`${hours}h ${minutes}m`)
+        // Actualizar schedule de entregas
+        const updateDeliverySchedule = () => {
+            const schedule = defaultScheduler.getTimeRemaining()
+            setDeliverySchedule(schedule)
         }
 
-        updateTimer()
-        const timer = setInterval(updateTimer, 60000) // Actualizar cada minuto
+        updateDeliverySchedule()
+        const deliveryTimer = setInterval(updateDeliverySchedule, 60000) // Actualizar cada minuto
 
         // Simular viewers activos (15-45 personas)
         const updateViewers = () => {
@@ -35,61 +30,68 @@ export function UrgencyBanner() {
         updateViewers()
         const viewTimer = setInterval(updateViewers, 5000)
 
+        // Iniciar rotación de mensajes dinámicos
+        const startMessageRotation = async () => {
+            try {
+                await defaultMessageEngine.startRotation((message: RenderedMessage) => {
+                    setDynamicMessage(message)
+                })
+            } catch (error) {
+                console.error('Error starting message rotation:', error)
+                // Mensaje fallback en caso de error
+                setDynamicMessage({
+                    id: 'fallback',
+                    text: 'Solo 23 cajas de aguacates disponibles hoy',
+                    type: 'stock',
+                    priority: 0,
+                    variables: { stock: 23, product: 'aguacates' }
+                })
+            }
+        }
+
+        startMessageRotation()
+
         return () => {
-            clearInterval(timer)
+            clearInterval(deliveryTimer)
             clearInterval(viewTimer)
         }
     }, [])
 
-    // Calcular próximo día de entrega (martes o viernes)
-    const getNextDeliveryDay = () => {
-        const now = new Date()
-        const dayOfWeek = now.getDay()
-        const hour = now.getHours()
+    // Formatear la fecha de entrega
+    const formatDeliveryDate = () => {
+        if (!deliverySchedule) return ''
+        return defaultScheduler.formatDeliveryDate(deliverySchedule.nextDeliveryDate)
+    }
 
-        // Martes = 2, Viernes = 5
-        let daysUntilDelivery: number
-
-        if (dayOfWeek === 0) { // Domingo
-            daysUntilDelivery = 2 // Martes
-        } else if (dayOfWeek === 1) { // Lunes
-            daysUntilDelivery = 1 // Martes
-        } else if (dayOfWeek === 2) { // Martes
-            daysUntilDelivery = hour < 20 ? 0 : 3 // Hoy o viernes
-        } else if (dayOfWeek === 3) { // Miércoles
-            daysUntilDelivery = 2 // Viernes
-        } else if (dayOfWeek === 4) { // Jueves
-            daysUntilDelivery = 1 // Viernes
-        } else if (dayOfWeek === 5) { // Viernes
-            daysUntilDelivery = hour < 20 ? 0 : 4 // Hoy o martes
-        } else { // Sábado
-            daysUntilDelivery = 3 // Martes
-        }
-
-        const deliveryDate = new Date(now)
-        deliveryDate.setDate(now.getDate() + daysUntilDelivery)
-
-        const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' }
-        return deliveryDate.toLocaleDateString('es-CO', options)
+    if (!mounted || !deliverySchedule || !dynamicMessage) {
+        return (
+            <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white">
+                <div className="container mx-auto px-4 py-3">
+                    <div className="flex items-center justify-center">
+                        <span>Cargando...</span>
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
         <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white">
             <div className="container mx-auto px-4 py-3">
                 <div className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm md:text-base">
-                    {/* Timer urgencia */}
+                    {/* Timer urgencia - Actualizado con nuevo scheduler */}
                     <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 animate-pulse" />
+                        <Clock className={`w-5 h-5 ${deliverySchedule.isUrgent ? 'animate-pulse' : ''}`} />
                         <span>
-                            <strong>Ordena en {timeLeft}</strong> para entrega el {getNextDeliveryDay()}
+                            <strong>Ordena en {deliverySchedule.timeLeft}</strong> para entrega el {formatDeliveryDate()}
                         </span>
                     </div>
 
-                    {/* Stock limitado - Solo desktop */}
+                    {/* Mensaje dinámico - Reemplaza "Solo 23 cajas disponibles" */}
                     <div className="hidden md:flex items-center gap-2">
                         <Package className="w-5 h-5" />
                         <span>
-                            Solo <strong>23 cajas</strong> disponibles hoy
+                            <span dangerouslySetInnerHTML={{ __html: dynamicMessage.text.replace(/<strong>(.*?)<\/strong>/g, '<strong>$1</strong>') }} />
                         </span>
                     </div>
 
