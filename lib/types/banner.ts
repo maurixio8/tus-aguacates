@@ -22,34 +22,17 @@ export interface DisplayConditions {
 }
 
 export interface MessageVariables {
-  stock?: number;
+  stock?: number | string;
   product?: string;
   category?: string;
   discount?: number;
-  [key: string]: string | number;
-}
-
-export interface DeliverySchedule {
-  nextDeliveryDate: Date;
-  deadlineDate: Date;
-  timeLeft: string;
-  hoursLeft: number;
-  minutesLeft: number;
-  isUrgent: boolean;
+  [key: string]: string | number | undefined;
 }
 
 export interface BannerConfig {
   cutoffHour: number; // 10 para 10AM
   deliveryDays: number[]; // [2, 5] para martes (2) y viernes (5)
   timezone: string;
-}
-
-export interface RenderedMessage {
-  id: string;
-  text: string;
-  type: BannerMessage['message_type'];
-  priority: number;
-  variables: MessageVariables;
 }
 
 // Opciones de configuración para el motor de mensajes

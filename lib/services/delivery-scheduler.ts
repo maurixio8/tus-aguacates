@@ -1,4 +1,13 @@
-import { DeliverySchedule, BannerConfig } from '@/lib/types/banner';
+import { BannerConfig } from '@/lib/types/banner';
+
+export interface DeliverySchedule {
+  nextDeliveryDate: Date;
+  deadlineDate: Date;
+  timeLeft: string;
+  hoursLeft: number;
+  minutesLeft: number;
+  isUrgent: boolean;
+}
 
 // Configuración para entregas martes y viernes con corte a 10AM
 const DEFAULT_CONFIG: BannerConfig = {
@@ -26,7 +35,7 @@ export class DeliveryScheduler {
 
     // Determinar si ya pasó la hora de corte de hoy
     const hasPassedCutoff = hour > this.config.cutoffHour ||
-                           (hour === this.config.cutoffHour && currentMinutes > 0);
+      (hour === this.config.cutoffHour && currentMinutes > 0);
 
     let daysUntilDelivery: number;
 

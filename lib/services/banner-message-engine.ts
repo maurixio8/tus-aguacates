@@ -1,4 +1,12 @@
-import { BannerMessage, MessageVariables, RenderedMessage, MessageEngineConfig, DisplayConditions } from '@/lib/types/banner';
+import { BannerMessage, MessageVariables, MessageEngineConfig, DisplayConditions } from '@/lib/types/banner';
+
+export interface RenderedMessage {
+  id: string;
+  text: string;
+  type: BannerMessage['message_type'];
+  priority: number;
+  variables: MessageVariables;
+}
 import { supabase } from '@/lib/supabase';
 
 // Configuración por defecto para el motor de mensajes
@@ -76,9 +84,9 @@ export class BannerMessageEngine {
       }
 
       const products = (data || []).map(product => ({
-        stock: product.stock,
-        product: product.name,
-        category: product.category_id
+        stock: product.stock || 0,
+        product: product.name || '',
+        category: product.category_id || ''
       }));
 
       this.cache.set(cacheKey, {
@@ -122,9 +130,9 @@ export class BannerMessageEngine {
       const products = (data || []).map(product => {
         const discount = Math.round(((product.price - product.discount_price) / product.price) * 100);
         return {
-          product: product.name,
+          product: product.name || '',
           discount: discount,
-          category: product.category_id
+          category: product.category_id || ''
         };
       });
 
@@ -215,7 +223,7 @@ export class BannerMessageEngine {
       if (conditions.min_stock !== undefined || conditions.max_stock !== undefined) {
         const lowStockProducts = await this.getLowStockProducts();
         const hasMatchingStock = lowStockProducts.some(product => {
-          const stock = product.stock || 0;
+          const stock = Number(product.stock) || 0;
           return (conditions.min_stock === undefined || stock >= conditions.min_stock) &&
                  (conditions.max_stock === undefined || stock <= conditions.max_stock);
         });
