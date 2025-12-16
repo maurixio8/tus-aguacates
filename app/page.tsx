@@ -93,6 +93,13 @@ export default function Home() {
       {/* Sprint 1: New Conversion Hero for guests, PersonalizedHero for authenticated users */}
       <ConversionHero />
 
+      {/* Promotion Slider - Destacado después del Hero */}
+      <section className="py-8 bg-gradient-to-b from-verde-bosque-50 to-white">
+        <div className="container mx-auto px-4">
+          <PromotionSlider />
+        </div>
+      </section>
+
       {/* Personalized content for authenticated users */}
       <PersonalizedHero />
 
@@ -155,13 +162,6 @@ export default function Home() {
             variant="scroll"
             showProductCount={false}
           />
-        </div>
-      </section>
-
-      {/* Promotion Slider */}
-      <section className="py-8">
-        <div className="container mx-auto px-4">
-          <PromotionSlider />
         </div>
       </section>
 
