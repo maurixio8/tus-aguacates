@@ -107,6 +107,32 @@ export function generateOrderSummary(order: Order): string {
     year: 'numeric'
   });
 
+  // Get first name only from customer name
+  const getFirstName = (fullName: string | undefined): string => {
+    if (!fullName) return 'Cliente';
+    const firstName = fullName.trim().split(' ')[0];
+    // Capitalize first letter
+    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  };
+
+  // Get greeting based on current hour (Colombia timezone UTC-5)
+  const getGreeting = (): string => {
+    const now = new Date();
+    // Adjust for Colombia timezone (UTC-5)
+    const colombiaHour = now.getHours(); // Assuming server is in Colombia time
+
+    if (colombiaHour >= 5 && colombiaHour < 12) {
+      return '¡Buenos días';
+    } else if (colombiaHour >= 12 && colombiaHour < 18) {
+      return '¡Buenas tardes';
+    } else {
+      return '¡Buenas noches';
+    }
+  };
+
+  const firstName = getFirstName(order.customer_name);
+  const greeting = getGreeting();
+
   // Build product list
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
@@ -118,16 +144,17 @@ export function generateOrderSummary(order: Order): string {
   let financialSummary = '';
 
   if (hasDiscount && discountAmount > 0) {
-    financialSummary = `💰 *RESUMEN FINANCIERO:*
-• Subtotal de productos: ${formatCurrency(subtotal)}
-• Costo de envío: ${formatCurrency(expectedShipping)}
-• Descuentos aplicados: ${formatCurrency(discountAmount)}
-💚 *TOTAL A PAGAR:* ${formatCurrency(total)}`;
+    financialSummary = `💰 *Resumen:*
+• Subtotal: ${formatCurrency(subtotal)}
+• Envío: ${formatCurrency(expectedShipping)}
+• Descuento: -${formatCurrency(discountAmount)}
+💚 *Total:* ${formatCurrency(total)}`;
   } else {
-    financialSummary = `💰 *RESUMEN FINANCIERO:*
-• Subtotal de productos: ${formatCurrency(subtotal)}
-• Costo de envío: ${formatCurrency(shippingCost)}
-💚 *TOTAL A PAGAR:* ${formatCurrency(total)}`;
+    const shippingText = shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost);
+    financialSummary = `💰 *Resumen:*
+• Subtotal: ${formatCurrency(subtotal)}
+• Envío: ${shippingText}
+💚 *Total:* ${formatCurrency(total)}`;
   }
 
   // Generate delivery address
@@ -145,31 +172,31 @@ export function generateOrderSummary(order: Order): string {
     } else {
       // It's already an object
       deliveryAddress = order.shipping_address.address ||
-                       order.shipping_address.street_address ||
-                       'N/A';
+        order.shipping_address.street_address ||
+        'N/A';
     }
   }
 
-  // Build complete message
-  const message = `🥑 *TUS AGUACATES - RESUMEN DE TU PEDIDO*
+  // Build complete message with warm, personal tone
+  const message = `🥑 *TUS AGUACATES*
 
-📋 *Número de Pedido:* #${orderNumber}
-👤 *Cliente:* ${order.customer_name || 'N/A'}
-📱 *Contacto:* ${order.customer_phone || 'N/A'}
-📍 *Dirección de Entrega:* ${deliveryAddress}
+${greeting}, ${firstName}! 👋
 
-📦 *DETALLE DE PRODUCTOS:*
+Gracias por confiar en nosotros. Aquí está el resumen de tu pedido:
+
+📋 *Pedido #${orderNumber}*
+
+📦 *Productos:*
 ${productList}
 
 ${financialSummary}
 
-🚚 *ESTADO DEL PEDIDO:* Confirmado
-📅 *Fecha estimada de entrega:* ${formattedDeliveryDate}
+📍 *Entrega:* ${deliveryAddress}
+📅 *Fecha estimada:* ${formattedDeliveryDate}
 
-📞 *¿Necesitas ayuda con tu pedido?*
-Responde a este mensaje y te atenderemos de inmediato.
+¿Tienes alguna duda o necesitas modificar algo? Responde a este mensaje y con gusto te ayudamos. 💬
 
-¡Gracias por confiar en Tus Aguacates! 💚🥑`;
+¡Gracias por elegirnos, ${firstName}! Nos alegra tenerte como cliente 💚🥑`;
 
   return message;
 }
