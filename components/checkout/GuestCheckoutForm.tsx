@@ -229,12 +229,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 • Tel: ${formData.phone}
 • Dirección: ${formData.address}
 
-💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata'}
+💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
 
 ¡Quedo atenta a la confirmación! 🙏`;
 
       // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
-      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${orderId.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Método de pago: ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata (pagado)'}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
+      const paymentLabel = formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata';
+      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${orderId.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Método de pago: ${paymentLabel}\n\n✅ Tu pedido ha sido guardado.\n📱 Ahora te abriremos WhatsApp para finalizar.\n\n¡Gracias por tu compra! 🥑`);
 
       // 4. Abrir WhatsApp con mensaje pre-completado
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
@@ -572,7 +573,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                       disabled={loading}
                       className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
                     >
-                      {loading ? 'Procesando...' : 'Continuar al Pago'}
+                      {loading ? 'Procesando...' : 'Continuar con mi pedido'}
                     </button>
                   </div>
 
@@ -616,101 +617,80 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-purple-900 mb-2">💳 Método de Pago</h3>
-                  <p className="text-sm text-purple-700">
-                    Selecciona cómo prefieres pagar tu pedido. Aceptamos pagos digitales y efectivo contra entrega.
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-green-900">📋 Último paso: Elige cómo pagar</h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Pedido #{orderId.slice(0, 8)} • {formData.name}
                   </p>
                 </div>
 
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Total a Pagar</label>
-                      <div className="text-3xl font-bold text-verde-bosque">
-                        ${totals.total.toLocaleString('es-CO')} COP
-                      </div>
-                    </div>
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900">¿Cómo prefieres pagar?</h4>
 
-                    <div className="border-t pt-4">
-                      <p className="text-sm text-gray-600 mb-4">
-                        Pedido #{orderId.slice(0, 8)}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Cliente: {formData.name}<br />
-                        Email: {formData.email}
-                      </p>
-                    </div>
+                  {/* Payment Method Buttons - Compact */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* Daviplata */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, paymentMethod: 'daviplata' })}
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'daviplata'
+                        ? 'border-purple-500 bg-purple-50'
+                        : 'border-gray-200 hover:border-purple-300'
+                        }`}
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        D
+                      </div>
+                      <span className="text-xs font-medium">Daviplata</span>
+                    </button>
+
+                    {/* Nequi */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, paymentMethod: 'nequi' })}
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'nequi'
+                        ? 'border-pink-500 bg-pink-50'
+                        : 'border-gray-200 hover:border-pink-300'
+                        }`}
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        N
+                      </div>
+                      <span className="text-xs font-medium">Nequi</span>
+                    </button>
+
+                    {/* Efectivo */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, paymentMethod: 'efectivo' })}
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'efectivo'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:border-green-300'
+                        }`}
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                        $
+                      </div>
+                      <span className="text-xs font-medium">Efectivo</span>
+                    </button>
                   </div>
-                </div>
 
-                <div className="space-y-4">
-                  <h4 className="font-medium text-gray-900">Selecciona tu método de pago:</h4>
-
-                  {/* Daviplata Option */}
-                  <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-400 transition-colors bg-white">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="daviplata"
-                      checked={formData.paymentMethod === 'daviplata'}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                      className="mt-1 text-purple-600 focus:ring-purple-500"
-                    />
-                    <div className="ml-3 sm:ml-4 flex-1 min-w-0">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
-                          D
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">Daviplata</p>
-                          <p className="text-xs sm:text-sm text-gray-600">Transferencia bancaria instantánea</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                        <p className="text-sm font-medium text-purple-900 mb-2">📱 Proceso de Pago:</p>
-                        <ol className="text-xs text-purple-800 space-y-1 list-decimal list-inside">
-                          <li>Confirmas tu pedido en esta página</li>
-                          <li>Hacemos clic en "Confirmar Pedido"</li>
-                          <li>WhatsApp se abre con tu pedido ya escrito</li>
-                          <li>Envía el mensaje para notificar tu compra</li>
-                        </ol>
-                      </div>
+                  {/* Payment Instructions - Only when selected */}
+                  {formData.paymentMethod === 'daviplata' && (
+                    <div className="p-3 bg-purple-50 rounded-lg text-sm">
+                      <p className="font-medium text-purple-900">📱 Transfiere a: <strong>320 306 2007</strong></p>
                     </div>
-                  </label>
-
-                  {/* Efectivo Option */}
-                  <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition-colors bg-white">
-                    <input
-                      type="radio"
-                      name="paymentMethod"
-                      value="efectivo"
-                      checked={formData.paymentMethod === 'efectivo'}
-                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-                      className="mt-1 text-green-600 focus:ring-green-500"
-                    />
-                    <div className="ml-3 sm:ml-4 flex-1 min-w-0">
-                      <div className="flex items-center">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
-                          $
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-gray-900 text-sm sm:text-base">Efectivo</p>
-                          <p className="text-xs sm:text-sm text-gray-600">Paga cuando recibas tu pedido</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                        <p className="text-sm font-medium text-green-900 mb-2">💵 Proceso de Entrega:</p>
-                        <ol className="text-xs text-green-800 space-y-1 list-decimal list-inside">
-                          <li>Confirmas tu pedido en esta página</li>
-                          <li>Hacemos clic en "Confirmar Pedido"</li>
-                          <li>WhatsApp se abre con tu pedido ya escrito</li>
-                          <li>Envía el mensaje para confirmar entrega</li>
-                          <li>Paga al recibir tu pedido (dinero exacto si es posible)</li>
-                        </ol>
-                      </div>
+                  )}
+                  {formData.paymentMethod === 'nequi' && (
+                    <div className="p-3 bg-pink-50 rounded-lg text-sm">
+                      <p className="font-medium text-pink-900">📱 Transfiere a: <strong>320 306 2007</strong></p>
                     </div>
-                  </label>
+                  )}
+                  {formData.paymentMethod === 'efectivo' && (
+                    <div className="p-3 bg-green-50 rounded-lg text-sm">
+                      <p className="font-medium text-green-900">💵 Pagas al recibir tu pedido</p>
+                    </div>
+                  )}
                 </div>
 
                 {error && (
@@ -725,7 +705,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                     disabled={loading}
                     className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
                   >
-                    {loading ? 'Procesando...' : `Confirmar Pedido - ${formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}`}
+                    {loading ? 'Procesando...' : `Confirmar Pedido`}
                   </button>
 
                   <button
