@@ -49,9 +49,9 @@ export const metadata: Metadata = {
     description: 'Aguacates Hass frescos y frutas premium con entrega en 48h en Bogotá. ¡Pide hoy!',
     images: [
       {
-        url: 'https://tus-aguacates.vercel.app/images/hero-optimized.png',
-        width: 1200,
-        height: 630,
+        url: 'https://tus-aguacates.vercel.app/images/hero-sin-transparencia.png',
+        width: 1344,
+        height: 768,
         alt: 'Tus Aguacates - Aguacates frescos del Eje Cafetero',
       },
     ],
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Tus Aguacates - Del Eje Cafetero a tu Mesa',
     description: 'Aguacates Hass frescos y frutas premium con entrega en 48h en Bogotá. ¡Pide hoy!',
-    images: ['https://tus-aguacates.vercel.app/images/hero-optimized.png'],
+    images: ['https://tus-aguacates.vercel.app/images/hero-sin-transparencia.png'],
   },
   // Otros metadatos
   other: {
