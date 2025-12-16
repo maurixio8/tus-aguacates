@@ -150,7 +150,9 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
           // ✅ IMPORTANTE: Supabase (local) tiene prioridad sobre el JSON base
           is_active: localMatch.is_active !== undefined ? localMatch.is_active : baseProd.is_active,
           price: localMatch.price || baseProd.price,
-          description: localMatch.description || baseProd.description,
+          // ✅ FIX: Priorizar descripción del JSON base (tiene las descripciones completas)
+          // Solo usar la de Supabase si el JSON no tiene descripción
+          description: baseProd.description || localMatch.description,
           // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
           // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
         };
