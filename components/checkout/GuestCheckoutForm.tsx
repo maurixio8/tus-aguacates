@@ -450,7 +450,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         <div className="bg-white border-b border-gray-200 py-4">
           <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/images/logo-animated.gif"
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
               alt="Tus Aguacates - Logo"
               width={200}
               height={70}
@@ -605,7 +605,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         <div className="bg-white border-b border-gray-200 py-4">
           <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/images/logo-animated.gif"
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
               alt="Tus Aguacates - Logo"
               width={200}
               height={70}
@@ -729,7 +729,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         <div className="bg-white border-b border-gray-200 py-4">
           <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/images/logo-animated.gif"
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
               alt="Tus Aguacates - Logo"
               width={200}
               height={70}
@@ -809,7 +809,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         <div className="bg-white border-b border-gray-200 py-4">
           <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
             <Image
-              src="/images/logo-animated.gif"
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
               alt="Tus Aguacates - Logo"
               width={200}
               height={70}
