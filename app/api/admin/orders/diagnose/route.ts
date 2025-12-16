@@ -21,7 +21,7 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const diagnostics = {
+  const diagnostics: any = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
     vercel: {
