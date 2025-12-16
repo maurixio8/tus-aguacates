@@ -100,6 +100,15 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     image: '/categories/gourmet.jpg',
     description: 'Productos gourmet premium',
     color: 'from-red-500 to-orange-700'
+  },
+  {
+    id: 'cat-9',
+    name: 'Productos Nuevos',
+    slug: 'productos-nuevos',
+    icon: '✨',
+    image: '/categories/gourmet.jpg',
+    description: 'Últimos productos agregados a nuestra tienda',
+    color: 'from-purple-500 to-pink-600'
   }
 ];
 

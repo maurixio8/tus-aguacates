@@ -60,6 +60,12 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; name: string; description
     description: 'Productos gourmet selectos para los paladares más exigentes',
     imageSlug: 'gourmet'
   },
+  'productos-nuevos': {
+    emoji: '✨',
+    name: 'Productos Nuevos',
+    description: 'Descubre las últimas novedades y productos frescos en nuestra tienda',
+    imageSlug: 'gourmet'
+  },
   'verduras': {
     emoji: '🥬',
     name: 'Verduras',
