@@ -27,7 +27,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     email: '',
     phone: '',
     address: '',
-        createAccount: false,
+    createAccount: false,
     password: '',
     paymentMethod: 'daviplata'
   });
@@ -120,7 +120,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-              };
+      };
 
       console.log('📦 Order data prepared:', orderData);
 
@@ -184,24 +184,23 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-              };
+      };
 
-      // Generar mensaje para WhatsApp (como si el cliente lo escribiera)
-      let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
+      // Generar mensaje para WhatsApp (como si el cliente lo escribiera - tono natural)
+      const firstName = formData.name.split(' ')[0];
 
-*Cliente:* ${formData.name}
-*Teléfono:* ${formData.phone}
-*Email:* ${formData.email}
-*Dirección:* ${formData.address}
+      let mensajeWhatsApp = `¡Hola! 👋
 
-*Pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+Acabo de hacer un pedido en su tienda:
+🔗 https://tus-aguacates.vercel.app
+
+📦 *Mi pedido:*
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {
-        mensajeWhatsApp += `\n
-*Resumen:*
-• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
+        mensajeWhatsApp += `\n\n💰 *Resumen:*`;
+        mensajeWhatsApp += `\n• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
 
         if (totals.discount > 0) {
           mensajeWhatsApp += `\n• Descuento: -$${totals.discount.toLocaleString('es-CO')}`;
@@ -209,32 +208,30 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
 
         if (totals.shipping > 0) {
           mensajeWhatsApp += `\n• Envío: $${totals.shipping.toLocaleString('es-CO')}`;
+        } else {
+          mensajeWhatsApp += `\n• Envío: GRATIS 🎉`;
         }
 
-        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')} COP*`;
+        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')}*`;
       } else {
-        mensajeWhatsApp += `\n
-*Total:* $${totals.total.toLocaleString('es-CO')} COP`;
+        mensajeWhatsApp += `\n\n💰 *Total:* $${totals.total.toLocaleString('es-CO')}`;
       }
 
       // Add coupon information if applied
       if (orderData.appliedCoupon) {
-        mensajeWhatsApp += `\n
-*Cupón Aplicado:* ${orderData.appliedCoupon.code}
-${orderData.appliedCoupon.description}
-*Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
-  ? `${orderData.appliedCoupon.discount_value}%`
-  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
-}`;
+        mensajeWhatsApp += `\n\n🎟️ Usé el cupón: ${orderData.appliedCoupon.code}`;
       }
 
       mensajeWhatsApp += `
 
-*Entrega:* Por coordinar
+👤 *Mis datos:*
+• Me llamo ${firstName}
+• Tel: ${formData.phone}
+• Dirección: ${formData.address}
 
-*Método de pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
+💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata'}
 
-¡Gracias por tu compra! 🥑`;
+¡Quedo atenta a la confirmación! 🙏`;
 
       // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
       alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${orderId.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Método de pago: ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata (pagado)'}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
@@ -313,7 +310,7 @@ ${orderData.appliedCoupon.description}
     // Actualizar estado del pedido a "pago fallido"
     supabase
       .from('guest_orders')
-      .update({ 
+      .update({
         status: 'pago_fallido',
         payment_status: 'fallido'
       })
@@ -341,7 +338,7 @@ ${orderData.appliedCoupon.description}
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
-              };
+      };
 
       const { data: guestOrder, error: orderError } = await supabase
         .from('guest_orders')
@@ -362,22 +359,21 @@ ${orderData.appliedCoupon.description}
 
       if (orderError) throw orderError;
 
-      // 2. Generar mensaje de WhatsApp pre-formateado para pedido contra entrega
-      let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
+      // 2. Generar mensaje de WhatsApp pre-formateado para pedido contra entrega (tono natural)
+      const firstName = formData.name.split(' ')[0];
 
-*Cliente:* ${formData.name}
-*Teléfono:* ${formData.phone}
-*Email:* ${formData.email}
-*Dirección:* ${formData.address}
+      let mensajeWhatsApp = `¡Hola! 👋
 
-*Pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+Acabo de hacer un pedido en su tienda:
+🔗 https://tus-aguacates.vercel.app
+
+📦 *Mi pedido:*
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {
-        mensajeWhatsApp += `\n
-*Resumen:*
-• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
+        mensajeWhatsApp += `\n\n💰 *Resumen:*`;
+        mensajeWhatsApp += `\n• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
 
         if (totals.discount > 0) {
           mensajeWhatsApp += `\n• Descuento: -$${totals.discount.toLocaleString('es-CO')}`;
@@ -385,32 +381,30 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
 
         if (totals.shipping > 0) {
           mensajeWhatsApp += `\n• Envío: $${totals.shipping.toLocaleString('es-CO')}`;
+        } else {
+          mensajeWhatsApp += `\n• Envío: GRATIS 🎉`;
         }
 
-        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')} COP*`;
+        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')}*`;
       } else {
-        mensajeWhatsApp += `\n
-*Total:* $${totals.total.toLocaleString('es-CO')} COP`;
+        mensajeWhatsApp += `\n\n💰 *Total:* $${totals.total.toLocaleString('es-CO')}`;
       }
 
       // Add coupon information if applied
       if (orderData.appliedCoupon) {
-        mensajeWhatsApp += `\n
-*Cupón Aplicado:* ${orderData.appliedCoupon.code}
-${orderData.appliedCoupon.description}
-*Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
-  ? `${orderData.appliedCoupon.discount_value}%`
-  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
-}`;
+        mensajeWhatsApp += `\n\n🎟️ Usé el cupón: ${orderData.appliedCoupon.code}`;
       }
 
       mensajeWhatsApp += `
 
-*Entrega:* Por coordinar
+👤 *Mis datos:*
+• Me llamo ${firstName}
+• Tel: ${formData.phone}
+• Dirección: ${formData.address}
 
-*Método de pago:* Efectivo contra entrega
+💳 *Pago:* Efectivo contra entrega
 
-¡Gracias por tu compra! 🥑`;
+¡Quedo atenta a la confirmación! 🙏`;
 
       // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
       alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${guestOrder.id.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
@@ -466,148 +460,148 @@ ${orderData.appliedCoupon.description}
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2">
-          <form onSubmit={handleSubmitInfo} className="space-y-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Información de Contacto</h3>
+              <div className="lg:col-span-2">
+                <form onSubmit={handleSubmitInfo} className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4">Información de Contacto</h3>
 
-          {/* Mensaje informativo sobre política de pedidos */}
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex">
-              <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
+                    {/* Mensaje informativo sobre política de pedidos */}
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex">
+                        <div className="flex-shrink-0">
+                          <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3">
+                          <p className="text-sm text-blue-800">
+                            <span className="font-semibold">Política de pedidos:</span> Por seguridad, permitimos <strong>1 pedido por día por número de teléfono</strong>. Si necesitas modificar tu pedido, por favor regístrate con tu email.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Nombre Completo *</label>
+                        <input
+                          type="text"
+                          required
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Email *</label>
+                        <input
+                          type="email"
+                          required
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Teléfono *</label>
+                        <input
+                          type="tel"
+                          required
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+57 300 123 4567"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-1">Dirección de Entrega *</label>
+                        <textarea
+                          required
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          rows={3}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-6">
+                    <label className="flex items-start space-x-3">
+                      <input
+                        type="checkbox"
+                        checked={formData.createAccount}
+                        onChange={(e) => setFormData({ ...formData, createAccount: e.target.checked })}
+                        className="mt-1"
+                      />
+                      <div>
+                        <p className="font-medium">Crear cuenta (opcional)</p>
+                        <p className="text-sm text-gray-600">
+                          Guarda tu información y accede a tu historial de pedidos
+                        </p>
+                      </div>
+                    </label>
+
+                    {formData.createAccount && (
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium mb-1">Contraseña</label>
+                        <input
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          minLength={8}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
+                          placeholder="Mínimo 8 caracteres"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+                    >
+                      {loading ? 'Procesando...' : 'Continuar al Pago'}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleConfirmOrder}
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016.393 7H3a2 2 0 00-1.997 1.884zM4.5 6.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm7.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                      </svg>
+                      <span>Pagar Contra Entrega (Envío por WhatsApp)</span>
+                    </button>
+                  </div>
+
+                  <p className="text-sm text-gray-600 text-center">
+                    Entregas martes y viernes en Bogotá
+                  </p>
+                </form>
               </div>
-              <div className="ml-3">
-                <p className="text-sm text-blue-800">
-                  <span className="font-semibold">Política de pedidos:</span> Por seguridad, permitimos <strong>1 pedido por día por número de teléfono</strong>. Si necesitas modificar tu pedido, por favor regístrate con tu email.
-                </p>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Coupon Input */}
+                <CouponInput userEmail={formData.email} />
               </div>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Nombre Completo *</label>
-              <input
-                type="text"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Email *</label>
-              <input
-                type="email"
-                required
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Teléfono *</label>
-              <input
-                type="tel"
-                required
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+57 300 123 4567"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Dirección de Entrega *</label>
-              <textarea
-                required
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-              />
-            </div>
-          </div>
         </div>
-
-        <div className="border-t pt-6">
-          <label className="flex items-start space-x-3">
-            <input
-              type="checkbox"
-              checked={formData.createAccount}
-              onChange={(e) => setFormData({ ...formData, createAccount: e.target.checked })}
-              className="mt-1"
-            />
-            <div>
-              <p className="font-medium">Crear cuenta (opcional)</p>
-              <p className="text-sm text-gray-600">
-                Guarda tu información y accede a tu historial de pedidos
-              </p>
-            </div>
-          </label>
-
-          {formData.createAccount && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium mb-1">Contraseña</label>
-              <input
-                type="password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                minLength={8}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-                placeholder="Mínimo 8 caracteres"
-              />
-            </div>
-          )}
-        </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
-          >
-            {loading ? 'Procesando...' : 'Continuar al Pago'}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleConfirmOrder}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016.393 7H3a2 2 0 00-1.997 1.884zM4.5 6.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zm7.5 0a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
-            </svg>
-            <span>Pagar Contra Entrega (Envío por WhatsApp)</span>
-          </button>
-        </div>
-
-        <p className="text-sm text-gray-600 text-center">
-          Entregas martes y viernes en Bogotá
-        </p>
-          </form>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Coupon Input */}
-          <CouponInput userEmail={formData.email} />
-        </div>
-          </div>
-        </div>
-      </div>
       </div>
     );
   }
@@ -634,139 +628,139 @@ ${orderData.appliedCoupon.description}
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-purple-900 mb-2">💳 Método de Pago</h3>
-          <p className="text-sm text-purple-700">
-            Selecciona cómo prefieres pagar tu pedido. Aceptamos pagos digitales y efectivo contra entrega.
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Total a Pagar</label>
-              <div className="text-3xl font-bold text-verde-bosque">
-                ${totals.total.toLocaleString('es-CO')} COP
-              </div>
-            </div>
-
-            <div className="border-t pt-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Pedido #{orderId.slice(0, 8)}
-              </p>
-              <p className="text-sm text-gray-600">
-                Cliente: {formData.name}<br />
-                Email: {formData.email}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <h4 className="font-medium text-gray-900">Selecciona tu método de pago:</h4>
-
-          {/* Daviplata Option */}
-          <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-400 transition-colors bg-white">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="daviplata"
-              checked={formData.paymentMethod === 'daviplata'}
-              onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-              className="mt-1 text-purple-600 focus:ring-purple-500"
-            />
-            <div className="ml-3 sm:ml-4 flex-1 min-w-0">
-              <div className="flex items-center">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
-                  D
+                <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-purple-900 mb-2">💳 Método de Pago</h3>
+                  <p className="text-sm text-purple-700">
+                    Selecciona cómo prefieres pagar tu pedido. Aceptamos pagos digitales y efectivo contra entrega.
+                  </p>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 text-sm sm:text-base">Daviplata</p>
-                  <p className="text-xs sm:text-sm text-gray-600">Transferencia bancaria instantánea</p>
+
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Total a Pagar</label>
+                      <div className="text-3xl font-bold text-verde-bosque">
+                        ${totals.total.toLocaleString('es-CO')} COP
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <p className="text-sm text-gray-600 mb-4">
+                        Pedido #{orderId.slice(0, 8)}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        Cliente: {formData.name}<br />
+                        Email: {formData.email}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Selecciona tu método de pago:</h4>
+
+                  {/* Daviplata Option */}
+                  <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-purple-400 transition-colors bg-white">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="daviplata"
+                      checked={formData.paymentMethod === 'daviplata'}
+                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                      className="mt-1 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
+                          D
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Daviplata</p>
+                          <p className="text-xs sm:text-sm text-gray-600">Transferencia bancaria instantánea</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                        <p className="text-sm font-medium text-purple-900 mb-2">📱 Proceso de Pago:</p>
+                        <ol className="text-xs text-purple-800 space-y-1 list-decimal list-inside">
+                          <li>Confirmas tu pedido en esta página</li>
+                          <li>Hacemos clic en "Confirmar Pedido"</li>
+                          <li>WhatsApp se abre con tu pedido ya escrito</li>
+                          <li>Envía el mensaje para notificar tu compra</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </label>
+
+                  {/* Efectivo Option */}
+                  <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition-colors bg-white">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="efectivo"
+                      checked={formData.paymentMethod === 'efectivo'}
+                      onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
+                      className="mt-1 text-green-600 focus:ring-green-500"
+                    />
+                    <div className="ml-3 sm:ml-4 flex-1 min-w-0">
+                      <div className="flex items-center">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
+                          $
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-gray-900 text-sm sm:text-base">Efectivo</p>
+                          <p className="text-xs sm:text-sm text-gray-600">Paga cuando recibas tu pedido</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                        <p className="text-sm font-medium text-green-900 mb-2">💵 Proceso de Entrega:</p>
+                        <ol className="text-xs text-green-800 space-y-1 list-decimal list-inside">
+                          <li>Confirmas tu pedido en esta página</li>
+                          <li>Hacemos clic en "Confirmar Pedido"</li>
+                          <li>WhatsApp se abre con tu pedido ya escrito</li>
+                          <li>Envía el mensaje para confirmar entrega</li>
+                          <li>Paga al recibir tu pedido (dinero exacto si es posible)</li>
+                        </ol>
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                {error && (
+                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                    {error}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  <button
+                    onClick={handlePaymentSuccess}
+                    disabled={loading}
+                    className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+                  >
+                    {loading ? 'Procesando...' : `Confirmar Pedido - ${formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}`}
+                  </button>
+
+                  <button
+                    onClick={() => setStep('info')}
+                    className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
+                  >
+                    Volver
+                  </button>
+                </div>
+
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">
+                    🚚 Entregas disponibles en Bogotá<br />
+                    💳 Pagos seguros y protegidos
+                  </p>
                 </div>
               </div>
-              <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                <p className="text-sm font-medium text-purple-900 mb-2">📱 Proceso de Pago:</p>
-                <ol className="text-xs text-purple-800 space-y-1 list-decimal list-inside">
-                  <li>Confirmas tu pedido en esta página</li>
-                  <li>Hacemos clic en "Confirmar Pedido"</li>
-                  <li>WhatsApp se abre con tu pedido ya escrito</li>
-                  <li>Envía el mensaje para notificar tu compra</li>
-                </ol>
+
+              {/* Sidebar */}
+              <div className="space-y-6">
+                {/* Order Summary */}
+                <CheckoutSummary />
               </div>
-            </div>
-          </label>
-
-          {/* Efectivo Option */}
-          <label className="relative flex items-start p-4 sm:p-6 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-400 transition-colors bg-white">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="efectivo"
-              checked={formData.paymentMethod === 'efectivo'}
-              onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}
-              className="mt-1 text-green-600 focus:ring-green-500"
-            />
-            <div className="ml-3 sm:ml-4 flex-1 min-w-0">
-              <div className="flex items-center">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center text-white font-bold mr-3 flex-shrink-0">
-                  $
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-gray-900 text-sm sm:text-base">Efectivo</p>
-                  <p className="text-xs sm:text-sm text-gray-600">Paga cuando recibas tu pedido</p>
-                </div>
-              </div>
-              <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-900 mb-2">💵 Proceso de Entrega:</p>
-                <ol className="text-xs text-green-800 space-y-1 list-decimal list-inside">
-                  <li>Confirmas tu pedido en esta página</li>
-                  <li>Hacemos clic en "Confirmar Pedido"</li>
-                  <li>WhatsApp se abre con tu pedido ya escrito</li>
-                  <li>Envía el mensaje para confirmar entrega</li>
-                  <li>Paga al recibir tu pedido (dinero exacto si es posible)</li>
-                </ol>
-              </div>
-            </div>
-          </label>
-        </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <button
-            onClick={handlePaymentSuccess}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
-          >
-            {loading ? 'Procesando...' : `Confirmar Pedido - ${formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}`}
-          </button>
-
-          <button
-            onClick={() => setStep('info')}
-            className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
-          >
-            Volver
-          </button>
-        </div>
-
-        <div className="text-center">
-          <p className="text-xs text-gray-500">
-            🚚 Entregas disponibles en Bogotá<br />
-            💳 Pagos seguros y protegidos
-          </p>
-        </div>
-        </div>
-
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Order Summary */}
-          <CheckoutSummary />
-        </div>
             </div>
           </div>
         </div>
@@ -795,58 +789,58 @@ ${orderData.appliedCoupon.description}
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <div className="space-y-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="font-semibold mb-2">Información de Pago</h3>
-          <p className="text-sm text-blue-800">
-            Procesaremos tu pago de forma segura. Por ahora, haz clic en "Simular Pago Exitoso" para completar tu pedido.
-          </p>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Total a Pagar</label>
-              <div className="text-3xl font-bold text-verde-bosque">
-                ${totals.total.toLocaleString('es-CO')} COP
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold mb-2">Información de Pago</h3>
+                <p className="text-sm text-blue-800">
+                  Procesaremos tu pago de forma segura. Por ahora, haz clic en "Simular Pago Exitoso" para completar tu pedido.
+                </p>
               </div>
-            </div>
 
-            <div className="border-t pt-4">
-              <p className="text-sm text-gray-600 mb-4">
-                Pedido #{orderId.slice(0, 8)}
+              <div className="bg-white border border-gray-200 rounded-lg p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Total a Pagar</label>
+                    <div className="text-3xl font-bold text-verde-bosque">
+                      ${totals.total.toLocaleString('es-CO')} COP
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Pedido #{orderId.slice(0, 8)}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Cliente: {formData.name}<br />
+                      Email: {formData.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {error && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  {error}
+                </div>
+              )}
+
+              <button
+                onClick={handlePaymentSuccess}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+              >
+                {loading ? 'Procesando...' : `Simular Pago Exitoso - $${totals.total.toLocaleString('es-CO')} COP`}
+              </button>
+
+              <button
+                onClick={() => setStep('info')}
+                className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
+              >
+                Volver
+              </button>
+
+              <p className="text-xs text-gray-500 text-center mt-4">
+                Nota: Esta es una simulación de pago. En producción se integrará Stripe para pagos reales.
               </p>
-              <p className="text-sm text-gray-600">
-                Cliente: {formData.name}<br />
-                Email: {formData.email}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {error && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            {error}
-          </div>
-        )}
-
-        <button
-          onClick={handlePaymentSuccess}
-          disabled={loading}
-          className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
-        >
-          {loading ? 'Procesando...' : `Simular Pago Exitoso - $${totals.total.toLocaleString('es-CO')} COP`}
-        </button>
-
-        <button
-          onClick={() => setStep('info')}
-          className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
-        >
-          Volver
-        </button>
-
-        <p className="text-xs text-gray-500 text-center mt-4">
-          Nota: Esta es una simulación de pago. En producción se integrará Stripe para pagos reales.
-        </p>
             </div>
           </div>
         </div>

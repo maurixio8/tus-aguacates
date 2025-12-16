@@ -137,22 +137,21 @@ export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFo
       const createdOrderId = order.id;
       setOrderId(createdOrderId);
 
-      // 2. Crear mensaje de WhatsApp
-      let mensajeWhatsApp = `🥑 *Nuevo Pedido - Tus Aguacates*
+      // 2. Crear mensaje de WhatsApp (tono natural)
+      const firstName = selectedAddress.full_name.split(' ')[0];
 
-*Cliente:* ${selectedAddress.full_name}
-*Teléfono:* ${selectedAddress.phone}
-*Email:* ${user.email}
-*Dirección:* ${selectedAddress.street_address}, ${selectedAddress.city}
-${selectedAddress.additional_info ? `*Referencias:* ${selectedAddress.additional_info}\n` : ''}
-*Pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.variantName ? `(${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+      let mensajeWhatsApp = `¡Hola! 👋
+
+Acabo de hacer un pedido en su tienda:
+🔗 https://tus-aguacates.vercel.app
+
+📦 *Mi pedido:*
+${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown
       if (totals.discount > 0 || totals.shipping > 0) {
-        mensajeWhatsApp += `\n
-*Resumen:*
-• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
+        mensajeWhatsApp += `\n\n💰 *Resumen:*`;
+        mensajeWhatsApp += `\n• Subtotal: $${totals.subtotal.toLocaleString('es-CO')}`;
 
         if (totals.discount > 0) {
           mensajeWhatsApp += `\n• Descuento: -$${totals.discount.toLocaleString('es-CO')}`;
@@ -160,32 +159,30 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
 
         if (totals.shipping > 0) {
           mensajeWhatsApp += `\n• Envío: $${totals.shipping.toLocaleString('es-CO')}`;
+        } else {
+          mensajeWhatsApp += `\n• Envío: GRATIS 🎉`;
         }
 
-        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')} COP*`;
+        mensajeWhatsApp += `\n• *Total: $${totals.total.toLocaleString('es-CO')}*`;
       } else {
-        mensajeWhatsApp += `\n
-*Total:* $${totals.total.toLocaleString('es-CO')} COP`;
+        mensajeWhatsApp += `\n\n💰 *Total:* $${totals.total.toLocaleString('es-CO')}`;
       }
 
       // Add coupon information if applied
       if (orderData.appliedCoupon) {
-        mensajeWhatsApp += `\n
-*Cupón Aplicado:* ${orderData.appliedCoupon.code}
-${orderData.appliedCoupon.description}
-*Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
-  ? `${orderData.appliedCoupon.discount_value}%`
-  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
-}`;
+        mensajeWhatsApp += `\n\n🎟️ Usé el cupón: ${orderData.appliedCoupon.code}`;
       }
 
       mensajeWhatsApp += `
 
-*Entrega:* Por coordinar
+👤 *Mis datos:*
+• Me llamo ${firstName}
+• Tel: ${selectedAddress.phone}
+• Dirección: ${selectedAddress.street_address}, ${selectedAddress.city}
+${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.additional_info}\n` : ''}
+💳 *Pago:* ${paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : 'Daviplata'}
 
-*Método de pago:* ${paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
-
-¡Gracias por tu compra! 🥑`;
+¡Quedo atenta a la confirmación! 🙏`;
 
       // 3. Abrir WhatsApp
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
@@ -292,11 +289,10 @@ ${orderData.appliedCoupon.description}
               <CardContent className="space-y-4">
                 {/* Daviplata Option */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'daviplata'
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'daviplata'
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                   onClick={() => setPaymentMethod('daviplata')}
                 >
                   <div className="flex items-start gap-3">
@@ -332,11 +328,10 @@ ${orderData.appliedCoupon.description}
 
                 {/* Efectivo Option */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'efectivo'
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'efectivo'
                       ? 'border-primary bg-primary/5'
                       : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                    }`}
                   onClick={() => setPaymentMethod('efectivo')}
                 >
                   <div className="flex items-start gap-3">
