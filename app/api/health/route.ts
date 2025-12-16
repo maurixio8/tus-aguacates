@@ -130,8 +130,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate overall status
-    const allChecks = Object.values(health.checks);
-    const failedChecks = allChecks.filter(c => c.status === 'fail').length;
+    const allChecks = Object.values(health.checks) as any[];
+    const failedChecks = allChecks.filter((c: any) => c.status === 'fail').length;
 
     if (failedChecks > 0) {
       health.status = 'error';
