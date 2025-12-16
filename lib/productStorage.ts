@@ -266,6 +266,24 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     const allProducts = await getProducts();
     console.log(`✅ Total de ${allProducts.length} productos cargados`);
 
+    // 🔥 CASO ESPECIAL: Categoría "ofertas-combos" muestra combos y productos con descuento
+    if (categorySlugOrName === 'ofertas-combos') {
+      console.log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
+      const ofertasProducts = allProducts.filter(p => {
+        if (p.is_active === false) return false;
+
+        // Productos con "combo" en el nombre
+        const isCombo = p.name.toLowerCase().includes('combo');
+
+        // Productos con precio de descuento
+        const hasDiscount = p.discount_price && p.discount_price < p.price;
+
+        return isCombo || hasDiscount;
+      });
+      console.log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
+      return ofertasProducts;
+    }
+
     // ✅ Mapeo FLEXIBLE con múltiples variaciones posibles del nombre
     const categoryNameMap: { [key: string]: string[] } = {
       'aguacates': ['🥑 Aguacates', 'Aguacates'],

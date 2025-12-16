@@ -18,6 +18,12 @@ const CATEGORY_CONFIG: Record<string, { emoji: string; name: string; description
     description: 'Aguacates frescos Hass de la mejor calidad',
     imageSlug: 'aguacates'
   },
+  'ofertas-combos': {
+    emoji: '🔥',
+    name: 'Ofertas y Combos',
+    description: '¡Aprovecha nuestros combos especiales y ofertas del día!',
+    imageSlug: 'aguacates'
+  },
   'frutas-tropicales': {
     emoji: '🍊',
     name: 'Frutas Tropicales',

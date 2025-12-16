@@ -39,6 +39,15 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     color: 'from-green-500 to-green-700'
   },
   {
+    id: 'cat-ofertas',
+    name: 'Ofertas y Combos',
+    slug: 'ofertas-combos',
+    icon: '🔥',
+    image: '/categories/ofertas.jpg',
+    description: 'Combos especiales y ofertas del día',
+    color: 'from-red-500 to-orange-500'
+  },
+  {
     id: 'cat-2',
     name: 'Frutas Tropicales',
     slug: 'frutas-tropicales',
