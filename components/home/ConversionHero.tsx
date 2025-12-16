@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { defaultScheduler } from '@/lib/services/delivery-scheduler'
 
 export function ConversionHero() {
     const { user, loading } = useAuth()
@@ -13,27 +14,9 @@ export function ConversionHero() {
         return null
     }
 
-    // Calcular próximo día de entrega
+    // Obtener próximo día de entrega usando el scheduler centralizado
     const getNextDeliveryDay = () => {
-        const now = new Date()
-        const dayOfWeek = now.getDay()
-        const hour = now.getHours()
-
-        let daysUntilDelivery: number
-
-        if (dayOfWeek === 0) daysUntilDelivery = 2
-        else if (dayOfWeek === 1) daysUntilDelivery = 1
-        else if (dayOfWeek === 2) daysUntilDelivery = hour < 20 ? 0 : 3
-        else if (dayOfWeek === 3) daysUntilDelivery = 2
-        else if (dayOfWeek === 4) daysUntilDelivery = 1
-        else if (dayOfWeek === 5) daysUntilDelivery = hour < 20 ? 0 : 4
-        else daysUntilDelivery = 3
-
-        const deliveryDate = new Date(now)
-        deliveryDate.setDate(now.getDate() + daysUntilDelivery)
-
-        const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'short' }
-        return deliveryDate.toLocaleDateString('es-CO', options)
+        return defaultScheduler.formatDeliveryDate()
     }
 
     return (
@@ -49,7 +32,7 @@ export function ConversionHero() {
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Aguacates Hass frescos del Eje Cafetero colombiano"
+                        alt="Frutas frescas del corazón de Colombia: aguacates, mangos, uvas y más"
                     />
                 </div>
 
@@ -60,20 +43,20 @@ export function ConversionHero() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-3 py-2 rounded-full mb-4 shadow-lg text-xs">
                             <Clock className="w-4 h-4" />
                             <span className="font-semibold">
-                                Entrega: Ordena antes 8PM
+                                Entrega: Ordena antes 10AM
                             </span>
                         </div>
 
                         {/* Headline */}
                         <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
-                            <span className="text-yellow-400">Aguacates Hass</span>
+                            <span className="text-yellow-400">Frutas Frescas</span>
                             <br />
-                            del Eje Cafetero
+                            del Corazón de Colombia
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-lg text-white/90 mb-4 leading-relaxed">
-                            Frescos en tu mesa en <strong className="text-yellow-400">48 horas</strong> o te devolvemos tu dinero.
+                            Aguacates, mangos, uvas y más. Frescos en tu mesa en <strong className="text-yellow-400">48 horas</strong>.
                         </p>
 
                         {/* Social proof */}
@@ -135,7 +118,7 @@ export function ConversionHero() {
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Aguacates Hass frescos del Eje Cafetero colombiano"
+                        alt="Frutas frescas del corazón de Colombia: aguacates, mangos, uvas y más"
                     />
                     {/* Overlay para legibilidad del texto */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
@@ -148,20 +131,20 @@ export function ConversionHero() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-4 py-2 rounded-full mb-6 shadow-lg">
                             <Clock className="w-5 h-5" />
                             <span className="font-semibold">
-                                Próxima entrega: {getNextDeliveryDay()} • Ordena antes 8PM
+                                Próxima entrega: {getNextDeliveryDay()} • Ordena antes 10AM
                             </span>
                         </div>
 
                         {/* Headline */}
                         <h1 className="text-5xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
-                            <span className="text-yellow-400">Aguacates Hass</span>
+                            <span className="text-yellow-400">Frutas Frescas</span>
                             <br />
-                            del Eje Cafetero
+                            del Corazón de Colombia
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-2xl lg:text-3xl text-white/90 mb-6 leading-relaxed">
-                            Frescos en tu mesa en <strong className="text-yellow-400">48 horas</strong> o te devolvemos tu dinero.
+                            Aguacates, mangos, uvas y todas nuestras frutas frescas.
                             Directo de la finca, más fresco imposible.
                         </p>
 

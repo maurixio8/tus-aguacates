@@ -233,9 +233,11 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 
 ¡Quedo atenta a la confirmación! 🙏`;
 
-      // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
+      // 3. MOSTRAR CONFIRMACIÓN CON INFO COMPLETA DEL CLIENTE
       const paymentLabel = formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata';
-      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${orderId.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Método de pago: ${paymentLabel}\n\n✅ Tu pedido ha sido guardado.\n📱 Ahora te abriremos WhatsApp para finalizar.\n\n¡Gracias por tu compra! 🥑`);
+      const transferInfo = formData.paymentMethod !== 'efectivo' ? `\n\n📱 Para pagar, transfiere a: 320 306 2007` : '';
+
+      alert(`✅ ¡Hola ${firstName}!\n\n✅ Confirmamos tu pedido #${orderId.toString().slice(-8)}\n\n👤 Cliente: ${formData.name}\n📍 Dirección: ${formData.address}\n📱 Teléfono: ${formData.phone}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Pago: ${paymentLabel}${transferInfo}\n\n🚚 Tu pedido ya está confirmado.\n\n📲 Al dar "Aceptar" se abrirá WhatsApp para que nos agregues como contacto y veas nuestras promociones.\n\n¡Gracias por tu compra! 🥑`);
 
       // 4. Abrir WhatsApp con mensaje pre-completado
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
@@ -675,52 +677,35 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                     </button>
                   </div>
 
-                  {/* Payment Instructions - Only when selected */}
-                  {formData.paymentMethod === 'daviplata' && (
-                    <div className="p-3 bg-purple-50 rounded-lg text-sm">
-                      <p className="font-medium text-purple-900">📱 Transfiere a: <strong>320 306 2007</strong></p>
+                  {error && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                      {error}
                     </div>
                   )}
-                  {formData.paymentMethod === 'nequi' && (
-                    <div className="p-3 bg-pink-50 rounded-lg text-sm">
-                      <p className="font-medium text-pink-900">📱 Transfiere a: <strong>320 306 2007</strong></p>
-                    </div>
-                  )}
-                  {formData.paymentMethod === 'efectivo' && (
-                    <div className="p-3 bg-green-50 rounded-lg text-sm">
-                      <p className="font-medium text-green-900">💵 Pagas al recibir tu pedido</p>
-                    </div>
-                  )}
-                </div>
 
-                {error && (
-                  <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                    {error}
+                  <div className="space-y-3">
+                    <button
+                      onClick={handlePaymentSuccess}
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+                    >
+                      {loading ? 'Procesando...' : `Confirmar Pedido`}
+                    </button>
+
+                    <button
+                      onClick={() => setStep('info')}
+                      className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
+                    >
+                      Volver
+                    </button>
                   </div>
-                )}
 
-                <div className="space-y-3">
-                  <button
-                    onClick={handlePaymentSuccess}
-                    disabled={loading}
-                    className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
-                  >
-                    {loading ? 'Procesando...' : `Confirmar Pedido`}
-                  </button>
-
-                  <button
-                    onClick={() => setStep('info')}
-                    className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
-                  >
-                    Volver
-                  </button>
-                </div>
-
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">
-                    🚚 Entregas disponibles en Bogotá<br />
-                    💳 Pagos seguros y protegidos
-                  </p>
+                  <div className="text-center">
+                    <p className="text-xs text-gray-500">
+                      🚚 Entregas disponibles en Bogotá<br />
+                      💳 Pagos seguros y protegidos
+                    </p>
+                  </div>
                 </div>
               </div>
 

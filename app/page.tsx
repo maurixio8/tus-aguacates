@@ -140,7 +140,7 @@ export default function Home() {
               </div>
               <h3 className="font-display font-bold text-xl mb-2">Calidad Garantizada</h3>
               <p className="text-gray-600">
-                Satisfacción 100% o te devolvemos tu dinero
+                Productos seleccionados con los más altos estándares de calidad
               </p>
             </div>
           </div>
