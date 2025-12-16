@@ -615,8 +615,25 @@ ${orderData.appliedCoupon.description}
   // Paso 2: Selección de método de pago
   if (step === 'payment-method') {
     return (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+      <div className="min-h-screen bg-gray-50">
+        {/* Logo Header */}
+        <div className="bg-white border-b border-gray-200 py-4">
+          <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
+            <Image
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
+              alt="Tus Aguacates - Logo"
+              width={200}
+              height={70}
+              priority
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-6">
         <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-purple-900 mb-2">💳 Método de Pago</h3>
           <p className="text-sm text-purple-700">
@@ -750,6 +767,9 @@ ${orderData.appliedCoupon.description}
           {/* Order Summary */}
           <CheckoutSummary />
         </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -757,7 +777,24 @@ ${orderData.appliedCoupon.description}
   // Paso 3: Procesamiento de pago
   if (step === 'payment') {
     return (
-      <div className="space-y-6">
+      <div className="min-h-screen bg-gray-50">
+        {/* Logo Header */}
+        <div className="bg-white border-b border-gray-200 py-4">
+          <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
+            <Image
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
+              alt="Tus Aguacates - Logo"
+              width={200}
+              height={70}
+              priority
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="space-y-6">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h3 className="font-semibold mb-2">Información de Pago</h3>
           <p className="text-sm text-blue-800">
@@ -810,6 +847,9 @@ ${orderData.appliedCoupon.description}
         <p className="text-xs text-gray-500 text-center mt-4">
           Nota: Esta es una simulación de pago. En producción se integrará Stripe para pagos reales.
         </p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -817,10 +857,30 @@ ${orderData.appliedCoupon.description}
   // Paso 3: Procesando
   if (step === 'processing') {
     return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-verde-aguacate mx-auto mb-4"></div>
-        <h3 className="text-xl font-semibold mb-2">Procesando tu pedido...</h3>
-        <p className="text-gray-600">Por favor espera un momento</p>
+      <div className="min-h-screen bg-gray-50">
+        {/* Logo Header */}
+        <div className="bg-white border-b border-gray-200 py-4">
+          <div className="max-w-md mx-auto flex justify-center bg-gradient-to-r from-green-600 to-green-700 rounded-lg p-4">
+            <Image
+              src="https://i.ibb.co/WWj50Qdy/logo.png"
+              alt="Tus Aguacates - Logo"
+              width={200}
+              height={70}
+              priority
+              className="object-contain"
+            />
+          </div>
+        </div>
+
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-md mx-auto">
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-verde-aguacate mx-auto mb-4"></div>
+              <h3 className="text-xl font-semibold mb-2">Procesando tu pedido...</h3>
+              <p className="text-gray-600">Por favor espera un momento</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
