@@ -88,7 +88,7 @@ export function LastOrderSummary() {
     }
     // Si está pendiente o en preparación, mostramos reloj
     if (status === 'pending' || status === 'pendiente' ||
-        status === 'processing' || status === 'en_preparacion') {
+      status === 'processing' || status === 'en_preparacion') {
       return <Clock className="w-5 h-5 text-yellow-500" />;
     }
     // Si está cancelado, mostramos paquete gris
@@ -161,16 +161,15 @@ export function LastOrderSummary() {
               {lastOrder.payment_status && (
                 <div className="flex items-center justify-between text-sm mb-2">
                   <span className="text-gray-600">Estado del pago:</span>
-                  <span className={`font-semibold ${
-                    lastOrder.payment_status === 'completed' ? 'text-green-600' :
-                    lastOrder.payment_status === 'failed' ? 'text-red-600' :
-                    'text-yellow-600'
-                  }`}>
+                  <span className={`font-semibold ${lastOrder.payment_status === 'completed' ? 'text-green-600' :
+                      lastOrder.payment_status === 'failed' ? 'text-red-600' :
+                        'text-yellow-600'
+                    }`}>
                     {lastOrder.payment_status === 'completed' ? 'Completado' :
-                     lastOrder.payment_status === 'failed' ? 'Fallido' :
-                     lastOrder.payment_status === 'pending' ? 'Pendiente' :
-                     lastOrder.payment_status === 'refunded' ? 'Reembolsado' :
-                     lastOrder.payment_status}
+                      lastOrder.payment_status === 'failed' ? 'Fallido' :
+                        lastOrder.payment_status === 'pending' ? 'Pendiente' :
+                          lastOrder.payment_status === 'refunded' ? 'Reembolsado' :
+                            lastOrder.payment_status}
                   </span>
                 </div>
               )}
@@ -179,8 +178,8 @@ export function LastOrderSummary() {
                   <span className="text-gray-600">Método de pago:</span>
                   <span className="font-semibold text-verde-bosque-700 capitalize">
                     {lastOrder.payment_method === 'daviplata' ? 'Daviplata' :
-                     lastOrder.payment_method === 'efectivo' ? 'Efectivo contra entrega' :
-                     lastOrder.payment_method}
+                      lastOrder.payment_method === 'efectivo' ? 'Efectivo contra entrega' :
+                        lastOrder.payment_method}
                   </span>
                 </div>
               )}
@@ -189,7 +188,7 @@ export function LastOrderSummary() {
             <div className="flex gap-3">
               <Link
                 href="/cuenta"
-                className="flex-1 bg-verde-aguacate hover:bg-verde-bosque-700 text-white font-bold py-2 px-4 rounded-lg transition-all text-center flex items-center justify-center gap-2"
+                className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-2 px-4 rounded-lg transition-all text-center flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105 border-2 border-verde-aguacate"
               >
                 <Package className="w-4 h-4" />
                 Ver Detalles

@@ -268,7 +268,7 @@ export function OrderSummaryCard({
                   onRepeatOrder(order);
                 }}
                 disabled={isRepeating}
-                className="w-full flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 disabled:bg-gray-300 text-white font-medium py-2.5 md:py-3 px-4 rounded-lg transition-colors text-sm md:text-base"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 text-verde-bosque-700 font-medium py-2.5 md:py-3 px-4 rounded-lg transition-all text-sm md:text-base shadow-md hover:shadow-lg transform hover:scale-105 border-2 border-verde-aguacate disabled:border-gray-400"
               >
                 <RefreshCw className={`w-4 h-4 ${isRepeating ? 'animate-spin' : ''}`} />
                 {isRepeating ? 'Preparando...' : 'Repetir pedido'}

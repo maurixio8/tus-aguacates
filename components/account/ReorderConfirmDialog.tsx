@@ -190,11 +190,11 @@ export function ReorderConfirmDialog({
           <button
             onClick={onConfirm}
             disabled={isProcessing}
-            className="flex-1 px-4 py-2.5 bg-verde-aguacate hover:bg-verde-bosque/90 disabled:bg-gray-300 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="flex-1 px-4 py-2.5 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 text-verde-bosque-700 font-medium rounded-lg transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg transform hover:scale-105 border-2 border-verde-aguacate disabled:border-gray-400"
           >
             {isProcessing ? (
               <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-4 h-4 border-2 border-verde-bosque-700 border-t-transparent rounded-full animate-spin"></div>
                 Agregando al carrito...
               </>
             ) : (

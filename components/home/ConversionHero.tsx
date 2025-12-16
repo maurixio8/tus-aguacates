@@ -90,7 +90,7 @@ export function ConversionHero() {
                         <div className="flex flex-col gap-3 mb-6">
                             <Link
                                 href="/tienda"
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-verde-aguacate to-verde-aguacate-600 text-white px-6 py-3 rounded-full text-lg font-bold shadow-xl"
+                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl transition-all transform hover:scale-105 border-2 border-verde-aguacate"
                             >
                                 🛒 Ver Productos
                             </Link>
@@ -179,7 +179,7 @@ export function ConversionHero() {
                         <div className="flex gap-4 mb-8">
                             <Link
                                 href="/tienda"
-                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-verde-aguacate to-verde-aguacate-600 hover:from-verde-aguacate-600 hover:to-verde-aguacate-700 text-white px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
+                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate"
                             >
                                 🛒 Ver Productos
                             </Link>
