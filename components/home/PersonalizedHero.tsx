@@ -152,10 +152,10 @@ export function PersonalizedHero() {
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-display font-bold text-verde-bosque-700 mb-6">
-            Del Corazón de Colombia a tu Mesa
+            Sabores Auténticos de Colombia
           </h1>
           <p className="text-xl md:text-2xl text-gray-700 mb-8">
-            Aguacates frescos, frutas y verduras de la mejor calidad
+            Aguacates, frutas exóticas, hierbas aromáticas, especias y más
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link

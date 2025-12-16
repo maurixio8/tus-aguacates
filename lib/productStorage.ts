@@ -150,7 +150,9 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
           // ✅ IMPORTANTE: Supabase (local) tiene prioridad sobre el JSON base
           is_active: localMatch.is_active !== undefined ? localMatch.is_active : baseProd.is_active,
           price: localMatch.price || baseProd.price,
-          description: localMatch.description || baseProd.description,
+          // ✅ FIX: Priorizar descripción del JSON base (tiene las descripciones completas)
+          // Solo usar la de Supabase si el JSON no tiene descripción
+          description: baseProd.description || localMatch.description,
           // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
           // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
         };
@@ -265,6 +267,24 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     // Obtener todos los productos
     const allProducts = await getProducts();
     console.log(`✅ Total de ${allProducts.length} productos cargados`);
+
+    // 🔥 CASO ESPECIAL: Categoría "ofertas-combos" muestra combos y productos con descuento
+    if (categorySlugOrName === 'ofertas-combos') {
+      console.log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
+      const ofertasProducts = allProducts.filter(p => {
+        if (p.is_active === false) return false;
+
+        // Productos con "combo" en el nombre
+        const isCombo = p.name.toLowerCase().includes('combo');
+
+        // Productos con precio de descuento
+        const hasDiscount = p.discount_price && p.discount_price < p.price;
+
+        return isCombo || hasDiscount;
+      });
+      console.log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
+      return ofertasProducts;
+    }
 
     // ✅ Mapeo FLEXIBLE con múltiples variaciones posibles del nombre
     const categoryNameMap: { [key: string]: string[] } = {

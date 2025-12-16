@@ -32,7 +32,7 @@ export function ConversionHero() {
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Frutas frescas del corazón de Colombia: aguacates, mangos, uvas y más"
+                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
                     />
                 </div>
 
@@ -49,14 +49,14 @@ export function ConversionHero() {
 
                         {/* Headline */}
                         <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
-                            <span className="text-yellow-400">Frutas Frescas</span>
+                            <span className="text-yellow-400">Sabores Auténticos</span>
                             <br />
-                            del Corazón de Colombia
+                            de Colombia
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-lg text-white/90 mb-4 leading-relaxed">
-                            Aguacates, mangos, uvas y más. Frescos en tu mesa en <strong className="text-yellow-400">48 horas</strong>.
+                            Aguacates, frutas exóticas, aromáticas, especias y más. <strong className="text-yellow-400">Del campo a tu cocina</strong>.
                         </p>
 
                         {/* Social proof */}
@@ -118,7 +118,7 @@ export function ConversionHero() {
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Frutas frescas del corazón de Colombia: aguacates, mangos, uvas y más"
+                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
                     />
                     {/* Overlay para legibilidad del texto */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
@@ -137,15 +137,15 @@ export function ConversionHero() {
 
                         {/* Headline */}
                         <h1 className="text-5xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
-                            <span className="text-yellow-400">Frutas Frescas</span>
+                            <span className="text-yellow-400">Sabores Auténticos</span>
                             <br />
-                            del Corazón de Colombia
+                            de Colombia
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-2xl lg:text-3xl text-white/90 mb-6 leading-relaxed">
-                            Aguacates, mangos, uvas y todas nuestras frutas frescas.
-                            Directo de la finca, más fresco imposible.
+                            Aguacates, frutas exóticas, hierbas aromáticas, especias y más.
+                            Del campo colombiano a tu cocina.
                         </p>
 
                         {/* Social proof */}

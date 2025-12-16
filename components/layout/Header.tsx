@@ -70,15 +70,22 @@ export function Header() {
             </Link>
 
             {/* Navegación Desktop */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
-                Categorías
+            <nav className="hidden md:flex items-center space-x-6">
+              <Link
+                href="/tienda/ofertas-combos"
+                className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-4 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg animate-pulse hover:animate-none"
+              >
+                <span>🔥</span>
+                <span>Ofertas</span>
               </Link>
               <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
                 Aguacates
               </Link>
               <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
                 Frutas Tropicales
+              </Link>
+              <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
+                Más Categorías
               </Link>
             </nav>
 
@@ -211,12 +218,12 @@ export function Header() {
                 </Link>
 
                 <Link
-                  href="/ofertas"
+                  href="/tienda/ofertas-combos"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold transition-colors"
                 >
-                  <Tag className="w-5 h-5" />
-                  <span>Ofertas</span>
+                  <span className="w-5 h-5 flex items-center justify-center">🔥</span>
+                  <span>Ofertas y Combos</span>
                 </Link>
 
                 <div className="border-t border-white/10 my-2" />

@@ -114,6 +114,16 @@
           ]
         },
         {
+          "name": "Combo Navideño Premium",
+          "description": "🎄 El regalo perfecto para Navidad. Incluye: 12 Aguacates Hass Premium en tres estados de maduración + Uvas Chilenas Importadas (500g) + Cerezas frescas (125g). Valor individual $51,900 - ¡Ahorras $6,000!",
+          "variants": [
+            {
+              "name": "Combo Navideño",
+              "price": 45900
+            }
+          ]
+        },
+        {
           "name": "Paquete X 12 Unidades baby",
           "description": "Aguacates Hass Baby en tres estados de maduración.",
           "variants": [
