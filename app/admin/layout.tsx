@@ -17,7 +17,8 @@ import {
   Users,
   Ticket,
   Image as ImageIcon,
-  MessageSquare
+  MessageSquare,
+  Layers
 } from 'lucide-react';
 
 interface AdminUser {
@@ -104,6 +105,7 @@ export default function AdminLayout({
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Productos', href: '/admin/productos', icon: Package },
+    { name: 'Categorías', href: '/admin/categorias', icon: Layers },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },

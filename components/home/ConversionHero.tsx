@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { defaultScheduler } from '@/lib/services/delivery-scheduler'
+import { OptimizedImage } from '@/components/optimization/OptimizedImage'
 
 export function ConversionHero() {
     const { user, loading } = useAuth()
@@ -25,14 +25,14 @@ export function ConversionHero() {
             <section className="md:hidden flex flex-col bg-verde-bosque-900">
                 {/* Imagen completa sin recorte */}
                 <div className="relative w-full h-[40vh]">
-                    <Image
+                    <OptimizedImage
                         src="/images/hero-optimized.png"
+                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
                         fill
-                        className="object-contain object-center"
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
+                        className="object-contain object-center"
                     />
                 </div>
 
@@ -110,15 +110,14 @@ export function ConversionHero() {
             <section className="hidden md:flex relative min-h-[90vh] items-center">
                 {/* Imagen de fondo - llena el espacio */}
                 <div className="absolute inset-0">
-                    <Image
+                    <OptimizedImage
                         src="/images/hero-optimized.png"
+                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
                         fill
-                        className="object-cover"
-                        style={{ objectPosition: '50% 40%' }}
                         sizes="100vw"
                         priority
                         quality={85}
-                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
+                        className="object-cover"
                     />
                     {/* Overlay para legibilidad del texto */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
