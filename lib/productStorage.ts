@@ -137,8 +137,8 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
           image: localMatch.image || localMatch.main_image_url || baseProd.image,
           main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
 
-          // Actualizar otros campos si cambiaron
-          is_active: localMatch.is_active ?? baseProd.is_active,
+          // ✅ IMPORTANTE: Supabase (local) tiene prioridad sobre el JSON base
+          is_active: localMatch.is_active !== undefined ? localMatch.is_active : baseProd.is_active,
           price: localMatch.price || baseProd.price,
           description: localMatch.description || baseProd.description,
           // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
@@ -249,7 +249,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
       console.log(`📦 Modo "todos": cargando TODOS los productos`);
       const allProducts = await getProducts();
-      return allProducts.filter(p => p.is_active !== false);
+      return allProducts.filter(p => p.is_active === true);
     }
 
     // Obtener todos los productos
