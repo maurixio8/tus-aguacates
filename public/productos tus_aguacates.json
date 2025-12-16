@@ -65,7 +65,7 @@
         },
         {
           "name": "Combo Ahorro #2",
-          "description": "",
+          "description": "Combo que incluye 1 caja de aguacates x 24 unidades y Arándanos x 250 grs Orgánicos.",
           "variants": [
             {
               "name": "Combo",
@@ -222,7 +222,7 @@
         },
         {
           "name": "Yacon bandeja",
-          "description": "",
+          "description": "El yacón es un tubérculo rico en fibra, bajo en calorías y con propiedades prebióticas que benefician la digestión y el control del azúcar en sangre.",
           "variants": [
             {
               "name": "X500 grs",
@@ -260,7 +260,7 @@
         },
         {
           "name": "Cebolla Ocañera",
-          "description": "",
+          "description": "Cebolla ocañera de excelente calidad, sabor suave y dulce, ideal para ensaladas y preparaciones crudas o cocidas.",
           "variants": [
             {
               "name": "x500 grs",
@@ -288,7 +288,7 @@
         },
         {
           "name": "Guisantes Bandeja",
-          "description": "",
+          "description": "Guisantes frescos en bandeja, ricos en proteínas, fibra y vitaminas. Ideales para sopas, guisos y ensaladas.",
           "variants": [
             {
               "name": "x125 grs",
@@ -1454,7 +1454,7 @@
         },
         {
           "name": "Manzana de Agua",
-          "description": "",
+          "description": "La manzana de agua es una fruta tropical refrescante, rica en agua y vitaminas, ideal para hidratarse.",
           "variants": [
             {
               "name": "400grs",
@@ -1595,7 +1595,7 @@
         },
         {
           "name": "Habas desgranadas",
-          "description": "",
+          "description": "Habas frescas desgranadas, ricas en proteínas, fibra y hierro. Perfectas para guisos y sopas.",
           "variants": [
             {
               "name": "500 grs",
@@ -1828,7 +1828,7 @@
         },
         {
           "name": "Esparragos",
-          "description": "",
+          "description": "Los espárragos son ricos en fibra, ácido fólico y vitaminas A, C y K. Tienen propiedades diuréticas y antioxidantes.",
           "variants": [
             {
               "name": "500 gr",
@@ -1870,7 +1870,7 @@
         },
         {
           "name": "Cebolla larga malla",
-          "description": "",
+          "description": "Cebolla larga fresca en malla, ideal para sopas, guisos y preparaciones colombianas.",
           "variants": [
             {
               "name": "Malla",
@@ -1880,7 +1880,7 @@
         },
         {
           "name": "Cebolla cabezona blanca",
-          "description": "",
+          "description": "Cebolla cabezona blanca de excelente calidad, versátil para todo tipo de preparaciones culinarias.",
           "variants": [
             {
               "name": "500grs",
@@ -2048,7 +2048,7 @@
         },
         {
           "name": "Lechuga Hidroponica",
-          "description": "",
+          "description": "Lechuga hidropónica fresca, cultivada sin tierra, más limpia y con mayor durabilidad.",
           "variants": [
             {
               "name": "1 Unidad",
@@ -2236,7 +2236,7 @@
         },
         {
           "name": "Cebollin",
-          "description": "",
+          "description": "El cebollín es una hierba aromática rica en vitaminas y minerales, ideal para dar sabor a sopas, ensaladas y platos orientales.",
           "variants": [
             {
               "name": "125grs",
