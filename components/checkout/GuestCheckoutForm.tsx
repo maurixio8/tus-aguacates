@@ -710,18 +710,25 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                             💳 Paga con tarjeta de crédito, débito, PSE o Nequi de forma segura.
                           </p>
                         </div>
-                        <BoldPayButton
-                          orderId={orderId}
-                          amount={totals.total}
-                          description={`Pedido Tus Aguacates ${orderId ? `#${orderId.slice(-8)}` : ''}`}
-                          customerEmail={formData.email}
-                          customerName={formData.name}
-                          customerPhone={formData.phone}
-                          customerAddress={formData.address}
-                          embedded={true}
-                          buttonStyle="dark"
-                          buttonSize="L"
-                        />
+                        {orderId && totals.total > 0 ? (
+                          <BoldPayButton
+                            orderId={orderId}
+                            amount={totals.total}
+                            description={`Pedido Tus Aguacates #${orderId.slice(-8)}`}
+                            customerEmail={formData.email}
+                            customerName={formData.name}
+                            customerPhone={formData.phone}
+                            customerAddress={formData.address}
+                            embedded={true}
+                            buttonStyle="dark"
+                            buttonSize="L"
+                          />
+                        ) : (
+                          <div className="flex items-center justify-center py-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                            <span className="ml-3 text-gray-600">Cargando método de pago...</span>
+                          </div>
+                        )}
                       </>
                     ) : (
                       <>
