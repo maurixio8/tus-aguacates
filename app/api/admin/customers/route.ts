@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
           .order('created_at', { ascending: false });
 
         // Obtener pedidos invitados del mismo teléfono (antes de registrarse)
-        let guestOrdersForProfile = [];
+        let guestOrdersForProfile: any[] = [];
         if (profile.phone) {
           const { data: guestOrdersData } = await supabase
             .from('guest_orders')
