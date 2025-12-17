@@ -149,10 +149,8 @@ export function BoldPayButton({
 
         containerRef.current.appendChild(script);
 
-        // Forzar re-renderizado del botón de Bold
-        if ((window as any).BoldCheckout) {
-            (window as any).BoldCheckout.render();
-        }
+        // Bold renderiza automáticamente el botón cuando se detecta el script
+        // No es necesario llamar a ninguna función adicional
     }, [
         scriptLoaded,
         integrityHash,
