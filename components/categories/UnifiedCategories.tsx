@@ -128,46 +128,54 @@ export default function UnifiedCategories({
   showProductCount = false,
   maxItems = 8
 }: UnifiedCategoriesProps) {
-  const [categories, setCategories] = useState<UnifiedCategory[]>(UNIFIED_CATEGORIES);
-  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<UnifiedCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Intentar sincronizar con Supabase (opcional)
+  // Cargar categorías desde Supabase (DB es la fuente principal)
   useEffect(() => {
-    const syncWithSupabase = async () => {
+    const loadCategories = async () => {
       try {
         setLoading(true);
 
         const { data: supabaseCategories, error } = await supabase
           .from('categories')
-          .select('id, name, slug, image_url, description, sort_order')
+          .select('id, name, slug, image_url, description, sort_order, is_active')
           .eq('is_active', true)
-          .order('sort_order', { ascending: true });
+          .order('sort_order', { ascending: true })
+          .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
-          // Combinar datos de Supabase con categorías unificadas
-          const mergedCategories = UNIFIED_CATEGORIES.map(unifiedCat => {
-            const supabaseCat = supabaseCategories.find(sc => sc.slug === unifiedCat.slug);
-            return {
-              ...unifiedCat,
-              ...(supabaseCat && {
-                id: supabaseCat.id,
-                image: supabaseCat.image_url || unifiedCat.image,
-                description: supabaseCat.description || unifiedCat.description
-              })
-            };
-          });
+          // Convertir datos de Supabase al formato UnifiedCategory
+          const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            icon: '', // Las imágenes reemplazan los íconos
+            image: cat.image_url || undefined,
+            description: cat.description || undefined,
+            color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
+          }));
 
-          setCategories(mergedCategories.slice(0, maxItems));
+          setCategories(formattedCategories);
+        } else if (!error) {
+          // Si no hay error pero tampoco hay categorías, usar fallback
+          console.log('⚠️ No hay categorías activas en la base de datos');
+          setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
+        } else {
+          // Si hay error, usar fallback
+          console.error('Error loading categories from Supabase:', error);
+          setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
         }
       } catch (error) {
-        console.log('⚠️ Error syncing with Supabase, using unified categories:', error);
+        console.log('⚠️ Error loading categories, using fallback:', error);
+        setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
       } finally {
         setLoading(false);
       }
     };
 
-    syncWithSupabase();
+    loadCategories();
   }, [maxItems]);
 
   const handleCategoryClick = (category: UnifiedCategory) => {
