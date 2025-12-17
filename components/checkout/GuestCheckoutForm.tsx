@@ -713,7 +713,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                         <BoldPayButton
                           orderId={orderId}
                           amount={totals.total}
-                          description={`Pedido Tus Aguacates #${orderId.slice(-8)}`}
+                          description={`Pedido Tus Aguacates ${orderId ? `#${orderId.slice(-8)}` : ''}`}
                           customerEmail={formData.email}
                           customerName={formData.name}
                           customerPhone={formData.phone}
