@@ -23,7 +23,7 @@ interface UploadResult {
   message?: string;
 }
 
-// Configuración
+// Configuración para productos
 const UPLOAD_CONFIG = {
   BUCKET_NAME: 'product-images',
   MAX_SIZE: 5 * 1024 * 1024, // 5MB
@@ -32,6 +32,17 @@ const UPLOAD_CONFIG = {
   COMPRESSION_QUALITY: 0.8,
   MAX_WIDTH: 1200,
   MAX_HEIGHT: 1200,
+};
+
+// Configuración para categorías
+const CATEGORY_UPLOAD_CONFIG = {
+  BUCKET_NAME: 'category-images',
+  MAX_SIZE: 5 * 1024 * 1024, // 5MB
+  ALLOWED_FORMATS: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
+  COMPRESSION_QUALITY: 0.85, // Calidad ligeramente superior para categorías
+  MAX_WIDTH: 400, // Categorías más pequeñas
+  MAX_HEIGHT: 400,
 };
 
 /**
@@ -328,4 +339,196 @@ export async function checkStorageAccess(): Promise<boolean> {
     console.error('Error comprobando Storage:', error);
     return false;
   }
+}
+
+// ==================== FUNCIONES PARA CATEGORÍAS ====================
+
+/**
+ * Sube una imagen de categoría a Supabase Storage
+ * @param file - Archivo de imagen
+ * @param categorySlug - Slug de la categoría
+ * @param onProgress - Callback de progreso
+ * @returns Resultado del upload
+ */
+export async function uploadCategoryImage(
+  file: File,
+  categorySlug: string,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<UploadResult> {
+  try {
+    console.log('📸 [Categoría] Iniciando validación de imagen...');
+
+    // 1. Validar imagen
+    const validation = validateImage(file);
+    if (!validation.valid) {
+      console.error('❌ Validación fallida:', validation.error);
+      return {
+        success: false,
+        error: validation.error
+      };
+    }
+
+    console.log('✅ Imagen validada');
+
+    // 2. Comprimir imagen con configuración para categorías
+    console.log('⚙️ Comprimiendo imagen de categoría...');
+    const compressedBlob = await compressImage(
+      file,
+      CATEGORY_UPLOAD_CONFIG.COMPRESSION_QUALITY,
+      CATEGORY_UPLOAD_CONFIG.MAX_WIDTH,
+      CATEGORY_UPLOAD_CONFIG.MAX_HEIGHT
+    );
+    const compressedSize = (compressedBlob.size / (1024 * 1024)).toFixed(2);
+    const originalSize = (file.size / (1024 * 1024)).toFixed(2);
+    console.log(`✅ Imagen comprimida: ${originalSize}MB → ${compressedSize}MB`);
+
+    // Reportar progreso de compresión
+    if (onProgress) {
+      onProgress({
+        loaded: compressedBlob.size,
+        total: compressedBlob.size,
+        percentage: 50
+      });
+    }
+
+    // 3. Crear archivo con nombre único
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const filename = `${categorySlug}-${timestamp}-${randomStr}.jpg`;
+    const storagePath = `categories/${categorySlug}/${filename}`;
+
+    console.log(`📤 Subiendo a Supabase Storage: ${storagePath}`);
+
+    // 4. Subir a Supabase Storage
+    const { data, error } = await supabase.storage
+      .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
+      .upload(storagePath, compressedBlob, {
+        contentType: 'image/jpeg',
+        upsert: false,
+        cacheControl: '31536000' // 1 año de caché para categorías (cambian poco)
+      });
+
+    if (error) {
+      console.error('❌ Error en Supabase Storage:', error);
+      return {
+        success: false,
+        error: `Error al subir: ${error.message}`
+      };
+    }
+
+    console.log('✅ Archivo subido:', data.path);
+
+    // Reportar progreso de subida
+    if (onProgress) {
+      onProgress({
+        loaded: compressedBlob.size,
+        total: compressedBlob.size,
+        percentage: 100
+      });
+    }
+
+    // 5. Obtener URL pública
+    const { data: publicUrlData } = supabase.storage
+      .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
+      .getPublicUrl(storagePath);
+
+    const publicUrl = publicUrlData.publicUrl;
+    console.log('✅ URL pública generada:', publicUrl);
+
+    return {
+      success: true,
+      publicUrl,
+      storagePath,
+      message: 'Imagen de categoría subida exitosamente'
+    };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('❌ Error durante upload de categoría:', errorMessage);
+    return {
+      success: false,
+      error: `Error: ${errorMessage}`
+    };
+  }
+}
+
+/**
+ * Reemplaza una imagen de categoría
+ * @param newFile - Nuevo archivo de imagen
+ * @param categorySlug - Slug de la categoría
+ * @param oldStoragePath - Ruta de la imagen anterior (opcional)
+ * @param onProgress - Callback de progreso
+ */
+export async function replaceCategoryImage(
+  newFile: File,
+  categorySlug: string,
+  oldStoragePath?: string,
+  onProgress?: (progress: UploadProgress) => void
+): Promise<UploadResult> {
+  try {
+    // 1. Subir nueva imagen
+    const uploadResult = await uploadCategoryImage(newFile, categorySlug, onProgress);
+
+    if (!uploadResult.success) {
+      return uploadResult;
+    }
+
+    // 2. Eliminar imagen anterior si existe
+    if (oldStoragePath) {
+      console.log(`🗑️ Eliminando imagen anterior de categoría: ${oldStoragePath}`);
+      const { error: deleteError } = await supabase.storage
+        .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
+        .remove([oldStoragePath]);
+
+      if (deleteError) {
+        console.warn('⚠️ No se pudo eliminar imagen anterior:', deleteError);
+        // No fallar el upload si no se puede eliminar la anterior
+      } else {
+        console.log('✅ Imagen anterior eliminada');
+      }
+    }
+
+    return uploadResult;
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+    console.error('❌ Error durante reemplazo de categoría:', errorMessage);
+    return {
+      success: false,
+      error: `Error: ${errorMessage}`
+    };
+  }
+}
+
+/**
+ * Elimina una imagen de categoría del storage
+ */
+export async function deleteCategoryImage(storagePath: string): Promise<boolean> {
+  try {
+    const { error } = await supabase.storage
+      .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
+      .remove([storagePath]);
+
+    if (error) {
+      console.error('Error eliminando imagen de categoría:', error);
+      return false;
+    }
+
+    console.log('✅ Imagen de categoría eliminada:', storagePath);
+    return true;
+  } catch (error) {
+    console.error('Error:', error);
+    return false;
+  }
+}
+
+/**
+ * Obtiene la URL pública de una imagen de categoría
+ */
+export function getCategoryImageUrl(storagePath: string): string {
+  const { data } = supabase.storage
+    .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
+    .getPublicUrl(storagePath);
+
+  return data.publicUrl;
 }
