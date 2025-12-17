@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       neighborhood: null,
       notes: 'Cliente invitado (sin cuenta)',
       total_orders: guest.orders.length,
-      total_spent: guest.orders.reduce((sum, order) => sum + order.total, 0),
+      total_spent: guest.orders.reduce((sum: number, order) => sum + order.total, 0),
       last_order_date: guest.orders[0]?.created_at || null,
       is_active: true,
       created_at: guest.created_at,
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
         ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         const totalOrders = allOrders.length;
-        const totalSpent = allOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const totalSpent = allOrders.reduce((sum: number, order) => sum + (order.total || 0), 0);
         const lastOrderDate = allOrders[0]?.created_at || null;
 
         // Obtener dirección principal del usuario
