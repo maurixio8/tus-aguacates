@@ -52,22 +52,82 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Obtener emails de auth.users y estadísticas de pedidos para cada perfil
+    // Obtener clientes invitados únicos de guest_orders
+    const { data: guestOrders } = await supabase
+      .from('guest_orders')
+      .select('guest_name, guest_email, guest_phone, guest_address, total_amount, created_at')
+      .order('created_at', { ascending: false });
+
+    // Agrupar clientes invitados por teléfono (clave única)
+    const guestCustomersMap = new Map();
+    (guestOrders || []).forEach((order) => {
+      const key = order.guest_phone.trim();
+      if (!guestCustomersMap.has(key)) {
+        guestCustomersMap.set(key, {
+          phone: order.guest_phone,
+          name: order.guest_name,
+          email: order.guest_email || null,
+          address: order.guest_address,
+          orders: [],
+          created_at: order.created_at,
+        });
+      }
+      guestCustomersMap.get(key).orders.push({
+        total: order.total_amount,
+        created_at: order.created_at,
+      });
+    });
+
+    // Convertir clientes invitados a array con estadísticas
+    const guestCustomers = Array.from(guestCustomersMap.values()).map((guest) => ({
+      id: `guest-${guest.phone}`, // ID temporal para clientes invitados
+      name: guest.name,
+      phone: guest.phone,
+      email: guest.email,
+      address: guest.address,
+      city: null,
+      neighborhood: null,
+      notes: 'Cliente invitado (sin cuenta)',
+      total_orders: guest.orders.length,
+      total_spent: guest.orders.reduce((sum, order) => sum + order.total, 0),
+      last_order_date: guest.orders[0]?.created_at || null,
+      is_active: true,
+      created_at: guest.created_at,
+      is_guest: true, // Flag para identificar clientes invitados
+    }));
+
+    // Obtener emails de auth.users y estadísticas de pedidos para perfiles registrados
     const enrichedProfiles = await Promise.all(
       (profiles || []).map(async (profile) => {
         // Obtener email de auth.users
         const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
 
-        // Obtener estadísticas de pedidos
+        // Obtener estadísticas de pedidos registrados
         const { data: orders } = await supabase
           .from('orders')
           .select('total, created_at')
           .eq('user_id', profile.id)
           .order('created_at', { ascending: false });
 
-        const totalOrders = orders?.length || 0;
-        const totalSpent = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
-        const lastOrderDate = orders?.[0]?.created_at || null;
+        // Obtener pedidos invitados del mismo teléfono (antes de registrarse)
+        let guestOrdersForProfile = [];
+        if (profile.phone) {
+          const { data: guestOrdersData } = await supabase
+            .from('guest_orders')
+            .select('total_amount, created_at')
+            .eq('guest_phone', profile.phone);
+          guestOrdersForProfile = guestOrdersData || [];
+        }
+
+        // Combinar pedidos registrados + pedidos invitados
+        const allOrders = [
+          ...(orders || []).map(o => ({ total: o.total, created_at: o.created_at })),
+          ...guestOrdersForProfile.map(o => ({ total: o.total_amount, created_at: o.created_at })),
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        const totalOrders = allOrders.length;
+        const totalSpent = allOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+        const lastOrderDate = allOrders[0]?.created_at || null;
 
         // Obtener dirección principal del usuario
         const { data: addresses } = await supabase
@@ -91,18 +151,52 @@ export async function GET(request: NextRequest) {
           last_order_date: lastOrderDate,
           is_active: true,
           created_at: profile.created_at,
+          is_guest: false,
         };
       })
     );
 
+    // Filtrar clientes invitados que ya están registrados (mismo teléfono)
+    const registeredPhones = new Set(
+      enrichedProfiles
+        .filter(p => p.phone && p.phone !== 'Sin teléfono')
+        .map(p => p.phone.trim())
+    );
+
+    const uniqueGuestCustomers = guestCustomers.filter(
+      (guest) => !registeredPhones.has(guest.phone.trim())
+    );
+
+    // Combinar clientes registrados + invitados únicos
+    const allCustomers = [...enrichedProfiles, ...uniqueGuestCustomers];
+
+    // Aplicar búsqueda a la lista combinada
+    let filteredCustomers = allCustomers;
+    if (search) {
+      const searchLower = search.toLowerCase();
+      filteredCustomers = allCustomers.filter(
+        (customer) =>
+          customer.name.toLowerCase().includes(searchLower) ||
+          customer.phone.toLowerCase().includes(searchLower) ||
+          (customer.email && customer.email.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Aplicar paginación a la lista filtrada
+    const totalFiltered = filteredCustomers.length;
+    const paginatedCustomers = filteredCustomers.slice(
+      (page - 1) * limit,
+      page * limit
+    );
+
     return NextResponse.json({
       success: true,
-      data: enrichedProfiles || [],
+      data: paginatedCustomers,
       pagination: {
         page,
         limit,
-        total: count || 0,
-        totalPages: Math.ceil((count || 0) / limit)
+        total: totalFiltered,
+        totalPages: Math.ceil(totalFiltered / limit)
       }
     });
 
@@ -229,7 +323,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH - Actualizar cliente
+// PATCH - Actualizar cliente o convertir cliente invitado en registrado
 export async function PATCH(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -244,6 +338,68 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const supabase = createSupabaseClient();
+
+    // Verificar si es un cliente invitado (ID empieza con 'guest-')
+    if (customerId.startsWith('guest-')) {
+      // Convertir cliente invitado en cliente registrado
+      const phone = customerId.replace('guest-', '');
+
+      if (!body.email) {
+        return NextResponse.json(
+          { error: 'Email es requerido para convertir cliente invitado en registrado' },
+          { status: 400 }
+        );
+      }
+
+      // Crear usuario en auth.users
+      const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: body.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          full_name: body.name,
+        }
+      });
+
+      if (authError) {
+        return NextResponse.json(
+          { error: 'Error al crear cuenta de usuario', details: authError.message },
+          { status: 500 }
+        );
+      }
+
+      // Actualizar perfil
+      await supabase
+        .from('profiles')
+        .update({
+          full_name: body.name,
+          phone: phone,
+        })
+        .eq('id', authData.user.id);
+
+      // Crear dirección si se proporcionó
+      if (body.address) {
+        await supabase
+          .from('addresses')
+          .insert({
+            user_id: authData.user.id,
+            label: 'Principal',
+            full_name: body.name,
+            phone: phone,
+            street_address: body.address,
+            city: body.city || 'Bogotá',
+            state: body.city || 'Bogotá',
+            is_default: true,
+          });
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: { id: authData.user.id, converted: true },
+        message: 'Cliente invitado convertido a cliente registrado'
+      });
+    }
 
     // Si se está actualizando el teléfono, verificar que no exista otro cliente con ese número
     if (body.phone) {
@@ -349,6 +505,14 @@ export async function DELETE(request: NextRequest) {
     if (!customerId) {
       return NextResponse.json(
         { error: 'ID de cliente requerido' },
+        { status: 400 }
+      );
+    }
+
+    // No permitir eliminar clientes invitados
+    if (customerId.startsWith('guest-')) {
+      return NextResponse.json(
+        { error: 'No se puede eliminar un cliente invitado. Puedes editarlo para convertirlo en cliente registrado.' },
         { status: 400 }
       );
     }
