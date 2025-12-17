@@ -7,6 +7,18 @@ import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
+import dynamic from 'next/dynamic';
+
+// Cargar BoldPayButton dinámicamente para evitar errores de SSR
+const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-3 text-gray-600">Cargando...</span>
+    </div>
+  )
+});
 
 interface GuestCheckoutFormProps {
   onSuccess: (orderId: string) => void;
@@ -629,8 +641,23 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">¿Cómo prefieres pagar?</h4>
 
-                  {/* Payment Method Buttons - Compact */}
-                  <div className="grid grid-cols-3 gap-3">
+                  {/* Payment Method Buttons */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {/* Bold - Tarjeta/PSE */}
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, paymentMethod: 'bold' })}
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'bold'
+                        ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                        : 'border-gray-200 hover:border-blue-300'
+                        }`}
+                    >
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-lg">
+                        💳
+                      </div>
+                      <span className="text-xs font-medium">Tarjeta/PSE</span>
+                    </button>
+
                     {/* Daviplata */}
                     <button
                       type="button"
@@ -684,13 +711,47 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                   )}
 
                   <div className="space-y-3">
-                    <button
-                      onClick={handlePaymentSuccess}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
-                    >
-                      {loading ? 'Procesando...' : `Confirmar Pedido`}
-                    </button>
+                    {/* Mostrar BoldPayButton o botón normal según el método seleccionado */}
+                    {formData.paymentMethod === 'bold' ? (
+                      <>
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                          <p className="text-sm text-blue-800">
+                            💳 Paga con tarjeta de crédito, débito, PSE o Nequi de forma segura.
+                          </p>
+                        </div>
+                        {orderId && totals.total > 0 && (
+                          <BoldPayButton
+                            orderId={orderId}
+                            amount={totals.total}
+                            description={`Pedido #${orderId.slice(-8)}`}
+                            customerEmail={formData.email}
+                            customerName={formData.name}
+                            customerPhone={formData.phone}
+                            customerAddress={formData.address}
+                            embedded={true}
+                            buttonStyle="dark"
+                            buttonSize="L"
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {(formData.paymentMethod === 'daviplata' || formData.paymentMethod === 'nequi') && (
+                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="text-sm text-purple-800">
+                              📱 Transfiere a: <strong>320 306 2007</strong>
+                            </p>
+                          </div>
+                        )}
+                        <button
+                          onClick={handlePaymentSuccess}
+                          disabled={loading}
+                          className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+                        >
+                          {loading ? 'Procesando...' : `Confirmar Pedido`}
+                        </button>
+                      </>
+                    )}
 
                     <button
                       onClick={() => setStep('info')}
