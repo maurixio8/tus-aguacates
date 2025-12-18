@@ -115,26 +115,32 @@ export class BannerMessageEngine {
         return cached.data;
       }
 
+      // Nota: Supabase no puede comparar columnas entre sí (.lt('discount_price', 'price'))
+      // Traemos productos con discount_price y filtramos en JavaScript
       const { data, error } = await supabase
         .from('products')
         .select('name, discount_price, price, category_id')
         .not('discount_price', 'is', null)
-        .lt('discount_price', 'price')
-        .limit(5);
+        .gt('discount_price', 0)
+        .limit(20);
 
       if (error) {
         console.error('Error fetching discounted products:', error);
         return [];
       }
 
-      const products = (data || []).map(product => {
-        const discount = Math.round(((product.price - product.discount_price) / product.price) * 100);
-        return {
-          product: product.name || '',
-          discount: discount,
-          category: product.category_id || ''
-        };
-      });
+      // Filtrar en JavaScript: discount_price < price
+      const products = (data || [])
+        .filter(product => product.discount_price && product.price && product.discount_price < product.price)
+        .slice(0, 5)
+        .map(product => {
+          const discount = Math.round(((product.price - product.discount_price) / product.price) * 100);
+          return {
+            product: product.name || '',
+            discount: discount,
+            category: product.category_id || ''
+          };
+        });
 
       this.cache.set(cacheKey, {
         data: products,
@@ -162,11 +168,12 @@ export class BannerMessageEngine {
         return cached.data;
       }
 
+      // Nota: Supabase no puede comparar columnas entre sí
       const { data, error } = await supabase
         .from('products')
         .select('category_id, discount_price, price')
         .not('discount_price', 'is', null)
-        .lt('discount_price', 'price');
+        .gt('discount_price', 0);
 
       if (error) {
         console.error('Error fetching discounted categories:', error);
@@ -174,7 +181,8 @@ export class BannerMessageEngine {
       }
 
       const categoryDiscounts = new Map();
-      (data || []).forEach(product => {
+      // Filtrar en JavaScript: discount_price < price
+      (data || []).filter(p => p.discount_price && p.price && p.discount_price < p.price).forEach(product => {
         const discount = Math.round(((product.price - product.discount_price) / product.price) * 100);
         if (!categoryDiscounts.has(product.category_id) || categoryDiscounts.get(product.category_id) < discount) {
           categoryDiscounts.set(product.category_id, discount);
@@ -225,7 +233,7 @@ export class BannerMessageEngine {
         const hasMatchingStock = lowStockProducts.some(product => {
           const stock = Number(product.stock) || 0;
           return (conditions.min_stock === undefined || stock >= conditions.min_stock) &&
-                 (conditions.max_stock === undefined || stock <= conditions.max_stock);
+            (conditions.max_stock === undefined || stock <= conditions.max_stock);
         });
 
         if (!hasMatchingStock) return false;
