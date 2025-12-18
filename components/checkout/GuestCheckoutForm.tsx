@@ -728,9 +728,6 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                             customerName={formData.name}
                             customerPhone={formData.phone}
                             customerAddress={formData.address}
-                            embedded={true}
-                            buttonStyle="dark"
-                            buttonSize="L"
                           />
                         )}
                       </>
