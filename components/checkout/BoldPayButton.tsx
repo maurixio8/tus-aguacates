@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 interface BoldPayButtonProps {
     /** ID único del pedido */
@@ -28,15 +28,6 @@ interface BoldPayButtonProps {
 // Llave de identidad de Bold (pública, segura para frontend)
 const BOLD_IDENTITY_KEY = process.env.NEXT_PUBLIC_BOLD_IDENTITY_KEY || '';
 
-// Declarar el tipo global para BoldCheckout
-declare global {
-    interface Window {
-        BoldCheckout?: {
-            open: (config: any) => void;
-        };
-    }
-}
-
 export function BoldPayButton({
     orderId,
     amount,
@@ -49,51 +40,11 @@ export function BoldPayButton({
     disabled = false,
     className = '',
 }: BoldPayButtonProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
     const [integrityHash, setIntegrityHash] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string>('');
-    const [scriptLoaded, setScriptLoaded] = useState(false);
-    const [processingPayment, setProcessingPayment] = useState(false);
-
-    // Cargar el script de Bold
-    useEffect(() => {
-        // Verificar si ya está cargado
-        if (window.BoldCheckout) {
-            setScriptLoaded(true);
-            return;
-        }
-
-        // Verificar si el script ya existe
-        const existingScript = document.querySelector('script[src="https://checkout.bold.co/library/boldPaymentButton.js"]');
-        if (existingScript) {
-            // Esperar a que cargue
-            const checkLoaded = setInterval(() => {
-                if (window.BoldCheckout) {
-                    setScriptLoaded(true);
-                    clearInterval(checkLoaded);
-                }
-            }, 100);
-            return () => clearInterval(checkLoaded);
-        }
-
-        // Cargar el script
-        const script = document.createElement('script');
-        script.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
-        script.async = true;
-        script.onload = () => {
-            console.log('[Bold] Script loaded successfully');
-            setScriptLoaded(true);
-        };
-        script.onerror = () => {
-            console.error('[Bold] Failed to load script');
-            setError('Error cargando pasarela de pagos');
-        };
-        document.head.appendChild(script);
-
-        return () => {
-            // No remover el script al desmontar para evitar problemas de recarga
-        };
-    }, []);
+    const [buttonRendered, setButtonRendered] = useState(false);
 
     // Generar hash de integridad desde el backend
     useEffect(() => {
@@ -125,7 +76,7 @@ export function BoldPayButton({
                 }
 
                 const data = await response.json();
-                console.log('[Bold] Hash received:', data.hash?.substring(0, 20) + '...');
+                console.log('[Bold] Hash received successfully');
                 setIntegrityHash(data.hash);
             } catch (err: any) {
                 console.error('[Bold] Error fetching hash:', err);
@@ -138,76 +89,86 @@ export function BoldPayButton({
         fetchHash();
     }, [orderId, amount]);
 
-    // Función para abrir el checkout de Bold
-    const handlePayClick = () => {
-        if (!window.BoldCheckout) {
-            setError('La pasarela de pagos no se ha cargado. Por favor recarga la página.');
-            console.error('[Bold] BoldCheckout not available');
-            return;
-        }
+    // Renderizar el botón de Bold cuando tengamos el hash
+    const renderBoldButton = useCallback(() => {
+        if (!containerRef.current || !integrityHash || buttonRendered) return;
 
-        if (!integrityHash) {
-            setError('Error de seguridad. Por favor recarga la página.');
-            console.error('[Bold] No integrity hash');
-            return;
-        }
+        // Limpiar contenedor
+        containerRef.current.innerHTML = '';
 
-        if (!BOLD_IDENTITY_KEY) {
-            setError('Bold no está configurado correctamente');
-            console.error('[Bold] No identity key');
-            return;
-        }
-
-        setProcessingPayment(true);
-
-        // Configuración para BoldCheckout.open()
-        const baseUrl = window.location.origin;
+        // URL de redirección
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
         const finalRedirectUrl = redirectUrl || `${baseUrl}/checkout/success`;
 
-        const config: any = {
-            apiKey: BOLD_IDENTITY_KEY,
-            orderId: orderId,
-            currency: 'COP',
-            amount: amount,
-            integritySignature: integrityHash,
-            description: description,
-            redirectionUrl: finalRedirectUrl,
-            renderMode: 'embedded', // Modal sin salir de la página
-        };
+        // Crear el script con los data-attributes de Bold
+        const script = document.createElement('script');
+        script.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
+        script.setAttribute('data-bold-button', 'dark-L');
+        script.setAttribute('data-api-key', BOLD_IDENTITY_KEY);
+        script.setAttribute('data-order-id', orderId);
+        script.setAttribute('data-currency', 'COP');
+        script.setAttribute('data-amount', amount.toString());
+        script.setAttribute('data-integrity-signature', integrityHash);
+        script.setAttribute('data-description', description);
+        script.setAttribute('data-redirection-url', finalRedirectUrl);
 
-        // Datos del cliente
+        // Embedded checkout (modal sin salir de la página)
+        script.setAttribute('data-render-mode', 'embedded');
+
+        // Datos del cliente (pre-llenar formulario de Bold)
         if (customerEmail || customerName || customerPhone) {
-            config.customerData = {
+            const customerData = {
                 email: customerEmail || '',
                 fullName: customerName || '',
                 phone: customerPhone || '',
                 dialCode: '+57',
             };
+            script.setAttribute('data-customer-data', JSON.stringify(customerData));
         }
 
         // Dirección de facturación
         if (customerAddress) {
-            config.billingAddress = {
+            const billingAddress = {
                 address: customerAddress,
                 city: 'Bogotá',
                 country: 'CO',
             };
+            script.setAttribute('data-billing-address', JSON.stringify(billingAddress));
         }
 
-        console.log('[Bold] Opening checkout with config:', {
-            orderId: config.orderId,
-            amount: config.amount,
-            hasHash: !!config.integritySignature
-        });
+        script.onload = () => {
+            console.log('[Bold] Button script loaded successfully');
+            setButtonRendered(true);
+        };
 
-        try {
-            window.BoldCheckout.open(config);
-        } catch (err: any) {
-            console.error('[Bold] Error opening checkout:', err);
-            setError('Error al abrir la pasarela de pagos');
-            setProcessingPayment(false);
+        script.onerror = () => {
+            console.error('[Bold] Failed to load button script');
+            setError('Error cargando el botón de pago');
+        };
+
+        containerRef.current.appendChild(script);
+        console.log('[Bold] Script appended to container');
+    }, [
+        integrityHash,
+        orderId,
+        amount,
+        description,
+        customerEmail,
+        customerName,
+        customerPhone,
+        customerAddress,
+        redirectUrl,
+        buttonRendered
+    ]);
+
+    // Renderizar botón cuando el hash esté listo
+    useEffect(() => {
+        if (integrityHash && !isLoading && !buttonRendered) {
+            // Pequeño delay para asegurar que el DOM está listo
+            const timer = setTimeout(renderBoldButton, 100);
+            return () => clearTimeout(timer);
         }
-    };
+    }, [integrityHash, isLoading, buttonRendered, renderBoldButton]);
 
     // Estado de carga
     if (isLoading) {
@@ -235,38 +196,22 @@ export function BoldPayButton({
         );
     }
 
-    // Script no cargado todavía
-    if (!scriptLoaded) {
-        return (
-            <div className={`flex items-center justify-center py-4 ${className}`}>
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-600">Cargando pasarela de pagos...</span>
-            </div>
-        );
-    }
-
-    // Botón de pago
+    // Contenedor para el botón de Bold
     return (
         <div className={className}>
-            <button
-                onClick={handlePayClick}
-                disabled={disabled || processingPayment || !integrityHash}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-[1.02] shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
+            <div
+                ref={containerRef}
+                className="bold-button-container flex justify-center min-h-[60px]"
+                style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
             >
-                {processingPayment ? (
-                    <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                        <span>Abriendo pasarela...</span>
-                    </>
-                ) : (
-                    <>
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                        </svg>
-                        <span>Pagar con Tarjeta o PSE</span>
-                    </>
+                {/* El botón de Bold se renderizará aquí automáticamente */}
+                {!buttonRendered && (
+                    <div className="flex items-center justify-center py-4">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <span className="ml-3 text-gray-500 text-sm">Cargando botón de pago...</span>
+                    </div>
                 )}
-            </button>
+            </div>
             <p className="text-xs text-gray-500 text-center mt-2">
                 🔒 Pago seguro procesado por Bold
             </p>
