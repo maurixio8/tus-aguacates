@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface BoldPayButtonProps {
     /** ID único del pedido */
@@ -44,7 +44,7 @@ export function BoldPayButton({
     const [integrityHash, setIntegrityHash] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string>('');
-    const [buttonRendered, setButtonRendered] = useState(false);
+    const [buttonInjected, setButtonInjected] = useState(false);
 
     // Generar hash de integridad desde el backend
     useEffect(() => {
@@ -89,33 +89,16 @@ export function BoldPayButton({
         fetchHash();
     }, [orderId, amount]);
 
-    // Renderizar el botón de Bold cuando tengamos el hash
-    const renderBoldButton = useCallback(() => {
-        if (!containerRef.current || !integrityHash || buttonRendered) return;
-
-        // Limpiar contenedor
-        containerRef.current.innerHTML = '';
+    // Inyectar el botón de Bold cuando tengamos el hash (una sola vez)
+    useEffect(() => {
+        if (!containerRef.current || !integrityHash || isLoading || buttonInjected) return;
 
         // URL de redirección
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+        const baseUrl = window.location.origin;
         const finalRedirectUrl = redirectUrl || `${baseUrl}/checkout/success`;
 
-        // Crear el script con los data-attributes de Bold
-        const script = document.createElement('script');
-        script.src = 'https://checkout.bold.co/library/boldPaymentButton.js';
-        script.setAttribute('data-bold-button', 'dark-L');
-        script.setAttribute('data-api-key', BOLD_IDENTITY_KEY);
-        script.setAttribute('data-order-id', orderId);
-        script.setAttribute('data-currency', 'COP');
-        script.setAttribute('data-amount', amount.toString());
-        script.setAttribute('data-integrity-signature', integrityHash);
-        script.setAttribute('data-description', description);
-        script.setAttribute('data-redirection-url', finalRedirectUrl);
-
-        // Embedded checkout (modal sin salir de la página)
-        script.setAttribute('data-render-mode', 'embedded');
-
-        // Datos del cliente (pre-llenar formulario de Bold)
+        // Construir datos del cliente
+        let customerDataAttr = '';
         if (customerEmail || customerName || customerPhone) {
             const customerData = {
                 email: customerEmail || '',
@@ -123,52 +106,44 @@ export function BoldPayButton({
                 phone: customerPhone || '',
                 dialCode: '+57',
             };
-            script.setAttribute('data-customer-data', JSON.stringify(customerData));
+            customerDataAttr = `data-customer-data='${JSON.stringify(customerData)}'`;
         }
 
-        // Dirección de facturación
+        // Construir dirección de facturación
+        let billingAddressAttr = '';
         if (customerAddress) {
             const billingAddress = {
                 address: customerAddress,
                 city: 'Bogotá',
                 country: 'CO',
             };
-            script.setAttribute('data-billing-address', JSON.stringify(billingAddress));
+            billingAddressAttr = `data-billing-address='${JSON.stringify(billingAddress)}'`;
         }
 
-        script.onload = () => {
-            console.log('[Bold] Button script loaded successfully');
-            setButtonRendered(true);
-        };
+        // Inyectar el script directamente usando innerHTML para evitar conflictos con React
+        // Este enfoque evita que React intente reconciliar el DOM modificado por Bold
+        containerRef.current.innerHTML = `
+            <script
+                src="https://checkout.bold.co/library/boldPaymentButton.js"
+                data-bold-button="dark-L"
+                data-api-key="${BOLD_IDENTITY_KEY}"
+                data-order-id="${orderId}"
+                data-currency="COP"
+                data-amount="${amount}"
+                data-integrity-signature="${integrityHash}"
+                data-description="${description}"
+                data-redirection-url="${finalRedirectUrl}"
+                data-render-mode="embedded"
+                ${customerDataAttr}
+                ${billingAddressAttr}
+            ></script>
+        `;
 
-        script.onerror = () => {
-            console.error('[Bold] Failed to load button script');
-            setError('Error cargando el botón de pago');
-        };
+        // Marcar como inyectado para no repetir
+        setButtonInjected(true);
+        console.log('[Bold] Button injected using innerHTML');
 
-        containerRef.current.appendChild(script);
-        console.log('[Bold] Script appended to container');
-    }, [
-        integrityHash,
-        orderId,
-        amount,
-        description,
-        customerEmail,
-        customerName,
-        customerPhone,
-        customerAddress,
-        redirectUrl,
-        buttonRendered
-    ]);
-
-    // Renderizar botón cuando el hash esté listo
-    useEffect(() => {
-        if (integrityHash && !isLoading && !buttonRendered) {
-            // Pequeño delay para asegurar que el DOM está listo
-            const timer = setTimeout(renderBoldButton, 100);
-            return () => clearTimeout(timer);
-        }
-    }, [integrityHash, isLoading, buttonRendered, renderBoldButton]);
+    }, [integrityHash, isLoading, buttonInjected, orderId, amount, description, customerEmail, customerName, customerPhone, customerAddress, redirectUrl]);
 
     // Estado de carga
     if (isLoading) {
@@ -197,21 +172,16 @@ export function BoldPayButton({
     }
 
     // Contenedor para el botón de Bold
+    // IMPORTANTE: No rendericemos nada dentro del div ref después de que Bold lo modifique
     return (
         <div className={className}>
             <div
                 ref={containerRef}
                 className="bold-button-container flex justify-center min-h-[60px]"
                 style={{ opacity: disabled ? 0.5 : 1, pointerEvents: disabled ? 'none' : 'auto' }}
-            >
-                {/* El botón de Bold se renderizará aquí automáticamente */}
-                {!buttonRendered && (
-                    <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <span className="ml-3 text-gray-500 text-sm">Cargando botón de pago...</span>
-                    </div>
-                )}
-            </div>
+                // Indicar a React que no toque este contenedor
+                suppressHydrationWarning={true}
+            />
             <p className="text-xs text-gray-500 text-center mt-2">
                 🔒 Pago seguro procesado por Bold
             </p>
