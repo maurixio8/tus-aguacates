@@ -94,6 +94,13 @@ export function BoldPayButton({
         if (!containerRef.current || !integrityHash || isLoading) return;
         if (scriptInjectedRef.current) return; // Evitar doble inyección
 
+        // IMPORTANTE: Verificar que tenemos la API key antes de inyectar
+        if (!BOLD_IDENTITY_KEY) {
+            console.error('[Bold] NEXT_PUBLIC_BOLD_IDENTITY_KEY no está configurada');
+            setError('Bold no está configurado correctamente. Por favor contacta al administrador.');
+            return;
+        }
+
         // URL de redirección
         const baseUrl = window.location.origin;
         const finalRedirectUrl = redirectUrl || `${baseUrl}/checkout/success`;
