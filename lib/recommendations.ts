@@ -21,7 +21,7 @@ export interface RecommendationScore {
  */
 export async function getUserPurchaseHistory(userId: string): Promise<UserPurchaseHistory[]> {
   try {
-    console.log('🔍 [RECOMMENDATIONS] Getting purchase history for user:', userId);
+    // console.log('🔍 [RECOMMENDATIONS] Getting purchase history for user:', userId);
     
     // Obtener órdenes con sus items usando join
     const { data: orders, error } = await supabase
@@ -46,7 +46,7 @@ export async function getUserPurchaseHistory(userId: string): Promise<UserPurcha
       throw error;
     }
 
-    console.log('📊 [RECOMMENDATIONS] Found orders:', orders?.length || 0);
+    // console.log('📊 [RECOMMENDATIONS] Found orders:', orders?.length || 0);
 
     const purchaseMap = new Map<string, UserPurchaseHistory>();
 
@@ -82,7 +82,7 @@ export async function getUserPurchaseHistory(userId: string): Promise<UserPurcha
     });
 
     const result = Array.from(purchaseMap.values());
-    console.log('✅ [RECOMMENDATIONS] Purchase history processed:', result.length, 'products');
+    // console.log('✅ [RECOMMENDATIONS] Purchase history processed:', result.length, 'products');
     return result;
   } catch (error) {
     console.error('❌ [RECOMMENDATIONS] Error getting purchase history:', error);
@@ -206,7 +206,7 @@ async function getFallbackRecommendations(limit: number = 6): Promise<Product[]>
  */
 export async function getUserStats(userId: string) {
   try {
-    console.log('🔍 [RECOMMENDATIONS] Getting user stats for:', userId);
+    // console.log('🔍 [RECOMMENDATIONS] Getting user stats for:', userId);
     
     // Obtener órdenes con sus items
     const { data: orders, error } = await supabase
@@ -226,7 +226,7 @@ export async function getUserStats(userId: string) {
       throw error;
     }
 
-    console.log('📊 [RECOMMENDATIONS] Found orders for stats:', orders?.length || 0);
+    // console.log('📊 [RECOMMENDATIONS] Found orders for stats:', orders?.length || 0);
 
     const totalOrders = orders?.length || 0;
     const totalSpent = orders?.reduce((sum, order) => sum + (order.total || 0), 0) || 0;
@@ -270,7 +270,7 @@ export async function getUserStats(userId: string) {
       averageOrderValue: totalOrders > 0 ? Math.round(totalSpent / totalOrders) : 0,
     };
     
-    console.log('✅ [RECOMMENDATIONS] User stats calculated:', result);
+    // console.log('✅ [RECOMMENDATIONS] User stats calculated:', result);
     return result;
   } catch (error) {
     console.error('❌ [RECOMMENDATIONS] Error getting user stats:', error);
@@ -290,7 +290,7 @@ export async function getUserStats(userId: string) {
  */
 export async function getLastOrder(userId: string) {
   try {
-    console.log('🔍 [RECOMMENDATIONS] Getting last order for user:', userId);
+    // console.log('🔍 [RECOMMENDATIONS] Getting last order for user:', userId);
     
     const { data, error } = await supabase
       .from('orders')
@@ -312,7 +312,7 @@ export async function getLastOrder(userId: string) {
       throw error;
     }
     
-    console.log('✅ [RECOMMENDATIONS] Last order retrieved successfully:', data?.id);
+    // console.log('✅ [RECOMMENDATIONS] Last order retrieved successfully:', data?.id);
     return data;
   } catch (error) {
     console.error('❌ [RECOMMENDATIONS] Error getting last order:', error);

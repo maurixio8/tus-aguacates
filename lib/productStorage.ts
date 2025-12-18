@@ -8,6 +8,10 @@ import type { UnifiedProduct, UnifiedProductVariant } from './types';
 export type Product = UnifiedProduct;
 export type ProductVariant = UnifiedProductVariant;
 
+// 🔇 Flag para controlar logging - desactivado en producción para mejorar rendimiento
+const DEBUG = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PRODUCTS === 'true';
+const log = (...args: unknown[]): void => { if (DEBUG) console.log(...args); };
+
 // Productos por defecto si no hay datos guardados
 const DEFAULT_PRODUCTS: UnifiedProduct[] = [];
 
@@ -18,7 +22,7 @@ export const getDefaultProducts = (): UnifiedProduct[] => {
 // ✅ ÚNICA FUENTE DE VERDAD: productos tus_aguacates.json (217 productos)
 const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
   try {
-    console.log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
+    log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
 
     let jsonData;
 
@@ -30,7 +34,7 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
       const filePath = path.join(process.cwd(), 'public', 'productos tus_aguacates.json');
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       jsonData = JSON.parse(fileContent);
-      console.log('✅ JSON cargado desde filesystem (servidor)');
+      log('✅ JSON cargado desde filesystem (servidor)');
     } else {
       // Cliente: usar fetch
       const response = await fetch('/productos tus_aguacates.json');
@@ -38,7 +42,7 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
         throw new Error('No se pudo cargar el JSON de productos');
       }
       jsonData = await response.json();
-      console.log('✅ JSON cargado desde fetch (cliente)');
+      log('✅ JSON cargado desde fetch (cliente)');
     }
 
     const products: UnifiedProduct[] = [];
@@ -50,7 +54,7 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
     // Procesar cada categoría del JSON
     for (const category of jsonData.categories || []) {
       const categoryName = category.name || 'General';
-      console.log(`📦 Procesando categoría: ${categoryName}`);
+      log(`📦 Procesando categoría: ${categoryName}`);
 
       // ✅ LEER CADA PRODUCTO TAL CUAL
       for (const product of category.products || []) {
@@ -91,7 +95,7 @@ const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
       }
     }
 
-    console.log(`✅ ${products.length} productos cargados exitosamente`);
+    log(`✅ ${products.length} productos cargados exitosamente`);
     return products;
 
   } catch (error) {
@@ -106,10 +110,10 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
   try {
     // Intentar sincronizar en segundo plano para no bloquear la carga
     syncSupabaseToLocal().catch(err => {
-      console.log('⚠️ Error en sincronización automática:', err);
+      log('⚠️ Error en sincronización automática:', err);
     });
   } catch (error) {
-    console.log('⚠️ No se pudo sincronizar con Supabase:', error);
+    log('⚠️ No se pudo sincronizar con Supabase:', error);
   }
 
   // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
@@ -120,7 +124,7 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
 
   // 3. Si hay datos locales, realizar FUSIÓN INTELIGENTE
   if (localProducts.length > 0 && baseProducts.length > 0) {
-    console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
+    log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
 
     // Helper para normalizar nombres
     const normalize = (str: string) => str.trim().toLowerCase();
@@ -133,7 +137,7 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
 
         // Debug comentado para evitar spam en consola
         // if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
-        //   console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
+        //   log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
         // }
 
         return idMatch || nameMatch;
@@ -172,7 +176,7 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
     });
 
     if (newLocalProducts.length > 0) {
-      console.log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
+      log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
       return [...mergedProducts, ...newLocalProducts];
     }
 
@@ -181,16 +185,16 @@ export const getProducts = async (): Promise<UnifiedProduct[]> => {
 
   // Fallbacks simples si una fuente falla
   if (baseProducts.length > 0) {
-    console.log('⚠️ Usando solo JSON base (sin datos locales)');
+    log('⚠️ Usando solo JSON base (sin datos locales)');
     return baseProducts;
   }
 
   if (localProducts.length > 0) {
-    console.log('⚠️ Usando solo LocalStorage (JSON falló)');
+    log('⚠️ Usando solo LocalStorage (JSON falló)');
     return localProducts;
   }
 
-  console.log('❌ No se pudieron cargar productos de ninguna fuente');
+  log('❌ No se pudieron cargar productos de ninguna fuente');
   return DEFAULT_PRODUCTS;
 };
 
@@ -204,7 +208,7 @@ export const getProductsSync = (): UnifiedProduct[] => {
       const parsed = JSON.parse(saved);
       return parsed;
     } catch (e) {
-      console.log('⚠️ Error al leer localStorage');
+      log('⚠️ Error al leer localStorage');
     }
   }
 
@@ -216,7 +220,7 @@ export const saveProducts = (products: UnifiedProduct[]): void => {
 
   try {
     localStorage.setItem('tus_aguacates_products', JSON.stringify(products));
-    console.log('💾 Productos guardados en localStorage compartido:', products.length);
+    log('💾 Productos guardados en localStorage compartido:', products.length);
   } catch (e) {
     console.error('❌ Error al guardar productos en localStorage:', e);
   }
@@ -228,7 +232,7 @@ export const updateProductImage = (productId: string, imageData: string): Unifie
     p.id === productId ? { ...p, image: imageData } : p
   );
   saveProducts(updated);
-  console.log('✅ Imagen actualizada para producto ID:', productId);
+  log('✅ Imagen actualizada para producto ID:', productId);
   return updated;
 };
 
@@ -255,22 +259,22 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
 
 export const getProductsByCategory = async (categorySlugOrName: string): Promise<UnifiedProduct[]> => {
   try {
-    console.log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
+    log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
 
     // Si es "todos", cargar todos los productos
     if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
-      console.log(`📦 Modo "todos": cargando TODOS los productos`);
+      log(`📦 Modo "todos": cargando TODOS los productos`);
       const allProducts = await getProducts();
       return allProducts.filter(p => p.is_active === true);
     }
 
     // Obtener todos los productos
     const allProducts = await getProducts();
-    console.log(`✅ Total de ${allProducts.length} productos cargados`);
+    log(`✅ Total de ${allProducts.length} productos cargados`);
 
     // 🔥 CASO ESPECIAL: Categoría "ofertas-combos" muestra combos y productos con descuento
     if (categorySlugOrName === 'ofertas-combos') {
-      console.log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
+      log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
       const ofertasProducts = allProducts.filter(p => {
         if (p.is_active === false) return false;
 
@@ -282,7 +286,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
         return isCombo || hasDiscount;
       });
-      console.log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
+      log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
       return ofertasProducts;
     }
 
@@ -308,7 +312,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
     if (!isSlug) {
       // Es un nombre con posibles emojis/espacios
-      console.log(`📝 Detectado como NOMBRE (no slug): "${categorySlugOrName}"`);
+      log(`📝 Detectado como NOMBRE (no slug): "${categorySlugOrName}"`);
 
       // Obtener categorías de Supabase para mapeo
       const { data: supabaseCategories } = await supabase
@@ -319,7 +323,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       if (supabaseCategories && supabaseCategories.length > 0) {
         // Limpiar emojis y espacios
         const cleanInput = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
-        console.log(`  Nombre limpio: "${cleanInput}"`);
+        log(`  Nombre limpio: "${cleanInput}"`);
 
         const match = supabaseCategories.find(cat =>
           cat.name.toLowerCase().includes(cleanInput) ||
@@ -328,11 +332,11 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
         if (match) {
           targetSlug = match.slug;
-          console.log(`✅ Encontrado en Supabase: "${match.name}" -> slug: "${targetSlug}"`);
+          log(`✅ Encontrado en Supabase: "${match.name}" -> slug: "${targetSlug}"`);
         }
       }
     } else {
-      console.log(`✅ Detectado como SLUG: "${categorySlugOrName}"`);
+      log(`✅ Detectado como SLUG: "${categorySlugOrName}"`);
     }
 
     const possibleCategoryNames = categoryNameMap[targetSlug];
@@ -343,7 +347,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       return [];
     }
 
-    console.log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
+    log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
 
     // ✅ Función helper para limpiar y comparar nombres de categoría
     const cleanCategoryName = (name: string): string => {
@@ -371,7 +375,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       });
     });
 
-    console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
+    log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
 
     return filteredProducts;
 
@@ -416,7 +420,7 @@ export const slugToCategory = (slug: string): string => {
 // Sincroniza datos de Supabase a localStorage como única fuente de verdad
 export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
-    console.log('🔄 Starting Supabase to localStorage sync...');
+    log('🔄 Starting Supabase to localStorage sync...');
 
     // 1. Obtener datos de Supabase (TODOS los productos, no solo activos)
     // ⚠️ IMPORTANTE: Traer todos los productos para sincronizar correctamente los estados is_active
@@ -429,11 +433,10 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
       return false;
     }
 
-    console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
+    log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
 
-    // 2. Obtener datos actuales de localStorage
-    const localProducts = await getProducts();
-    console.log(`📦 Found ${localProducts.length} products in localStorage`);
+    // 2. Obtener datos actuales de localStorage (SIN llamar getProducts para evitar loop)
+    const localProducts = getProductsSync();
 
     // 3. Mapear y combinar datos
     let mergedProducts: UnifiedProduct[] = [];
@@ -481,7 +484,7 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
         // Excluir si ya existe por NOMBRE (priorizar la versión de base de datos)
         if (supabaseNames.has(normalize(lp.name))) {
-          console.log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
+          log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
           return false;
         }
 
@@ -490,17 +493,17 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
       mergedProducts = [...convertedProducts, ...localOnly];
 
-      console.log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
+      log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
     } else {
       // Si no hay datos en Supabase, usar solo datos locales
       mergedProducts = localProducts;
-      console.log('⚠️ No Supabase data, using localStorage only');
+      log('⚠️ No Supabase data, using localStorage only');
     }
 
     // 5. Guardar en localStorage
     saveProducts(mergedProducts);
 
-    console.log(`✅ Sync completed: ${mergedProducts.length} total products saved to localStorage`);
+    log(`✅ Sync completed: ${mergedProducts.length} total products saved to localStorage`);
     return true;
 
   } catch (error) {
@@ -515,9 +518,9 @@ export const initializeProducts = async (): Promise<UnifiedProduct[]> => {
   const syncSuccess = await syncSupabaseToLocal();
 
   if (syncSuccess) {
-    console.log('🎉 Products initialized from Supabase sync');
+    log('🎉 Products initialized from Supabase sync');
   } else {
-    console.log('⚠️ Products initialized from localStorage (fallback)');
+    log('⚠️ Products initialized from localStorage (fallback)');
   }
 
   // Retornar productos actualizados (ahora es asíncrono)
@@ -526,7 +529,7 @@ export const initializeProducts = async (): Promise<UnifiedProduct[]> => {
   // 🔥 Notificar a la UI que hay datos nuevos
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('products-updated'));
-    console.log('📢 Evento products-updated enviado');
+    log('📢 Evento products-updated enviado');
   }
 
   return products;
