@@ -664,15 +664,14 @@ ${orderData.appliedCoupon.description}
               </CardContent>
             </Card>
 
-            <Button
+            <button
               onClick={handleContinueToPayment}
               disabled={!selectedAddress}
-              className="w-full"
-              size="lg"
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
             >
               Continuar con mi pedido
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </>
         )}
 
@@ -879,23 +878,23 @@ ${orderData.appliedCoupon.description}
                       />
                     </div>
                   ) : paymentMethod === 'bold' ? (
-                    <Button
+                    <button
                       onClick={handleConfirmOrder}
                       disabled={loading}
-                      className="flex-1"
+                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Procesando...' : 'Preparar pago con Bold'}
-                    </Button>
+                    </button>
                   ) : (
-                    <Button
+                    <button
                       onClick={handleConfirmOrder}
                       disabled={loading}
-                      className="flex-1"
+                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {loading ? 'Procesando...' : `Confirmar Pedido - ${paymentMethod === 'daviplata' ? 'Daviplata' :
                         paymentMethod === 'nequi' ? 'Nequi' : 'Efectivo'
                         }`}
-                    </Button>
+                    </button>
                   )}
                 </div>
               </CardContent>
