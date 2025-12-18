@@ -503,26 +503,11 @@ ${orderData.appliedCoupon.description}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <User className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{displayName}</p>
-                        {profile.preferred_name && profile.full_name && (
-                          <p className="text-sm text-gray-500">{profile.full_name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-gray-400" />
-                      <p className="text-sm">{user.email}</p>
-                    </div>
-                    {profile.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-gray-400" />
-                        <p className="text-sm">{profile.phone}</p>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <p className="font-medium text-green-700">
+                      {displayName} - Datos confirmados
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -587,36 +572,79 @@ ${orderData.appliedCoupon.description}
               </CardContent>
             </Card>
 
-            {/* Payment Preference Card */}
+            {/* Método de Pago - Grid de botones */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <CreditCard className="w-5 h-5" />
-                  Método de Pago Preferido
+                  ¿Cómo prefieres pagar?
                 </CardTitle>
-                <CardDescription>
-                  Basado en tus compras anteriores
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${paymentMethod === 'daviplata'
-                    ? 'bg-purple-100 text-purple-700'
-                    : 'bg-green-100 text-green-700'
-                    }`}>
-                    {paymentMethod === 'daviplata' ? 'D' : '$'}
-                  </div>
-                  <div>
-                    <p className="font-medium capitalize">
-                      {paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {paymentMethod === 'daviplata'
-                        ? 'Transferencia bancaria instantánea'
-                        : 'Paga cuando recibas tu pedido'
-                      }
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Tarjeta/PSE */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bold')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'bold'
+                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium">Tarjeta/PSE</span>
+                  </button>
+
+                  {/* Daviplata */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('daviplata')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'daviplata'
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-red-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-black text-sm">D</span>
+                    </div>
+                    <span className="text-xs font-medium">Daviplata</span>
+                  </button>
+
+                  {/* Nequi */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('nequi')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'nequi'
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-pink-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-fuchsia-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-black text-sm">N</span>
+                    </div>
+                    <span className="text-xs font-medium">Nequi</span>
+                  </button>
+
+                  {/* Efectivo */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('efectivo')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'efectivo'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium">Efectivo</span>
+                  </button>
                 </div>
               </CardContent>
             </Card>
@@ -627,7 +655,7 @@ ${orderData.appliedCoupon.description}
               className="w-full"
               size="lg"
             >
-              Continuar al Pago
+              Continuar con mi pedido
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </>
@@ -879,59 +907,6 @@ ${orderData.appliedCoupon.description}
           <CheckoutSummary />
 
           {/* Quick Info */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">Tiempo estimado</h4>
-              </div>
-              <p className="text-sm text-blue-700">
-                Tu pedido estará listo en <strong>15-20 minutos</strong> después de confirmar.
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                Entregas disponibles en Bogotá
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Opción de Suscripción */}
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <Repeat className="w-4 h-4 text-white" />
-                </div>
-                <h4 className="font-semibold text-green-900">¿Pedido recurrente?</h4>
-              </div>
-              <p className="text-sm text-green-700 mb-4">
-                Ahorra tiempo y nunca te quedes sin tus productos favoritos.
-                Configura entregas automáticas cada 15 días.
-              </p>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Descuento especial en suscripciones</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Modifica productos antes de cada entrega</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Cancela cuando quieras sin costo</span>
-                </div>
-              </div>
-              <Button
-                onClick={handleCreateSubscription}
-                disabled={!selectedAddress}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                variant="default"
-              >
-                <Repeat className="w-4 h-4 mr-2" />
-                Hacer este pedido recurrente
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
 
