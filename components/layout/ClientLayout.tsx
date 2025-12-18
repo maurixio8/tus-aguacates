@@ -10,6 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
 import BottomNavigation from "@/components/layout/BottomNavigation";
+import { InstallPrompt, ServiceWorkerRegistration } from "@/components/pwa";
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -45,6 +46,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <ServiceWorkerRegistration />
       <Header />
       <main className="min-h-screen">
         {children}
@@ -53,6 +55,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
       <CartDrawer />
       <ChatBot />
       <BottomNavigation />
+      <InstallPrompt />
     </>
   );
 }
