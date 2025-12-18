@@ -733,13 +733,6 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                       </>
                     ) : (
                       <>
-                        {(formData.paymentMethod === 'daviplata' || formData.paymentMethod === 'nequi') && (
-                          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                            <p className="text-sm text-purple-800">
-                              📱 Transfiere a: <strong>320 306 2007</strong>
-                            </p>
-                          </div>
-                        )}
                         <button
                           onClick={handlePaymentSuccess}
                           disabled={loading}
