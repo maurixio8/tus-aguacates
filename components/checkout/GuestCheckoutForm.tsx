@@ -266,9 +266,9 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 
       alert(confirmMessage);
 
-      // 4. Abrir WhatsApp con mensaje pre-completado
+      // 4. Redirigir a WhatsApp (usamos location.href en lugar de window.open para evitar bloqueo de popups en móviles)
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
-      window.open(whatsappUrl, '_blank');
+      window.location.href = whatsappUrl;
 
       // 5. Actualizar estado del pedido con método de pago
       const paymentStatus = formData.paymentMethod === 'efectivo' ? 'pendiente_pago' : 'pagado';
