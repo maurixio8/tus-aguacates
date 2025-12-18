@@ -101,15 +101,15 @@ function CategoryHeader({ categoria }: { categoria: string }) {
           priority
         />
 
-        {/* Overlay degradado oscuro para legibilidad */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/50 to-black/70" />
+        {/* Overlay sutil solo en la parte inferior para el texto */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
         {/* Contenido superpuesto */}
         <div className="relative h-full flex flex-col justify-between p-4 md:p-6">
           {/* Botón volver arriba */}
           <Link
             href="/tienda"
-            className="text-white hover:text-green-300 font-semibold flex items-center gap-1 w-fit transition-colors backdrop-blur-sm bg-black/20 px-3 py-2 rounded-lg"
+            className="text-white hover:text-green-300 font-semibold flex items-center gap-1 w-fit transition-colors backdrop-blur-md bg-black/30 px-4 py-2 rounded-lg shadow-lg"
           >
             <ChevronLeft className="w-4 h-4" />
             Volver
@@ -117,11 +117,10 @@ function CategoryHeader({ categoria }: { categoria: string }) {
 
           {/* Título y descripción abajo */}
           <div className="text-white">
-            <div className="text-5xl md:text-6xl mb-3">{config.emoji}</div>
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-2">
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-2 drop-shadow-lg">
               {config.name}
             </h1>
-            <p className="text-white/90 text-base md:text-lg max-w-2xl">
+            <p className="text-white/95 text-base md:text-lg max-w-2xl drop-shadow-md">
               {config.description}
             </p>
           </div>

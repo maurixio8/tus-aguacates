@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { ChevronLeft } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
 import { getProductsByCategory } from '@/lib/productStorage';
 import type { Product } from '@/lib/productStorage';
@@ -75,6 +77,17 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
+        </div>
+
+        {/* Botón Volver al final */}
+        <div className="mt-12 flex justify-center">
+          <Link
+            href="/tienda"
+            className="inline-flex items-center gap-2 bg-verde-aguacate-500 hover:bg-verde-aguacate-600 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+          >
+            <ChevronLeft className="w-5 h-5" />
+            Volver a Categorías
+          </Link>
         </div>
       </div>
     </>
