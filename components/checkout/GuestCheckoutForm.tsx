@@ -241,15 +241,30 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 • Tel: ${formData.phone}
 • Dirección: ${formData.address}
 
-💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
+💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Tarjeta/PSE'}`;
 
-¡Quedo atenta a la confirmación! 🙏`;
+      // Agregar datos de transferencia SOLO para Nequi/Daviplata
+      if (formData.paymentMethod === 'nequi' || formData.paymentMethod === 'daviplata') {
+        mensajeWhatsApp += `\n\n📱 *Para transferir:* 320 306 2007`;
+      }
 
-      // 3. MOSTRAR CONFIRMACIÓN CON INFO COMPLETA DEL CLIENTE
-      const paymentLabel = formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata';
-      const transferInfo = formData.paymentMethod !== 'efectivo' ? `\n\n📱 Para pagar, transfiere a: 320 306 2007` : '';
+      mensajeWhatsApp += `\n\n¡Quedo atento(a) a la confirmación! 🙏`;
 
-      alert(`✅ ¡Hola ${firstName}!\n\n✅ Confirmamos tu pedido #${orderId.toString().slice(-8)}\n\n👤 Cliente: ${formData.name}\n📍 Dirección: ${formData.address}\n📱 Teléfono: ${formData.phone}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n💳 Pago: ${paymentLabel}${transferInfo}\n\n🚚 Tu pedido ya está confirmado.\n\n📲 Al dar "Aceptar" se abrirá WhatsApp para que nos agregues como contacto y veas nuestras promociones.\n\n¡Gracias por tu compra! 🥑`);
+      // 3. MOSTRAR CONFIRMACIÓN MEJORADA (SIN datos de transferencia - esos van en WhatsApp)
+      const paymentLabel = formData.paymentMethod === 'efectivo'
+        ? 'Efectivo contra entrega'
+        : formData.paymentMethod === 'nequi'
+          ? 'Nequi'
+          : formData.paymentMethod === 'daviplata'
+            ? 'Daviplata'
+            : 'Tarjeta/PSE';
+
+      // Mensaje diferenciado: con transferencia vs ya pagado (Bold)
+      const confirmMessage = formData.paymentMethod === 'bold'
+        ? `✨ ¡Pago Recibido, ${firstName}!\n\n✅ Tu pedido #${orderId.toString().slice(-8)} está siendo preparado.\n\n📦 RESUMEN\n• Total: $${totals.total.toLocaleString('es-CO')} ✅ Pagado\n• Entrega: ${formData.address}\n• Teléfono: ${formData.phone}\n\n📲 Al dar "Aceptar" te llevaremos a WhatsApp para coordinar tu entrega.\n\n🎁 ¿Ya tienes cuenta?\nLos miembros obtienen descuentos exclusivos.\nRegístrate en tus-aguacates.vercel.app/registro`
+        : `✨ ¡Pedido Confirmado, ${firstName}!\n\n📦 RESUMEN\n• Total: $${totals.total.toLocaleString('es-CO')}\n• Entrega: ${formData.address}\n• Teléfono: ${formData.phone}\n• Método: ${paymentLabel}\n\n📲 Al dar "Aceptar" te llevaremos a WhatsApp.\nAhí te enviaremos los datos para completar tu pago.\n\n🎁 ¿Ya tienes cuenta?\nLos miembros obtienen descuentos exclusivos.\nRegístrate en tus-aguacates.vercel.app/registro`;
+
+      alert(confirmMessage);
 
       // 4. Abrir WhatsApp con mensaje pre-completado
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
@@ -652,8 +667,11 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                         : 'border-gray-200 hover:border-blue-300'
                         }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center text-white text-lg">
-                        💳
+                      {/* Icono de Tarjeta con PSE */}
+                      <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                        </svg>
                       </div>
                       <span className="text-xs font-medium">Tarjeta/PSE</span>
                     </button>
@@ -663,12 +681,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                       type="button"
                       onClick={() => setFormData({ ...formData, paymentMethod: 'daviplata' })}
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'daviplata'
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-gray-200 hover:border-purple-300'
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-200 hover:border-red-300'
                         }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        D
+                      {/* Logo Daviplata - D estilizada roja */}
+                      <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-black text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>D</span>
                       </div>
                       <span className="text-xs font-medium">Daviplata</span>
                     </button>
@@ -682,8 +701,9 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                         : 'border-gray-200 hover:border-pink-300'
                         }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-pink-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        N
+                      {/* Logo Nequi - N estilizada fucsia/morada */}
+                      <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-fuchsia-600 rounded-lg flex items-center justify-center">
+                        <span className="text-white font-black text-lg" style={{ fontFamily: 'Arial Black, sans-serif' }}>N</span>
                       </div>
                       <span className="text-xs font-medium">Nequi</span>
                     </button>
@@ -697,8 +717,11 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                         : 'border-gray-200 hover:border-green-300'
                         }`}
                     >
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                        $
+                      {/* Icono de Billete/Efectivo */}
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
+                        </svg>
                       </div>
                       <span className="text-xs font-medium">Efectivo</span>
                     </button>
