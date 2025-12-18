@@ -191,7 +191,10 @@ export function EnhancedAuthenticatedCheckoutForm({
 
     setLoading(true);
     setError('');
-    setStep('processing');
+    // Para Bold, NO cambiar a processing - quedarse en payment-method para mostrar BoldPayButton
+    if (paymentMethod !== 'bold') {
+      setStep('processing');
+    }
 
     try {
       // Save payment preference
@@ -233,6 +236,10 @@ export function EnhancedAuthenticatedCheckoutForm({
         additional_info: selectedAddress.additional_info,
       };
 
+      // Mapear payment_method a valor válido para la BD
+      // La BD puede tener constraint que solo acepta ciertos valores
+      const dbPaymentMethod = paymentMethod === 'bold' ? 'tarjeta' : paymentMethod;
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -244,9 +251,9 @@ export function EnhancedAuthenticatedCheckoutForm({
           shipping_amount: totals.shipping,
           address_id: selectedAddress.id,
           shipping_address: addressSnapshot,
-          payment_method: paymentMethod,
+          payment_method: dbPaymentMethod,
           status: 'pendiente',
-          payment_status: paymentMethod === 'daviplata' ? 'pagado' : 'pendiente',
+          payment_status: paymentMethod === 'bold' ? 'pendiente' : paymentMethod === 'daviplata' ? 'pagado' : 'pendiente',
           coupon_code: useCartStore.getState().appliedCoupon?.code || null,
         })
         .select()
@@ -310,6 +317,14 @@ ${orderData.appliedCoupon.description}
       // Agregar datos de transferencia al mensaje de WhatsApp para Nequi/Daviplata
       if (paymentMethod === 'nequi' || paymentMethod === 'daviplata') {
         mensajeWhatsApp = mensajeWhatsApp.replace('*Método de pago:*', `*Método de pago:*`) + `\n📱 *Para transferir:* 320 306 2007`;
+      }
+
+      // Para Bold: NO redirigir a WhatsApp, el usuario debe pagar primero con Bold
+      if (paymentMethod === 'bold') {
+        // Solo actualizar el pedido y esperar a que el usuario pague con Bold
+        // El BoldPayButton se mostrará porque orderId ya está establecido
+        setLoading(false);
+        return; // No continuar con el flujo normal
       }
 
       // 3. Redirigir a WhatsApp (usamos location.href para evitar bloqueo de popups)
