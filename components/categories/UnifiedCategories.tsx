@@ -160,14 +160,28 @@ export default function UnifiedCategories({
             'productos-nuevos': '/categories/gourmet.jpg',
           };
 
+          // Función para validar si una URL de imagen es válida
+          const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string | undefined => {
+            // Si tiene una URL de Supabase válida, usarla
+            if (imageUrl && imageUrl.startsWith('http')) {
+              return imageUrl;
+            }
+            // Si tiene una ruta local válida, usarla
+            if (imageUrl && imageUrl.startsWith('/')) {
+              return imageUrl;
+            }
+            // Fallback a imagen local basada en slug
+            return localImageMap[slug];
+          };
+
           // Convertir datos de Supabase al formato UnifiedCategory
           const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
             id: cat.id,
             name: cat.name,
             slug: cat.slug,
             icon: '', // Las imágenes reemplazan los íconos
-            // Usar image_url de Supabase, o fallback a imagen local basada en slug
-            image: cat.image_url || localImageMap[cat.slug] || undefined,
+            // Usar validación robusta de imagen
+            image: getValidImageUrl(cat.image_url, cat.slug),
             description: cat.description || undefined,
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
@@ -251,12 +265,18 @@ export default function UnifiedCategories({
             >
               {/* Imagen optimizada */}
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
+                {/* Debug: mostrar ruta de imagen en consola */}
+                {typeof window !== 'undefined' && console.log('Category image:', category.slug, category.image)}
                 {category.image ? (
                   <img
                     src={category.image}
                     alt={category.name}
                     className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                     loading="lazy"
+                    onError={(e) => {
+                      console.error('Error loading image:', category.image);
+                      e.currentTarget.style.display = 'none';
+                    }}
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
