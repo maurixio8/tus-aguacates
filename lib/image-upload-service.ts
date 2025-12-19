@@ -34,9 +34,9 @@ const UPLOAD_CONFIG = {
   MAX_HEIGHT: 1200,
 };
 
-// Configuración para categorías
+// Configuración para categorías (usa el mismo bucket que productos)
 const CATEGORY_UPLOAD_CONFIG = {
-  BUCKET_NAME: 'category-images',
+  BUCKET_NAME: 'product-images',
   MAX_SIZE: 5 * 1024 * 1024, // 5MB
   ALLOWED_FORMATS: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
   ALLOWED_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
