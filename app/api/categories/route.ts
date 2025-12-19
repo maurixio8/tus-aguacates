@@ -201,19 +201,30 @@ export async function PATCH(request: NextRequest) {
     if (sort_order !== undefined) updates.sort_order = sort_order;
 
     // Primero verificar que la categoría existe
-    const { data: existing } = await supabase
+    console.log('🔍 [API Categories] Checking if category exists:', id);
+    const { data: existing, error: existError } = await supabase
       .from('categories')
       .select('id')
       .eq('id', id)
-      .single();
+      .maybeSingle(); // Usar maybeSingle() en lugar de single()
+
+    if (existError) {
+      console.error('❌ API: Error checking category:', existError);
+      return NextResponse.json(
+        { error: `Error al verificar categoría: ${existError.message}`, success: false },
+        { status: 500 }
+      );
+    }
 
     if (!existing) {
       console.error('❌ API: Category not found:', id);
       return NextResponse.json(
-        { error: 'Categoría no encontrada', success: false },
+        { error: `Categoría no encontrada con ID: ${id}`, success: false },
         { status: 404 }
       );
     }
+
+    console.log('✅ [API Categories] Category exists, proceeding with update');
 
     // Ahora actualizar
     const { data, error } = await supabase
@@ -221,7 +232,7 @@ export async function PATCH(request: NextRequest) {
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle(); // Usar maybeSingle() en lugar de single()
 
     if (error) {
       console.error('❌ API: Error updating category:', error);
