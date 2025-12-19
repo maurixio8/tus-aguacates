@@ -146,13 +146,28 @@ export default function UnifiedCategories({
           .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
+          // Mapeo de slug a imagen local para fallback
+          const localImageMap: Record<string, string> = {
+            'aguacates': '/categories/aguacates.jpg',
+            'ofertas-combos': '/categories/gourmet.jpg',
+            'frutas-tropicales': '/categories/tropicales.jpg',
+            'frutos-rojos': '/categories/frutos-rojos.jpg',
+            'aromaticas': '/categories/aromaticas.jpg',
+            'saludables': '/categories/saludables.jpg',
+            'especias': '/categories/especias.jpg',
+            'desgranados': '/categories/desgranados.jpg',
+            'gourmet': '/categories/gourmet.jpg',
+            'productos-nuevos': '/categories/gourmet.jpg',
+          };
+
           // Convertir datos de Supabase al formato UnifiedCategory
           const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
             id: cat.id,
             name: cat.name,
             slug: cat.slug,
             icon: '', // Las imágenes reemplazan los íconos
-            image: cat.image_url || undefined,
+            // Usar image_url de Supabase, o fallback a imagen local basada en slug
+            image: cat.image_url || localImageMap[cat.slug] || undefined,
             description: cat.description || undefined,
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
