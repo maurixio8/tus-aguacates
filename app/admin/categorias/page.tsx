@@ -139,7 +139,11 @@ export default function CategoriesAdminPage() {
 
       // Si hay imagen anterior, extraer el storagePath de la URL
       if (oldImageUrl) {
-        const urlParts = oldImageUrl.split('/category-images/');
+        // Intentar con product-images (nuevo bucket) o category-images (legacy)
+        let urlParts = oldImageUrl.split('/product-images/');
+        if (urlParts.length === 1) {
+          urlParts = oldImageUrl.split('/category-images/');
+        }
         if (urlParts.length > 1) {
           formData.append('oldStoragePath', urlParts[1]);
         }
@@ -432,12 +436,21 @@ export default function CategoriesAdminPage() {
                 {previewUrl ? (
                   <div className="space-y-4">
                     <div className="relative w-48 h-48 mx-auto">
-                      <OptimizedImage
-                        src={previewUrl}
-                        alt="Preview"
-                        fill
-                        className="rounded-lg object-cover"
-                      />
+                      {/* Usar img normal para preview de data URLs */}
+                      {previewUrl.startsWith('data:') ? (
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="rounded-lg object-cover w-full h-full"
+                        />
+                      ) : (
+                        <OptimizedImage
+                          src={previewUrl}
+                          alt="Preview"
+                          fill
+                          className="rounded-lg object-cover"
+                        />
+                      )}
                     </div>
                     <button
                       onClick={() => {
