@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { OptimizedImage, CategoryImage } from '@/components/optimization/OptimizedImage';
+import { OptimizedImage } from '@/components/optimization/OptimizedImage';
 
 // Interface para categorías unificadas
 interface UnifiedCategory {
@@ -146,13 +146,28 @@ export default function UnifiedCategories({
           .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
+          // Mapeo de slug a imagen local para fallback
+          const localImageMap: Record<string, string> = {
+            'aguacates': '/categories/aguacates.jpg',
+            'ofertas-combos': '/categories/gourmet.jpg',
+            'frutas-tropicales': '/categories/tropicales.jpg',
+            'frutos-rojos': '/categories/frutos-rojos.jpg',
+            'aromaticas': '/categories/aromaticas.jpg',
+            'saludables': '/categories/saludables.jpg',
+            'especias': '/categories/especias.jpg',
+            'desgranados': '/categories/desgranados.jpg',
+            'gourmet': '/categories/gourmet.jpg',
+            'productos-nuevos': '/categories/gourmet.jpg',
+          };
+
           // Convertir datos de Supabase al formato UnifiedCategory
           const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
             id: cat.id,
             name: cat.name,
             slug: cat.slug,
             icon: '', // Las imágenes reemplazan los íconos
-            image: cat.image_url || undefined,
+            // Usar image_url de Supabase, o fallback a imagen local basada en slug
+            image: cat.image_url || localImageMap[cat.slug] || undefined,
             description: cat.description || undefined,
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
@@ -237,11 +252,11 @@ export default function UnifiedCategories({
               {/* Imagen optimizada */}
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
                 {category.image ? (
-                  <CategoryImage
+                  <img
                     src={category.image}
                     alt={category.name}
-                    priority={false}
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
