@@ -370,31 +370,46 @@ export async function uploadCategoryImage(
 
     console.log('✅ Imagen validada');
 
-    // 2. Comprimir imagen con configuración para categorías
-    console.log('⚙️ Comprimiendo imagen de categoría...');
-    const compressedBlob = await compressImage(
-      file,
-      CATEGORY_UPLOAD_CONFIG.COMPRESSION_QUALITY,
-      CATEGORY_UPLOAD_CONFIG.MAX_WIDTH,
-      CATEGORY_UPLOAD_CONFIG.MAX_HEIGHT
-    );
-    const compressedSize = (compressedBlob.size / (1024 * 1024)).toFixed(2);
-    const originalSize = (file.size / (1024 * 1024)).toFixed(2);
-    console.log(`✅ Imagen comprimida: ${originalSize}MB → ${compressedSize}MB`);
+    // 2. Determinar si estamos en el servidor o cliente
+    const isServer = typeof window === 'undefined';
+    let uploadBlob: Blob;
+    let contentType: string;
 
-    // Reportar progreso de compresión
-    if (onProgress) {
-      onProgress({
-        loaded: compressedBlob.size,
-        total: compressedBlob.size,
-        percentage: 50
-      });
+    if (isServer) {
+      // En el servidor, subir el archivo directamente sin compresión
+      console.log('⚙️ Modo servidor: subiendo imagen sin compresión');
+      uploadBlob = file;
+      contentType = file.type;
+    } else {
+      // En el cliente, comprimir la imagen
+      console.log('⚙️ Comprimiendo imagen de categoría...');
+      const compressedBlob = await compressImage(
+        file,
+        CATEGORY_UPLOAD_CONFIG.COMPRESSION_QUALITY,
+        CATEGORY_UPLOAD_CONFIG.MAX_WIDTH,
+        CATEGORY_UPLOAD_CONFIG.MAX_HEIGHT
+      );
+      const compressedSize = (compressedBlob.size / (1024 * 1024)).toFixed(2);
+      const originalSize = (file.size / (1024 * 1024)).toFixed(2);
+      console.log(`✅ Imagen comprimida: ${originalSize}MB → ${compressedSize}MB`);
+      uploadBlob = compressedBlob;
+      contentType = 'image/jpeg';
+
+      // Reportar progreso de compresión
+      if (onProgress) {
+        onProgress({
+          loaded: compressedBlob.size,
+          total: compressedBlob.size,
+          percentage: 50
+        });
+      }
     }
 
     // 3. Crear archivo con nombre único
     const timestamp = Date.now();
     const randomStr = Math.random().toString(36).substring(2, 8);
-    const filename = `${categorySlug}-${timestamp}-${randomStr}.jpg`;
+    const extension = file.type === 'image/png' ? 'png' : 'jpg';
+    const filename = `${categorySlug}-${timestamp}-${randomStr}.${extension}`;
     const storagePath = `categories/${categorySlug}/${filename}`;
 
     console.log(`📤 Subiendo a Supabase Storage: ${storagePath}`);
@@ -402,8 +417,8 @@ export async function uploadCategoryImage(
     // 4. Subir a Supabase Storage
     const { data, error } = await supabase.storage
       .from(CATEGORY_UPLOAD_CONFIG.BUCKET_NAME)
-      .upload(storagePath, compressedBlob, {
-        contentType: 'image/jpeg',
+      .upload(storagePath, uploadBlob, {
+        contentType: contentType,
         upsert: false,
         cacheControl: '31536000' // 1 año de caché para categorías (cambian poco)
       });
@@ -421,8 +436,8 @@ export async function uploadCategoryImage(
     // Reportar progreso de subida
     if (onProgress) {
       onProgress({
-        loaded: compressedBlob.size,
-        total: compressedBlob.size,
+        loaded: uploadBlob.size,
+        total: uploadBlob.size,
         percentage: 100
       });
     }

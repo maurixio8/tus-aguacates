@@ -156,38 +156,30 @@ export default function PremiumCategoryGrid() {
                 />
               </div>
 
-              {/* Overlay con gradiente */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${placeholder.gradient} opacity-60 group-hover:opacity-50 transition-opacity duration-300`} />
+              {/* Overlay sutil solo para el texto */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
               {/* Contenido */}
-              <div className="relative h-full flex flex-col items-center justify-center p-4 text-white">
-                {/* Emoji/Icono grande */}
-                <div className="text-5xl md:text-6xl mb-3 transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 drop-shadow-lg">
-                  {placeholder.emoji}
-                </div>
-
+              <div className="relative h-full flex flex-col items-end justify-end p-4 text-white">
                 {/* Nombre de categoría */}
-                <h3 className="text-base md:text-lg font-bold text-center drop-shadow-md">
+                <h3 className="text-base md:text-lg font-bold text-center drop-shadow-md w-full">
                   {category.name}
                 </h3>
 
                 {/* Descripción (solo en hover en pantallas grandes) */}
                 {category.description && (
-                  <p className="hidden md:block text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow">
+                  <p className="hidden md:block text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow w-full">
                     {category.description}
                   </p>
                 )}
               </div>
 
               {/* Badge "Ver más" en hover */}
-              <div className="absolute inset-x-0 bottom-0 p-4 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="absolute inset-x-0 top-0 p-4 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                 <div className="bg-white text-gray-900 px-4 py-2 rounded-full text-sm font-semibold shadow-xl">
                   Ver productos →
                 </div>
               </div>
-
-              {/* Efecto de brillo en hover */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-20 bg-gradient-to-tr from-white via-transparent to-transparent transition-opacity duration-300" />
             </Link>
           );
         })}
