@@ -200,6 +200,22 @@ export async function PATCH(request: NextRequest) {
     if (is_active !== undefined) updates.is_active = is_active;
     if (sort_order !== undefined) updates.sort_order = sort_order;
 
+    // Primero verificar que la categoría existe
+    const { data: existing } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('id', id)
+      .single();
+
+    if (!existing) {
+      console.error('❌ API: Category not found:', id);
+      return NextResponse.json(
+        { error: 'Categoría no encontrada', success: false },
+        { status: 404 }
+      );
+    }
+
+    // Ahora actualizar
     const { data, error } = await supabase
       .from('categories')
       .update(updates)
