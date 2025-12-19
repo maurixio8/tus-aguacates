@@ -1,10 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { defaultScheduler } from '@/lib/services/delivery-scheduler'
-import { OptimizedImage } from '@/components/optimization/OptimizedImage'
+
+// Placeholder blur data URL para carga instantánea
+const HERO_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgEDAwUBAAAAAAAAAAAAAQIDAAQRBRIhBhMxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQEBAQEBAAAAAAAAAAAAAAAAARExQf/aAAwDAQACEQMRAD8A1a3s7c28beyCysAQSPVWKKKcsl//2Q=="
 
 export function ConversionHero() {
     const { user, loading } = useAuth()
@@ -23,15 +26,17 @@ export function ConversionHero() {
         <>
             {/* ========== MÓVIL: Imagen completa arriba, contenido abajo ========== */}
             <section className="md:hidden flex flex-col bg-verde-bosque-900">
-                {/* Imagen completa sin recorte */}
-                <div className="relative w-full h-[40vh]">
-                    <OptimizedImage
+                {/* Imagen completa sin recorte - optimizada */}
+                <div className="relative w-full h-[40vh] bg-verde-bosque-800">
+                    <Image
                         src="/images/hero-optimized.png"
-                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
+                        alt="Sabores auténticos de Colombia"
                         fill
                         sizes="100vw"
                         priority
-                        quality={85}
+                        quality={75}
+                        placeholder="blur"
+                        blurDataURL={HERO_BLUR}
                         className="object-contain object-center"
                     />
                 </div>
@@ -109,14 +114,16 @@ export function ConversionHero() {
             {/* ========== DESKTOP: Imagen de fondo que llena, contenido encima ========== */}
             <section className="hidden md:flex relative min-h-[90vh] items-center">
                 {/* Imagen de fondo - llena el espacio */}
-                <div className="absolute inset-0">
-                    <OptimizedImage
+                <div className="absolute inset-0 bg-verde-bosque-800">
+                    <Image
                         src="/images/hero-optimized.png"
-                        alt="Sabores auténticos de Colombia: aguacates, frutas exóticas, aromáticas, especias y más"
+                        alt="Sabores auténticos de Colombia"
                         fill
                         sizes="100vw"
                         priority
-                        quality={85}
+                        quality={80}
+                        placeholder="blur"
+                        blurDataURL={HERO_BLUR}
                         className="object-cover"
                     />
                     {/* Overlay para legibilidad del texto */}

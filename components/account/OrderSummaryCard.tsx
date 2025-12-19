@@ -11,7 +11,8 @@ import {
   CheckCircle,
   RefreshCw,
   Truck,
-  ShoppingBag
+  ShoppingBag,
+  Repeat
 } from 'lucide-react';
 
 // Usamos el mismo OrderItem que está definido en la página de cuenta
@@ -41,12 +42,14 @@ interface OrderItem {
 interface OrderSummaryCardProps {
   order: Order & { items?: OrderItem[] };
   onRepeatOrder?: (order: Order & { items?: OrderItem[] }) => void;
+  onMakeRecurrent?: (order: Order & { items?: OrderItem[] }) => void;
   isRepeating?: boolean;
 }
 
 export function OrderSummaryCard({
   order,
   onRepeatOrder,
+  onMakeRecurrent,
   isRepeating = false
 }: OrderSummaryCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -260,20 +263,37 @@ export function OrderSummaryCard({
               </div>
             </div>
 
-            {/* Botón de repetir pedido */}
-            {onRepeatOrder && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onRepeatOrder(order);
-                }}
-                disabled={isRepeating}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 text-verde-bosque-700 font-medium py-2.5 md:py-3 px-4 rounded-lg transition-all text-sm md:text-base shadow-md hover:shadow-lg transform hover:scale-105 border-2 border-verde-aguacate disabled:border-gray-400"
-              >
-                <RefreshCw className={`w-4 h-4 ${isRepeating ? 'animate-spin' : ''}`} />
-                {isRepeating ? 'Preparando...' : 'Repetir pedido'}
-              </button>
-            )}
+            {/* Botones de acciones */}
+            <div className="flex flex-col sm:flex-row gap-2">
+              {/* Botón de repetir pedido */}
+              {onRepeatOrder && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRepeatOrder(order);
+                  }}
+                  disabled={isRepeating}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 text-verde-bosque-700 font-medium py-2.5 md:py-3 px-4 rounded-lg transition-all text-sm md:text-base shadow-md hover:shadow-lg border-2 border-verde-aguacate disabled:border-gray-400"
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRepeating ? 'animate-spin' : ''}`} />
+                  {isRepeating ? 'Preparando...' : 'Repetir'}
+                </button>
+              )}
+
+              {/* Botón de hacer recurrente */}
+              {onMakeRecurrent && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMakeRecurrent(order);
+                  }}
+                  className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium py-2.5 md:py-3 px-4 rounded-lg transition-all text-sm md:text-base shadow-md hover:shadow-lg"
+                >
+                  <Repeat className="w-4 h-4" />
+                  Hacer recurrente
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
