@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { OptimizedImage, CategoryImage } from '@/components/optimization/OptimizedImage';
+import { OptimizedImage } from '@/components/optimization/OptimizedImage';
 
 // Interface para categorías unificadas
 interface UnifiedCategory {
@@ -252,11 +252,11 @@ export default function UnifiedCategories({
               {/* Imagen optimizada */}
               <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
                 {category.image ? (
-                  <CategoryImage
+                  <img
                     src={category.image}
                     alt={category.name}
-                    priority={false}
-                    className="object-cover group-hover:scale-110 transition-transform duration-300"
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
