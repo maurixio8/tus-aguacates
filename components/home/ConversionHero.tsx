@@ -25,9 +25,9 @@ export function ConversionHero() {
     return (
         <>
             {/* ========== MÓVIL: Imagen completa arriba, contenido abajo ========== */}
-            <section className="md:hidden flex flex-col bg-verde-bosque-900">
+            <section className="md:hidden flex flex-col bg-verde-bosque-600">
                 {/* Imagen completa sin recorte - optimizada */}
-                <div className="relative w-full h-[40vh] bg-verde-bosque-800">
+                <div className="relative w-full h-[40vh] bg-verde-bosque-600">
                     <Image
                         src="/images/hero-optimized.png"
                         alt="Sabores auténticos de Colombia"
@@ -42,7 +42,7 @@ export function ConversionHero() {
                 </div>
 
                 {/* Contenido debajo de la imagen */}
-                <div className="bg-gradient-to-b from-verde-bosque-900 to-verde-bosque-800 px-4 py-6">
+                <div className="bg-gradient-to-b from-verde-bosque-600 to-verde-bosque-700 px-4 py-6">
                     <div className="container mx-auto">
                         {/* Botón de Ofertas - Solo móvil */}
                         <Link
