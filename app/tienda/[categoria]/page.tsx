@@ -32,9 +32,24 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
 
   const category = categoryData as Category;
 
-  // Imagen de fallback si no hay imagen en la base de datos
-  const fallbackImage = '/categories/aguacates.jpg';
-  const categoryImage = category.image_url || fallbackImage;
+  // Mapeo de slug a imagen de Unsplash para fallback (mismas que PremiumCategoryGrid)
+  const categoryFallbacks: Record<string, string> = {
+    'aguacates': 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=800&h=400&fit=crop',
+    'frutas-tropicales': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=800&h=400&fit=crop',
+    'frutos-rojos': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=800&h=400&fit=crop',
+    'aromaticas': 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=800&h=400&fit=crop',
+    'saludables': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=800&h=400&fit=crop',
+    'especias': 'https://images.unsplash.com/photo-1596040033229-a0b13f84e434?w=800&h=400&fit=crop',
+    'desgranados': 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=800&h=400&fit=crop',
+    'gourmet': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=800&h=400&fit=crop',
+    'productos-nuevos': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop',
+    'navidad': 'https://images.unsplash.com/photo-1512909006721-3d6018887383?w=800&h=400&fit=crop',
+    'ofertas-combos': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=800&h=400&fit=crop',
+  };
+
+  // Usar imagen de Supabase si existe, sino fallback de Unsplash
+  const defaultFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop';
+  const categoryImage = category.image_url || categoryFallbacks[categoria] || defaultFallback;
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16 pb-24">
