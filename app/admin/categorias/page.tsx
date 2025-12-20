@@ -29,6 +29,26 @@ interface Category {
   updated_at: string;
 }
 
+// Mapeo de imágenes locales por slug (fallback cuando no hay image_url en BD)
+const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
+  'aguacates': '/categories/aguacates.jpg',
+  'aromaticas': '/categories/aromaticas.jpg',
+  'aromaticas-y-zumos': '/categories/aromaticas.jpg',
+  'saludables': '/categories/saludables.jpg',
+  'especias': '/categories/especias.jpg',
+  'tropicales': '/categories/tropicales.jpg',
+  'frutas-tropicales': '/categories/tropicales.jpg',
+  'frutos-rojos': '/categories/frutos-rojos.jpg',
+  'desgranados': '/categories/desgranados.jpg',
+  'gourmet': '/categories/gourmet.jpg',
+};
+
+// Helper para obtener la imagen de una categoría (BD o fallback local)
+const getCategoryImage = (category: Category): string | null => {
+  if (category.image_url) return category.image_url;
+  return LOCAL_CATEGORY_IMAGES[category.slug] || null;
+};
+
 export default function CategoriesAdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,7 +77,9 @@ export default function CategoriesAdminPage() {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/categories?includeInactive=true');
+      const response = await fetch('/api/admin/categories?includeInactive=true', {
+        credentials: 'include'
+      });
       const data = await response.json();
 
       if (data.success) {
@@ -74,6 +96,7 @@ export default function CategoriesAdminPage() {
 
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
+    const imageUrl = getCategoryImage(category);
     setFormData({
       name: category.name,
       slug: category.slug,
@@ -82,7 +105,8 @@ export default function CategoriesAdminPage() {
       is_active: category.is_active,
       sort_order: category.sort_order
     });
-    setPreviewUrl(category.image_url || '');
+    // Mostrar imagen existente (BD o fallback local) en el preview
+    setPreviewUrl(imageUrl || '');
     setSelectedFile(null);
   };
 
@@ -194,7 +218,7 @@ export default function CategoriesAdminPage() {
       }
 
       // Luego crear o actualizar la categoría
-      const endpoint = isCreating ? '/api/categories' : '/api/categories';
+      const endpoint = '/api/admin/categories';
       const method = isCreating ? 'POST' : 'PATCH';
 
       const body = isCreating
@@ -221,6 +245,7 @@ export default function CategoriesAdminPage() {
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(body)
       });
 
@@ -247,8 +272,9 @@ export default function CategoriesAdminPage() {
     }
 
     try {
-      const response = await fetch(`/api/categories?id=${id}`, {
-        method: 'DELETE'
+      const response = await fetch(`/api/admin/categories?id=${id}`, {
+        method: 'DELETE',
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -267,11 +293,12 @@ export default function CategoriesAdminPage() {
 
   const toggleActive = async (category: Category) => {
     try {
-      const response = await fetch('/api/categories', {
+      const response = await fetch('/api/admin/categories', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({
           id: category.id,
           is_active: !category.is_active
@@ -557,18 +584,21 @@ export default function CategoriesAdminPage() {
                 filteredCategories.map((category) => (
                   <tr key={category.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {category.image_url ? (
-                        <img
-                          src={category.image_url}
-                          alt={category.name}
-                          className="w-16 h-16 rounded-lg object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                            (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center ${category.image_url ? 'hidden' : ''}`}>
+                      {(() => {
+                        const imageUrl = getCategoryImage(category);
+                        return imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={category.name}
+                            className="w-16 h-16 rounded-lg object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null;
+                      })()}
+                      <div className={`w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center ${getCategoryImage(category) ? 'hidden' : ''}`}>
                         <ImageIcon className="w-8 h-8 text-gray-400" />
                       </div>
                     </td>
@@ -649,30 +679,33 @@ export default function CategoriesAdminPage() {
                 <div className="flex items-start gap-4">
                   {/* Imagen */}
                   <div className="flex-shrink-0">
-                    {category.image_url ? (
-                      <img
-                        src={category.image_url}
-                        alt={category.name}
-                        className="w-16 h-16 rounded-lg object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = '';
-                          (e.target as HTMLImageElement).onerror = null;
-                          (e.target as HTMLImageElement).parentElement!.innerHTML = `
-                            <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                              <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                              </svg>
-                            </div>
-                          `;
-                        }}
-                      />
-                    ) : (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
-                        <ImageIcon className="w-8 h-8 text-gray-400" />
-                      </div>
-                    )}
+                    {(() => {
+                      const imageUrl = getCategoryImage(category);
+                      return imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={category.name}
+                          className="w-16 h-16 rounded-lg object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '';
+                            (e.target as HTMLImageElement).onerror = null;
+                            (e.target as HTMLImageElement).parentElement!.innerHTML = `
+                              <div class="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                  <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                              </div>
+                            `;
+                          }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <ImageIcon className="w-8 h-8 text-gray-400" />
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Contenido */}
