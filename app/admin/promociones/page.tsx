@@ -490,74 +490,79 @@ export default function AdminPromocionesPage() {
                         {promotions.map((promo, index) => (
                             <div
                                 key={promo.id}
-                                className={`flex items-center gap-4 p-4 ${!promo.is_active ? 'bg-gray-50 opacity-60' : ''
-                                    }`}
+                                className={`p-4 ${!promo.is_active ? 'bg-gray-50 opacity-60' : ''}`}
                             >
-                                {/* Orden */}
-                                <div className="flex flex-col gap-1">
-                                    <button
-                                        onClick={() => handleMoveOrder(promo.id, 'up')}
-                                        disabled={index === 0}
-                                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        <ArrowUp className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleMoveOrder(promo.id, 'down')}
-                                        disabled={index === promotions.length - 1}
-                                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    >
-                                        <ArrowDown className="w-4 h-4" />
-                                    </button>
-                                </div>
+                                {/* Layout móvil */}
+                                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                    {/* Orden + Imagen */}
+                                    <div className="flex items-center gap-3">
+                                        {/* Orden */}
+                                        <div className="flex flex-col gap-1">
+                                            <button
+                                                onClick={() => handleMoveOrder(promo.id, 'up')}
+                                                disabled={index === 0}
+                                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
+                                                <ArrowUp className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleMoveOrder(promo.id, 'down')}
+                                                disabled={index === promotions.length - 1}
+                                                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                                            >
+                                                <ArrowDown className="w-4 h-4" />
+                                            </button>
+                                        </div>
 
-                                {/* Imagen thumbnail */}
-                                <div className="w-32 h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
-                                    <img
-                                        src={promo.image_url}
-                                        alt={promo.title}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
+                                        {/* Imagen thumbnail */}
+                                        <div className="w-24 sm:w-32 h-12 sm:h-16 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                            <img
+                                                src={promo.image_url}
+                                                alt={promo.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </div>
+                                    </div>
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <h3 className="font-semibold text-gray-900 truncate">{promo.title}</h3>
-                                    {promo.description && (
-                                        <p className="text-sm text-gray-500 truncate">{promo.description}</p>
-                                    )}
-                                    {promo.link && (
-                                        <p className="text-xs text-blue-600 truncate mt-1">
-                                            <LinkIcon className="w-3 h-3 inline mr-1" />
-                                            {promo.link}
-                                        </p>
-                                    )}
-                                </div>
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <h3 className="font-semibold text-gray-900 truncate">{promo.title}</h3>
+                                        {promo.description && (
+                                            <p className="text-sm text-gray-500 truncate">{promo.description}</p>
+                                        )}
+                                        {promo.link && (
+                                            <p className="text-xs text-blue-600 truncate mt-1">
+                                                <LinkIcon className="w-3 h-3 inline mr-1" />
+                                                {promo.link}
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Acciones */}
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => handleToggleActive(promo.id, promo.is_active)}
-                                        className={`p-2 rounded-lg transition-colors ${promo.is_active
-                                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                                                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                                            }`}
-                                        title={promo.is_active ? 'Visible' : 'Oculto'}
-                                    >
-                                        {promo.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                    </button>
-                                    <button
-                                        onClick={() => handleEdit(promo)}
-                                        className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(promo.id)}
-                                        className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
+                                    {/* Acciones */}
+                                    <div className="flex items-center gap-2 self-end sm:self-center">
+                                        <button
+                                            onClick={() => handleToggleActive(promo.id, promo.is_active)}
+                                            className={`p-2 rounded-lg transition-colors ${promo.is_active
+                                                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                    : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                                                }`}
+                                            title={promo.is_active ? 'Visible' : 'Oculto'}
+                                        >
+                                            {promo.is_active ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        </button>
+                                        <button
+                                            onClick={() => handleEdit(promo)}
+                                            className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(promo.id)}
+                                            className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         ))}
