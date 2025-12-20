@@ -47,9 +47,23 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
     'ofertas-combos': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=800&h=400&fit=crop',
   };
 
-  // Usar imagen de Supabase si existe, sino fallback de Unsplash
-  const defaultFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop';
-  const categoryImage = category.image_url || categoryFallbacks[categoria] || defaultFallback;
+  // Función para validar si una URL de imagen es válida (no es null, "null", o placeholder local)
+  const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string => {
+    const defaultFallback = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=800&h=400&fit=crop';
+
+    // Si es una URL externa válida (http o https), usarla
+    if (imageUrl && typeof imageUrl === 'string' &&
+        (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) &&
+        imageUrl !== 'null') {
+      return imageUrl;
+    }
+
+    // Si no hay URL válida, usar fallback de Unsplash por categoría
+    return categoryFallbacks[slug] || defaultFallback;
+  };
+
+  // Obtener imagen válida (ignora valores como "null", null, o rutas locales a placeholders)
+  const categoryImage = getValidImageUrl(category.image_url, categoria);
 
   return (
     <div className="min-h-screen bg-gray-50 pt-16 pb-24">
