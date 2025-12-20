@@ -146,50 +146,44 @@ export default function UnifiedCategories({
           .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
-          // Mapeo de slug a imagen local para fallback (incluye todas las posibles categorías)
+          // Mapeo de slug a imagen de Unsplash para fallback (mismas que PremiumCategoryGrid)
           const localImageMap: Record<string, string> = {
-            // Categorías principales
-            'aguacates': '/categories/aguacates.jpg',
-            'ofertas-combos': '/categories/gourmet.jpg',
-            'frutas-tropicales': '/categories/tropicales.jpg',
-            'frutos-rojos': '/categories/frutos-rojos.jpg',
-            'aromaticas': '/categories/aromaticas.jpg',
-            'saludables': '/categories/saludables.jpg',
-            'especias': '/categories/especias.jpg',
-            'desgranados': '/categories/desgranados.jpg',
-            'gourmet': '/categories/gourmet.jpg',
-            'productos-nuevos': '/categories/gourmet.jpg',
-            // Categorías adicionales que pueden existir
-            'navidad': '/categories/gourmet.jpg',
-            'frutas': '/categories/tropicales.jpg',
-            'verduras': '/categories/saludables.jpg',
-            'hierbas-aromaticas': '/categories/aromaticas.jpg',
-            'combos': '/categories/gourmet.jpg',
-            'jugos': '/categories/tropicales.jpg',
-            'otros': '/categories/gourmet.jpg',
+            // Categorías principales con imágenes de Unsplash
+            'aguacates': 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?w=400&h=400&fit=crop',
+            'frutas-tropicales': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop',
+            'frutos-rojos': 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?w=400&h=400&fit=crop',
+            'aromaticas': 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=400&h=400&fit=crop',
+            'saludables': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=400&fit=crop',
+            'especias': 'https://images.unsplash.com/photo-1596040033229-a0b13f84e434?w=400&h=400&fit=crop',
+            'desgranados': 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=400&h=400&fit=crop',
+            'gourmet': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=400&h=400&fit=crop',
+            'productos-nuevos': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop',
+            'navidad': 'https://images.unsplash.com/photo-1512909006721-3d6018887383?w=400&h=400&fit=crop',
+            // Categorías adicionales
+            'ofertas-combos': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=400&h=400&fit=crop',
+            'frutas': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop',
+            'verduras': 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?w=400&h=400&fit=crop',
+            'hierbas-aromaticas': 'https://images.unsplash.com/photo-1466692476868-aef1dfb1e735?w=400&h=400&fit=crop',
+            'combos': 'https://images.unsplash.com/photo-1506368249639-73a05d6f6488?w=400&h=400&fit=crop',
+            'jugos': 'https://images.unsplash.com/photo-1619566636858-adf3ef46400b?w=400&h=400&fit=crop',
+            'otros': 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop',
           };
 
           // Imagen por defecto si no hay coincidencia
-          const defaultImage = '/categories/gourmet.jpg';
+          const defaultImage = 'https://images.unsplash.com/photo-1542838132-92c53300491e?w=400&h=400&fit=crop';
 
-          // Función para validar si una URL de imagen es válida
+          // Función para obtener URL de imagen válida
           const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string => {
-            console.log(`🔍 getValidImageUrl - slug: ${slug}, imageUrl: "${imageUrl}"`);
-
-            // Si tiene una URL de Supabase válida (http/https), usarla
+            // Si tiene una URL válida (http/https), usarla (imágenes de Supabase o externas)
             if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
-              console.log(`✅ Usando URL de Supabase: ${imageUrl}`);
               return imageUrl;
             }
-            // Si tiene una ruta local válida que empieza con /, usarla
+            // Si tiene una ruta local válida, usarla
             if (imageUrl && imageUrl.startsWith('/') && imageUrl.length > 1) {
-              console.log(`✅ Usando ruta local: ${imageUrl}`);
               return imageUrl;
             }
-            // Fallback a imagen local basada en slug, o imagen por defecto
-            const fallback = localImageMap[slug] || defaultImage;
-            console.log(`⚠️ Usando fallback: ${fallback}`);
-            return fallback;
+            // Fallback a imagen de Unsplash basada en slug
+            return localImageMap[slug] || defaultImage;
           };
 
           // Convertir datos de Supabase al formato UnifiedCategory
@@ -204,19 +198,16 @@ export default function UnifiedCategories({
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
 
-          console.log('📸 Categories loaded with images:', formattedCategories.map(c => ({ slug: c.slug, image: c.image })));
           setCategories(formattedCategories);
         } else if (!error) {
           // Si no hay error pero tampoco hay categorías, usar fallback
-          console.log('⚠️ No hay categorías activas en la base de datos');
           setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
         } else {
           // Si hay error, usar fallback
-          console.error('Error loading categories from Supabase:', error);
           setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
         }
       } catch (error) {
-        console.log('⚠️ Error loading categories, using fallback:', error);
+        // Si hay error, usar fallback
         setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
       } finally {
         setLoading(false);
