@@ -1,11 +1,44 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { uploadCategoryImage, replaceCategoryImage } from '@/lib/image-upload-service';
+import jwt from 'jsonwebtoken';
 
 export const dynamic = 'force-dynamic';
+
+// Verify admin authentication
+async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
+  try {
+    const token = request.cookies.get('admin-token')?.value;
+
+    if (!token) {
+      return { success: false, error: 'No autenticado' };
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const decoded = jwt.verify(token, jwtSecret) as any;
+
+    if (decoded.type !== 'admin') {
+      return { success: false, error: 'Token inválido' };
+    }
+
+    return { success: true, adminId: decoded.id };
+  } catch (error) {
+    return { success: false, error: 'Token expirado o inválido' };
+  }
+}
 
 // POST - Upload category image
 export async function POST(request: NextRequest) {
   console.log('🔄 [API Category Image] POST request received');
+
+  // Verificar autenticación
+  const auth = await verifyAdminAuth(request);
+  if (!auth.success) {
+    console.log('❌ [API Category Image] Auth failed:', auth.error);
+    return NextResponse.json(
+      { error: auth.error, success: false },
+      { status: 401 }
+    );
+  }
 
   try {
     const formData = await request.formData();

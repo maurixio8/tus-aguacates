@@ -93,17 +93,13 @@ export async function POST(request: NextRequest) {
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
       const isProduction = process.env.NODE_ENV === 'production';
-      const domain = isProduction
-        ? 'tus-aguacates-57vp.vercel.app'
-        : undefined; // localhost no necesita domain
-
+      // No especificar domain - la cookie se establece automáticamente para el dominio actual
       response.cookies.set('admin-token', token, {
         httpOnly: true, // No accesible desde JavaScript (seguridad XSS)
         secure: isProduction, // HTTPS only en producción
         sameSite: 'lax', // Previene CSRF - 'lax' permite navegación top-level
         maxAge: 86400, // 24 horas en segundos
-        path: '/', // ✅ Cookie disponible en toda la app
-        domain: domain // ✅ Especificar dominio en producción
+        path: '/' // ✅ Cookie disponible en toda la app
       });
 
       console.log('🍪 [Admin-Signin API] Cookie establecida:', {
@@ -111,7 +107,6 @@ export async function POST(request: NextRequest) {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        domain: domain || 'localhost (sin domain)',
         maxAge: '24 horas',
         tokenLength: token.length
       });
