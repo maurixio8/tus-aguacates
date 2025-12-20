@@ -120,13 +120,13 @@ function ConfirmacionContent() {
               <div className="flex items-center gap-3 text-gray-700">
                 <Mail className="w-5 h-5 text-verde-bosque" />
                 <span className="text-sm">
-                  <strong>Email:</strong> soporte@tusaguacates.com
+                  <strong>Email:</strong> tusaguacates.com@gmail.com
                 </span>
               </div>
               <div className="flex items-center gap-3 text-gray-700">
                 <Phone className="w-5 h-5 text-verde-bosque" />
                 <span className="text-sm">
-                  <strong>Teléfono:</strong> +57 300 123 4567
+                  <strong>Teléfono:</strong> +57 300 258 2777
                 </span>
               </div>
             </div>

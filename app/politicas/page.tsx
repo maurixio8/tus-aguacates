@@ -84,15 +84,15 @@ export default function PoliticasPage() {
             <div className="space-y-4 text-gray-700">
               <div>
                 <h3 className="font-semibold mb-2">1. Áreas de cobertura</h3>
-                <p>Realizamos envíos a Bogotá y áreas metropolitanas. Pronto扩展remos nuestra cobertura a otras ciudades.</p>
+                <p>Realizamos envíos a Bogotá. Pronto expandiremos nuestra cobertura a otras ciudades.</p>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">2. Tiempos de entrega</h3>
+                <h3 className="font-semibold mb-2">2. Días y horarios de entrega</h3>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Bogotá: 24-48 horas</li>
-                  <li>Áreas metropolitanas: 48-72 horas</li>
-                  <li>Pedidos realizados antes de las 12:00 pm se procesan el mismo día</li>
+                  <li>Bogotá: Martes y Viernes</li>
+                  <li>Horario: Entre 2:00 PM y 8:00 PM</li>
+                  <li>Pedidos realizados antes de las 10:00 AM del día de entrega se procesan el mismo día</li>
                 </ul>
               </div>
 

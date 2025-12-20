@@ -81,15 +81,15 @@ export function Footer() {
             <ul className="space-y-3 text-sm">
               <li className="flex items-start space-x-2">
                 <MapPin className="w-4 h-4 mt-1 flex-shrink-0" />
-                <span>Eje Cafetero, Colombia</span>
+                <span>Eje Cafetero y Bogotá, Colombia</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 flex-shrink-0" />
-                <span>+57 300 123 4567</span>
+                <span>+57 300 258 2777</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 flex-shrink-0" />
-                <span>info@tusaguacates.com</span>
+                <span>tusaguacates.com@gmail.com</span>
               </li>
             </ul>
           </div>

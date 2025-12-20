@@ -71,12 +71,12 @@ export default function DevolucionesPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Por WhatsApp</h3>
-                <p className="text-sm">Envíanos un mensaje al +57 300 123 4567 con tu número de pedido.</p>
+                <p className="text-sm">Envíanos un mensaje al +57 300 258 2777 con tu número de pedido.</p>
               </div>
-              
+
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Por correo electrónico</h3>
-                <p className="text-sm">Escríbenos a devoluciones@tusaguacates.com con los detalles de tu pedido.</p>
+                <p className="text-sm">Escríbenos a tusaguacates.com@gmail.com con los detalles de tu pedido.</p>
               </div>
             </div>
           </div>

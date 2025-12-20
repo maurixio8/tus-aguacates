@@ -38,7 +38,7 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Teléfono</h3>
-                    <p className="text-gray-600 mb-2">+57 300 123 4567</p>
+                    <p className="text-gray-600 mb-2">+57 300 258 2777</p>
                     <p className="text-sm text-gray-500">
                       Lunes a viernes: 8:00 AM - 6:00 PM<br />
                       Sábados: 9:00 AM - 1:00 PM
@@ -52,7 +52,7 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                    <p className="text-gray-600 mb-2">info@tusaguacates.com</p>
+                    <p className="text-gray-600 mb-2">tusaguacates.com@gmail.com</p>
                     <p className="text-sm text-gray-500">
                       Respuesta en menos de 24 horas hábiles
                     </p>
@@ -65,10 +65,10 @@ export default function ContactoPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 mb-1">Ubicación</h3>
-                    <p className="text-gray-600 mb-2">Eje Cafetero, Colombia</p>
+                    <p className="text-gray-600 mb-2">Eje Cafetero y Bogotá, Colombia</p>
                     <p className="text-sm text-gray-500">
-                      Nuestros productos se cultivan directamente en el corazón del Eje Cafetero, 
-                      garantizando la máxima frescura y calidad.
+                      Nuestros productos se cultivan en el Eje Cafetero y realizamos
+                      entregas en Bogotá, garantizando la máxima frescura y calidad.
                     </p>
                   </div>
                 </div>
