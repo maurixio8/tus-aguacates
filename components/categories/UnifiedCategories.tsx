@@ -146,8 +146,9 @@ export default function UnifiedCategories({
           .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
-          // Mapeo de slug a imagen local para fallback
+          // Mapeo de slug a imagen local para fallback (incluye todas las posibles categorías)
           const localImageMap: Record<string, string> = {
+            // Categorías principales
             'aguacates': '/categories/aguacates.jpg',
             'ofertas-combos': '/categories/gourmet.jpg',
             'frutas-tropicales': '/categories/tropicales.jpg',
@@ -158,20 +159,31 @@ export default function UnifiedCategories({
             'desgranados': '/categories/desgranados.jpg',
             'gourmet': '/categories/gourmet.jpg',
             'productos-nuevos': '/categories/gourmet.jpg',
+            // Categorías adicionales que pueden existir
+            'navidad': '/categories/gourmet.jpg',
+            'frutas': '/categories/tropicales.jpg',
+            'verduras': '/categories/saludables.jpg',
+            'hierbas-aromaticas': '/categories/aromaticas.jpg',
+            'combos': '/categories/gourmet.jpg',
+            'jugos': '/categories/tropicales.jpg',
+            'otros': '/categories/gourmet.jpg',
           };
 
+          // Imagen por defecto si no hay coincidencia
+          const defaultImage = '/categories/gourmet.jpg';
+
           // Función para validar si una URL de imagen es válida
-          const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string | undefined => {
-            // Si tiene una URL de Supabase válida, usarla
-            if (imageUrl && imageUrl.startsWith('http')) {
+          const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string => {
+            // Si tiene una URL de Supabase válida (http/https), usarla
+            if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
               return imageUrl;
             }
-            // Si tiene una ruta local válida, usarla
-            if (imageUrl && imageUrl.startsWith('/')) {
+            // Si tiene una ruta local válida que empieza con /, usarla
+            if (imageUrl && imageUrl.startsWith('/') && imageUrl.length > 1) {
               return imageUrl;
             }
-            // Fallback a imagen local basada en slug
-            return localImageMap[slug];
+            // Fallback a imagen local basada en slug, o imagen por defecto
+            return localImageMap[slug] || defaultImage;
           };
 
           // Convertir datos de Supabase al formato UnifiedCategory
@@ -180,12 +192,13 @@ export default function UnifiedCategories({
             name: cat.name,
             slug: cat.slug,
             icon: '', // Las imágenes reemplazan los íconos
-            // Usar validación robusta de imagen
+            // Usar validación robusta de imagen - SIEMPRE tendrá un valor
             image: getValidImageUrl(cat.image_url, cat.slug),
             description: cat.description || undefined,
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
 
+          console.log('📸 Categories loaded with images:', formattedCategories.map(c => ({ slug: c.slug, image: c.image })));
           setCategories(formattedCategories);
         } else if (!error) {
           // Si no hay error pero tampoco hay categorías, usar fallback
@@ -263,26 +276,25 @@ export default function UnifiedCategories({
               className="flex-shrink-0 flex flex-col items-center group"
               onClick={() => handleCategoryClick(category)}
             >
-              {/* Imagen optimizada */}
-              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
-                {/* Debug: mostrar ruta de imagen en consola */}
-                {typeof window !== 'undefined' && console.log('Category image:', category.slug, category.image)}
-                {category.image ? (
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                    onError={(e) => {
-                      console.error('Error loading image:', category.image);
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-gray-400" />
-                  </div>
-                )}
+              {/* Imagen de categoría */}
+              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
+                <img
+                  src={category.image || '/categories/gourmet.jpg'}
+                  alt={category.name}
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  loading="lazy"
+                  onError={(e) => {
+                    // Si falla la imagen, mostrar un fondo con el nombre
+                    console.error('❌ Error loading category image:', category.slug, category.image);
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    // Agregar un div con el nombre como fallback visual
+                    const fallback = document.createElement('div');
+                    fallback.className = 'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-verde-aguacate to-verde-bosque text-white text-xs font-bold text-center p-2';
+                    fallback.textContent = category.name;
+                    target.parentElement?.appendChild(fallback);
+                  }}
+                />
 
                 {/* Badge de conteo de productos */}
                 {showProductCount && category.productCount && (
