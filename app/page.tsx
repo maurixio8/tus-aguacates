@@ -109,6 +109,24 @@ export default function Home() {
       {/* Recommended Products (Only for Authenticated Users) */}
       <RecommendedProducts />
 
+      {/* Categorías Unificadas - Scroll Horizontal */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
+              Explora por Categoría
+            </h2>
+            <p className="text-gray-600">
+              Desliza para descubrir productos frescos de nuestra tierra
+            </p>
+          </div>
+          <UnifiedCategories
+            variant="scroll"
+            showProductCount={false}
+          />
+        </div>
+      </section>
+
       {/* Sprint 1: Testimonials Section - Social Proof */}
       <Testimonials />
 
@@ -144,24 +162,6 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Categorías Unificadas - Scroll Horizontal */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
-              Explora por Categoría
-            </h2>
-            <p className="text-gray-600">
-              Desliza para descubrir productos frescos de nuestra tierra
-            </p>
-          </div>
-          <UnifiedCategories
-            variant="scroll"
-            showProductCount={false}
-          />
         </div>
       </section>
 
