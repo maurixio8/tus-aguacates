@@ -174,16 +174,22 @@ export default function UnifiedCategories({
 
           // Función para validar si una URL de imagen es válida
           const getValidImageUrl = (imageUrl: string | null | undefined, slug: string): string => {
+            console.log(`🔍 getValidImageUrl - slug: ${slug}, imageUrl: "${imageUrl}"`);
+
             // Si tiene una URL de Supabase válida (http/https), usarla
             if (imageUrl && (imageUrl.startsWith('http://') || imageUrl.startsWith('https://'))) {
+              console.log(`✅ Usando URL de Supabase: ${imageUrl}`);
               return imageUrl;
             }
             // Si tiene una ruta local válida que empieza con /, usarla
             if (imageUrl && imageUrl.startsWith('/') && imageUrl.length > 1) {
+              console.log(`✅ Usando ruta local: ${imageUrl}`);
               return imageUrl;
             }
             // Fallback a imagen local basada en slug, o imagen por defecto
-            return localImageMap[slug] || defaultImage;
+            const fallback = localImageMap[slug] || defaultImage;
+            console.log(`⚠️ Usando fallback: ${fallback}`);
+            return fallback;
           };
 
           // Convertir datos de Supabase al formato UnifiedCategory
