@@ -31,47 +31,61 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
     }
   });
 
-  // Buscar productos por slug
+  // Buscar productos por slug o por nombre similar
   useEffect(() => {
     async function fetchProducts() {
-      const slugs = ingredients
-        .filter(ing => ing.productSlug)
-        .map(ing => ing.productSlug as string);
+      const ingredientsWithSlug = ingredients.filter(ing => ing.productSlug);
 
-      if (slugs.length === 0) return;
+      if (ingredientsWithSlug.length === 0) return;
 
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .in('slug', slugs)
-          .eq('is_active', true);
+        const foundProducts: ProductWithQty[] = [];
 
-        if (error) {
-          // Log silencioso - no es crítico si no se encuentran productos
-          console.log('No se encontraron productos para la receta:', slugs);
-          return;
+        for (const ing of ingredientsWithSlug) {
+          const slug = ing.productSlug as string;
+
+          // Primero intentar por slug exacto
+          let { data } = await supabase
+            .from('products')
+            .select('*')
+            .eq('slug', slug)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          // Si no encuentra por slug, buscar por nombre similar
+          if (!data) {
+            const searchTerm = slug.replace(/-/g, ' ');
+            const { data: nameData } = await supabase
+              .from('products')
+              .select('*')
+              .ilike('name', `%${searchTerm}%`)
+              .eq('is_active', true)
+              .limit(1)
+              .maybeSingle();
+
+            data = nameData;
+          }
+
+          if (data) {
+            foundProducts.push({
+              product: data as UnifiedProduct,
+              qty: qtyMap.get(slug) || 1
+            });
+          }
         }
 
-        if (data && data.length > 0) {
-          // Mapear productos con sus cantidades
-          const productsData = data.map(product => ({
-            product: product as UnifiedProduct,
-            qty: qtyMap.get(product.slug) || 1
-          }));
-
-          setProductsWithQty(productsData);
+        if (foundProducts.length > 0) {
+          setProductsWithQty(foundProducts);
 
           // Calcular total considerando cantidades
-          const total = productsData.reduce((sum, { product, qty }) => {
+          const total = foundProducts.reduce((sum, { product, qty }) => {
             const price = product.discount_price || product.price;
             return sum + (price * qty);
           }, 0);
           setTotalPrice(total);
         }
-      } catch (error) {
+      } catch {
         // Error silencioso - la funcionalidad no es crítica
-        console.log('Productos no disponibles para esta receta');
       }
     }
 

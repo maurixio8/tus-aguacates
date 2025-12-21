@@ -18,7 +18,7 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
   const [loaded, setLoaded] = useState(false);
   const { addItem } = useCartStore();
 
-  // Buscar producto por slug
+  // Buscar producto por slug o por nombre similar
   useEffect(() => {
     async function fetchProduct() {
       if (!ingredient.productSlug) {
@@ -27,14 +27,29 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
       }
 
       try {
-        const { data, error } = await supabase
+        // Primero intentar por slug exacto
+        let { data, error } = await supabase
           .from('products')
           .select('*')
           .eq('slug', ingredient.productSlug)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
-        if (!error && data) {
+        // Si no encuentra por slug, buscar por nombre similar
+        if (!data) {
+          const searchTerm = ingredient.productSlug.replace(/-/g, ' ');
+          const { data: nameData } = await supabase
+            .from('products')
+            .select('*')
+            .ilike('name', `%${searchTerm}%`)
+            .eq('is_active', true)
+            .limit(1)
+            .maybeSingle();
+
+          data = nameData;
+        }
+
+        if (data) {
           setProduct(data as UnifiedProduct);
         }
       } catch {
