@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, Tag } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, Tag, BookOpen } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
@@ -86,6 +86,10 @@ export function Header() {
               </Link>
               <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
                 Más Categorías
+              </Link>
+              <Link href="/recetas" className="flex items-center gap-1 hover:text-verde-aguacate-200 transition-colors">
+                <BookOpen className="w-4 h-4" />
+                Recetas
               </Link>
             </nav>
 
@@ -224,6 +228,15 @@ export function Header() {
                 >
                   <span className="w-5 h-5 flex items-center justify-center">🔥</span>
                   <span>Ofertas y Combos</span>
+                </Link>
+
+                <Link
+                  href="/recetas"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span>Recetas</span>
                 </Link>
 
                 <div className="border-t border-white/10 my-2" />
