@@ -47,9 +47,13 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
           .in('slug', slugs)
           .eq('is_active', true);
 
-        if (error) throw error;
+        if (error) {
+          // Log silencioso - no es crítico si no se encuentran productos
+          console.log('No se encontraron productos para la receta:', slugs);
+          return;
+        }
 
-        if (data) {
+        if (data && data.length > 0) {
           // Mapear productos con sus cantidades
           const productsData = data.map(product => ({
             product: product as UnifiedProduct,
@@ -66,7 +70,8 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
           setTotalPrice(total);
         }
       } catch (error) {
-        console.error('Error fetching products:', error);
+        // Error silencioso - la funcionalidad no es crítica
+        console.log('Productos no disponibles para esta receta');
       }
     }
 

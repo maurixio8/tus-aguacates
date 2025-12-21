@@ -460,7 +460,7 @@ export const recipes: Recipe[] = [
     title: 'Pudding de Chía con Mango',
     description: 'Un postre saludable y nutritivo que se prepara la noche anterior. Perfecto para desayuno o merienda, rico en omega-3 y fibra.',
     shortDescription: 'Postre saludable con semillas de chía y mango',
-    image: 'https://images.unsplash.com/photo-1546039907-7b67f9e10173?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&h=600&fit=crop',
     prepTime: 10,
     cookTime: 0,
     servings: 2,

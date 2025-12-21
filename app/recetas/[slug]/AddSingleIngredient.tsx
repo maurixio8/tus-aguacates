@@ -30,12 +30,13 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
           .eq('is_active', true)
           .single();
 
-        if (error) throw error;
-        if (data) {
-          setProduct(data as UnifiedProduct);
+        if (error || !data) {
+          // Producto no disponible - silencioso
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching product:', error);
+        setProduct(data as UnifiedProduct);
+      } catch {
+        // Producto no disponible - silencioso
       }
     }
 
