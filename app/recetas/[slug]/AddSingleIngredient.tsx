@@ -15,12 +15,16 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState(false);
   const [product, setProduct] = useState<UnifiedProduct | null>(null);
+  const [loaded, setLoaded] = useState(false);
   const { addItem } = useCartStore();
 
   // Buscar producto por slug
   useEffect(() => {
     async function fetchProduct() {
-      if (!ingredient.productSlug) return;
+      if (!ingredient.productSlug) {
+        setLoaded(true);
+        return;
+      }
 
       try {
         const { data, error } = await supabase
@@ -30,13 +34,13 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
           .eq('is_active', true)
           .single();
 
-        if (error || !data) {
-          // Producto no disponible - silencioso
-          return;
+        if (!error && data) {
+          setProduct(data as UnifiedProduct);
         }
-        setProduct(data as UnifiedProduct);
       } catch {
         // Producto no disponible - silencioso
+      } finally {
+        setLoaded(true);
       }
     }
 
@@ -65,16 +69,14 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
     }
   };
 
-  // Si no tiene producto asociado, no mostrar botón
-  if (!ingredient.productSlug) {
+  // Si no tiene producto asociado o no se encontró, no mostrar nada
+  if (!ingredient.productSlug || (loaded && !product)) {
     return null;
   }
 
-  // Mientras carga el producto
-  if (!product) {
-    return (
-      <span className="text-gray-400 text-xs ml-2">...</span>
-    );
+  // Mientras carga el producto o si no existe
+  if (!loaded || !product) {
+    return null;
   }
 
   const price = product.discount_price || product.price;
