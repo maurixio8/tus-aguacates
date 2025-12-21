@@ -18,7 +18,8 @@ import {
   Ticket,
   Image as ImageIcon,
   MessageSquare,
-  Layers
+  Layers,
+  TrendingUp
 } from 'lucide-react';
 
 interface AdminUser {
@@ -109,6 +110,7 @@ export default function AdminLayout({
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
+    { name: 'Incentivos', href: '/admin/incentivos', icon: TrendingUp },
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
     { name: 'Banner Mensajes', href: '/admin/banner-mensajes', icon: MessageSquare },
     { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
