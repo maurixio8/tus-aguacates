@@ -7,6 +7,11 @@ import { supabase } from '@/lib/supabase';
 import type { RecipeIngredient } from '@/data/recipes';
 import type { UnifiedProduct } from '@/lib/types';
 
+interface ProductWithQty {
+  product: UnifiedProduct;
+  qty: number;
+}
+
 interface AddIngredientsButtonProps {
   ingredients: RecipeIngredient[];
 }
@@ -14,9 +19,17 @@ interface AddIngredientsButtonProps {
 export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps) {
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState(false);
-  const [products, setProducts] = useState<UnifiedProduct[]>([]);
+  const [productsWithQty, setProductsWithQty] = useState<ProductWithQty[]>([]);
   const [totalPrice, setTotalPrice] = useState(0);
   const { addItem, toggleCart } = useCartStore();
+
+  // Crear mapa de slug -> cantidad
+  const qtyMap = new Map<string, number>();
+  ingredients.forEach(ing => {
+    if (ing.productSlug) {
+      qtyMap.set(ing.productSlug, ing.productQty || 1);
+    }
+  });
 
   // Buscar productos por slug
   useEffect(() => {
@@ -37,9 +50,18 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
         if (error) throw error;
 
         if (data) {
-          setProducts(data as UnifiedProduct[]);
-          const total = data.reduce((sum, product) => {
-            return sum + (product.discount_price || product.price);
+          // Mapear productos con sus cantidades
+          const productsData = data.map(product => ({
+            product: product as UnifiedProduct,
+            qty: qtyMap.get(product.slug) || 1
+          }));
+
+          setProductsWithQty(productsData);
+
+          // Calcular total considerando cantidades
+          const total = productsData.reduce((sum, { product, qty }) => {
+            const price = product.discount_price || product.price;
+            return sum + (price * qty);
           }, 0);
           setTotalPrice(total);
         }
@@ -52,14 +74,14 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
   }, [ingredients]);
 
   const handleAddToCart = async () => {
-    if (products.length === 0) return;
+    if (productsWithQty.length === 0) return;
 
     setLoading(true);
 
     try {
-      // Agregar cada producto al carrito
-      for (const product of products) {
-        addItem(product, 1);
+      // Agregar cada producto al carrito con su cantidad sugerida
+      for (const { product, qty } of productsWithQty) {
+        addItem(product, qty);
       }
 
       setAdded(true);
@@ -80,7 +102,7 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
     }
   };
 
-  if (products.length === 0) {
+  if (productsWithQty.length === 0) {
     return null;
   }
 
@@ -88,7 +110,7 @@ export function AddIngredientsButton({ ingredients }: AddIngredientsButtonProps)
     <div className="space-y-4">
       <div className="text-center p-4 bg-verde-aguacate/10 rounded-xl">
         <p className="text-sm text-gray-600 mb-1">
-          {products.length} ingredientes disponibles en tienda
+          {productsWithQty.length} ingredientes disponibles en tienda
         </p>
         <p className="text-2xl font-bold text-verde-bosque">
           ${totalPrice.toLocaleString('es-CO')}

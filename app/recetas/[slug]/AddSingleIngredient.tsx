@@ -1,0 +1,108 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { ShoppingCart, Check, Loader2 } from 'lucide-react';
+import { useCartStore } from '@/lib/cart-store';
+import { supabase } from '@/lib/supabase';
+import type { RecipeIngredient } from '@/data/recipes';
+import type { UnifiedProduct } from '@/lib/types';
+
+interface AddSingleIngredientProps {
+  ingredient: RecipeIngredient;
+}
+
+export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
+  const [loading, setLoading] = useState(false);
+  const [added, setAdded] = useState(false);
+  const [product, setProduct] = useState<UnifiedProduct | null>(null);
+  const { addItem } = useCartStore();
+
+  // Buscar producto por slug
+  useEffect(() => {
+    async function fetchProduct() {
+      if (!ingredient.productSlug) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', ingredient.productSlug)
+          .eq('is_active', true)
+          .single();
+
+        if (error) throw error;
+        if (data) {
+          setProduct(data as UnifiedProduct);
+        }
+      } catch (error) {
+        console.error('Error fetching product:', error);
+      }
+    }
+
+    fetchProduct();
+  }, [ingredient.productSlug]);
+
+  const handleAddToCart = async () => {
+    if (!product) return;
+
+    setLoading(true);
+
+    try {
+      // Agregar la cantidad sugerida (o 1 por defecto)
+      const qty = ingredient.productQty || 1;
+      addItem(product, qty);
+      setAdded(true);
+
+      // Resetear después de 2 segundos
+      setTimeout(() => {
+        setAdded(false);
+      }, 2000);
+    } catch (error) {
+      console.error('Error adding product to cart:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Si no tiene producto asociado, no mostrar botón
+  if (!ingredient.productSlug) {
+    return null;
+  }
+
+  // Mientras carga el producto
+  if (!product) {
+    return (
+      <span className="text-gray-400 text-xs ml-2">...</span>
+    );
+  }
+
+  const price = product.discount_price || product.price;
+  const qty = ingredient.productQty || 1;
+
+  return (
+    <button
+      onClick={handleAddToCart}
+      disabled={loading || added}
+      className={`inline-flex items-center gap-1 ml-2 px-2 py-1 rounded-full text-xs font-medium transition-all ${
+        added
+          ? 'bg-green-100 text-green-700'
+          : 'bg-verde-aguacate/10 text-verde-bosque hover:bg-verde-aguacate/20'
+      }`}
+      title={ingredient.productNote || `Agregar ${qty} al carrito`}
+    >
+      {loading ? (
+        <Loader2 className="w-3 h-3 animate-spin" />
+      ) : added ? (
+        <>
+          <Check className="w-3 h-3" />
+          <span>Agregado</span>
+        </>
+      ) : (
+        <>
+          <ShoppingCart className="w-3 h-3" />
+          <span>${(price * qty).toLocaleString('es-CO')}</span>
+        </>
+      )}
+    </button>
+  );
+}
