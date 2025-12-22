@@ -1338,6 +1338,130 @@ export default function ProductsPage() {
                   <span className="text-sm text-gray-700">Producto Destacado</span>
                 </label>
               </div>
+
+              {/* Variantes Section */}
+              {((editingProduct.variants && editingProduct.variants.length > 0) || (editingProduct.product_variants && editingProduct.product_variants.length > 0)) && (
+                <div className="border-t border-gray-200 pt-6 mt-6">
+                  <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-verde-aguacate" />
+                    Variantes del Producto
+                  </h4>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Edita el precio, stock y estado de cada variante individualmente. Los cambios se aplicarán globalmente.
+                  </p>
+
+                  <div className="space-y-3">
+                    {(editingProduct.variants || editingProduct.product_variants || []).map((variant) => {
+                      const isEditingThisVariant = editingVariant?.variantId === variant.id;
+                      const editData = isEditingThisVariant ? editingVariant.data : variant;
+
+                      return (
+                        <div
+                          key={variant.id}
+                          className="bg-gray-50 rounded-lg border border-gray-200 p-4"
+                        >
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                            {/* Variant Name */}
+                            <div>
+                              <label className="text-xs text-gray-500 block mb-1 font-medium">Variante</label>
+                              <p className="font-semibold text-gray-900 text-sm">{variant.variant_value}</p>
+                            </div>
+
+                            {/* Price */}
+                            <div>
+                              <label className="text-xs text-gray-500 block mb-1 font-medium">Precio *</label>
+                              {isEditingThisVariant ? (
+                                <input
+                                  type="number"
+                                  value={editData.price || 0}
+                                  onChange={(e) => setEditingVariant({
+                                    ...editingVariant,
+                                    data: { ...editData, price: parseFloat(e.target.value) || 0 }
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  min="0"
+                                  step="100"
+                                />
+                              ) : (
+                                <p className="font-semibold text-gray-900 py-2">
+                                  {formatCurrency(variant.price || 0)}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Stock */}
+                            <div>
+                              <label className="text-xs text-gray-500 block mb-1 font-medium">Stock *</label>
+                              {isEditingThisVariant ? (
+                                <input
+                                  type="number"
+                                  value={editData.stock_quantity || 0}
+                                  onChange={(e) => setEditingVariant({
+                                    ...editingVariant,
+                                    data: { ...editData, stock_quantity: parseInt(e.target.value) || 0 }
+                                  })}
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                  min="0"
+                                />
+                              ) : (
+                                <p className={`font-medium py-2 ${(variant.stock_quantity || 0) < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                                  {variant.stock_quantity || 0}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end gap-2">
+                              {isEditingThisVariant ? (
+                                <>
+                                  <button
+                                    onClick={handleCancelVariantEdit}
+                                    className="px-3 py-2 text-xs text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
+                                    disabled={savingVariant}
+                                  >
+                                    Cancelar
+                                  </button>
+                                  <button
+                                    onClick={handleSaveVariant}
+                                    disabled={savingVariant}
+                                    className="px-3 py-2 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                                  >
+                                    {savingVariant ? (
+                                      <>
+                                        <Loader2 className="w-3 h-3 animate-spin" />
+                                        Guardando...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Save className="w-3 h-3" />
+                                        Guardar
+                                      </>
+                                    )}
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => handleEditVariant(editingProduct.id, variant)}
+                                  className="px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1 font-medium"
+                                >
+                                  <Edit className="w-3 h-3" />
+                                  Editar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-xs text-blue-800">
+                      <strong>Nota:</strong> Los cambios en las variantes se aplicarán globalmente en toda la tienda.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer */}
