@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Facebook, Instagram, Twitter, Mail, Phone, MapPin } from 'lucide-react';
+import { Instagram, Mail, Phone, MapPin } from 'lucide-react';
 
 export function Footer() {
   return (
@@ -14,14 +14,8 @@ export function Footer() {
               Apoyamos a los agricultores locales y garantizamos la mejor calidad.
             </p>
             <div className="flex space-x-3">
-              <a href="#" className="hover:text-verde-aguacate-200 transition-colors">
-                <Facebook className="w-5 h-5" />
-              </a>
-              <a href="#" className="hover:text-verde-aguacate-200 transition-colors">
+              <a href="https://www.instagram.com/tusaguacates/" target="_blank" rel="noopener noreferrer" className="hover:text-verde-aguacate-200 transition-colors" aria-label="Instagram">
                 <Instagram className="w-5 h-5" />
-              </a>
-              <a href="#" className="hover:text-verde-aguacate-200 transition-colors">
-                <Twitter className="w-5 h-5" />
               </a>
             </div>
           </div>
@@ -85,7 +79,7 @@ export function Footer() {
               </li>
               <li className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 flex-shrink-0" />
-                <span>+57 300 123 4567</span>
+                <span>+57 3 042 582 777</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-4 h-4 flex-shrink-0" />
