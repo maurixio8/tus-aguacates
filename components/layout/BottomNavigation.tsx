@@ -6,7 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import {
   Home,
   Search,
-  Tag,
+  BookOpen,
   ShoppingCart,
   User,
   LogIn
@@ -34,10 +34,10 @@ export default function BottomNavigation() {
       active: pathname === '/productos' || pathname.startsWith('/producto/')
     },
     {
-      label: 'Ofertas',
-      icon: Tag,
-      path: '/ofertas',
-      active: pathname === '/ofertas'
+      label: 'Recetas',
+      icon: BookOpen,
+      path: '/recetas',
+      active: pathname === '/recetas'
     },
     {
       label: 'Carrito',

@@ -87,6 +87,9 @@ export function Header() {
             <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
               Frutas Tropicales
             </Link>
+            <Link href="/recetas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
+              Recetas
+            </Link>
           </nav>
 
           {/* Acciones */}

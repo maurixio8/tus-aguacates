@@ -4,7 +4,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useEffect, useState } from 'react';
 import { getUserStats } from '@/lib/recommendations';
 import Link from 'next/link';
-import { ShoppingBag, TrendingUp } from 'lucide-react';
+import { ShoppingBag, TrendingUp, ChefHat } from 'lucide-react';
 import { supabase, Profile } from '@/lib/supabase';
 import { getDashboardGreeting } from '@/lib/greetings';
 
@@ -133,6 +133,13 @@ export function PersonalizedHero() {
                 Explorar Productos
               </Link>
               <Link
+                href="/recetas"
+                className="bg-gradient-to-r from-green-500 to-green-700 text-white hover:from-green-600 hover:to-green-800 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-800 text-center flex items-center justify-center gap-2"
+              >
+                <ChefHat className="w-5 h-5" />
+                Ver Recetas
+              </Link>
+              <Link
                 href="/cuenta"
                 className="bg-white text-verde-bosque-700 hover:bg-gray-50 font-bold px-8 py-4 rounded-xl transition-all shadow-md hover:shadow-lg border-2 border-verde-aguacate text-center"
               >
@@ -162,6 +169,13 @@ export function PersonalizedHero() {
               className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
             >
               Explorar Productos
+            </Link>
+            <Link
+              href="/recetas"
+              className="bg-gradient-to-r from-green-500 to-green-700 text-white hover:from-green-600 hover:to-green-800 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-green-800 flex items-center justify-center gap-2"
+            >
+              <ChefHat className="w-5 h-5" />
+              Descubre Recetas
             </Link>
             <Link
               href="/auth/register"
