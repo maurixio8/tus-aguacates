@@ -70,21 +70,29 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
       </section>
 
       {/* Categorías */}
-      <section className="py-12 bg-white">
+      <section className="py-10 bg-white">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Explora por Categoría</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+
+          {/* Carrusel horizontal con snap-scroll */}
+          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 px-1 scrollbar-hide">
             {recipeCategories.map(category => {
               const count = getRecipesByCategory(category.slug).length;
               return (
-                <RecipeCategoryCard
-                  key={category.slug}
-                  category={category}
-                  recipeCount={count}
-                />
+                <div key={category.slug} className="snap-start">
+                  <RecipeCategoryCard
+                    category={category}
+                    recipeCount={count}
+                  />
+                </div>
               );
             })}
           </div>
+
+          {/* Indicador de scroll */}
+          <p className="text-gray-500 text-sm mt-2 text-center md:hidden">
+            Desliza para ver más categorías →
+          </p>
         </div>
       </section>
 
