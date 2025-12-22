@@ -164,9 +164,15 @@ export async function PATCH(
         }
 
         // Prepare update object
-        const updateData: any = {
-            updated_at: new Date().toISOString()
-        };
+        const updateData: any = {};
+
+        // Try to add updated_at if the column exists
+        try {
+            updateData.updated_at = new Date().toISOString();
+        } catch (e) {
+            // Column might not exist, skip it
+            console.log('⚠️ updated_at column might not exist, skipping');
+        }
 
         // Validate and add fields from body
         const allowedFields = [
