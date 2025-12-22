@@ -247,6 +247,26 @@ export async function PATCH(
             price: data.price
         });
 
+        // Update product base price to minimum variant price
+        if (updateData.price !== undefined) {
+            const { data: minPriceData } = await supabase
+                .from('product_variants')
+                .select('price')
+                .eq('product_id', data.product_id)
+                .order('price', { ascending: true })
+                .limit(1)
+                .single();
+
+            if (minPriceData) {
+                await supabase
+                    .from('products')
+                    .update({ price: minPriceData.price })
+                    .eq('id', data.product_id);
+
+                console.log('✅ API: Product base price updated to:', minPriceData.price);
+            }
+        }
+
         return NextResponse.json({
             success: true,
             data,
