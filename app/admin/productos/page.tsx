@@ -1352,6 +1352,15 @@ export default function ProductsPage() {
 
                   <div className="space-y-3">
                     {(editingProduct.variants || editingProduct.product_variants || []).map((variant) => {
+                      // Debug: Log variant data
+                      console.log('🔍 [Variant Debug]', {
+                        id: variant.id,
+                        variant_value: variant.variant_value,
+                        price: variant.price,
+                        stock_quantity: variant.stock_quantity,
+                        fullVariant: variant
+                      });
+
                       const isEditingThisVariant = editingVariant?.variantId === variant.id;
                       const editData = isEditingThisVariant ? editingVariant.data : variant;
 
