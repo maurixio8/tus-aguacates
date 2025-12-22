@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { OptimizedImage } from '@/components/optimization/OptimizedImage';
 
 // Interface para categorías unificadas
 interface UnifiedCategory {
@@ -37,6 +37,15 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     image: '/categories/aguacates.jpg',
     description: 'Aguacates frescos de la mejor calidad',
     color: 'from-green-500 to-green-700'
+  },
+  {
+    id: 'cat-ofertas',
+    name: 'Ofertas y Combos',
+    slug: 'ofertas-combos',
+    icon: '🔥',
+    image: '/categories/ofertas.jpg',
+    description: 'Combos especiales y ofertas del día',
+    color: 'from-red-500 to-orange-500'
   },
   {
     id: 'cat-2',
@@ -100,6 +109,15 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     image: '/categories/gourmet.jpg',
     description: 'Productos gourmet premium',
     color: 'from-red-500 to-orange-700'
+  },
+  {
+    id: 'cat-9',
+    name: 'Productos Nuevos',
+    slug: 'productos-nuevos',
+    icon: '✨',
+    image: '/categories/gourmet.jpg',
+    description: 'Últimos productos agregados a nuestra tienda',
+    color: 'from-purple-500 to-pink-600'
   }
 ];
 
@@ -110,46 +128,69 @@ export default function UnifiedCategories({
   showProductCount = false,
   maxItems = 8
 }: UnifiedCategoriesProps) {
-  const [categories, setCategories] = useState<UnifiedCategory[]>(UNIFIED_CATEGORIES);
-  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<UnifiedCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Intentar sincronizar con Supabase (opcional)
+  // Cargar categorías desde Supabase (DB es la fuente principal)
   useEffect(() => {
-    const syncWithSupabase = async () => {
+    const loadCategories = async () => {
       try {
         setLoading(true);
 
         const { data: supabaseCategories, error } = await supabase
           .from('categories')
-          .select('id, name, slug, image_url, description, sort_order')
+          .select('id, name, slug, image_url, description, sort_order, is_active')
           .eq('is_active', true)
-          .order('sort_order', { ascending: true });
+          .order('sort_order', { ascending: true })
+          .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
-          // Combinar datos de Supabase con categorías unificadas
-          const mergedCategories = UNIFIED_CATEGORIES.map(unifiedCat => {
-            const supabaseCat = supabaseCategories.find(sc => sc.slug === unifiedCat.slug);
-            return {
-              ...unifiedCat,
-              ...(supabaseCat && {
-                id: supabaseCat.id,
-                image: supabaseCat.image_url || unifiedCat.image,
-                description: supabaseCat.description || unifiedCat.description
-              })
-            };
-          });
+          // Mapeo de slug a imagen local para fallback
+          const localImageMap: Record<string, string> = {
+            'aguacates': '/categories/aguacates.jpg',
+            'ofertas-combos': '/categories/gourmet.jpg',
+            'frutas-tropicales': '/categories/tropicales.jpg',
+            'frutos-rojos': '/categories/frutos-rojos.jpg',
+            'aromaticas': '/categories/aromaticas.jpg',
+            'saludables': '/categories/saludables.jpg',
+            'especias': '/categories/especias.jpg',
+            'desgranados': '/categories/desgranados.jpg',
+            'gourmet': '/categories/gourmet.jpg',
+            'productos-nuevos': '/categories/gourmet.jpg',
+          };
 
-          setCategories(mergedCategories.slice(0, maxItems));
+          // Convertir datos de Supabase al formato UnifiedCategory
+          const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
+            id: cat.id,
+            name: cat.name,
+            slug: cat.slug,
+            icon: '', // Las imágenes reemplazan los íconos
+            // Usar image_url de Supabase, o fallback a imagen local basada en slug
+            image: cat.image_url || localImageMap[cat.slug] || undefined,
+            description: cat.description || undefined,
+            color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
+          }));
+
+          setCategories(formattedCategories);
+        } else if (!error) {
+          // Si no hay error pero tampoco hay categorías, usar fallback
+          console.log('⚠️ No hay categorías activas en la base de datos');
+          setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
+        } else {
+          // Si hay error, usar fallback
+          console.error('Error loading categories from Supabase:', error);
+          setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
         }
       } catch (error) {
-        console.log('⚠️ Error syncing with Supabase, using unified categories:', error);
+        console.log('⚠️ Error loading categories, using fallback:', error);
+        setCategories(UNIFIED_CATEGORIES.slice(0, maxItems));
       } finally {
         setLoading(false);
       }
     };
 
-    syncWithSupabase();
+    loadCategories();
   }, [maxItems]);
 
   const handleCategoryClick = (category: UnifiedCategory) => {
@@ -208,25 +249,24 @@ export default function UnifiedCategories({
               className="flex-shrink-0 flex flex-col items-center group"
               onClick={() => handleCategoryClick(category)}
             >
-              {/* Imagen */}
-              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gray-100 mb-2 group-hover:shadow-xl transition-all">
-                <Image
-                  src={category.image || '/placeholder-category.jpg'}
-                  alt={category.name}
-                  fill
-                  className="object-cover group-hover:scale-110 transition-transform"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                {/* Fallback emoji */}
-                <div className="absolute inset-0 flex items-center justify-center text-4xl bg-gradient-to-br from-green-100 to-green-200">
-                  {category.icon}
-                </div>
+              {/* Imagen optimizada */}
+              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
+                {category.image ? (
+                  <img
+                    src={category.image}
+                    alt={category.name}
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-400" />
+                  </div>
+                )}
 
                 {/* Badge de conteo de productos */}
                 {showProductCount && category.productCount && (
-                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold shadow-lg">
                     {category.productCount}
                   </div>
                 )}
@@ -265,17 +305,33 @@ export default function UnifiedCategories({
             className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl"
             onClick={() => handleCategoryClick(category)}
           >
-            {/* Background */}
-            <div className={`absolute inset-0 bg-gradient-to-br ${category.color || 'from-gray-500 to-gray-700'} opacity-90`} />
+            {/* Imagen de fondo optimizada */}
+            {category.image ? (
+              <>
+                <OptimizedImage
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  priority={false}
+                  className="object-cover"
+                />
+                {/* Overlay oscuro */}
+                <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60 group-hover:from-black/30 group-hover:to-black/50 transition-all" />
+              </>
+            ) : (
+              <div className={`absolute inset-0 bg-gradient-to-br ${category.color || 'from-gray-500 to-gray-700'} opacity-90`} />
+            )}
 
             {/* Content */}
             <div className="relative h-full flex flex-col items-center justify-center text-white p-4">
-              <span className="text-5xl md:text-6xl mb-3 transform group-hover:scale-110 transition-transform duration-300">
-                {category.icon}
-              </span>
-              <h3 className="text-lg md:text-xl font-bold text-center">
+              <h3 className="text-lg md:text-xl font-bold text-center mb-2">
                 {category.name}
               </h3>
+              {category.description && (
+                <p className="text-xs text-white/80 text-center hidden md:block">
+                  {category.description}
+                </p>
+              )}
 
               {showProductCount && category.productCount && (
                 <div className="mt-2 bg-white/20 px-2 py-1 rounded-full text-xs">
@@ -296,24 +352,27 @@ export default function UnifiedCategories({
     );
   }
 
-  // Variante Simple (lista horizontal)
+  // Variante Simple (lista horizontal - solo texto)
   return (
     <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
       {categories.map((category) => (
         <Link
           key={category.id}
           href={`/tienda/${category.slug}`}
-          className={`flex-shrink-0 px-4 py-2 rounded-full transition-all ${
+          className={`flex-shrink-0 px-5 py-2.5 rounded-full transition-all font-medium ${
             selectedCategory === category.slug
-              ? 'bg-green-600 text-white'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              ? 'bg-verde-aguacate text-white shadow-md'
+              : 'bg-gray-100 hover:bg-gray-200 text-gray-700 hover:shadow-sm'
           }`}
           onClick={() => handleCategoryClick(category)}
         >
-          <span className="mr-2">{category.icon}</span>
-          <span className="text-sm font-medium">{category.name}</span>
+          <span className="text-sm">{category.name}</span>
           {showProductCount && category.productCount && (
-            <span className="ml-2 text-xs bg-gray-200 px-2 py-1 rounded-full">
+            <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+              selectedCategory === category.slug
+                ? 'bg-white/20 text-white'
+                : 'bg-gray-200 text-gray-600'
+            }`}>
               {category.productCount}
             </span>
           )}

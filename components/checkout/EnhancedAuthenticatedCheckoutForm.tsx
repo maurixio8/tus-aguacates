@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import CheckoutSummary from './CheckoutSummary';
 import CouponInput from './CouponInput';
+import dynamic from 'next/dynamic';
 import {
   User,
   Mail,
@@ -27,6 +28,17 @@ import {
 } from 'lucide-react';
 import { SubscriptionConfigModal } from './SubscriptionConfigModal';
 
+// Cargar BoldPayButton dinámicamente para evitar errores de SSR
+const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-3 text-gray-600">Cargando...</span>
+    </div>
+  ),
+});
+
 interface EnhancedAuthenticatedCheckoutFormProps {
   onSuccess: (orderId: string) => void;
   profile: Profile | null;
@@ -34,9 +46,9 @@ interface EnhancedAuthenticatedCheckoutFormProps {
 
 type CheckoutStep = 'review' | 'address' | 'payment-method' | 'processing';
 
-export function EnhancedAuthenticatedCheckoutForm({ 
-  onSuccess, 
-  profile 
+export function EnhancedAuthenticatedCheckoutForm({
+  onSuccess,
+  profile
 }: EnhancedAuthenticatedCheckoutFormProps) {
   const router = useRouter();
   const { user } = useAuth();
@@ -46,7 +58,7 @@ export function EnhancedAuthenticatedCheckoutForm({
   const [step, setStep] = useState<CheckoutStep>('review');
   const [orderId, setOrderId] = useState<string>('');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'efectivo'>('daviplata');
+  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'nequi' | 'efectivo' | 'bold'>('daviplata');
   const [userAddresses, setUserAddresses] = useState<Address[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -60,10 +72,25 @@ export function EnhancedAuthenticatedCheckoutForm({
     email: ''
   });
 
-  // Initialize shipping calculation when component mounts
+  // Función mejorada para extraer mensaje de error de Supabase
+  const extractErrorMessage = (error: any): string => {
+    if (typeof error === 'string') return error;
+    if (error?.message) return error.message;
+    if (error?.error?.message) return error.error.message;
+    if (error?.details) return error.details;
+    if (error?.code === '409') return 'Hubo un conflicto al crear el pedido. Por favor intenta de nuevo.';
+    if (error?.code === '42501') return 'No tienes permisos para crear pedidos. Por favor contacta soporte.';
+    if (error?.code === '23505') return 'El número de pedido ya existe. Por favor intenta de nuevo.';
+    return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
+  };
+
+  // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
-    calculateShipping();
-  }, [calculateShipping]);
+    // Only calculate shipping if there are items in the cart
+    if (items.length > 0) {
+      calculateShipping();
+    }
+  }, [calculateShipping, items.length]);
 
   // Load user data and preferences
   useEffect(() => {
@@ -76,9 +103,10 @@ export function EnhancedAuthenticatedCheckoutForm({
         email: user.email || ''
       });
 
-      // Set preferred payment method
-      if (profile.preferred_payment_method) {
-        setPaymentMethod(profile.preferred_payment_method);
+      // Set preferred payment method (validar que sea un método conocido)
+      const validMethods = ['daviplata', 'nequi', 'efectivo', 'bold'] as const;
+      if (profile.preferred_payment_method && validMethods.includes(profile.preferred_payment_method as any)) {
+        setPaymentMethod(profile.preferred_payment_method as 'daviplata' | 'nequi' | 'efectivo' | 'bold');
       }
 
       // Load addresses
@@ -88,10 +116,10 @@ export function EnhancedAuthenticatedCheckoutForm({
 
   // Recalculate shipping when address changes
   useEffect(() => {
-    if (selectedAddress) {
+    if (selectedAddress && items.length > 0) {
       calculateShipping(selectedAddress.city);
     }
-  }, [selectedAddress, calculateShipping]);
+  }, [selectedAddress, calculateShipping, items.length]);
 
   const loadAddresses = async () => {
     try {
@@ -132,7 +160,7 @@ export function EnhancedAuthenticatedCheckoutForm({
         .eq('id', user.id);
 
       if (error) throw error;
-      
+
       setEditingPersonalInfo(false);
       // Update profile state to reflect changes
       // This would typically be handled by a context or state management
@@ -163,7 +191,10 @@ export function EnhancedAuthenticatedCheckoutForm({
 
     setLoading(true);
     setError('');
-    setStep('processing');
+    // Para Bold, NO cambiar a processing - quedarse en payment-method para mostrar BoldPayButton
+    if (paymentMethod !== 'bold') {
+      setStep('processing');
+    }
 
     try {
       // Save payment preference
@@ -205,6 +236,10 @@ export function EnhancedAuthenticatedCheckoutForm({
         additional_info: selectedAddress.additional_info,
       };
 
+      // Mapear payment_method a valor válido para la BD
+      // La BD puede tener constraint que solo acepta ciertos valores
+      const dbPaymentMethod = paymentMethod === 'bold' ? 'tarjeta' : paymentMethod;
+
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -216,9 +251,9 @@ export function EnhancedAuthenticatedCheckoutForm({
           shipping_amount: totals.shipping,
           address_id: selectedAddress.id,
           shipping_address: addressSnapshot,
-          payment_method: paymentMethod,
+          payment_method: dbPaymentMethod,
           status: 'pendiente',
-          payment_status: paymentMethod === 'daviplata' ? 'pagado' : 'pendiente',
+          payment_status: paymentMethod === 'bold' ? 'pendiente' : paymentMethod === 'daviplata' ? 'pagado' : 'pendiente',
           coupon_code: useCartStore.getState().appliedCoupon?.code || null,
         })
         .select()
@@ -266,22 +301,35 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName} ${item.
 *Cupón Aplicado:* ${orderData.appliedCoupon.code}
 ${orderData.appliedCoupon.description}
 *Descuento:* ${orderData.appliedCoupon.discount_type === 'percentage'
-  ? `${orderData.appliedCoupon.discount_value}%`
-  : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
-}`;
+            ? `${orderData.appliedCoupon.discount_value}%`
+            : `$${orderData.appliedCoupon.discount_value.toLocaleString('es-CO')}`
+          }`;
       }
 
       mensajeWhatsApp += `
 
 *Entrega:* Por coordinar
 
-*Método de pago:* ${paymentMethod === 'efectivo' ? 'Efectivo' : 'Daviplata'}
+*Método de pago:* ${paymentMethod === 'efectivo' ? 'Efectivo' : paymentMethod === 'nequi' ? 'Nequi' : paymentMethod === 'bold' ? 'Tarjeta/PSE' : 'Daviplata'}
 
 ¡Gracias por tu compra! 🥑`;
 
-      // 3. Abrir WhatsApp
+      // Agregar datos de transferencia al mensaje de WhatsApp para Nequi/Daviplata
+      if (paymentMethod === 'nequi' || paymentMethod === 'daviplata') {
+        mensajeWhatsApp = mensajeWhatsApp.replace('*Método de pago:*', `*Método de pago:*`) + `\n📱 *Para transferir:* 320 306 2007`;
+      }
+
+      // Para Bold: NO redirigir a WhatsApp, el usuario debe pagar primero con Bold
+      if (paymentMethod === 'bold') {
+        // Solo actualizar el pedido y esperar a que el usuario pague con Bold
+        // El BoldPayButton se mostrará porque orderId ya está establecido
+        setLoading(false);
+        return; // No continuar con el flujo normal
+      }
+
+      // 3. Redirigir a WhatsApp (usamos location.href para evitar bloqueo de popups)
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
-      window.open(whatsappUrl, '_blank');
+      window.location.href = whatsappUrl;
 
       // 4. Actualizar pedido con info de WhatsApp
       await supabase
@@ -299,7 +347,7 @@ ${orderData.appliedCoupon.description}
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
-      setError(err.message || 'Error al procesar el pedido');
+      setError(extractErrorMessage(err));
       setStep('payment-method');
     } finally {
       setLoading(false);
@@ -470,26 +518,11 @@ ${orderData.appliedCoupon.description}
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <User className="w-5 h-5 text-gray-400" />
-                      <div>
-                        <p className="font-medium">{displayName}</p>
-                        {profile.preferred_name && profile.full_name && (
-                          <p className="text-sm text-gray-500">{profile.full_name}</p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-5 h-5 text-gray-400" />
-                      <p className="text-sm">{user.email}</p>
-                    </div>
-                    {profile.phone && (
-                      <div className="flex items-center gap-3">
-                        <Phone className="w-5 h-5 text-gray-400" />
-                        <p className="text-sm">{profile.phone}</p>
-                      </div>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <p className="font-medium text-green-700">
+                      {displayName} - Datos confirmados
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -503,7 +536,7 @@ ${orderData.appliedCoupon.description}
                   Dirección de Entrega
                 </CardTitle>
                 <CardDescription>
-                  {selectedAddress 
+                  {selectedAddress
                     ? `Dirección seleccionada: ${selectedAddress.label}`
                     : 'Selecciona una dirección para continuar'
                   }
@@ -554,50 +587,91 @@ ${orderData.appliedCoupon.description}
               </CardContent>
             </Card>
 
-            {/* Payment Preference Card */}
+            {/* Método de Pago - Grid de botones */}
             <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
                   <CreditCard className="w-5 h-5" />
-                  Método de Pago Preferido
+                  ¿Cómo prefieres pagar?
                 </CardTitle>
-                <CardDescription>
-                  Basado en tus compras anteriores
-                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                    paymentMethod === 'daviplata' 
-                      ? 'bg-purple-100 text-purple-700' 
-                      : 'bg-green-100 text-green-700'
-                  }`}>
-                    {paymentMethod === 'daviplata' ? 'D' : '$'}
-                  </div>
-                  <div>
-                    <p className="font-medium capitalize">
-                      {paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {paymentMethod === 'daviplata' 
-                        ? 'Transferencia bancaria instantánea'
-                        : 'Paga cuando recibas tu pedido'
-                      }
-                    </p>
-                  </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Tarjeta/PSE */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('bold')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'bold'
+                      ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                      : 'border-gray-200 hover:border-blue-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium">Tarjeta/PSE</span>
+                  </button>
+
+                  {/* Daviplata */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('daviplata')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'daviplata'
+                      ? 'border-red-500 bg-red-50'
+                      : 'border-gray-200 hover:border-red-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-700 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-black text-sm">D</span>
+                    </div>
+                    <span className="text-xs font-medium">Daviplata</span>
+                  </button>
+
+                  {/* Nequi */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('nequi')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'nequi'
+                      ? 'border-pink-500 bg-pink-50'
+                      : 'border-gray-200 hover:border-pink-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-fuchsia-600 rounded-lg flex items-center justify-center">
+                      <span className="text-white font-black text-sm">N</span>
+                    </div>
+                    <span className="text-xs font-medium">Nequi</span>
+                  </button>
+
+                  {/* Efectivo */}
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('efectivo')}
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'efectivo'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-green-300'
+                      }`}
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-green-700 rounded-lg flex items-center justify-center">
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1.41 16.09V20h-2.67v-1.93c-1.71-.36-3.16-1.46-3.27-3.4h1.96c.1 1.05.82 1.87 2.65 1.87 1.96 0 2.4-.98 2.4-1.59 0-.83-.44-1.61-2.67-2.14-2.48-.6-4.18-1.62-4.18-3.67 0-1.72 1.39-2.84 3.11-3.21V4h2.67v1.95c1.86.45 2.79 1.86 2.85 3.39H14.3c-.05-1.11-.64-1.87-2.22-1.87-1.5 0-2.4.68-2.4 1.64 0 .84.65 1.39 2.67 1.91s4.18 1.39 4.18 3.91c-.01 1.83-1.38 2.83-3.12 3.16z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-medium">Efectivo</span>
+                  </button>
                 </div>
               </CardContent>
             </Card>
 
-            <Button
+            <button
               onClick={handleContinueToPayment}
               disabled={!selectedAddress}
-              className="w-full"
-              size="lg"
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
             >
-              Continuar al Pago
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+              Continuar con mi pedido
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </>
         )}
 
@@ -642,11 +716,10 @@ ${orderData.appliedCoupon.description}
               <CardContent className="space-y-4">
                 {/* Daviplata Option */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'daviplata'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'daviplata'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   onClick={() => setPaymentMethod('daviplata')}
                 >
                   <div className="flex items-start gap-3">
@@ -682,11 +755,10 @@ ${orderData.appliedCoupon.description}
 
                 {/* Efectivo Option */}
                 <div
-                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    paymentMethod === 'efectivo'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'efectivo'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300'
+                    }`}
                   onClick={() => setPaymentMethod('efectivo')}
                 >
                   <div className="flex items-start gap-3">
@@ -718,6 +790,71 @@ ${orderData.appliedCoupon.description}
                   </div>
                 </div>
 
+                {/* Nequi Option */}
+                <div
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'nequi'
+                    ? 'border-pink-500 bg-pink-50'
+                    : 'border-gray-200 hover:border-pink-300'
+                    }`}
+                  onClick={() => setPaymentMethod('nequi')}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="nequi"
+                      checked={paymentMethod === 'nequi'}
+                      onChange={() => setPaymentMethod('nequi')}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-fuchsia-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-black text-sm">N</span>
+                        </div>
+                        <h3 className="font-semibold text-lg">Nequi</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Transferencia instantánea desde Nequi
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bold - Tarjeta/PSE Option */}
+                <div
+                  className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'bold'
+                    ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
+                    : 'border-gray-200 hover:border-blue-300'
+                    }`}
+                  onClick={() => setPaymentMethod('bold')}
+                >
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="paymentMethod"
+                      value="bold"
+                      checked={paymentMethod === 'bold'}
+                      onChange={() => setPaymentMethod('bold')}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center">
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z" />
+                          </svg>
+                        </div>
+                        <h3 className="font-semibold text-lg">Tarjeta/PSE</h3>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Paga con tarjeta de crédito, débito o PSE
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
                 <div className="flex gap-3 pt-4">
                   <Button
                     variant="outline"
@@ -726,13 +863,39 @@ ${orderData.appliedCoupon.description}
                   >
                     Volver
                   </Button>
-                  <Button
-                    onClick={handleConfirmOrder}
-                    disabled={loading}
-                    className="flex-1"
-                  >
-                    {loading ? 'Procesando...' : `Confirmar Pedido - ${paymentMethod === 'daviplata' ? 'Daviplata' : 'Efectivo'}`}
-                  </Button>
+
+                  {/* Mostrar BoldPayButton si seleccionó Bold, sino botón normal */}
+                  {paymentMethod === 'bold' && orderId ? (
+                    <div className="flex-1">
+                      <BoldPayButton
+                        orderId={orderId}
+                        amount={totals.total}
+                        description={`Pedido #${orderId.slice(-8)}`}
+                        customerEmail={user?.email || ''}
+                        customerName={selectedAddress?.full_name || ''}
+                        customerPhone={selectedAddress?.phone || ''}
+                        customerAddress={selectedAddress?.street_address || ''}
+                      />
+                    </div>
+                  ) : paymentMethod === 'bold' ? (
+                    <button
+                      onClick={handleConfirmOrder}
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Procesando...' : 'Preparar pago con Bold'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleConfirmOrder}
+                      disabled={loading}
+                      className="flex-1 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 font-bold py-4 px-6 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-[1.02] border-2 border-verde-aguacate disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Procesando...' : `Confirmar Pedido - ${paymentMethod === 'daviplata' ? 'Daviplata' :
+                        paymentMethod === 'nequi' ? 'Nequi' : 'Efectivo'
+                        }`}
+                    </button>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -756,61 +919,8 @@ ${orderData.appliedCoupon.description}
         <div className="sticky top-4 space-y-4">
           <CouponInput />
           <CheckoutSummary />
-          
-          {/* Quick Info */}
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <Clock className="w-4 h-4 text-blue-600" />
-                <h4 className="font-semibold text-blue-900">Tiempo estimado</h4>
-              </div>
-              <p className="text-sm text-blue-700">
-                Tu pedido estará listo en <strong>15-20 minutos</strong> después de confirmar.
-              </p>
-              <p className="text-sm text-blue-600 mt-1">
-                Entregas disponibles en Bogotá
-              </p>
-            </CardContent>
-          </Card>
 
-          {/* Opción de Suscripción */}
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <Repeat className="w-4 h-4 text-white" />
-                </div>
-                <h4 className="font-semibold text-green-900">¿Pedido recurrente?</h4>
-              </div>
-              <p className="text-sm text-green-700 mb-4">
-                Ahorra tiempo y nunca te quedes sin tus productos favoritos.
-                Configura entregas automáticas cada 15 días.
-              </p>
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Descuento especial en suscripciones</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Modifica productos antes de cada entrega</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-green-600">
-                  <Check className="w-4 h-4" />
-                  <span>Cancela cuando quieras sin costo</span>
-                </div>
-              </div>
-              <Button
-                onClick={handleCreateSubscription}
-                disabled={!selectedAddress}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
-                variant="default"
-              >
-                <Repeat className="w-4 h-4 mr-2" />
-                Hacer este pedido recurrente
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Quick Info */}
         </div>
       </div>
 
@@ -819,7 +929,7 @@ ${orderData.appliedCoupon.description}
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         selectedAddress={selectedAddress}
-        paymentMethod={paymentMethod}
+        paymentMethod={paymentMethod === 'efectivo' ? 'efectivo' : 'daviplata'}
         onSubscriptionCreated={handleSubscriptionCreated}
       />
     </div>

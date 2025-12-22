@@ -101,16 +101,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) throw error;
 
-    // Crear perfil de usuario
-    if (data.user) {
-      await supabase.from('profiles').insert({
-        id: data.user.id,
-        full_name: fullName,
-        preferred_name: null, // Se puede configurar después
-        role: 'customer',
-      });
+    console.log('✅ Usuario creado, el trigger automático creará el perfil');
 
-      // Migrar pedidos de invitado automáticamente
+    // Migrar pedidos de invitado automáticamente
+    if (data.user) {
       try {
         const result = await migrateGuestOrders(data.user.id, email);
         if (result.success && result.migratedCount > 0) {

@@ -174,7 +174,7 @@ export default function PromotionSlider({
               <img
                 src={promotion.image_url}
                 alt={promotion.title}
-                className="w-full h-full object-cover"
+                className="absolute inset-0 w-full h-full object-cover z-10"
                 onError={(e) => {
                   // Use fallback image if promotion image fails
                   const fallback = fallbackPromotions[parseInt(promotion.id) - 1] || fallbackPromotions[0];
@@ -184,7 +184,7 @@ export default function PromotionSlider({
               />
 
               {/* Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-20">
                 <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 md:p-8">
                   <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-1 sm:mb-2 line-clamp-2">
                     {promotion.title}
@@ -203,7 +203,7 @@ export default function PromotionSlider({
               </div>
 
               {/* Hover effect */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300"></div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300 z-30"></div>
             </div>
           ))}
         </div>
@@ -242,11 +242,10 @@ export default function PromotionSlider({
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`h-1.5 sm:h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex
-                  ? 'bg-verde-aguacate w-4 sm:w-6 md:w-8'
-                  : 'bg-gray-300 hover:bg-gray-400 w-1.5 sm:w-2'
-              }`}
+              className={`h-1.5 sm:h-2 rounded-full transition-all duration-200 ${index === currentIndex
+                ? 'bg-verde-aguacate w-4 sm:w-6 md:w-8'
+                : 'bg-gray-300 hover:bg-gray-400 w-1.5 sm:w-2'
+                }`}
               aria-label={`Go to slide ${index + 1}`}
             />
           ))}

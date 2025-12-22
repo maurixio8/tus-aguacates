@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { Product } from './productStorage';
+import type { UnifiedProduct, Product } from './types';
 
 /**
  * Default shipping information fallback
@@ -36,7 +36,7 @@ export interface ProductVariant {
 }
 
 export interface CartItemWithProduct {
-  product: Product;
+  product: UnifiedProduct;
   quantity: number;
   price: number;
   variant?: ProductVariant;
@@ -74,7 +74,7 @@ interface CartState {
   isOpen: boolean;
   appliedCoupon: AppliedCoupon | null;
   shipping: ShippingInfo;
-  addItem: (product: Product & { variant?: ProductVariant }, quantity?: number) => void;
+  addItem: (product: UnifiedProduct & { variant?: ProductVariant }, quantity?: number) => void;
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
@@ -233,14 +233,21 @@ export const useCartStore = create<CartState>()(
           console.log('📦 Calculating shipping:', { location, subtotal: get().getSubtotal() });
           const subtotal = get().getSubtotal();
 
-          // Validate subtotal
-          if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal)) {
-            console.error('❌ Invalid subtotal for shipping calculation:', { subtotal });
-            set({ shipping: getDefaultShippingInfo(0) });
+          // Validate subtotal - don't call API if cart is empty or subtotal is 0
+          if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal) || subtotal === 0) {
+            console.log('📦 Cart is empty or subtotal is 0, using default shipping:', { subtotal });
+            set({ shipping: getDefaultShippingInfo(subtotal) });
             return;
           }
 
-          const response = await fetch('/api/shipping/calculate', {
+          console.log('📦 Enviando a shipping API:', {
+          subtotal,
+          subtotalType: typeof subtotal,
+          location,
+          url: '/api/shipping/calculate'
+        });
+
+        const response = await fetch('/api/shipping/calculate', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -249,10 +256,14 @@ export const useCartStore = create<CartState>()(
               subtotal,
               location
             })
-          });
+        });
 
           if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+            const errorData = await response.json().catch(() => ({}));
+            console.error('❌ Shipping calculation error:', errorData);
+            console.error('❌ Response status:', response.status);
+            console.error('❌ Response text:', await response.text());
+            throw new Error(`❌ Shipping API Error ${response.status}: ${errorData.error || 'Unknown error'}`);
           }
 
           const data = await response.json();
@@ -270,8 +281,12 @@ export const useCartStore = create<CartState>()(
             };
 
             set({ shipping: shippingInfo });
-          } else {
-            console.error('❌ Shipping calculation failed:', data.error || 'Invalid response structure');
+          } else if (!data.success) {
+            console.error('❌ Shipping calculation failed (API returned success=false):', data);
+            console.error('❌ API Response:', JSON.stringify(data, null, 2));
+            set({ shipping: getDefaultShippingInfo(subtotal) });
+          } else if (!data.shipping) {
+            console.error('❌ Shipping calculation failed (missing shipping object):', data);
             set({ shipping: getDefaultShippingInfo(subtotal) });
           }
         } catch (error) {

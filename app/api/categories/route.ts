@@ -55,22 +55,32 @@ function createSupabaseClient() {
   );
 }
 
-// GET - List all categories
+// GET - List all categories (admin puede ver todas, público solo activas)
 export async function GET(request: NextRequest) {
   console.log('🔄 [API Categories] GET request received');
   console.log('🔍 [API Categories] Request headers:', Object.fromEntries(request.headers.entries()));
-  
+
   try {
+    const { searchParams } = new URL(request.url);
+    const includeInactive = searchParams.get('includeInactive') === 'true';
+
     console.log('📡 [API Categories] Creating Supabase client...');
     const supabase = createSupabaseClient();
     console.log('✅ [API Categories] Supabase client created successfully');
 
     console.log('🔍 [API Categories] Querying categories table...');
-    const { data, error } = await supabase
+    let query = supabase
       .from('categories')
-      .select('id, name, slug, description, image_url, is_active')
-      .eq('is_active', true)
-      .order('name', { ascending: true });
+      .select('id, name, slug, description, image_url, is_active, sort_order, created_at, updated_at');
+
+    // Solo filtrar por is_active si no se solicita incluir inactivas
+    if (!includeInactive) {
+      query = query.eq('is_active', true);
+    }
+
+    query = query.order('sort_order', { ascending: true });
+
+    const { data, error } = await query;
 
     console.log('📊 [API Categories] Query result:', {
       dataLength: data?.length || 0,
@@ -89,6 +99,200 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       categories: data || []
+    });
+
+  } catch (error) {
+    console.error('❌ API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor', success: false },
+      { status: 500 }
+    );
+  }
+}
+
+// POST - Create new category
+export async function POST(request: NextRequest) {
+  console.log('🔄 [API Categories] POST request received');
+
+  try {
+    const supabase = createSupabaseClient();
+    const body = await request.json();
+
+    const { name, slug, description, image_url, is_active = true, sort_order = 0 } = body;
+
+    // Validar campos requeridos
+    if (!name || !slug) {
+      return NextResponse.json(
+        { error: 'Nombre y slug son requeridos', success: false },
+        { status: 400 }
+      );
+    }
+
+    console.log('📝 [API Categories] Creating category:', { name, slug });
+
+    const { data, error } = await supabase
+      .from('categories')
+      .insert({
+        name,
+        slug,
+        description,
+        image_url,
+        is_active,
+        sort_order,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ API: Error creating category:', error);
+      return NextResponse.json(
+        { error: `Error al crear categoría: ${error.message}`, success: false },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ [API Categories] Category created successfully:', data);
+    return NextResponse.json({
+      success: true,
+      category: data
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('❌ API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor', success: false },
+      { status: 500 }
+    );
+  }
+}
+
+// PATCH - Update category
+export async function PATCH(request: NextRequest) {
+  console.log('🔄 [API Categories] PATCH request received');
+
+  try {
+    const supabase = createSupabaseClient();
+    const body = await request.json();
+
+    const { id, name, slug, description, image_url, is_active, sort_order } = body;
+
+    // Validar ID
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID de categoría requerido', success: false },
+        { status: 400 }
+      );
+    }
+
+    console.log('📝 [API Categories] Updating category:', { id, name });
+
+    // Construir objeto de actualización solo con campos proporcionados
+    const updates: any = {
+      updated_at: new Date().toISOString()
+    };
+
+    if (name !== undefined) updates.name = name;
+    if (slug !== undefined) updates.slug = slug;
+    if (description !== undefined) updates.description = description;
+    if (image_url !== undefined) updates.image_url = image_url;
+    if (is_active !== undefined) updates.is_active = is_active;
+    if (sort_order !== undefined) updates.sort_order = sort_order;
+
+    // Primero verificar que la categoría existe
+    console.log('🔍 [API Categories] Checking if category exists:', id);
+    const { data: existing, error: existError } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle(); // Usar maybeSingle() en lugar de single()
+
+    if (existError) {
+      console.error('❌ API: Error checking category:', existError);
+      return NextResponse.json(
+        { error: `Error al verificar categoría: ${existError.message}`, success: false },
+        { status: 500 }
+      );
+    }
+
+    if (!existing) {
+      console.error('❌ API: Category not found:', id);
+      return NextResponse.json(
+        { error: `Categoría no encontrada con ID: ${id}`, success: false },
+        { status: 404 }
+      );
+    }
+
+    console.log('✅ [API Categories] Category exists, proceeding with update');
+
+    // Ahora actualizar
+    const { data, error } = await supabase
+      .from('categories')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .maybeSingle(); // Usar maybeSingle() en lugar de single()
+
+    if (error) {
+      console.error('❌ API: Error updating category:', error);
+      return NextResponse.json(
+        { error: `Error al actualizar categoría: ${error.message}`, success: false },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ [API Categories] Category updated successfully:', data);
+    return NextResponse.json({
+      success: true,
+      category: data
+    });
+
+  } catch (error) {
+    console.error('❌ API: Unexpected error:', error);
+    return NextResponse.json(
+      { error: 'Error interno del servidor', success: false },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE - Delete category
+export async function DELETE(request: NextRequest) {
+  console.log('🔄 [API Categories] DELETE request received');
+
+  try {
+    const supabase = createSupabaseClient();
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    // Validar ID
+    if (!id) {
+      return NextResponse.json(
+        { error: 'ID de categoría requerido', success: false },
+        { status: 400 }
+      );
+    }
+
+    console.log('🗑️ [API Categories] Deleting category:', id);
+
+    const { error } = await supabase
+      .from('categories')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('❌ API: Error deleting category:', error);
+      return NextResponse.json(
+        { error: `Error al eliminar categoría: ${error.message}`, success: false },
+        { status: 500 }
+      );
+    }
+
+    console.log('✅ [API Categories] Category deleted successfully');
+    return NextResponse.json({
+      success: true,
+      message: 'Categoría eliminada exitosamente'
     });
 
   } catch (error) {

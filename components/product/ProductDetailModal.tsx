@@ -32,7 +32,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-  
+
   const isWishlisted = isInWishlist(product.id);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
@@ -172,11 +172,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                   <button
                     onClick={handleWishlistClick}
                     disabled={isWishlistLoading}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all ${
-                      isWishlisted
+                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all ${isWishlisted
                         ? 'bg-red-50 border-red-300 text-red-600'
                         : 'border-gray-300 text-gray-700 hover:border-red-300'
-                    } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
                     <span className="hidden sm:inline text-sm font-medium">
@@ -261,11 +260,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                         <button
                           key={variant.id}
                           onClick={() => setSelectedVariant(variant)}
-                          className={`px-3 py-2 rounded-lg border-2 font-medium transition-all text-sm ${
-                            selectedVariant?.id === variant.id
+                          className={`px-3 py-2 rounded-lg border-2 font-medium transition-all text-sm ${selectedVariant?.id === variant.id
                               ? 'bg-verde-bosque text-white border-verde-bosque'
                               : 'border-gray-300 text-gray-700 hover:border-verde-bosque'
-                          }`}
+                            }`}
                         >
                           <div className="font-semibold">{variant.variant_value}</div>
                           <div className="text-xs opacity-80">{formatPrice(variant.price)}</div>
@@ -320,7 +318,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 <button
                   onClick={handleAddToCart}
                   disabled={(product.stock || 0) === 0}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-emerald-700 disabled:border-gray-500 text-lg"
+                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-500 text-lg"
                 >
                   <ShoppingCart className="w-5 h-5" />
                   {(product.stock || 0) > 0 ? '🛒 Agregar al Carrito' : '❌ Agotado'}

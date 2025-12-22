@@ -14,6 +14,11 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+// Alias para formatCurrency para compatibilidad
+export function formatCurrency(price: number): string {
+  return formatPrice(price);
+}
+
 export function formatDate(date: string): string {
   return new Intl.DateTimeFormat('es-CO', {
     year: 'numeric',

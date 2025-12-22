@@ -648,7 +648,7 @@ export default function CreateOrderPage() {
                         {expandedProduct === product.id && (product.variants || product.product_variants) && (
                           <div className="mt-3 ml-17 space-y-2">
                             {(product.variants || product.product_variants || [])
-                              .filter((v) => v.is_active !== false && (v.stock_quantity === undefined || v.stock_quantity > 0))
+                              .filter((v) => v.is_active === true && (v.stock_quantity === undefined || v.stock_quantity > 0))
                               .map((variant) => (
                                 <div
                                   key={variant.id}
@@ -671,7 +671,7 @@ export default function CreateOrderPage() {
                                   </button>
                                 </div>
                               ))}
-                            {(product.variants || product.product_variants || []).filter((v) => v.is_active !== false && (v.stock_quantity === undefined || v.stock_quantity > 0))
+                            {(product.variants || product.product_variants || []).filter((v) => v.is_active === true && (v.stock_quantity === undefined || v.stock_quantity > 0))
                               .length === 0 && (
                               <p className="text-sm text-gray-500 p-2">
                                 No hay variantes disponibles con stock

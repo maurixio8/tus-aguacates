@@ -1,0 +1,1568 @@
+{
+  "estadisticas": {
+    "totalActuales": 201,
+    "totalFuente": 195,
+    "coincidenciasExactas": 155,
+    "coincidenciasParciales": 42,
+    "sinCoincidencia": 4
+  },
+  "coincidenciasExactas": [
+    {
+      "actual": "Combo Ahorro #1",
+      "fuente": "Combo Ahorro #1",
+      "descripcion": "1.000gr de fresas premium + 900gr de kiwis premium de la mejor calidad frescos y listo para disfrutar"
+    },
+    {
+      "actual": "Combo Ahorro #3",
+      "fuente": "Combo Ahorro #3",
+      "descripcion": "Fresas premium X 500grs, Arándanos x 250, Paquete X 4 Unidades PREMIUM en tres estados de maduración, Arándanos Orgánicos x 250 grs, Fresas x 500 gr"
+    },
+    {
+      "actual": "Nuevo combo 4",
+      "fuente": "Nuevo combo 4",
+      "descripcion": "Arándanos x 250 grs, Fresas 1000gr, Caja de 24 unidades* aguacate"
+    },
+    {
+      "actual": "Combo Mercado Semanal Completo",
+      "fuente": "Combo Mercado Semanal Completo",
+      "descripcion": "Qué Incluye: Envío gratis, Caja de 24 aguacates hass mediano, Fresas premium (500 gr), Banano criollo (1 Kilo), Tomate Chonto (500 gr), Cebolla Cabezona (500 gr), Papa Sabanera (500 gr), Zanahoria (500 gr), Pasta de Ajo (100 gr), Arándanos Orgánicos (125 gr), Uva isabelina (Bandeja 400 gr), Duraznos (500 gr), Limón Tahiti (1000 gr)"
+    },
+    {
+      "actual": "Pasta de Ajo",
+      "fuente": "Pasta de Ajo",
+      "descripcion": "El ajo es un antibiótico natural, mejora la circulación, ayuda al cuidado de la piel, sirve como un anticancerígeno, purifica la sangre en las arterias, dolores de garganta,"
+    },
+    {
+      "actual": "Flor de Jamaica",
+      "fuente": "Flor de Jamaica",
+      "descripcion": "Los usos tradicionales de esta planta son muy variados e incluyen las flores para el tratamiento de diversos problemas incluyendo los siguientes. Sistema circulatorio. Alta presión sanguínea. Niveles altos de grasa en la sangre. Contra la diabetes. Obesidad. El té sin azúcar se usa en México contra la tos."
+    },
+    {
+      "actual": "Yacon bandeja",
+      "fuente": "Yacon bandeja",
+      "descripcion": ""
+    },
+    {
+      "actual": "Granada",
+      "fuente": "Granada",
+      "descripcion": "La granada ofrece múltiples beneficios: mejora la salud gastrointestinal y sexual, favorece la salud cardíaca y cutánea, fortalece el sistema inmunitario, y contribuye a una buena salud neurológica y a la prevención de la pérdida de memoria."
+    },
+    {
+      "actual": "Cebolla Ocañera",
+      "fuente": "Cebolla Ocañera",
+      "descripcion": ""
+    },
+    {
+      "actual": "Raíces chinas",
+      "fuente": "Raíces chinas",
+      "descripcion": "Raíz china en bandeja"
+    },
+    {
+      "actual": "Guisantes Bandeja",
+      "fuente": "Guisantes Bandeja",
+      "descripcion": ""
+    },
+    {
+      "actual": "Zumo Limón concentrado",
+      "fuente": "Zumo Limón concentrado",
+      "descripcion": "Concentrado líquido para preparar bebidas sabor a limón"
+    },
+    {
+      "actual": "Zumo mango concentrado",
+      "fuente": "Zumo Mango concentrado",
+      "descripcion": "Concentrado líquido para preparar bebidas sabor a mango"
+    },
+    {
+      "actual": "Zumo coco concentrado",
+      "fuente": "Zumo Coco concentrado",
+      "descripcion": "Concentrado líquido para preparar bebidas sabor a coco"
+    },
+    {
+      "actual": "Zumo lulo concentrado",
+      "fuente": "Zumo Lulo concentrado",
+      "descripcion": "Concentrado líquido para preparar bebidas sabor a lulo"
+    },
+    {
+      "actual": "Datiles",
+      "fuente": "Datiles",
+      "descripcion": "Los dátiles son una fruta sabrosa y saludable, y aportan una buena dosis de energía gracias a sus múltiples propiedades beneficiosas"
+    },
+    {
+      "actual": "Lechuga morada",
+      "fuente": "Lechuga morada",
+      "descripcion": "La lechuga morada es baja en sodio y en calorías, y por lo general es más saludable que la lechuga verde. Proporciona mucha vitamina A, vitamina K y potasio. La vitamina A tiene muchas funciones"
+    },
+    {
+      "actual": "Ciruela importada bandeja",
+      "fuente": "Ciruela importada bandeja",
+      "descripcion": "La ciruelas son una fruta ricas en fibra, poseen gran cantidad de agua y evitan la retención de líquidos. Son poco calóricas y contienen vitaminas del grupo B, A, E y K; fósforo, sodio, magnesio, calcio, cobre, boro y zinc."
+    },
+    {
+      "actual": "Sandía Baby",
+      "fuente": "Sandía Baby",
+      "descripcion": "La sandía baby es una excelente fuente de hidratación debido a su alto contenido de agua. También aporta vitaminas A y C, potasio y magnesio, que son esenciales para el crecimiento."
+    },
+    {
+      "actual": "Anón",
+      "fuente": "Anón",
+      "descripcion": "Es una fruta rica en antioxidantes, vitaminas y minerales que ayudan a combatir la inflamación, aumentar las defensas del organismo y controlar los niveles de azúcar en sangre"
+    },
+    {
+      "actual": "Ciruela Importada",
+      "fuente": "Ciruela Importada",
+      "descripcion": "Esta fruta es un alimento energético, alcalinizante, depurativo, tonificante y capaz de estimular el sistema nervioso. Además, tiene un bajo contenido calórico por lo que es recomendable consumirla en caso de querer bajar de peso."
+    },
+    {
+      "actual": "Cúrcuma",
+      "fuente": "Cúrcuma",
+      "descripcion": "La Cúrcuma es un potente antiinflamatorio es útil para tratar el dolor y las enfermedades inflamatorias como artritis, artrosis, etc. Previene el parkinson y el alzhéimer. Ademas de darle un excelente sabor a las comidad."
+    },
+    {
+      "actual": "Arveja en vaina",
+      "fuente": "Arveja en vaina",
+      "descripcion": "Las arvejas son ricas en proteínas y carbohidratos, bajas en grasa y constituyen una buena fuente de fibra, vitaminas A, B y C; cuando se consumen frescas o refrigeradas, suministran tiamina y hierro."
+    },
+    {
+      "actual": "Habichuela",
+      "fuente": "Habichuela",
+      "descripcion": "Las habichuelas son legumbres que pertenecen a un grupo de alimentos indispensables dentro de una dieta equilibrada, gracias sobretodo a los diferentes beneficios y propiedades nutricionales que aportan."
+    },
+    {
+      "actual": "Polen",
+      "fuente": "Polen",
+      "descripcion": "Producto natural"
+    },
+    {
+      "actual": "Picados para sopa",
+      "fuente": "Picados para sopa",
+      "descripcion": "Zanahoria frijol alverja y varios"
+    },
+    {
+      "actual": "Ajo Negro Artesanal",
+      "fuente": "Ajo Negro Artesanal",
+      "descripcion": "Ajo Negro Artesanal"
+    },
+    {
+      "actual": "Aceite de coco",
+      "fuente": "Aceite de coco",
+      "descripcion": "El aceite de coco es beneficioso por sus propiedades antimicrobianas, mejora la salud cardiovascular, ayuda a quemar grasa, hidrata piel y cabello, y apoya la función cerebral. Es un aliado natural para la salud y el cuidado personal."
+    },
+    {
+      "actual": "Corozo",
+      "fuente": "Corozo",
+      "descripcion": "El corozo es una fruta rica en vitaminas A y C, minerales como magnesio e hierro, y antioxidantes que benefician la salud visual, el sistema inmunológico y el corazón. Además, ayuda a controlar el colesterol, el azúcar en sangre y puede aumentar la hemoglobina, siendo un aliado para la salud integral."
+    },
+    {
+      "actual": "Cubios",
+      "fuente": "Cubios",
+      "descripcion": "Los cubios son un tubérculo nutritivo que fortalece el sistema inmunológico, mejora la salud renal y cardiovascular, ayuda en la digestión y tiene propiedades antiinflamatorias y antimicrobianas."
+    },
+    {
+      "actual": "Papa criolla",
+      "fuente": "Papa criolla",
+      "descripcion": "La papa criolla cruda es antiinflamatoria, desintoxicante y rica en vitaminas y minerales que fortalecen la salud digestiva, inmunológica y cardiovascular."
+    },
+    {
+      "actual": "Papa sabanera",
+      "fuente": "Papa sabanera",
+      "descripcion": "La papa sabanera es fuente de energía (carbohidratos), vitaminas C y B6, potasio y fibra. Beneficia el sistema inmune, la digestión y la salud cardiovascular."
+    },
+    {
+      "actual": "Pistachos",
+      "fuente": "Pistachos",
+      "descripcion": "Los pistachos son nutritivos y benefician la salud cardiovascular, regulan el azúcar en sangre, aportan antioxidantes, mejoran el ánimo y la digestión."
+    },
+    {
+      "actual": "Cidra",
+      "fuente": "Cidra",
+      "descripcion": "La cidra es una fruta baja en calorías y rica en fibra, vitaminas y minerales. Ayuda a mejorar la salud cardiovascular, controlar la diabetes, fortalecer el sistema inmunológico y favorecer la digestión. Además, tiene propiedades antioxidantes y antiinflamatorias."
+    },
+    {
+      "actual": "Abichuelin",
+      "fuente": "Abichuelin",
+      "descripcion": "El abichuelín es nutritivo, ayuda a controlar el azúcar y el colesterol, mejora la digestión y protege el corazón."
+    },
+    {
+      "actual": "Maíz dulce",
+      "fuente": "Maíz dulce",
+      "descripcion": "El maíz dulce es rico en fibra, vitaminas (A, C y del grupo B) y minerales como potasio y hierro. Ayuda a mejorar la digestión, controlar el azúcar en sangre, proteger el corazón y la vista gracias a sus antioxidantes. Además, es un alimento energético y sin gluten, ideal para una dieta saludable."
+    },
+    {
+      "actual": "Pimenton amarillo",
+      "fuente": "Pimenton amarillo",
+      "descripcion": "El pimentón amarillo es rico en vitamina C, antioxidantes y fibra, lo que fortalece el sistema inmunológico, protege la vista, mejora la digestión y ayuda en el control de peso. Además, aporta minerales esenciales y tiene propiedades antiinflamatorias."
+    },
+    {
+      "actual": "Ají Jalapeño",
+      "fuente": "Ají Jalapeño",
+      "descripcion": "No se especifica descripción."
+    },
+    {
+      "actual": "Vino y galletas",
+      "fuente": "Vino y galletas",
+      "descripcion": "Vino siboney y galletas navideñas"
+    },
+    {
+      "actual": "Manzanilla paquete",
+      "fuente": "Manzanilla paquete",
+      "descripcion": "La manzanilla se usa como remedio para dolores estomacales, tratamiento de úlceras gástricas y gastritis."
+    },
+    {
+      "actual": "Hierbabuena",
+      "fuente": "Hierbabuena",
+      "descripcion": "La hierbabuena se usa para varios propósitos como la memoria, la digestión, la osteoartritis, las náuseas y los vómitos después de una cirugía."
+    },
+    {
+      "actual": "Albahaca",
+      "fuente": "Albahaca",
+      "descripcion": "La albahaca favorece la digestión de los alimentos y ayuda a atenuar los espasmos gástricos"
+    },
+    {
+      "actual": "Laurel",
+      "fuente": "Laurel",
+      "descripcion": "El laurel tiene beneficios respiratorios, especialmente para la congestión nasal y la tos."
+    },
+    {
+      "actual": "Orégano",
+      "fuente": "Orégano",
+      "descripcion": "El orégano es conocido por ser antioxidante y ayudar a combatir bacterias, virus y hongos"
+    },
+    {
+      "actual": "Romero",
+      "fuente": "Romero",
+      "descripcion": "El romero tiene propiedades antinflamatorias y antiespasmódicas, pues es tratamiento para el estreñimiento y la digestión de alimentos."
+    },
+    {
+      "actual": "Eucalipto",
+      "fuente": "Eucalipto",
+      "descripcion": "El eucalipto sirve para tratar enfermedades respiratorias y antiséptico natural. Revisar contraindicaciones por su médico."
+    },
+    {
+      "actual": "Tomillo",
+      "fuente": "Tomillo",
+      "descripcion": "El tomillo es una planta aromática que se usa como condimento y medicina natural para combatir cólicos, dolores de estómago o gases."
+    },
+    {
+      "actual": "Menta",
+      "fuente": "Menta",
+      "descripcion": "La menta es una planta vital para los problemas digestivos y respiratorios, también combate los dolores de cabeza fuertes y sirve como antiparasitario muy efectivo."
+    },
+    {
+      "actual": "Calendula",
+      "fuente": "Calendula",
+      "descripcion": "La caléndula es antiinflamatorio y cicatrizante, ayuda a problemas digestivos y menstruales, entre otros usos."
+    },
+    {
+      "actual": "Diente de león",
+      "fuente": "Diente de león",
+      "descripcion": "El diente de león sirve para problemas digestivos leves y para limpiar las vías urinarias y los riñones."
+    },
+    {
+      "actual": "Arándanos Orgánicos",
+      "fuente": "Arándanos Orgánicos",
+      "descripcion": "-Protege el corazón -Posee acción antiinflamatoria -Previene la diabetes -Mejora la memoria - Es adecuado ante las infecciones de orina -Tiene efectos beneficiosos sobre la visión - Perfectos para dietas de adelgazamiento"
+    },
+    {
+      "actual": "Frambuesas silvestres Org",
+      "fuente": "Frambuesas silvestres Org",
+      "descripcion": "Su ciclo de vida es muy corto 1-2 días Las frambuesas son ricas en calcio, potasio, vitamina B9 (ácido fólico) y vitamina C. Sus fitonutrientes disminuyen el estrés oxidativo y la inflamación de las células. Favorece la salud ocular y de la piel."
+    },
+    {
+      "actual": "Agraz",
+      "fuente": "Agraz",
+      "descripcion": "El agraz ayuda a desintoxicar el cuerpo, por lo que es ideal para prevenir infecciones urinarias, también ayuda a aliviar los síntomas del estreñimiento y otras enfermedades del sistema digestivo."
+    },
+    {
+      "actual": "Mora Real norteamericana",
+      "fuente": "Mora Real norteamericana",
+      "descripcion": "Es una gran fuente de fibra y de vitamina C Y por la presencia de las vitaminas C y A contribuyen a nutrir los huesos, los dientes, la piel, la generación de colágeno o la absorción de hierro."
+    },
+    {
+      "actual": "Fresas premium",
+      "fuente": "Fresas premium",
+      "descripcion": "La fresa es una abundante fuente de vitamina C, que es un antioxidante y previene los resfriados, infecciones y también fortalece los huesos y los dientes. Cuenta con antocianinas (sustancia química que da su color) y ayuda a prevenir el envejecimiento prematuro de la piel y la arteriosclerosis."
+    },
+    {
+      "actual": "Fresa Económica",
+      "fuente": "Fresa Económica",
+      "descripcion": "Fresa fresca de calidad económica."
+    },
+    {
+      "actual": "Uva isabelina",
+      "fuente": "Uva isabelina",
+      "descripcion": "Las uvas, una fruta que te ayudará a controlar los niveles de azúcar en sangre y la presión arterial Es un alimento rico en antioxidantes, también es diurética, antiinflamatoria y ayuda a cuidar la vista El consumo de uvas podría ser beneficioso para la microbiota, según un nuevo estudio."
+    },
+    {
+      "actual": "Frambuesas Amarillas",
+      "fuente": "Frambuesas Amarillas",
+      "descripcion": "Frambuesas Amarillas"
+    },
+    {
+      "actual": "Cerezas",
+      "fuente": "Cerezas",
+      "descripcion": "Las cerezas son una fruta rica en antioxidantes como las antocianinas y el ácido ascórbico, es decir, vitamina C. Estos antioxidantes combaten los radicales libres en nuestro cuerpo, ayudando a proteger nuestras células del estrés oxidativo y previniendo enfermedades crónicas. Además, contienen compuestos antiinflamatorios naturales, como las antocianinas y los flavonoides, que pueden ayudar a reducir la inflamación en el cuerpo"
+    },
+    {
+      "actual": "Uva verde importada sin semilla",
+      "fuente": "Uva verde importada sin semilla",
+      "descripcion": "Uva verde importada sin semilla"
+    },
+    {
+      "actual": "Uva chilena importada",
+      "fuente": "Uva chilena importada",
+      "descripcion": "Uva chilena importada Premium"
+    },
+    {
+      "actual": "Duraznos",
+      "fuente": "Duraznos",
+      "descripcion": "Durazno: es una buena fuente de betacaroteno, vitaminas del complejo B como B1, B2, vitamina C y vitamina K. Contiene magnesio, calcio, fósforo, también contiene luteína, bioflavonoides y antioxidantes que ayudan a estimular el sistema inmunológico"
+    },
+    {
+      "actual": "Kiwis",
+      "fuente": "Kiwis",
+      "descripcion": "Beneficios del consumo de kiwi Entre los analizados se encuentra su papel beneficioso como antioxidante y para mejorar la función inmunitaria, la mejora de la función del tracto digestivo y respiratorio, y la mejora del estado de ánimo."
+    },
+    {
+      "actual": "Lulos",
+      "fuente": "Lulos",
+      "descripcion": "Tiene propiedades diuréticas Aumenta cantidad y calidad de formación de cabello y uñas Fortalece los huesos Disminuye colesterol malo Facilita eliminación del ácido úrico Fortalece las defensas Ayuda a mejorar enfermedades nerviosas"
+    },
+    {
+      "actual": "Uchuvas",
+      "fuente": "Uchuvas",
+      "descripcion": "La uchuva no solo ayuda a regular el tránsito intestinal, también posee propiedades diuréticas que contribuyen a eliminar toxinas acumuladas en el organismo previniendo además problemas de retención de líquidos. Su poder depurativo hace que también sea recomendable para mantener la salud renal."
+    },
+    {
+      "actual": "Granadillas",
+      "fuente": "Granadillas",
+      "descripcion": "La granadilla te puede ayudar a prevenir el estreñimiento, los malestares de la gastritis y la acidez. Además, si la consumes con sus semillas le brinda a tu cuerpo un alto contenido de fibra, potasio, calcio, fósforo, hierro, vitaminas, proteínas y carbohidratos."
+    },
+    {
+      "actual": "Rambutan o lichi peludo",
+      "fuente": "Rambutan o lichi peludo",
+      "descripcion": "El rambután se compone de ácido gálico y una cantidad de antioxidantes, que ayudan a combatir el envejecimiento prematuro. Refuerza el sistema inmunológico. Debido a su contenido en vitamina C fortalece el sistema inmunológico. Fortalece huesos."
+    },
+    {
+      "actual": "Pera Nacional",
+      "fuente": "Pera Nacional",
+      "descripcion": "Por su bajo contenido en sodio e hidratos de carbono,"
+    },
+    {
+      "actual": "Limón tahiti",
+      "fuente": "Limón tahiti",
+      "descripcion": "Los limones contienen vitamina C, un poderoso antioxidante, y son una fuente de compuestos vegetales llamados flavonoides, que tienen efectos antioxidantes y antiinflamatorios. Los antioxidantes son compuestos que ayudan a proteger las células del cuerpo del daño."
+    },
+    {
+      "actual": "Limón Mandarino",
+      "fuente": "Limón Mandarino",
+      "descripcion": "Los limones contienen vitamina C, un poderoso antioxidante, y son una fuente de compuestos vegetales llamados flavonoides, que tienen efectos antioxidantes y antiinflamatorios. Los antioxidantes son compuestos que ayudan a proteger las células del cuerpo del daño."
+    },
+    {
+      "actual": "Tomate de Árbol",
+      "fuente": "Tomate de Árbol",
+      "descripcion": "El Tomate de Árbol Además de polifenoles, el tomate de árbol es rico en licopeno, carotenoide conocido por su alto poder antioxidante; se ha demostrado que el consumo de frutas ricas en carotenoides ejerce un efecto protectivo hacia el desarrollo de hiperglicemia."
+    },
+    {
+      "actual": "Borojo maya",
+      "fuente": "Borojo maya",
+      "descripcion": "Disminuye la fatiga durante el ejercicio. Aporta una buena porción de fibra dietética. Fortalece huesos, dientes y encías. El Borojo Es una fuente de fósforo. Mejora el funcionamiento del corazón, sistema nervioso y digestivo. Es rica en vitamina C y antioxidantes."
+    },
+    {
+      "actual": "Naranja valencia",
+      "fuente": "Naranja valencia",
+      "descripcion": "Las Naranjas Son ricas en calcio, que protege los huesos y dientes, manteniéndolos sanos. Su consumo ayuda a reducir la absorción de grasas y a bajar el colesterol y la tensión. Tiene propiedades antiinflamatorias, por lo que es beneficiosa para las personas con artritis."
+    },
+    {
+      "actual": "Coco",
+      "fuente": "Coco",
+      "descripcion": "Los beneficios del coco para la salud Se ha estimado que el 50 % de la grasa del coco es ácido láurico, un tipo de lípido que aumenta los niveles de colesterol bueno y reduce el riesgo de padecer enfermedades cardiovasculares. Además, este ácido posee tiene propiedades antibacterianas, antifúngicas y antivirales."
+    },
+    {
+      "actual": "Tamarindo",
+      "fuente": "Tamarindo",
+      "descripcion": "El Tamarindo Tiene un alto contenido de vitamina C, E y B1. Posee minerales como el calcio, zinc, potasio, hierro, fósforo y magnesio. Favorece el transporte de oxígeno en el sistema circulatorio. Regula el nivel de colesterol en la sangre"
+    },
+    {
+      "actual": "Mandarina",
+      "fuente": "Mandarina",
+      "descripcion": "Mandarina el alto nivel de nutrientes de la mandarina nos protege contra problemas cardíacos, infecciones, anemias, alergias, diabetes y varios tipos de cáncer. Asimismo, contribuye a combatir el colesterol, estreñimiento, presión arterial, deshidratación, obesidad y estrés."
+    },
+    {
+      "actual": "Gulupa",
+      "fuente": "Gulupa",
+      "descripcion": "GULUPA ES UNA ALTA FUENTE DE FIBRA. UNA ALTA FUENTE DE VITAMINA C. UNA ALTA FUENTE DE VITAMINA A. UNA BUENA FUENTE DE POTASIO. UNA FUENTE NATURAL DE HIERRO. UNA FUENTE NATURAL DE FÓSFORO. UNA FUENTE NATURAL DE MAGNESIO."
+    },
+    {
+      "actual": "Pitaya",
+      "fuente": "Pitaya",
+      "descripcion": "La Pitaya Propiedades y beneficios Refuerza el sistema inmunológico. ... Posee efectos antiinflamatorios. ... Regula el tránsito intestinal. ... Reduce el nivel de azúcar en sangre. ... Evita la anemia ferropénica. ... Mejora el estado de huesos y articulaciones. ... Ayuda en las dietas de adelgazamiento. ... Retrasa el envejecimiento celular."
+    },
+    {
+      "actual": "Carambolo",
+      "fuente": "Carambolo",
+      "descripcion": "Recomendada para diabetes, hipertensión y afecciones de corazón y vasos sanguíneos. Esta fruta se caracteriza por un bajo aporte en hidratos de carbono, lo que hace de ella un buen alimento para ser tomado por personas que padecen de diabetes, así como por ser rica en potasio"
+    },
+    {
+      "actual": "Mango Azúcar",
+      "fuente": "Mango Azúcar",
+      "descripcion": "El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro"
+    },
+    {
+      "actual": "Manzana de Agua",
+      "fuente": "Manzana de Agua",
+      "descripcion": ""
+    },
+    {
+      "actual": "Pera importada",
+      "fuente": "Pera importada",
+      "descripcion": "Las peras son ricas en sales minerales y en vitaminas C y A. La vitamina A es necesaria para el buen funcionamiento de la vista, para el crecimiento óseo"
+    },
+    {
+      "actual": "Ciruela nacional",
+      "fuente": "Ciruela nacional",
+      "descripcion": "La ciruela es considerada una fruta cítrica que aporta vitamina C, entonces se ha visto que el poder antioxidante que tiene por contener antocianina y al ser una fruta de color rojo"
+    },
+    {
+      "actual": "Mango Comun",
+      "fuente": "Mango Comun",
+      "descripcion": "El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,"
+    },
+    {
+      "actual": "Arveja desgranada",
+      "fuente": "Arveja desgranada",
+      "descripcion": "Arveja fresca desgranada, lista para usar."
+    },
+    {
+      "actual": "Frijol desgranado",
+      "fuente": "Frijol desgranado",
+      "descripcion": "Frijol fresco desgranado, listo para cocinar."
+    },
+    {
+      "actual": "Arveja Amarilla Económica",
+      "fuente": "Arveja Amarilla Económica",
+      "descripcion": "Arveja amarilla desgranada de opción económica."
+    },
+    {
+      "actual": "Mazorca desgranada fresca",
+      "fuente": "Mazorca desgranada fresca",
+      "descripcion": "El maíz es fuente natural de fibra insoluble la cual previene el tránsito intestinal lento, estimulando los movimientos peristálticos del tracto digestivo, además contiene fibra soluble la cual tiene propiedades en cuanto a la disminución de azúcar y grasa en la sangre."
+    },
+    {
+      "actual": "Habas desgranadas",
+      "fuente": "Habas desgranadas",
+      "descripcion": ""
+    },
+    {
+      "actual": "Mazorca baby",
+      "fuente": "Mazorca baby",
+      "descripcion": "Las mini-mazorcas son ricas en nutrientes y una porción de 12 taza cumple con el 4% del valor diario recomendado de vitamina A y hierro y con el 2% del valor diario de vitamina C. Como nutrientes esenciales para el sistema inmune, las vitaminas A y C ayudan a tu cuerpo a combatir infecciones"
+    },
+    {
+      "actual": "Jalapeños bandeja",
+      "fuente": "Jalapeños bandeja",
+      "descripcion": "Fuente de Vitaminas. ... Quema de calorías. ... Mayor oxigenación. ... Sensación de Plenitud. ... Protector gástrico. ... Mejora al corazón. ... Efecto antioxidante. ... Combate el Acné"
+    },
+    {
+      "actual": "Chiles",
+      "fuente": "Chiles",
+      "descripcion": "Contiene vitaminas B y E, además de ser una buena fuente de hierro y potasio. Es rico en capsaicina que ayuda a quemar grasa durante el proceso digestivo. Acelera el metabolismo hasta en un 25%, reduce el apetito y limpia el estómago. El chile tiene efectos antiinflamatorios y es un anticoagulante natural."
+    },
+    {
+      "actual": "Champiñones enteros",
+      "fuente": "Champiñones enteros",
+      "descripcion": "Enteros frescos blancos de la mejor calidad"
+    },
+    {
+      "actual": "Champiñones tajados bandeja",
+      "fuente": "Champiñones tajados bandeja",
+      "descripcion": "el champiñón es fuente de vitaminas del Grupo B y D además de minerales como el potasio, el fósforo y el hierro, entre otros. Esta composición lo convierte en un posible aliado en la prevención de enfermedades como el cáncer, la diabetes o el deterioro cognitivo."
+    },
+    {
+      "actual": "Mazorca sabanera x3 uni",
+      "fuente": "Mazorca sabanera x3 uni",
+      "descripcion": "Antioxidantes: El maíz es fuente de antioxidantes que combaten los radicales libres y el envejecimiento celular. Saciante: Rico en fibra e hidratos de carbono el maíz es saciante y ayuda a controlar nuestro apetito."
+    },
+    {
+      "actual": "Zucchini Amarillo",
+      "fuente": "Zucchini Amarillo",
+      "descripcion": "La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario."
+    },
+    {
+      "actual": "Zucchini verde",
+      "fuente": "Zucchini verde",
+      "descripcion": "La fibra de esta hortaliza ayuda a prevenir el estreñimiento y las enfermedades del intestino; además, regula los niveles de azúcar y el colesterol en sangre. Las vitaminas que contiene cuidan al sistema inmunitario."
+    },
+    {
+      "actual": "Tomate Uvalina",
+      "fuente": "Tomate Uvalina",
+      "descripcion": "Los tomates uva son más oblongos que los tomates cherry y se parecen más a las uvas en términos de su forma (de ahí el nombre de tomate uva!). También son más pequeños que los tomates cherry (aproximadamente la mitad del tamaño) y tienen una piel más gruesa. Los tomates uva tampoco son tan dulces como los tomates cherry y su carne es más carnosa y menos acuosa."
+    },
+    {
+      "actual": "Tomate cherry",
+      "fuente": "Tomate cherry",
+      "descripcion": "Fuente de vitamina A: contiene una cantidad importante de vitamina A, básicamente en forma de carotenoides, concretamente de licopeno. Estos pigmentos son, a su vez, responsables del color de esta verdura. La vitamina A es esencial para la piel y los dientes."
+    },
+    {
+      "actual": "Tomate larga vida",
+      "fuente": "Tomate larga vida",
+      "descripcion": "Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ..."
+    },
+    {
+      "actual": "Tomate chonto tamaño mixto",
+      "fuente": "Tomate chonto tamaño mixto",
+      "descripcion": "Protege la vista. La vitamina A mejora nuestra visión, ayuda a proteger nuestros ojos de enfermedades degenerativas o ceguera nocturna. Mejora la circulación sanguínea. ... Cuida la piel. ... Evita el estreñimiento. ... Diurético. ... Antioxidante. ..."
+    },
+    {
+      "actual": "Pimentón",
+      "fuente": "Pimentón",
+      "descripcion": "Recomendados para: Favorece la formación de colágeno, huesos y dientes. Favorece el crecimiento de: cabello, visión, uñas, mucosas. Sistema inmunológico. ... Transmisión y generación del impulso nervioso y muscular. Por su vitamina E como uno de los grandes antioxidantes aliados contra el cáncer."
+    },
+    {
+      "actual": "Esparragos",
+      "fuente": "Esparragos",
+      "descripcion": ""
+    },
+    {
+      "actual": "Zanahoria",
+      "fuente": "Zanahoria",
+      "descripcion": "Mejora la vista. Protege la dentadura. Ayuda en los problemas intestinales. Tiene propiedades diuréticas. Por su elevado contenido en agua son diuréticas y ayudan a la desintegración de los cálculos renales. Proporcionan energía al cerebro. Buena para uñas y cabello"
+    },
+    {
+      "actual": "Remolacha",
+      "fuente": "Remolacha",
+      "descripcion": "Es un potente anticancerígeno. Controla la tensión arterial. Ayuda a prevenir ataques de asma. Es un alimento excelente para atletas. Contribuye al buen estado de la vista."
+    },
+    {
+      "actual": "Cebolla larga malla",
+      "fuente": "Cebolla larga malla",
+      "descripcion": ""
+    },
+    {
+      "actual": "Cebolla cabezona blanca",
+      "fuente": "Cebolla cabezona blanca",
+      "descripcion": ""
+    },
+    {
+      "actual": "Cebolla roja mediana",
+      "fuente": "Cebolla roja mediana",
+      "descripcion": "Las cebollas son una fuente de fibra, lo que contribuye a la ingesta de fibras solubles. El tipo de fibra presente en las cebollas puede reducir la probabilidad de desarrollar enfermedades cardiovasculares"
+    },
+    {
+      "actual": "Apio tallos bandeja",
+      "fuente": "Apio tallos bandeja",
+      "descripcion": "Tallos de de apio bandeja"
+    },
+    {
+      "actual": "Apio Entero paquete",
+      "fuente": "Apio Entero paquete",
+      "descripcion": "El apio, rico en fibra, es también un excelente regulador del tránsito intestinal. Previene el estreñimiento, favorece una buena digestión,"
+    },
+    {
+      "actual": "Brocoli",
+      "fuente": "Brocoli",
+      "descripcion": "Bueno para la anemia. Protege al corazón. Mejora la hipertensión."
+    },
+    {
+      "actual": "Ajo importado malla",
+      "fuente": "Ajo importado malla",
+      "descripcion": "El Ajo tiene entre sus propiedades medicinales naturales la peculiaridad de combatir infecciones respiratorias, dilata los bronquios, fluidifica las mucosas, estimula el sistema inmunológico."
+    },
+    {
+      "actual": "Pepino cohombro",
+      "fuente": "Pepino cohombro",
+      "descripcion": "Contiene (ligninas) que ayudan a combatir algunos tipos de cáncer como seno, próstata y uterino. Ayuda a reducir los niveles de colesterol."
+    },
+    {
+      "actual": "Ajo Nacional",
+      "fuente": "Ajo Nacional",
+      "descripcion": "El Ajo tiene entre sus propiedades medicinales naturales la peculiaridad de combatir infecciones respiratorias, dilata los bronquios, fluidifica las mucosas, estimula el sistema inmunológico"
+    },
+    {
+      "actual": "Pepino Europeo",
+      "fuente": "Pepino Europeo",
+      "descripcion": "Pepino Europeo"
+    },
+    {
+      "actual": "Berenjena",
+      "fuente": "Berenjena",
+      "descripcion": "Es buena para el corazón. ... Ayuda a mantener un peso ideal. ... Ayuda a controlar el azúcar. ... Elimina virus y parásitos. ..."
+    },
+    {
+      "actual": "Coliflor",
+      "fuente": "Coliflor",
+      "descripcion": "Todos los tipos de coliflor tienen grandes cantidades de vitaminas A, K, magnesio, potasio, fósforo, vitaminas B y una larga lista de nutrientes."
+    },
+    {
+      "actual": "Lechuga Hidroponica",
+      "fuente": "Lechuga Hidroponica",
+      "descripcion": ""
+    },
+    {
+      "actual": "Lechuga Romana",
+      "fuente": "Lechuga Romana",
+      "descripcion": "La lechuga romana es rica en vitaminas y minerales, como la vitamina A, C, K, B1, B2 y B3. Además, en lo que respecta a los minerales"
+    },
+    {
+      "actual": "Cebolla Puerro",
+      "fuente": "Cebolla Puerro",
+      "descripcion": "Se ha usado para aliviar la tos, el resfrío, el catarro y el asma. Pero más recientemente sus propiedades curativas han sido atribuidas a un componente llamado sulfuro de propilo, que se cree tiene un efecto similar al de la insulina"
+    },
+    {
+      "actual": "Batata Rosada",
+      "fuente": "Batata Rosada",
+      "descripcion": "Batata Rosada"
+    },
+    {
+      "actual": "Zanahoria baby",
+      "fuente": "Zanahoria baby",
+      "descripcion": "Zanahoria baby bandeja"
+    },
+    {
+      "actual": "Lechuga Batavia",
+      "fuente": "Lechuga Batavia",
+      "descripcion": "Lechuga Batavia unidad x 700 grs"
+    },
+    {
+      "actual": "Auyama sakata",
+      "fuente": "Auyama sakata",
+      "descripcion": "Auyama sakata x kilo (1-2) Unidades"
+    },
+    {
+      "actual": "Rugula Bandeja",
+      "fuente": "Rugula Bandeja",
+      "descripcion": "Rugula Bandeja x 150 grs Aprox"
+    },
+    {
+      "actual": "Kale crespo",
+      "fuente": "Kale crespo",
+      "descripcion": "Kale crespo Bandeja x130grs"
+    },
+    {
+      "actual": "Repollo unidad",
+      "fuente": "Repollo unidad",
+      "descripcion": "Repollo unidad de 1200 grs Aprox"
+    },
+    {
+      "actual": "Acelga",
+      "fuente": "Acelga",
+      "descripcion": "Acelga"
+    },
+    {
+      "actual": "Perejil liso",
+      "fuente": "Perejil liso",
+      "descripcion": "Perejil liso fresco por paquete."
+    },
+    {
+      "actual": "Alcachofa",
+      "fuente": "Alcachofa",
+      "descripcion": "Alcachofa x unidad"
+    },
+    {
+      "actual": "Semillas de quinoa",
+      "fuente": "Semillas de quinoa",
+      "descripcion": "Tiene más proteína que cualquier cereal. Es ideal para veganos. ... Previene enfermedades. ... Buena para los diabéticos. ... Contiene carbohidratos complejos. ... Posee grasas buenas. ... Rica en fibra y minerales. ... Repleta de vitaminas."
+    },
+    {
+      "actual": "Semillas de Chía",
+      "fuente": "Semillas de Chía",
+      "descripcion": "Beneficios de la Chía Son ricas en antioxidantes. Son excelente fuente de fibra. Gran aporte de proteínas buenas. Alto contenido de ácidos grasos Omega-3. Ayudan a tu salud metabólica. Proveen de nutrientes para los huesos. Previenen la diabetes."
+    },
+    {
+      "actual": "Miel de Abejas 100% Natural",
+      "fuente": "Miel de Abejas 100% Natural",
+      "descripcion": "La miel es buena para la salud porque es rica en energía, antioxidantes, vitaminas y minerales. También ayuda a fortalecer el sistema inmunológico y tiene propiedades antiinflamatorias y antibacterianas."
+    },
+    {
+      "actual": "Jengibre",
+      "fuente": "Jengibre",
+      "descripcion": "También se utiliza para los vértigos, náuseas y mareos de viaje, trastornos circulatorios y del riego sanguíneo, dolores y espasmos musculares, así como para los trastornos gástricos y digestivos. Desde la Antigüedad, el jengibre también se considera un afrodisíaco."
+    },
+    {
+      "actual": "Oregano seco",
+      "fuente": "Oregano seco",
+      "descripcion": "El orégano seco es un condimento que contienen 11 gramos de proteínas, 21,63 gramos de carbohidratos, 10,25 gramos de grasa y 21,63 gramos de azúcar por cada 100 gramos, aportando 308 calorias a la dieta."
+    },
+    {
+      "actual": "Finas Hierbas",
+      "fuente": "Finas Hierbas",
+      "descripcion": "Estas hierbas se utilizan como especias y condimentos por sus características organolépticas, que brindan a los alimentos y bebidas aromas, colores y sabores, que los hacen más apetitosos al olfato, vista y paladar."
+    },
+    {
+      "actual": "Curcuma",
+      "fuente": "Curcuma",
+      "descripcion": "es una especia sabrosa que es nutritiva para consumir, también se ha utilizado tradicionalmente en la medicina ayurvédica y china para tratar la inflamación, enfermedades de la piel, heridas, dolencias digestivas y condiciones hepáticas."
+    },
+    {
+      "actual": "Canela",
+      "fuente": "Canela",
+      "descripcion": "mejora las digestiones y ayuda a prevenir los resfriados, ya que es expectorante y posee propiedades analgésicas."
+    },
+    {
+      "actual": "Canela Polvo",
+      "fuente": "Canela Polvo",
+      "descripcion": "mejora las digestiones y ayuda a prevenir los resfriados, ya que es expectorante y posee propiedades analgésicas."
+    },
+    {
+      "actual": "Ajo Polvo",
+      "fuente": "Ajo Polvo",
+      "descripcion": "Se emplea para aromatizar una elaboración, pero también es muy utilizado en la elaboración de embutidos al tratarse de un potente conservante"
+    },
+    {
+      "actual": "Bicarbonato",
+      "fuente": "Bicarbonato",
+      "descripcion": "es un antiácido usado para aliviar la pirosis (acidez estomacal) y la indigestión ácida"
+    },
+    {
+      "actual": "Achiote polvo",
+      "fuente": "Achiote polvo",
+      "descripcion": "es un colorante natural, también llamado anatto, onoto o bijol, el cual se obtiene de un árbol pequeño que da un fruto oval y carnoso y cuyas semillas dan lugar a la especia. Éstas son comestibles y se usan en algunos países como sustituto del azafrán para condimentar y dar color a los platillos."
+    },
+    {
+      "actual": "Tomillo Seco",
+      "fuente": "Tomillo Seco",
+      "descripcion": "Por sus propiedades antiespasmódica, expectorante y antiséptica, el tomillo está especialmente indicado en el tratamiento de ciertas afecciones de las vías respiratorias altas, particularmente las que cursan con tos irritativa, laringitis, bronquitis, asma, enfisema y gripe."
+    },
+    {
+      "actual": "Laurel seco",
+      "fuente": "Laurel seco",
+      "descripcion": "Puede ayudar a aliviar los cólicos, problemas estomacales y a eliminar los gases intestinales, combatiendo así la aerofagia."
+    },
+    {
+      "actual": "Albahaca seca",
+      "fuente": "Albahaca seca",
+      "descripcion": "puede utilizarse para aromatizar platos crudos o cocidos, por ejemplo, ensaladas, salsas, adobos, pizzas, pasta, verduras u hortalizas crudas (por ejemplo, tomate), pestos de hierbas, sopas o salsas."
+    },
+    {
+      "actual": "Jengibre Polvo",
+      "fuente": "Jengibre Polvo",
+      "descripcion": "funciona como protector del sistema digestivo, además de antidiarreico debido a que aumenta la proporción de bacterias beneficiosas. También favorece la circulación sanguínea, ayuda a prevenir la gripe y los resfriados, y es hipocolesterolemiante, antiinflamatorio y analgésico natural."
+    },
+    {
+      "actual": "Stevia Hoja",
+      "fuente": "Stevia Hoja",
+      "descripcion": "La Stevia es probablemente el endulzante natural más popular. Dentro de las propiedades principales que la destacan se encuentran: su soporte a la diabetes, al control de peso y la reducción de la presión arterial."
+    },
+    {
+      "actual": "Moringa",
+      "fuente": "Moringa",
+      "descripcion": "podrían ayudar a tratar algunos trastornos estomacales, como la constipación, la gastritis y la colitis ulcerosa"
+    },
+    {
+      "actual": "Pimienta Pepas",
+      "fuente": "Pimienta Pepas",
+      "descripcion": "puede ayudarte a adelgazar, mejorar la digestión, aliviar la tos y el resfriado, acelerar el metabolismo y tratar problemas dermatológicos."
+    },
+    {
+      "actual": "Paprika",
+      "fuente": "Paprika",
+      "descripcion": "La paprika es un condimento en polvo obtenido al moler pimientos rojos secos para sazonar distintos platos."
+    },
+    {
+      "actual": "Pimienta Cayena",
+      "fuente": "Pimienta Cayena",
+      "descripcion": "es un maravilloso anti-inflamatorio y puede servir para aliviar alergias"
+    },
+    {
+      "actual": "Comino pepa",
+      "fuente": "Comino pepa",
+      "descripcion": "Es una especia muy utilizada en la gastronomía como un digestivo, además de darle un olor y sabor único a los platos."
+    },
+    {
+      "actual": "Ajo pelado importado",
+      "fuente": "Ajo pelado importado",
+      "descripcion": "Producto listo para usar en diversas preparaciones culinarias."
+    },
+    {
+      "actual": "Guasca seca",
+      "fuente": "Guasca seca",
+      "descripcion": "Esta hierba se usa principalmente para sazonar el ajiaco, también tiene propiedades cicatrizantes y antiinflamatorias."
+    },
+    {
+      "actual": "Ajonjolí tostado",
+      "fuente": "Ajonjolí tostado",
+      "descripcion": "El ajonjolí ayuda a combatir el colesterol malo, siendo combatiente de las enfermedades del corazón y la prevención de las mismas."
+    }
+  ],
+  "coincidenciasParciales": [
+    {
+      "actual": "Caja de 12 unidades Premium",
+      "posibles": [
+        {
+          "nombre": "Aguacate Hass Caja Premium (Promo)",
+          "desc": "Caja de aguacates Hass Premium pinto y maduro. Pro..."
+        },
+        {
+          "nombre": "Fresas premium",
+          "desc": "La fresa es una abundante fuente de vitamina C, qu..."
+        }
+      ]
+    },
+    {
+      "actual": "Caja de 7 unidades injerto",
+      "posibles": [
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Aguacate Maya Injerto (Promoción)",
+          "desc": "3 unidades de variedad injerto en tres estados de ..."
+        }
+      ]
+    },
+    {
+      "actual": "Caja promoción del día",
+      "posibles": [
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Aguacate Maya Injerto (Promoción)",
+          "desc": "3 unidades de variedad injerto en tres estados de ..."
+        }
+      ]
+    },
+    {
+      "actual": "Maya injerto promoción",
+      "posibles": [
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Aguacate Maya Injerto (Promoción)",
+          "desc": "3 unidades de variedad injerto en tres estados de ..."
+        }
+      ]
+    },
+    {
+      "actual": "Combo Ahorro #2",
+      "posibles": [
+        {
+          "nombre": "Combo Ahorro #2 Más",
+          "desc": "Combo que incluye 1 caja de aguacates x 24 unidade..."
+        },
+        {
+          "nombre": "Combo Ahorro #1",
+          "desc": "1.000gr de fresas premium + 900gr de kiwis premium..."
+        },
+        {
+          "nombre": "Combo Ahorro #3",
+          "desc": "Fresas premium X 500grs, Arándanos x 250, Paquete ..."
+        },
+        {
+          "nombre": "Nuevo combo 4",
+          "desc": "Arándanos x 250 grs, Fresas 1000gr, Caja de 24 uni..."
+        },
+        {
+          "nombre": "Combo Mercado Semanal Completo",
+          "desc": "Qué Incluye: Envío gratis, Caja de 24 aguacates ha..."
+        }
+      ]
+    },
+    {
+      "actual": "Paquete X 12 Unidades baby",
+      "posibles": [
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Paquete x 8 unidades mediano",
+      "posibles": [
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Paquete x4 unidades premium",
+      "posibles": [
+        {
+          "nombre": "Aguacate Hass Caja Premium (Promo)",
+          "desc": "Caja de aguacates Hass Premium pinto y maduro. Pro..."
+        },
+        {
+          "nombre": "Fresas premium",
+          "desc": "La fresa es una abundante fuente de vitamina C, qu..."
+        },
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Paquete 4 Unidades injerto",
+      "posibles": [
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Aguacate Maya Injerto (Promoción)",
+          "desc": "3 unidades de variedad injerto en tres estados de ..."
+        },
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Nueva Maya paquete x 8 Mediano",
+      "posibles": [
+        {
+          "nombre": "Aguacate Hass Nueva Maya",
+          "desc": "Aguacate Hass en tres estados de maduración median..."
+        },
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Nueva Maya paquete x 7 premium",
+      "posibles": [
+        {
+          "nombre": "Aguacate Hass Nueva Maya",
+          "desc": "Aguacate Hass en tres estados de maduración median..."
+        },
+        {
+          "nombre": "Aguacate Hass Caja Premium (Promo)",
+          "desc": "Caja de aguacates Hass Premium pinto y maduro. Pro..."
+        },
+        {
+          "nombre": "Fresas premium",
+          "desc": "La fresa es una abundante fuente de vitamina C, qu..."
+        },
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Promo paga 2 lleva tres",
+      "posibles": [
+        {
+          "nombre": "Aguacate Hass Caja Premium (Promo)",
+          "desc": "Caja de aguacates Hass Premium pinto y maduro. Pro..."
+        },
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Aguacate Maya Injerto (Promoción)",
+          "desc": "3 unidades de variedad injerto en tres estados de ..."
+        }
+      ]
+    },
+    {
+      "actual": "Toronja x1kilo",
+      "posibles": [
+        {
+          "nombre": "Toronja",
+          "desc": "..."
+        }
+      ]
+    },
+    {
+      "actual": "Zumo cereza concentrado",
+      "posibles": [
+        {
+          "nombre": "Cerezas",
+          "desc": "Las cerezas son una fruta rica en antioxidantes co..."
+        },
+        {
+          "nombre": "Zumo Limón concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Mango concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Coco concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Lulo concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumocereza concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        }
+      ]
+    },
+    {
+      "actual": "Zumo maracuya concentrado",
+      "posibles": [
+        {
+          "nombre": "Zumo Limón concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Mango concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Coco concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Lulo concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumocereza concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumomaracuya concentr",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        }
+      ]
+    },
+    {
+      "actual": "Zumo Naranja concentrado",
+      "posibles": [
+        {
+          "nombre": "Naranja valencia",
+          "desc": "Las Naranjas Son ricas en calcio, que protege los ..."
+        },
+        {
+          "nombre": "Zumo Limón concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Mango concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Coco concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumo Lulo concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "Zumocereza concentrado",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        },
+        {
+          "nombre": "ZumoNaranja concentr",
+          "desc": "Concentrado líquido para preparar bebidas sabor a ..."
+        }
+      ]
+    },
+    {
+      "actual": "Germinados Cilantro",
+      "posibles": [
+        {
+          "nombre": "Cilantro",
+          "desc": "Cilantro fresco por paquete...."
+        },
+        {
+          "nombre": "Germinados",
+          "desc": "Germinados de Remolacha Cilantro Cebollin Repollo ..."
+        }
+      ]
+    },
+    {
+      "actual": "Germinados Remolacha",
+      "posibles": [
+        {
+          "nombre": "Germinados",
+          "desc": "Germinados de Remolacha Cilantro Cebollin Repollo ..."
+        },
+        {
+          "nombre": "Remolacha",
+          "desc": "Es un potente anticancerígeno. Controla la tensión..."
+        }
+      ]
+    },
+    {
+      "actual": "Germinados Alfalfa",
+      "posibles": [
+        {
+          "nombre": "Germinados",
+          "desc": "Germinados de Remolacha Cilantro Cebollin Repollo ..."
+        }
+      ]
+    },
+    {
+      "actual": "Germinados Repollo",
+      "posibles": [
+        {
+          "nombre": "Germinados",
+          "desc": "Germinados de Remolacha Cilantro Cebollin Repollo ..."
+        },
+        {
+          "nombre": "Repollo unidad",
+          "desc": "Repollo unidad de 1200 grs Aprox..."
+        }
+      ]
+    },
+    {
+      "actual": "Germinados Rábano",
+      "posibles": [
+        {
+          "nombre": "Germinados",
+          "desc": "Germinados de Remolacha Cilantro Cebollin Repollo ..."
+        }
+      ]
+    },
+    {
+      "actual": "Ají guajillo x50 g",
+      "posibles": [
+        {
+          "nombre": "Ají guajillo",
+          "desc": "El ají guajillo aporta vitaminas y antioxidantes, ..."
+        }
+      ]
+    },
+    {
+      "actual": "Ají chipotle x 50 g",
+      "posibles": [
+        {
+          "nombre": "Ají chipotle",
+          "desc": "El ají chipotle ayuda a aliviar el dolor, mejora l..."
+        }
+      ]
+    },
+    {
+      "actual": "Ají ancho x 50g",
+      "posibles": [
+        {
+          "nombre": "Ají ancho",
+          "desc": "El ají ancho es rico en vitaminas A y C, mejora la..."
+        }
+      ]
+    },
+    {
+      "actual": "Sábila hoja",
+      "posibles": [
+        {
+          "nombre": "Sábila",
+          "desc": "La sábila es útil para afecciones de la piel y que..."
+        }
+      ]
+    },
+    {
+      "actual": "Frambuesa Europea",
+      "posibles": [
+        {
+          "nombre": "Frambuesas silvestres Org",
+          "desc": "Su ciclo de vida es muy corto 1-2 días Las frambue..."
+        },
+        {
+          "nombre": "Frambuesas Amarillas",
+          "desc": "Frambuesas Amarillas..."
+        }
+      ]
+    },
+    {
+      "actual": "Red globe nacional",
+      "posibles": [
+        {
+          "nombre": "Uva red globe nacional",
+          "desc": "Uva red globe nacional..."
+        },
+        {
+          "nombre": "Pera Nacional",
+          "desc": "Por su bajo contenido en sodio e hidratos de carbo..."
+        },
+        {
+          "nombre": "Ciruela nacional",
+          "desc": "La ciruela es considerada una fruta cítrica que ap..."
+        },
+        {
+          "nombre": "Ajo Nacional",
+          "desc": "El Ajo tiene entre sus propiedades medicinales nat..."
+        }
+      ]
+    },
+    {
+      "actual": "Mangostinos kilo",
+      "posibles": [
+        {
+          "nombre": "Mangostinos",
+          "desc": "El mangostino Fortalece el sistema inmune, muy nec..."
+        }
+      ]
+    },
+    {
+      "actual": "Manzana roja Bandeja",
+      "posibles": [
+        {
+          "nombre": "Ciruela importada bandeja",
+          "desc": "La ciruelas son una fruta ricas en fibra, poseen g..."
+        },
+        {
+          "nombre": "Manzana roja",
+          "desc": "Ayudan a purificar la sangre, a limpiar el intesti..."
+        },
+        {
+          "nombre": "Manzana verde",
+          "desc": "La manzana verde es uno de los mejores alimentos p..."
+        },
+        {
+          "nombre": "Manzana combinada",
+          "desc": "Previene el estreñimiento. Su alto contenido en fi..."
+        },
+        {
+          "nombre": "Manzana de Agua",
+          "desc": "..."
+        },
+        {
+          "nombre": "Yacon bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Guisantes Bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Jalapeños bandeja",
+          "desc": "Fuente de Vitaminas. ... Quema de calorías. ... Ma..."
+        },
+        {
+          "nombre": "Champiñones tajados bandeja",
+          "desc": "el champiñón es fuente de vitaminas del Grupo B y ..."
+        },
+        {
+          "nombre": "Apio tallos bandeja",
+          "desc": "Tallos de de apio bandeja..."
+        },
+        {
+          "nombre": "Rugula Bandeja",
+          "desc": "Rugula Bandeja x 150 grs Aprox..."
+        }
+      ]
+    },
+    {
+      "actual": "Manzana verde Bandeja",
+      "posibles": [
+        {
+          "nombre": "Ciruela importada bandeja",
+          "desc": "La ciruelas son una fruta ricas en fibra, poseen g..."
+        },
+        {
+          "nombre": "Uva verde importada sin semilla",
+          "desc": "Uva verde importada sin semilla..."
+        },
+        {
+          "nombre": "Manzana roja",
+          "desc": "Ayudan a purificar la sangre, a limpiar el intesti..."
+        },
+        {
+          "nombre": "Manzana verde",
+          "desc": "La manzana verde es uno de los mejores alimentos p..."
+        },
+        {
+          "nombre": "Manzana combinada",
+          "desc": "Previene el estreñimiento. Su alto contenido en fi..."
+        },
+        {
+          "nombre": "Manzana de Agua",
+          "desc": "..."
+        },
+        {
+          "nombre": "Yacon bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Guisantes Bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Jalapeños bandeja",
+          "desc": "Fuente de Vitaminas. ... Quema de calorías. ... Ma..."
+        },
+        {
+          "nombre": "Champiñones tajados bandeja",
+          "desc": "el champiñón es fuente de vitaminas del Grupo B y ..."
+        },
+        {
+          "nombre": "Zucchini verde",
+          "desc": "La fibra de esta hortaliza ayuda a prevenir el est..."
+        },
+        {
+          "nombre": "Apio tallos bandeja",
+          "desc": "Tallos de de apio bandeja..."
+        },
+        {
+          "nombre": "Rugula Bandeja",
+          "desc": "Rugula Bandeja x 150 grs Aprox..."
+        }
+      ]
+    },
+    {
+      "actual": "Manzana bandeja combinada",
+      "posibles": [
+        {
+          "nombre": "Ciruela importada bandeja",
+          "desc": "La ciruelas son una fruta ricas en fibra, poseen g..."
+        },
+        {
+          "nombre": "Manzana roja",
+          "desc": "Ayudan a purificar la sangre, a limpiar el intesti..."
+        },
+        {
+          "nombre": "Manzana verde",
+          "desc": "La manzana verde es uno de los mejores alimentos p..."
+        },
+        {
+          "nombre": "Manzana combinada",
+          "desc": "Previene el estreñimiento. Su alto contenido en fi..."
+        },
+        {
+          "nombre": "Manzana de Agua",
+          "desc": "..."
+        },
+        {
+          "nombre": "Yacon bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Guisantes Bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Jalapeños bandeja",
+          "desc": "Fuente de Vitaminas. ... Quema de calorías. ... Ma..."
+        },
+        {
+          "nombre": "Champiñones tajados bandeja",
+          "desc": "el champiñón es fuente de vitaminas del Grupo B y ..."
+        },
+        {
+          "nombre": "Apio tallos bandeja",
+          "desc": "Tallos de de apio bandeja..."
+        },
+        {
+          "nombre": "Rugula Bandeja",
+          "desc": "Rugula Bandeja x 150 grs Aprox..."
+        }
+      ]
+    },
+    {
+      "actual": "Banano criollo Kilo",
+      "posibles": [
+        {
+          "nombre": "Aguacate Criollo o Injerto (Caja Promoción del Día)",
+          "desc": "Caja de 6-8 unidades de aguacate criollo o injerto..."
+        },
+        {
+          "nombre": "Banano criollo",
+          "desc": "Fuente de carbohidratos. Gran aporte de vitaminas...."
+        },
+        {
+          "nombre": "Banano bocadillo",
+          "desc": "Fuente de carbohidratos. Gran aporte de vitaminas...."
+        }
+      ]
+    },
+    {
+      "actual": "Banano bocadillo kilo",
+      "posibles": [
+        {
+          "nombre": "Banano criollo",
+          "desc": "Fuente de carbohidratos. Gran aporte de vitaminas...."
+        },
+        {
+          "nombre": "Banano bocadillo",
+          "desc": "Fuente de carbohidratos. Gran aporte de vitaminas...."
+        }
+      ]
+    },
+    {
+      "actual": "Pitahaya morada kilo",
+      "posibles": [
+        {
+          "nombre": "Pitahaya morada",
+          "desc": "En Taiwán, utilizan su fruta para mejorar los nive..."
+        },
+        {
+          "nombre": "Lechuga morada",
+          "desc": "La lechuga morada es baja en sodio y en calorías, ..."
+        }
+      ]
+    },
+    {
+      "actual": "Toronja x1000 grs",
+      "posibles": [
+        {
+          "nombre": "Toronja",
+          "desc": "..."
+        }
+      ]
+    },
+    {
+      "actual": "Platano verde x 4 Unidades",
+      "posibles": [
+        {
+          "nombre": "Uva verde importada sin semilla",
+          "desc": "Uva verde importada sin semilla..."
+        },
+        {
+          "nombre": "Manzana verde",
+          "desc": "La manzana verde es uno de los mejores alimentos p..."
+        },
+        {
+          "nombre": "Platano",
+          "desc": "Mejorar el funcionamiento del intestino. Prevenir ..."
+        },
+        {
+          "nombre": "Zucchini verde",
+          "desc": "La fibra de esta hortaliza ayuda a prevenir el est..."
+        }
+      ]
+    },
+    {
+      "actual": "Col bruselas",
+      "posibles": [
+        {
+          "nombre": "Col bruselas(repollitas)",
+          "desc": "Las coles de Bruselas están repletas de vitaminas,..."
+        }
+      ]
+    },
+    {
+      "actual": "Rabanos x Bandeja",
+      "posibles": [
+        {
+          "nombre": "Ciruela importada bandeja",
+          "desc": "La ciruelas son una fruta ricas en fibra, poseen g..."
+        },
+        {
+          "nombre": "Yacon bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Guisantes Bandeja",
+          "desc": "..."
+        },
+        {
+          "nombre": "Jalapeños bandeja",
+          "desc": "Fuente de Vitaminas. ... Quema de calorías. ... Ma..."
+        },
+        {
+          "nombre": "Champiñones tajados bandeja",
+          "desc": "el champiñón es fuente de vitaminas del Grupo B y ..."
+        },
+        {
+          "nombre": "Apio tallos bandeja",
+          "desc": "Tallos de de apio bandeja..."
+        },
+        {
+          "nombre": "Rabanos",
+          "desc": "..."
+        },
+        {
+          "nombre": "Rugula Bandeja",
+          "desc": "Rugula Bandeja x 150 grs Aprox..."
+        }
+      ]
+    },
+    {
+      "actual": "Espinaca paquete x1 Kilo",
+      "posibles": [
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        },
+        {
+          "nombre": "Espinaca",
+          "desc": "Paquete de espinaca fresca...."
+        }
+      ]
+    },
+    {
+      "actual": "Cilantro fresco paquete",
+      "posibles": [
+        {
+          "nombre": "Manzanilla paquete",
+          "desc": "La manzanilla se usa como remedio para dolores est..."
+        },
+        {
+          "nombre": "Cilantro",
+          "desc": "Cilantro fresco por paquete...."
+        },
+        {
+          "nombre": "Apio Entero paquete",
+          "desc": "El apio, rico en fibra, es también un excelente re..."
+        }
+      ]
+    },
+    {
+      "actual": "Semillas Linaza",
+      "posibles": [
+        {
+          "nombre": "Semillas de quinoa",
+          "desc": "Tiene más proteína que cualquier cereal. Es ideal ..."
+        },
+        {
+          "nombre": "Semillas de Chía",
+          "desc": "Beneficios de la Chía Son ricas en antioxidantes. ..."
+        },
+        {
+          "nombre": "Semillas de Linaza",
+          "desc": "Las semillas de linaza contienen fibra, vitaminas,..."
+        }
+      ]
+    },
+    {
+      "actual": "Flor de Jamaica Extra",
+      "posibles": [
+        {
+          "nombre": "Flor de Jamaica",
+          "desc": "Los usos tradicionales de esta planta son muy vari..."
+        }
+      ]
+    }
+  ],
+  "sinCoincidencia": [
+    "Caja de 24 unidades hass mediano",
+    "Caja de 35 unidades hass baby",
+    "Ancheta regalo",
+    "Cebollin"
+  ]
+}

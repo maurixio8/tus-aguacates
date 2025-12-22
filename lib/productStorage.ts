@@ -2,80 +2,59 @@
 // Sistema unificado de almacenamiento de productos
 
 import { supabase } from './supabase';
+import type { UnifiedProduct, UnifiedProductVariant } from './types';
 
-export interface ProductVariant {
-  id: string;
-  product_id: string;
-  variant_name: string;
-  variant_value: string;
-  price_adjustment: number;
-  is_active: boolean;
-  stock_quantity?: number;
-  created_at?: string;
-  updated_at?: string;
-}
+// Re-exportar para compatibilidad
+export type Product = UnifiedProduct;
+export type ProductVariant = UnifiedProductVariant;
 
-export interface Product {
-  // ✅ REQUERIDOS (mínimo necesario):
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-
-  // ✅ OPCIONALES (todos con '?'):
-  category?: string;
-  category_id?: string;
-  discount_price?: number;
-  unit?: string;
-  weight?: number;
-  min_quantity?: number;
-  main_image_url?: string;
-  image?: string;
-  images?: string[];
-  stock?: number;
-  reserved_stock?: number;
-  is_featured?: boolean;
-  is_organic?: boolean;
-  is_active?: boolean;
-  benefits?: string[];
-  rating?: number;
-  review_count?: number;
-  slug?: string;
-  sku?: string;
-  created_at?: string;
-  updated_at?: string;
-  variants?: ProductVariant[];
-  hasVariants?: boolean;
-  base_price?: number;
-}
+// 🔇 Flag para controlar logging - desactivado en producción para mejorar rendimiento
+const DEBUG = process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_DEBUG_PRODUCTS === 'true';
+const log = (...args: unknown[]): void => { if (DEBUG) console.log(...args); };
 
 // Productos por defecto si no hay datos guardados
-const DEFAULT_PRODUCTS: Product[] = [];
+const DEFAULT_PRODUCTS: UnifiedProduct[] = [];
 
-export const getDefaultProducts = (): Product[] => {
+export const getDefaultProducts = (): UnifiedProduct[] => {
   return DEFAULT_PRODUCTS;
 };
 
 // ✅ ÚNICA FUENTE DE VERDAD: productos tus_aguacates.json (217 productos)
-const loadProductsFromJSON = async (): Promise<Product[]> => {
+const loadProductsFromJSON = async (): Promise<UnifiedProduct[]> => {
   try {
-    console.log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
+    log('📦 Cargando 217 PRODUCTOS desde productos tus_aguacates.json...');
 
-    const response = await fetch('/productos tus_aguacates.json');
-    if (!response.ok) {
-      throw new Error('No se pudo cargar el JSON de productos');
+    let jsonData;
+
+    // Detectar si estamos en servidor (Node.js) o cliente (browser)
+    if (typeof window === 'undefined') {
+      // Servidor: leer del filesystem usando imports dinámicos
+      const fs = await import('fs');
+      const path = await import('path');
+      const filePath = path.join(process.cwd(), 'public', 'productos tus_aguacates.json');
+      const fileContent = fs.readFileSync(filePath, 'utf-8');
+      jsonData = JSON.parse(fileContent);
+      log('✅ JSON cargado desde filesystem (servidor)');
+    } else {
+      // Cliente: usar fetch
+      const response = await fetch('/productos tus_aguacates.json');
+      if (!response.ok) {
+        throw new Error('No se pudo cargar el JSON de productos');
+      }
+      jsonData = await response.json();
+      log('✅ JSON cargado desde fetch (cliente)');
     }
 
-    const jsonData = await response.json();
-    console.log('✅ JSON cargado exitosamente');
-
-    const products: Product[] = [];
+    const products: UnifiedProduct[] = [];
     let productId = 1;
+
+    // No generar URLs de imágenes - dejar que ProductImagePlaceholder maneje los placeholders
+    // Las imágenes de productos no existen en Supabase Storage actualmente
 
     // Procesar cada categoría del JSON
     for (const category of jsonData.categories || []) {
       const categoryName = category.name || 'General';
-      console.log(`📦 Procesando categoría: ${categoryName}`);
+      log(`📦 Procesando categoría: ${categoryName}`);
 
       // ✅ LEER CADA PRODUCTO TAL CUAL
       for (const product of category.products || []) {
@@ -92,7 +71,8 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
           description: description,
           price: basePrice,
           category: categoryName,
-          image: '',
+          image: '', // Dejar vacío para que ProductImagePlaceholder maneje el placeholder
+          main_image_url: '', // Dejar vacío para que ProductImagePlaceholder maneje el placeholder
           is_active: true,
           stock: 100,
           unit: 'unidad',
@@ -115,7 +95,7 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
       }
     }
 
-    console.log(`✅ ${products.length} productos cargados exitosamente`);
+    log(`✅ ${products.length} productos cargados exitosamente`);
     return products;
 
   } catch (error) {
@@ -125,7 +105,17 @@ const loadProductsFromJSON = async (): Promise<Product[]> => {
 };
 
 
-export const getProducts = async (): Promise<Product[]> => {
+export const getProducts = async (): Promise<UnifiedProduct[]> => {
+  // 0. Sincronizar con Supabase primero para asegurar datos actualizados
+  try {
+    // Intentar sincronizar en segundo plano para no bloquear la carga
+    syncSupabaseToLocal().catch(err => {
+      log('⚠️ Error en sincronización automática:', err);
+    });
+  } catch (error) {
+    log('⚠️ No se pudo sincronizar con Supabase:', error);
+  }
+
   // 1. Cargar SIEMPRE el catálogo base completo (217+ productos)
   const baseProducts = await loadProductsFromJSON();
 
@@ -134,7 +124,7 @@ export const getProducts = async (): Promise<Product[]> => {
 
   // 3. Si hay datos locales, realizar FUSIÓN INTELIGENTE
   if (localProducts.length > 0 && baseProducts.length > 0) {
-    console.log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
+    log(`🔄 Fusionando: ${baseProducts.length} productos base con actualizaciones locales`);
 
     // Helper para normalizar nombres
     const normalize = (str: string) => str.trim().toLowerCase();
@@ -145,10 +135,10 @@ export const getProducts = async (): Promise<Product[]> => {
         const idMatch = lp.id === baseProd.id;
         const nameMatch = normalize(lp.name) === normalize(baseProd.name);
 
-        // Debug para el primer producto si falla
-        if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
-          console.log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
-        }
+        // Debug comentado para evitar spam en consola
+        // if (!idMatch && !nameMatch && baseProd.id === 'product-1') {
+        //   log(`🔍 Comparando: '${normalize(baseProd.name)}' (Base) vs '${normalize(lp.name)}' (Local)`);
+        // }
 
         return idMatch || nameMatch;
       });
@@ -161,10 +151,12 @@ export const getProducts = async (): Promise<Product[]> => {
           image: localMatch.image || localMatch.main_image_url || baseProd.image,
           main_image_url: localMatch.main_image_url || localMatch.image || baseProd.main_image_url,
 
-          // Actualizar otros campos si cambiaron
-          is_active: localMatch.is_active ?? baseProd.is_active,
+          // ✅ IMPORTANTE: Supabase (local) tiene prioridad sobre el JSON base
+          is_active: localMatch.is_active !== undefined ? localMatch.is_active : baseProd.is_active,
           price: localMatch.price || baseProd.price,
-          description: localMatch.description || baseProd.description,
+          // ✅ FIX: Priorizar descripción del JSON base (tiene las descripciones completas)
+          // Solo usar la de Supabase si el JSON no tiene descripción
+          description: baseProd.description || localMatch.description,
           // Si local tiene UUID y base tiene ID simple, podríamos querer guardar el UUID para futuras referencias,
           // pero por ahora mantenemos el ID base para no romper referencias de UI si usan índices.
         };
@@ -184,7 +176,7 @@ export const getProducts = async (): Promise<Product[]> => {
     });
 
     if (newLocalProducts.length > 0) {
-      console.log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
+      log(`➕ Agregando ${newLocalProducts.length} productos nuevos creados localmente`);
       return [...mergedProducts, ...newLocalProducts];
     }
 
@@ -193,21 +185,21 @@ export const getProducts = async (): Promise<Product[]> => {
 
   // Fallbacks simples si una fuente falla
   if (baseProducts.length > 0) {
-    console.log('⚠️ Usando solo JSON base (sin datos locales)');
+    log('⚠️ Usando solo JSON base (sin datos locales)');
     return baseProducts;
   }
 
   if (localProducts.length > 0) {
-    console.log('⚠️ Usando solo LocalStorage (JSON falló)');
+    log('⚠️ Usando solo LocalStorage (JSON falló)');
     return localProducts;
   }
 
-  console.log('❌ No se pudieron cargar productos de ninguna fuente');
+  log('❌ No se pudieron cargar productos de ninguna fuente');
   return DEFAULT_PRODUCTS;
 };
 
 // Versión síncrona para el admin que solo lee del localStorage
-export const getProductsSync = (): Product[] => {
+export const getProductsSync = (): UnifiedProduct[] => {
   if (typeof window === 'undefined') return DEFAULT_PRODUCTS;
 
   const saved = localStorage.getItem('tus_aguacates_products');
@@ -216,31 +208,31 @@ export const getProductsSync = (): Product[] => {
       const parsed = JSON.parse(saved);
       return parsed;
     } catch (e) {
-      console.log('⚠️ Error al leer localStorage');
+      log('⚠️ Error al leer localStorage');
     }
   }
 
   return DEFAULT_PRODUCTS;
 };
 
-export const saveProducts = (products: Product[]): void => {
+export const saveProducts = (products: UnifiedProduct[]): void => {
   if (typeof window === 'undefined') return;
 
   try {
     localStorage.setItem('tus_aguacates_products', JSON.stringify(products));
-    console.log('💾 Productos guardados en localStorage compartido:', products.length);
+    log('💾 Productos guardados en localStorage compartido:', products.length);
   } catch (e) {
     console.error('❌ Error al guardar productos en localStorage:', e);
   }
 };
 
-export const updateProductImage = (productId: string, imageData: string): Product[] => {
+export const updateProductImage = (productId: string, imageData: string): UnifiedProduct[] => {
   const products = getProductsSync();
   const updated = products.map(p =>
     p.id === productId ? { ...p, image: imageData } : p
   );
   saveProducts(updated);
-  console.log('✅ Imagen actualizada para producto ID:', productId);
+  log('✅ Imagen actualizada para producto ID:', productId);
   return updated;
 };
 
@@ -265,20 +257,38 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
   }
 };
 
-export const getProductsByCategory = async (categorySlugOrName: string): Promise<Product[]> => {
+export const getProductsByCategory = async (categorySlugOrName: string): Promise<UnifiedProduct[]> => {
   try {
-    console.log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
+    log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
 
     // Si es "todos", cargar todos los productos
     if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
-      console.log(`📦 Modo "todos": cargando TODOS los productos`);
+      log(`📦 Modo "todos": cargando TODOS los productos`);
       const allProducts = await getProducts();
-      return allProducts.filter(p => p.is_active !== false);
+      return allProducts.filter(p => p.is_active === true);
     }
 
     // Obtener todos los productos
     const allProducts = await getProducts();
-    console.log(`✅ Total de ${allProducts.length} productos cargados`);
+    log(`✅ Total de ${allProducts.length} productos cargados`);
+
+    // 🔥 CASO ESPECIAL: Categoría "ofertas-combos" muestra combos y productos con descuento
+    if (categorySlugOrName === 'ofertas-combos') {
+      log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
+      const ofertasProducts = allProducts.filter(p => {
+        if (p.is_active === false) return false;
+
+        // Productos con "combo" en el nombre
+        const isCombo = p.name.toLowerCase().includes('combo');
+
+        // Productos con precio de descuento
+        const hasDiscount = p.discount_price && p.discount_price < p.price;
+
+        return isCombo || hasDiscount;
+      });
+      log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
+      return ofertasProducts;
+    }
 
     // ✅ Mapeo FLEXIBLE con múltiples variaciones posibles del nombre
     const categoryNameMap: { [key: string]: string[] } = {
@@ -289,7 +299,8 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       'saludables': ['🍯🥜 SALUDABLES', 'SALUDABLES', 'Saludables'],
       'especias': ['🥗🌱☘️ Especias', 'Especias', 'Especias y Condimentos', 'Especias y Hierbas'],
       'desgranados': ['🌽 Desgranados', 'Desgranados'],
-      'gourmet': ['🍅🌽 Gourmet', 'Gourmet']
+      'gourmet': ['🍅🌽 Gourmet', 'Gourmet'],
+      'productos-nuevos': ['✨ PRODUCTOS NUEVOS', 'PRODUCTOS NUEVOS', 'Productos Nuevos', 'Nuevos']
     };
 
     // Determinar si es un slug o un nombre
@@ -301,7 +312,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
     if (!isSlug) {
       // Es un nombre con posibles emojis/espacios
-      console.log(`📝 Detectado como NOMBRE (no slug): "${categorySlugOrName}"`);
+      log(`📝 Detectado como NOMBRE (no slug): "${categorySlugOrName}"`);
 
       // Obtener categorías de Supabase para mapeo
       const { data: supabaseCategories } = await supabase
@@ -312,7 +323,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       if (supabaseCategories && supabaseCategories.length > 0) {
         // Limpiar emojis y espacios
         const cleanInput = categorySlugOrName.replace(/[\p{Emoji}]/gu, '').trim().toLowerCase();
-        console.log(`  Nombre limpio: "${cleanInput}"`);
+        log(`  Nombre limpio: "${cleanInput}"`);
 
         const match = supabaseCategories.find(cat =>
           cat.name.toLowerCase().includes(cleanInput) ||
@@ -321,11 +332,11 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
         if (match) {
           targetSlug = match.slug;
-          console.log(`✅ Encontrado en Supabase: "${match.name}" -> slug: "${targetSlug}"`);
+          log(`✅ Encontrado en Supabase: "${match.name}" -> slug: "${targetSlug}"`);
         }
       }
     } else {
-      console.log(`✅ Detectado como SLUG: "${categorySlugOrName}"`);
+      log(`✅ Detectado como SLUG: "${categorySlugOrName}"`);
     }
 
     const possibleCategoryNames = categoryNameMap[targetSlug];
@@ -336,7 +347,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       return [];
     }
 
-    console.log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
+    log(`🔎 Buscando productos en categorías: ${possibleCategoryNames.join(', ')}`);
 
     // ✅ Función helper para limpiar y comparar nombres de categoría
     const cleanCategoryName = (name: string): string => {
@@ -364,7 +375,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       });
     });
 
-    console.log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
+    log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
 
     return filteredProducts;
 
@@ -409,27 +420,26 @@ export const slugToCategory = (slug: string): string => {
 // Sincroniza datos de Supabase a localStorage como única fuente de verdad
 export const syncSupabaseToLocal = async (): Promise<boolean> => {
   try {
-    console.log('🔄 Starting Supabase to localStorage sync...');
+    log('🔄 Starting Supabase to localStorage sync...');
 
-    // 1. Obtener datos de Supabase
+    // 1. Obtener datos de Supabase (TODOS los productos, no solo activos)
+    // ⚠️ IMPORTANTE: Traer todos los productos para sincronizar correctamente los estados is_active
     const { data: supabaseProducts, error } = await supabase
       .from('products')
-      .select('*')
-      .eq('is_active', true);
+      .select('*');
 
     if (error) {
       console.error('❌ Error fetching from Supabase:', error);
       return false;
     }
 
-    console.log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
+    log(`📊 Found ${supabaseProducts?.length || 0} products in Supabase`);
 
-    // 2. Obtener datos actuales de localStorage
-    const localProducts = await getProducts();
-    console.log(`📦 Found ${localProducts.length} products in localStorage`);
+    // 2. Obtener datos actuales de localStorage (SIN llamar getProducts para evitar loop)
+    const localProducts = getProductsSync();
 
     // 3. Mapear y combinar datos
-    let mergedProducts: Product[] = [];
+    let mergedProducts: UnifiedProduct[] = [];
 
     if (supabaseProducts && supabaseProducts.length > 0) {
       // Convertir productos de Supabase al formato local
@@ -474,7 +484,7 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
         // Excluir si ya existe por NOMBRE (priorizar la versión de base de datos)
         if (supabaseNames.has(normalize(lp.name))) {
-          console.log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
+          log(`🧹 Limpiando duplicado local: ${lp.name} (ya viene de Supabase)`);
           return false;
         }
 
@@ -483,17 +493,17 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 
       mergedProducts = [...convertedProducts, ...localOnly];
 
-      console.log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
+      log(`🔗 Merged: ${convertedProducts.length} from Supabase + ${localOnly.length} local only`);
     } else {
       // Si no hay datos en Supabase, usar solo datos locales
       mergedProducts = localProducts;
-      console.log('⚠️ No Supabase data, using localStorage only');
+      log('⚠️ No Supabase data, using localStorage only');
     }
 
     // 5. Guardar en localStorage
     saveProducts(mergedProducts);
 
-    console.log(`✅ Sync completed: ${mergedProducts.length} total products saved to localStorage`);
+    log(`✅ Sync completed: ${mergedProducts.length} total products saved to localStorage`);
     return true;
 
   } catch (error) {
@@ -503,14 +513,14 @@ export const syncSupabaseToLocal = async (): Promise<boolean> => {
 };
 
 // Función de inicialización que asegura la sincronización
-export const initializeProducts = async (): Promise<Product[]> => {
+export const initializeProducts = async (): Promise<UnifiedProduct[]> => {
   // Intentar sincronizar primero
   const syncSuccess = await syncSupabaseToLocal();
 
   if (syncSuccess) {
-    console.log('🎉 Products initialized from Supabase sync');
+    log('🎉 Products initialized from Supabase sync');
   } else {
-    console.log('⚠️ Products initialized from localStorage (fallback)');
+    log('⚠️ Products initialized from localStorage (fallback)');
   }
 
   // Retornar productos actualizados (ahora es asíncrono)
@@ -519,14 +529,14 @@ export const initializeProducts = async (): Promise<Product[]> => {
   // 🔥 Notificar a la UI que hay datos nuevos
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new Event('products-updated'));
-    console.log('📢 Evento products-updated enviado');
+    log('📢 Evento products-updated enviado');
   }
 
   return products;
 };
 
 // 🚀 FUNCIÓN DE IMPORTACIÓN CSV
-export async function importProductsFromCSV(file: File): Promise<Product[]> {
+export async function importProductsFromCSV(file: File): Promise<UnifiedProduct[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -536,13 +546,13 @@ export async function importProductsFromCSV(file: File): Promise<Product[]> {
         const lines = csv.split('\n');
         const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
 
-        const products: Product[] = [];
+        const products: UnifiedProduct[] = [];
 
         for (let i = 1; i < lines.length; i++) {
           if (!lines[i].trim()) continue;
 
           const values = lines[i].split(',').map(v => v.trim());
-          const product: Product = {
+          const product: UnifiedProduct = {
             id: values[headers.indexOf('id')] || `prod-${Date.now()}-${i}`,
             name: values[headers.indexOf('name')] || 'Producto sin nombre',
             description: values[headers.indexOf('description')] || '',

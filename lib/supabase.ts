@@ -123,6 +123,7 @@ export interface Order {
   shipping_fee: number;
   discount: number;
   total: number;
+  total_amount?: number; // Alias para total, usado en admin
   coupon_code?: string;
   address_id?: string; // Referencia a addresses table
   shipping_address?: any; // JSONB snapshot de la dirección
@@ -131,6 +132,7 @@ export interface Order {
   payment_method?: string;
   payment_status: 'pending' | 'completed' | 'failed' | 'refunded';
   notes?: string;
+  order_data?: any; // JSON con items, subtotal, discount, shipping, total, etc.
   created_at: string;
   updated_at: string;
   confirmed_at?: string;

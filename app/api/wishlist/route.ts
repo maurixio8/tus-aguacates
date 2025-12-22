@@ -1,93 +1,92 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { createSupabaseRequestClient, extractBearerToken } from '@/lib/supabaseRequestClient';
+import { getProducts, type Product } from '@/lib/productStorage';
 
-// OPTIONS - Manejar solicitudes CORS
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, Cookie, Set-Cookie',
-      'Access-Control-Allow-Credentials': 'true',
-    },
-  });
-}
+export const dynamic = 'force-dynamic';
 
-// GET - Obtener todos los favoritos del usuario
+// GET - Obtener favoritos del usuario
 export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-  console.log('🔍 [WISHLIST-API] GET request received at:', new Date().toISOString());
-  console.log('🌐 [WISHLIST-API] Request URL:', request.url);
-  console.log('🔍 [WISHLIST-API] Request headers:', Object.fromEntries(request.headers.entries()));
-  
   try {
-    // Verificar autenticación
     const authHeader = request.headers.get('authorization');
-    console.log('🔐 [WISHLIST-API] Auth header present:', !!authHeader);
-    console.log('🔐 [WISHLIST-API] Auth header value:', authHeader ? `${authHeader.substring(0, 20)}...` : 'null');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ [WISHLIST-API] No valid authorization header');
+    const token = extractBearerToken(authHeader);
+
+    if (!token) {
+      console.log('[WISHLIST-API] GET: No valid authorization header');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log('🔑 [WISHLIST-API] Verifying token...');
-    console.log('🔑 [WISHLIST-API] Token length:', token?.length || 0);
-    
+    // Verificar que el token es valido
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      console.error('❌ [WISHLIST-API] Auth error:', authError);
-      console.error('❌ [WISHLIST-API] User data:', user);
+      console.log('[WISHLIST-API] GET: Invalid token', authError?.message);
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { error: 'Token invalido' },
         { status: 401 }
       );
     }
 
-    console.log('✅ [WISHLIST-API] User authenticated:', user.id);
-    console.log('✅ [WISHLIST-API] User email:', user.email);
+    console.log('[WISHLIST-API] GET: User authenticated:', user.id);
 
-    // Obtener favoritos del usuario
-    console.log('📊 [WISHLIST-API] Fetching wishlist for user:', user.id);
-    const { data, error } = await supabase
+    // Crear cliente scoped al usuario para RLS
+    const sb = createSupabaseRequestClient(token);
+
+    // Primero obtenemos los items del wishlist
+    const { data: wishlistItems, error: wishlistError } = await sb
       .from('wishlist')
-      .select(`
-        *,
-        product:products(*)
-      `)
+      .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('❌ [WISHLIST-API] Error fetching wishlist:', error);
-      console.error('❌ [WISHLIST-API] Error details:', JSON.stringify(error, null, 2));
+    if (wishlistError) {
+      console.error('[WISHLIST-API] GET: Error fetching wishlist:', wishlistError.code, wishlistError.message);
       return NextResponse.json(
-        { error: 'Error al obtener favoritos' },
+        { error: 'Error al obtener favoritos', code: wishlistError.code },
         { status: 500 }
       );
     }
 
-    const duration = Date.now() - startTime;
-    console.log('✅ [WISHLIST-API] Wishlist fetched successfully:', data?.length || 0, 'items');
-    console.log('⏱️ [WISHLIST-API] Request duration:', duration, 'ms');
-    
+    // Si no hay items, retornamos array vacío
+    if (!wishlistItems || wishlistItems.length === 0) {
+      console.log('[WISHLIST-API] GET: No items found');
+      return NextResponse.json({
+        success: true,
+        data: []
+      });
+    }
+
+    // Obtenemos los IDs de productos
+    const productIds = wishlistItems.map(item => item.product_id);
+
+    // Obtenemos los productos desde productStorage (carga del JSON)
+    let products: Product[] = [];
+    try {
+      const allProducts = await getProducts();
+      products = allProducts.filter(p => productIds.includes(p.id));
+      console.log('[WISHLIST-API] GET: Loaded', products.length, 'products from productStorage');
+    } catch (error) {
+      console.error('[WISHLIST-API] GET: Error loading products from storage:', error);
+      // Continuar sin product data
+    }
+
+    // Combinamos wishlist items con product data
+    const wishlistWithProducts = wishlistItems.map(item => ({
+      ...item,
+      product: products.find(p => p.id === item.product_id) || null
+    }));
+
+    console.log('[WISHLIST-API] GET: Returning', wishlistWithProducts.length, 'items with product data');
     return NextResponse.json({
       success: true,
-      data: data || []
+      data: wishlistWithProducts
     });
 
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error('❌ [WISHLIST-API] Error in wishlist GET:', error);
-    console.error('❌ [WISHLIST-API] Error stack:', error instanceof Error ? error.stack : 'No stack available');
-    console.error('⏱️ [WISHLIST-API] Error occurred after:', duration, 'ms');
-    
+    console.error('[WISHLIST-API] GET: Server error:', error);
     return NextResponse.json(
       { error: 'Error del servidor' },
       { status: 500 }
@@ -95,134 +94,141 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Agregar un producto a favoritos
+// POST - Agregar a favoritos
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-  console.log('🔍 [WISHLIST-API] POST request received at:', new Date().toISOString());
-  console.log('🌐 [WISHLIST-API] Request URL:', request.url);
-  console.log('🔍 [WISHLIST-API] Request headers:', Object.fromEntries(request.headers.entries()));
-  
   try {
-    // Verificar autenticación
     const authHeader = request.headers.get('authorization');
-    console.log('🔐 [WISHLIST-API] Auth header present:', !!authHeader);
-    console.log('🔐 [WISHLIST-API] Auth header value:', authHeader ? `${authHeader.substring(0, 20)}...` : 'null');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      console.log('❌ [WISHLIST-API] No valid authorization header in POST');
+    const token = extractBearerToken(authHeader);
+
+    if (!token) {
+      console.log('[WISHLIST-API] POST: No valid authorization header');
       return NextResponse.json(
         { error: 'No autorizado' },
         { status: 401 }
       );
     }
 
-    const token = authHeader.split(' ')[1];
-    console.log('🔑 [WISHLIST-API] Verifying token in POST...');
-    console.log('🔑 [WISHLIST-API] Token length:', token?.length || 0);
-    
+    // Verificar que el token es valido
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
-      console.error('❌ [WISHLIST-API] Auth error in POST:', authError);
-      console.error('❌ [WISHLIST-API] User data:', user);
+      console.log('[WISHLIST-API] POST: Invalid token', authError?.message);
       return NextResponse.json(
-        { error: 'Token inválido' },
+        { error: 'Token invalido' },
         { status: 401 }
       );
     }
 
-    console.log('✅ [WISHLIST-API] User authenticated in POST:', user.id);
-    console.log('✅ [WISHLIST-API] User email:', user.email);
+    console.log('[WISHLIST-API] POST: User authenticated:', user.id);
 
-    // Obtener datos del request
-    const body = await request.json();
-    console.log('📝 [WISHLIST-API] Request body:', body);
-    
+    // Crear cliente scoped al usuario para RLS
+    const sb = createSupabaseRequestClient(token);
+
+    let body;
+    try {
+      body = await request.json();
+    } catch {
+      console.log('[WISHLIST-API] POST: Invalid JSON body');
+      return NextResponse.json(
+        { error: 'Cuerpo de la solicitud invalido' },
+        { status: 400 }
+      );
+    }
+
     const { product_id } = body;
 
     if (!product_id) {
-      console.log('❌ [WISHLIST-API] No product_id provided');
+      console.log('[WISHLIST-API] POST: Missing product_id');
       return NextResponse.json(
         { error: 'El ID del producto es requerido' },
         { status: 400 }
       );
     }
 
-    console.log('🔍 [WISHLIST-API] Checking if product exists:', product_id);
-    
-    // Verificar que el producto existe
-    const { data: product, error: productError } = await supabase
+    console.log('[WISHLIST-API] POST: Adding product', product_id, 'for user', user.id);
+
+    // Verificar que el producto existe (opcional - permitir productos locales)
+    const { data: product, error: productError } = await sb
       .from('products')
       .select('id')
       .eq('id', product_id)
-      .single();
+      .maybeSingle();
 
-    if (productError || !product) {
-      console.error('❌ [WISHLIST-API] Product not found:', productError);
-      console.error('❌ [WISHLIST-API] Product error details:', JSON.stringify(productError, null, 2));
-      return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404 }
-      );
+    if (productError && productError.code !== 'PGRST116') {
+      // Solo loguear error si no es "no rows returned"
+      console.log('[WISHLIST-API] POST: Error checking product:', productError.message);
     }
 
-    console.log('✅ [WISHLIST-API] Product exists, checking if already in wishlist');
+    if (!product) {
+      console.log('[WISHLIST-API] POST: Product not in Supabase, but allowing anyway:', product_id);
+    }
 
-    // Verificar si ya está en favoritos
-    const { data: existingItem } = await supabase
+    // Verificar si ya existe en wishlist del usuario (usando cliente scoped)
+    const { data: existingItem, error: checkError } = await sb
       .from('wishlist')
       .select('id')
       .eq('user_id', user.id)
       .eq('product_id', product_id)
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('[WISHLIST-API] POST: Error checking existing item:', checkError.code, checkError.message);
+      return NextResponse.json(
+        { error: 'Error al verificar favoritos', code: checkError.code },
+        { status: 500 }
+      );
+    }
 
     if (existingItem) {
-      console.log('⚠️ [WISHLIST-API] Product already in wishlist:', product_id);
+      console.log('[WISHLIST-API] POST: Product already in wishlist', product_id);
       return NextResponse.json(
-        { error: 'El producto ya está en favoritos' },
+        { error: 'El producto ya esta en favoritos' },
         { status: 409 }
       );
     }
 
-    console.log('📝 [WISHLIST-API] Adding product to wishlist:', product_id);
-
-    // Agregar a favoritos
-    const { data, error } = await supabase
+    // Insertar en wishlist (usando cliente scoped para que RLS funcione con auth.uid())
+    const { data: newItem, error } = await sb
       .from('wishlist')
       .insert({
         user_id: user.id,
         product_id
       })
-      .select(`
-        *,
-        product:products(*)
-      `)
+      .select('*')
       .single();
 
     if (error) {
-      console.error('❌ [WISHLIST-API] Error adding to wishlist:', error);
-      console.error('❌ [WISHLIST-API] Error details:', JSON.stringify(error, null, 2));
+      console.error('[WISHLIST-API] POST: Error inserting wishlist item:', error.code, error.message);
       return NextResponse.json(
-        { error: 'Error al agregar a favoritos' },
+        { error: 'Error al agregar a favoritos', code: error.code, details: error.message },
         { status: 500 }
       );
     }
 
-    const duration = Date.now() - startTime;
-    console.log('✅ [WISHLIST-API] Product added to wishlist successfully:', data);
-    console.log('⏱️ [WISHLIST-API] POST request duration:', duration, 'ms');
-    
+    // Obtener los datos del producto desde productStorage (carga del JSON)
+    let productData: Product | null = null;
+    try {
+      const allProducts = await getProducts();
+      productData = allProducts.find(p => p.id === product_id) || null;
+      console.log('[WISHLIST-API] POST: Product data loaded from storage:', productData ? 'found' : 'not found');
+    } catch (error) {
+      console.error('[WISHLIST-API] POST: Error loading product from storage:', error);
+    }
+
+    // Combinar datos
+    const itemWithProduct = {
+      ...newItem,
+      product: productData
+    };
+
+    console.log('[WISHLIST-API] POST: Successfully added product to wishlist:', newItem?.id);
     return NextResponse.json({
       success: true,
-      data
-    });
+      data: itemWithProduct
+    }, { status: 201 });
 
   } catch (error) {
-    const duration = Date.now() - startTime;
-    console.error('❌ [WISHLIST-API] Error in wishlist POST:', error);
-    console.error('❌ [WISHLIST-API] Error stack:', error instanceof Error ? error.stack : 'No stack available');
-    console.error('⏱️ [WISHLIST-API] Error occurred after:', duration, 'ms');
-    
+    console.error('[WISHLIST-API] POST: Server error:', error);
     return NextResponse.json(
       { error: 'Error del servidor' },
       { status: 500 }

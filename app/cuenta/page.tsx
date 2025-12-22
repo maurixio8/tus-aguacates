@@ -4,10 +4,14 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { supabase, Profile, Order, Product } from '@/lib/supabase';
-import { useFavoritesStore } from '@/lib/favorites-store';
+import { supabase, Profile, Order } from '@/lib/supabase';
+import { UnifiedProduct, getProductImageUrl, normalizeProductForCart } from '@/lib/types';
+import { useWishlistStore } from '@/lib/wishlist-store';
+import { convertLegacyIdsToUuids } from '@/lib/legacyIdMapper';
 import { useCartStore } from '@/lib/cart-store';
-import FavoriteButton from '@/components/FavoriteButton';
+import { ProductCard } from '@/components/product/ProductCard';
+import { OrderSummaryCard } from '@/components/account/OrderSummaryCard';
+import { ReorderConfirmDialog } from '@/components/account/ReorderConfirmDialog';
 import {
   User,
   Mail,
@@ -26,7 +30,8 @@ import {
   Package,
   Calendar,
   Copy,
-  Gift
+  Gift,
+  ShoppingCart
 } from 'lucide-react';
 
 interface OrderItem {
@@ -36,11 +41,24 @@ interface OrderItem {
     name: string;
     price: number;
     main_image_url?: string;
+    image?: string;
     unit?: string;
   };
   quantity: number;
   unit_price: number;
   subtotal: number;
+  product?: {
+    id: string;
+    name: string;
+    main_image_url?: string;
+    image?: string;
+    price: number;
+    discount_price?: number;
+    unit?: string;
+    slug?: string;
+    is_active?: boolean;
+    stock?: number;
+  };
 }
 
 interface OrderWithItems extends Order {
@@ -62,17 +80,22 @@ interface Coupon {
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { favorites } = useFavoritesStore();
+  const { items: wishlist } = useWishlistStore();
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [orders, setOrders] = useState<OrderWithItems[]>([]);
-  const [favoriteProducts, setFavoriteProducts] = useState<Product[]>([]);
+  const [favoriteProducts, setFavoriteProducts] = useState<UnifiedProduct[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('pedidos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
+
+  // Reorder dialog state
+  const [selectedOrder, setSelectedOrder] = useState<OrderWithItems | null>(null);
+  const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
+  const [isRepeatingOrder, setIsRepeatingOrder] = useState(false);
 
   // Edit profile state
   const [isEditing, setIsEditing] = useState(false);
@@ -92,12 +115,12 @@ export default function CuentaPage() {
   }, [user]);
 
   useEffect(() => {
-    if (favorites.length > 0) {
+    if (wishlist.length > 0) {
       loadFavoriteProducts();
     } else {
       setFavoriteProducts([]);
     }
-  }, [favorites]);
+  }, [wishlist]);
 
   async function loadUserData() {
     try {
@@ -117,25 +140,63 @@ export default function CuentaPage() {
         });
       }
 
-      // Load orders with items
-      const { data: ordersData } = await supabase
+      // Load orders with their items
+      const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
-        .select('*')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_id,
+            quantity,
+            unit_price,
+            subtotal,
+            product_snapshot,
+            created_at
+          )
+        `)
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false })
         .limit(10);
 
+      if (ordersError) {
+        console.error('Error fetching orders:', ordersError);
+      }
+
       if (ordersData) {
-        // Load items for each order
-        const ordersWithItems = await Promise.all(
-          ordersData.map(async (order) => {
-            const { data: items } = await supabase
-              .from('order_items')
-              .select('*')
-              .eq('order_id', order.id);
-            return { ...order, items: items || [] };
-          })
-        );
+
+        // Función para extraer items de order_data si no hay order_items
+        const extractOrderItems = (order: any) => {
+          // Primero intentar con order_items
+          if (order.order_items && order.order_items.length > 0) {
+            return order.order_items;
+          }
+
+          // Luego extraer desde order_data
+          if (order.order_data?.items) {
+            return order.order_data.items.map((item: any, index: number) => ({
+              id: `item-${index}`,
+              product_id: item.productId,
+              product_snapshot: {
+                name: item.productName,
+                price: item.price,
+                main_image_url: null,
+                unit: null
+              },
+              quantity: item.quantity,
+              unit_price: item.price,
+              subtotal: item.quantity * item.price
+            }));
+          }
+
+          return [];
+        };
+
+        // Map order_items to items property con fallback a order_data
+        const ordersWithItems: OrderWithItems[] = ordersData.map(order => ({
+          ...order,
+          items: extractOrderItems(order)
+        }));
         setOrders(ordersWithItems);
       }
 
@@ -150,14 +211,47 @@ export default function CuentaPage() {
 
   async function loadFavoriteProducts() {
     try {
+      // Convertir IDs legacy (product-N) a UUIDs reales
+      const legacyIds = wishlist.map(item => item.product_id);
+      console.log('🔍 [DEBUG] Legacy IDs from wishlist:', legacyIds);
+
+      const { uuids, unmapped } = convertLegacyIdsToUuids(legacyIds);
+      console.log('🔍 [DEBUG] Converted UUIDs:', uuids);
+      console.log('⚠️ [DEBUG] Unmapped IDs:', unmapped);
+
       const { data: products } = await supabase
         .from('products')
         .select('*')
-        .in('id', favorites)
+        .in('id', uuids)
         .eq('is_active', true);
 
+      console.log('📊 [DEBUG] Products from Supabase:', products?.length || 0);
+
       if (products) {
-        setFavoriteProducts(products);
+        console.log('✅ [DEBUG] Raw products from DB:', products.map(p => ({
+          id: p.id,
+          name: p.name,
+          image: p.image,
+          main_image_url: p.main_image_url
+        })));
+
+        // Convertir a UnifiedProduct para asegurar compatibilidad
+        const unifiedProducts: UnifiedProduct[] = products.map(product => ({
+          ...product,
+          // Asegurar que ambos campos de imagen estén presentes
+          main_image_url: product.main_image_url || product.image,
+          image: product.image || product.main_image_url,
+        }));
+
+        console.log('🎯 [DEBUG] Final unified products:', unifiedProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          image: p.image,
+          main_image_url: p.main_image_url,
+          imageUrl: getProductImageUrl(p)
+        })));
+
+        setFavoriteProducts(unifiedProducts);
       }
     } catch (error) {
       console.error('Error cargando favoritos:', error);
@@ -207,35 +301,68 @@ export default function CuentaPage() {
     }
   }
 
-  function handleRepeatOrder(order: OrderWithItems) {
+  function handleRepeatOrderClick(order: OrderWithItems) {
     if (!order.items || order.items.length === 0) return;
 
-    order.items.forEach((item) => {
-      if (item.product_snapshot) {
-        const productForCart = {
-          id: item.product_id,
-          name: item.product_snapshot.name,
-          price: item.product_snapshot.price,
-          main_image_url: item.product_snapshot.main_image_url,
-          unit: item.product_snapshot.unit || 'unidad',
-          slug: item.product_id,
-          stock: 100,
-          is_active: true,
-          is_featured: false,
-          rating: 0,
-          review_count: 0,
-          min_quantity: 1,
-          reserved_stock: 0,
-          category_id: '',
-          description: '',
-          created_at: '',
-          updated_at: '',
-        };
-        addItem(productForCart, item.quantity);
-      }
-    });
+    // Abrir diálogo de confirmación
+    setSelectedOrder(order);
+    setIsReorderDialogOpen(true);
+  }
 
-    router.push('/cart');
+  async function confirmReorderOrder() {
+    if (!selectedOrder || !selectedOrder.items) return;
+
+    setIsRepeatingOrder(true);
+
+    try {
+      // Limpiar carrito primero
+      const { clearCart } = useCartStore.getState();
+      clearCart();
+
+      // Agregar items del pedido al carrito
+      selectedOrder.items.forEach((item) => {
+        // Priorizar datos del producto del JOIN sobre el snapshot
+        const productData = (item as any).product || item.product_snapshot;
+
+        if (productData) {
+          const productForCart = {
+            id: item.product_id,
+            name: productData.name,
+            price: productData.price,
+            main_image_url: productData.main_image_url || productData.image,
+            image: productData.image || productData.main_image_url,
+            unit: productData.unit || 'unidad',
+            slug: productData.slug || item.product_id,
+            stock: productData.stock || 100,
+            is_active: productData.is_active ?? true,
+            is_featured: false,
+            rating: 0,
+            review_count: 0,
+            min_quantity: 1,
+            reserved_stock: 0,
+            category_id: '',
+            description: productData.description || '',
+            created_at: productData.created_at || new Date().toISOString(),
+            updated_at: productData.updated_at || new Date().toISOString(),
+          };
+          addItem(productForCart, item.quantity);
+        }
+      });
+
+      // Cerrar diálogo y redirigir al carrito
+      setIsReorderDialogOpen(false);
+      setSelectedOrder(null);
+      router.push('/cart');
+    } catch (error) {
+      console.error('Error al repetir pedido:', error);
+    } finally {
+      setIsRepeatingOrder(false);
+    }
+  }
+
+  function handleAddToFavorites(product: UnifiedProduct) {
+    const normalizedProduct = normalizeProductForCart(product);
+    addItem(normalizedProduct, 1);
   }
 
   function copyCouponCode(code: string) {
@@ -452,7 +579,7 @@ export default function CuentaPage() {
                   <p className="text-xs text-gray-500">Pedidos</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{favorites.length}</p>
+                  <p className="text-2xl font-bold text-red-500">{wishlist.length}</p>
                   <p className="text-xs text-gray-500">Favoritos</p>
                 </div>
                 <div className="text-center">
@@ -469,47 +596,42 @@ export default function CuentaPage() {
             <div className="bg-white rounded-xl shadow-sm p-1 flex">
               <button
                 onClick={() => setActiveTab('pedidos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'pedidos'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'pedidos'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <ShoppingBag className="w-5 h-5" />
                 <span className="hidden sm:inline">Pedidos</span>
               </button>
               <button
                 onClick={() => setActiveTab('favoritos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'favoritos'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'favoritos'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <Heart className="w-5 h-5" />
                 <span className="hidden sm:inline">Favoritos</span>
-                {favorites.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
-                  }`}>
-                    {favorites.length}
+                {wishlist.length > 0 && (
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
+                    }`}>
+                    {wishlist.length}
                   </span>
                 )}
               </button>
               <button
                 onClick={() => setActiveTab('cupones')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${
-                  activeTab === 'cupones'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'cupones'
                     ? 'bg-verde-bosque text-white'
                     : 'text-gray-600 hover:bg-gray-100'
-                }`}
+                  }`}
               >
                 <Ticket className="w-5 h-5" />
                 <span className="hidden sm:inline">Cupones</span>
                 {availableCoupons.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${
-                    activeTab === 'cupones' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
-                  }`}>
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'cupones' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
+                    }`}>
                     {availableCoupons.length}
                   </span>
                 )}
@@ -518,103 +640,21 @@ export default function CuentaPage() {
 
             {/* Tab Content: Pedidos */}
             {activeTab === 'pedidos' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <ShoppingBag className="w-6 h-6 text-verde-bosque" />
-                  <h3 className="font-display font-bold text-xl">Historial de Pedidos</h3>
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                  <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-verde-bosque" />
+                  <h3 className="font-display font-bold text-lg md:text-xl">Historial de Pedidos</h3>
                 </div>
 
                 {orders.length > 0 ? (
                   <div className="space-y-4">
                     {orders.map((order) => (
-                      <div
+                      <OrderSummaryCard
                         key={order.id}
-                        className="border border-gray-200 rounded-lg overflow-hidden hover:border-verde-bosque/50 transition-colors"
-                      >
-                        {/* Order Header */}
-                        <div
-                          className="p-4 cursor-pointer"
-                          onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <p className="font-semibold text-gray-900">
-                                Pedido #{order.order_number}
-                              </p>
-                              <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                                <Calendar className="w-4 h-4" />
-                                {formatDate(order.created_at)}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
-                                {getStatusLabel(order.status)}
-                              </span>
-                              <ChevronRight
-                                className={`w-5 h-5 text-gray-400 transition-transform ${
-                                  expandedOrder === order.id ? 'rotate-90' : ''
-                                }`}
-                              />
-                            </div>
-                          </div>
-                          <div className="flex justify-between items-center">
-                            <p className="text-sm text-gray-600">
-                              {order.items?.length || 0} productos
-                            </p>
-                            <p className="font-bold text-verde-bosque">
-                              {formatCurrency(order.total)}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Expanded Order Details */}
-                        {expandedOrder === order.id && order.items && (
-                          <div className="border-t border-gray-200 bg-gray-50 p-4">
-                            <div className="space-y-3 mb-4">
-                              {order.items.map((item) => (
-                                <div key={item.id} className="flex items-center gap-3">
-                                  <div className="w-12 h-12 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
-                                    {item.product_snapshot?.main_image_url ? (
-                                      <img
-                                        src={item.product_snapshot.main_image_url}
-                                        alt={item.product_snapshot.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <Package className="w-6 h-6 text-gray-400" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-gray-900 truncate">
-                                      {item.product_snapshot?.name || 'Producto'}
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                      {item.quantity} x {formatCurrency(item.unit_price)}
-                                    </p>
-                                  </div>
-                                  <p className="font-medium text-gray-900">
-                                    {formatCurrency(item.subtotal)}
-                                  </p>
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Repeat Order Button */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRepeatOrder(order);
-                              }}
-                              className="w-full flex items-center justify-center gap-2 bg-verde-bosque text-white py-3 rounded-lg hover:bg-verde-bosque/90 transition-colors font-medium"
-                            >
-                              <RefreshCw className="w-5 h-5" />
-                              Repetir este pedido
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                        order={order}
+                        onRepeatOrder={handleRepeatOrderClick}
+                        isRepeating={isRepeatingOrder && selectedOrder?.id === order.id}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -643,34 +683,10 @@ export default function CuentaPage() {
                 {favoriteProducts.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {favoriteProducts.map((product) => (
-                      <Link
+                      <ProductCard
                         key={product.id}
-                        href={`/productos/${product.id}`}
-                        className="group block bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-                      >
-                        <div className="aspect-square relative">
-                          {product.main_image_url ? (
-                            <img
-                              src={product.main_image_url}
-                              alt={product.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                              <Package className="w-12 h-12 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="absolute top-2 right-2">
-                            <FavoriteButton productId={product.id} size="sm" />
-                          </div>
-                        </div>
-                        <div className="p-3">
-                          <h4 className="font-medium text-gray-900 truncate">{product.name}</h4>
-                          <p className="text-verde-bosque font-bold mt-1">
-                            {formatCurrency(product.discount_price || product.price)}
-                          </p>
-                        </div>
-                      </Link>
+                        product={product}
+                      />
                     ))}
                   </div>
                 ) : (
@@ -690,63 +706,67 @@ export default function CuentaPage() {
 
             {/* Tab Content: Cupones */}
             {activeTab === 'cupones' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <Ticket className="w-6 h-6 text-purple-500" />
-                  <h3 className="font-display font-bold text-xl">Cupones Disponibles</h3>
+              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+                <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
+                  <Ticket className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
+                  <h3 className="font-display font-bold text-lg md:text-xl">Cupones Disponibles</h3>
                 </div>
 
                 {availableCoupons.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {availableCoupons.map((coupon) => (
                       <div
                         key={coupon.id}
-                        className="border-2 border-dashed border-purple-200 rounded-lg p-4 bg-purple-50/50"
+                        className="border-2 border-dashed border-purple-200 rounded-lg p-3 md:p-4 bg-purple-50/50"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-mono font-bold text-lg text-purple-700">
+                        {/* Layout: stack on mobile, row on desktop */}
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            {/* Código y badge */}
+                            <div className="flex flex-wrap items-center gap-2 mb-1">
+                              <span className="font-mono font-bold text-base md:text-lg text-purple-700">
                                 {coupon.code}
                               </span>
                               {coupon.is_welcome_coupon && (
-                                <span className="px-2 py-0.5 text-xs bg-purple-200 text-purple-700 rounded-full flex items-center gap-1">
+                                <span className="px-2 py-0.5 text-[10px] md:text-xs bg-purple-200 text-purple-700 rounded-full flex items-center gap-1">
                                   <Gift className="w-3 h-3" />
                                   Bienvenida
                                 </span>
                               )}
                             </div>
-                            <p className="text-gray-600 text-sm mb-2">{coupon.description}</p>
-                            <div className="flex flex-wrap gap-2 text-xs">
-                              <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                            {/* Descripción */}
+                            <p className="text-gray-600 text-xs md:text-sm mb-2 line-clamp-2">{coupon.description}</p>
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1.5 md:gap-2 text-[10px] md:text-xs">
+                              <span className="px-2 py-0.5 md:py-1 bg-white rounded-full text-gray-600">
                                 {coupon.discount_type === 'percentage'
-                                  ? `${coupon.discount_value}% de descuento`
-                                  : `${formatCurrency(coupon.discount_value)} de descuento`}
+                                  ? `${coupon.discount_value}%`
+                                  : formatCurrency(coupon.discount_value)}
                               </span>
                               {coupon.min_purchase > 0 && (
-                                <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                                <span className="px-2 py-0.5 md:py-1 bg-white rounded-full text-gray-600">
                                   Mín: {formatCurrency(coupon.min_purchase)}
                                 </span>
                               )}
                               {coupon.free_shipping && (
-                                <span className="px-2 py-1 bg-green-100 rounded-full text-green-700">
-                                  + Envío gratis
+                                <span className="px-2 py-0.5 md:py-1 bg-green-100 rounded-full text-green-700">
+                                  Envío gratis
                                 </span>
                               )}
                               {coupon.valid_until && (
-                                <span className="px-2 py-1 bg-white rounded-full text-gray-600">
+                                <span className="hidden md:inline-block px-2 py-1 bg-white rounded-full text-gray-600">
                                   Hasta: {formatDate(coupon.valid_until)}
                                 </span>
                               )}
                             </div>
                           </div>
+                          {/* Botón copiar - full width en móvil */}
                           <button
                             onClick={() => copyCouponCode(coupon.code)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                              copiedCoupon === coupon.code
+                            className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors flex-shrink-0 ${copiedCoupon === coupon.code
                                 ? 'bg-green-500 text-white'
                                 : 'bg-purple-600 text-white hover:bg-purple-700'
-                            }`}
+                              }`}
                           >
                             {copiedCoupon === coupon.code ? (
                               <>
@@ -756,7 +776,7 @@ export default function CuentaPage() {
                             ) : (
                               <>
                                 <Copy className="w-4 h-4" />
-                                Copiar
+                                Copiar código
                               </>
                             )}
                           </button>
@@ -778,6 +798,20 @@ export default function CuentaPage() {
           </div>
         </div>
       </div>
+
+      {/* Diálogo de confirmación para repetir pedido */}
+      {selectedOrder && (
+        <ReorderConfirmDialog
+          isOpen={isReorderDialogOpen}
+          onClose={() => {
+            setIsReorderDialogOpen(false);
+            setSelectedOrder(null);
+          }}
+          onConfirm={confirmReorderOrder}
+          order={selectedOrder}
+          isProcessing={isRepeatingOrder}
+        />
+      )}
     </div>
   );
 }

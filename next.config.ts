@@ -5,14 +5,117 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: __dirname,
 
   images: {
-    unoptimized: true,
+    // Reemplazamos domains obsoleto por remotePatterns para Next.js 16
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'gxqkmaaqoehydulksudj.supabase.co',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.dicebear.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ibb.co',
+        port: '',
+        pathname: '/**',
+      },
+    ],
+    formats: ['image/webp', 'image/avif'], // Formatos modernos
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 días de caché
+    dangerouslyAllowSVG: false, // Seguridad
+    contentDispositionType: 'attachment',
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
+    unoptimized: false, // Habilitar optimización
   },
-  trailingSlash: false, // Desactivado para evitar problemas con CORS en APIs
+  trailingSlash: false,
   typescript: {
     ignoreBuildErrors: false,
   },
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizeCss: true,
+    scrollRestoration: true,
+    webVitalsAttribution: ['CLS', 'LCP'],
+  },
+  // Compresión para producción
+  compress: true,
+  // Configuración de headers para caché
+  async headers() {
+    return [
+      {
+        source: '/_next/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/images/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
+  // Configuración de Turbopack para Next.js 16
+  turbopack: {
+    // Configuración específica para Turbopack
+    rules: {
+      // Reglas para manejar módulos grandes de forma similar a webpack
+      '*.svg': {
+        loaders: ['@svgr/webpack'],
+        as: '*.js',
+      },
+    },
+  },
+  // Optimización del bundle (mantenemos para compatibilidad con webpack)
+  webpack: (config, { isServer, dev }) => {
+    if (!dev && !isServer) {
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          vendor: {
+            test: /[\\/]node_modules[\\/]/,
+            name: 'vendors',
+            chunks: 'all',
+            priority: 10,
+          },
+          large: {
+            test: /[\\/]node_modules[\\/](puppeteer|@react-google-maps)[\\/]/,
+            name: 'large-vendors',
+            chunks: 'async',
+            priority: 20,
+            enforce: true,
+          },
+        },
+      };
+    }
+    return config;
   },
 };
 

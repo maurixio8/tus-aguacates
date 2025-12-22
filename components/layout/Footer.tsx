@@ -31,7 +31,7 @@ export function Footer() {
             <h3 className="font-display font-bold text-lg mb-4">Enlaces Rápidos</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/tienda/todos" className="hover:text-verde-aguacate-200 transition-colors">
+                <Link href="/tienda" className="hover:text-verde-aguacate-200 transition-colors" prefetch={false}>
                   Todos los Productos
                 </Link>
               </li>
@@ -53,7 +53,7 @@ export function Footer() {
             <h3 className="font-display font-bold text-lg mb-4">Atención al Cliente</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/perfil/mis-pedidos" className="hover:text-verde-aguacate-200 transition-colors">
+                <Link href="/cuenta" className="hover:text-verde-aguacate-200 transition-colors">
                   Mis Pedidos
                 </Link>
               </li>

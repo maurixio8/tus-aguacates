@@ -1,0 +1,162 @@
+{
+    "name": "Cerebro Híbrido (Mistral + Reglas) - v3",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "chat",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.body.message }}",
+                            "operation": "startsWith",
+                            "value2": "intent_"
+                        }
+                    ]
+                }
+            },
+            "name": "Es un Botón?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 1,
+            "position": [
+                620,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// RESPUESTAS RÁPIDAS (Sin gastar AI)\nconst msg = $json.body.message;\nlet timeline = [];\n\nif (msg === 'intent_avocados') {\n  timeline = [\n    { type: 'text', content: '🥑 ¡Nuestros Hass son mantequilla pura!' },\n    { type: 'products', items: [{ id: 'hass-24', name: 'Caja de 24 unidades hass mediano', price: 16600, image: 'https://tus-aguacates.vercel.app/images/avatar-aguacate.png' }] },\n    { type: 'options', options: [{ label: '🛒 Agregar', value: 'add_hass_24' }, { label: 'Volver', value: 'greeting' }] }\n  ];\n} else if (msg === 'intent_market') {\n  timeline = [\n    { type: 'text', content: '🧺 Mercado fresco para toda la semana.' },\n    { type: 'products', items: [{ id: 'hass-12-premium', name: 'Caja de 12 unidades Premium', price: 24700, image: 'https://tus-aguacates.vercel.app/images/hero-optimized.png' }] }\n  ];\n} else {\n  // Default fallback for buttons\n  timeline = [{ type: 'text', content: 'Entendido.' }];\n}\n\nreturn { timeline };"
+            },
+            "name": "Respuesta Estática",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                900,
+                180
+            ]
+        },
+        {
+            "parameters": {
+                "text": "={{ $json.body.message }}",
+                "options": {
+                    "systemMessage": "Eres el Mayordomo de 'Tus Aguacates'.\n\nTU TAREA:\nResponder preguntas sobre aguacates, frutas y recetas.\n\nFORMATO OBLIGATORIO (JSON):\nNo respondas texto plano. Responde SIEMPRE este JSON:\n{ \"timeline\": [ { \"type\": \"text\", \"content\": \"Respuesta...\" } ] }\n\nSI TE PIDEN PRODUCTOS:\nUsa los siguientes datos reales:\n- Aguacate Hass Media (Malla x5): $18.000 (ID: hass-x5-real)\n- Combo Familiar: $85.000 (ID: combo-fam-real)\n\nEjemplo JSON con producto:\n{ \"timeline\": [ { \"type\": \"products\", \"items\": [{ \"id\": \"hass-x5-real\", \"name\": \"Aguacate Hass\", \"price\": 18000, \"image\": \"https://tus-aguacates.vercel.app/images/avatar-aguacate.png\" }] } ] }"
+                }
+            },
+            "name": "AI Agent (Mistral)",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1,
+            "position": [
+                900,
+                450
+            ]
+        },
+        {
+            "parameters": {
+                "model": "mistral-small-latest",
+                "options": {}
+            },
+            "name": "Mistral Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+            "typeVersion": 1,
+            "position": [
+                900,
+                650
+            ],
+            "credentials": {
+                "mistralCloudApi": {
+                    "id": "xxCUooDM4wFtCGFv",
+                    "name": "Mistral Cloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "name": "Respond to Webhook",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1,
+            "position": [
+                1300,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Es un Botón?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Es un Botón?": {
+            "main": [
+                [
+                    {
+                        "node": "Respuesta Estática",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "AI Agent (Mistral)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Respuesta Estática": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "AI Agent (Mistral)": {
+            "main": [
+                [
+                    {
+                        "node": "Respond to Webhook",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Mistral Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "AI Agent (Mistral)",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

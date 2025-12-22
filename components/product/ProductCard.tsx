@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
-import type { Product } from '@/lib/productStorage';
+import type { UnifiedProduct } from '@/lib/types';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
+import { getProductImageUrl } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
 import { useAuth } from '@/lib/auth-context';
@@ -22,7 +23,7 @@ interface ProductVariant {
 }
 
 interface ProductCardProps {
-  product: Product;
+  product: UnifiedProduct;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
@@ -34,7 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
-  
+
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
   const isProductInWishlist = isInWishlist(product.id);
@@ -159,7 +160,7 @@ export function ProductCard({ product }: ProductCardProps) {
             productName={product.name}
             price={displayPrice}
             category="aguacates"
-            imageUrl={product.main_image_url}
+            imageUrl={getProductImageUrl(product)}
             showPrice={false} // El precio se mostrará en la sección de abajo
             className="w-full h-full"
           />
@@ -175,9 +176,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Botón Favorito */}
           <button
-            className={`absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all ${
-              isProductInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-red-500'
-            } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all ${isProductInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-red-500'
+              } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
             onClick={handleWishlistClick}
             disabled={isWishlistLoading}
           >
@@ -227,22 +227,22 @@ export function ProductCard({ product }: ProductCardProps) {
                       setSelectedVariant(variant);
                     }}
                     className={`
-                      ${variants.length > 2 ? 'min-w-[120px] md:min-w-0 snap-start' : ''}
-                      flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md border-2 transition-all
+                      ${variants.length > 2 ? 'min-w-[80px] md:min-w-[120px] snap-start' : ''}
+                      flex items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 py-1.5 rounded-md border-2 transition-all
                       ${selectedVariant?.id === variant.id
                         ? 'border-verde-bosque bg-verde-bosque/10 shadow-sm'
                         : 'border-gray-300 bg-white hover:border-verde-bosque/50'
                       }
                     `}
                   >
-                    <span className={`text-xs font-semibold truncate ${
-                      selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
-                    }`}>
+                    {/* Valor de variante - siempre visible */}
+                    <span className={`text-xs font-semibold truncate ${selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-900'
+                      }`}>
                       {variant.variant_value}
                     </span>
-                    <span className={`text-xs font-mono whitespace-nowrap ${
-                      selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
-                    }`}>
+                    {/* Precio - solo visible en desktop */}
+                    <span className={`hidden md:inline text-xs font-mono whitespace-nowrap ${selectedVariant?.id === variant.id ? 'text-verde-bosque' : 'text-gray-600'
+                      }`}>
                       {formatPrice(variant.price)}
                     </span>
                   </button>
@@ -255,9 +255,8 @@ export function ProductCard({ product }: ProductCardProps) {
                   {variants.map((_, index) => (
                     <div
                       key={index}
-                      className={`h-0.5 rounded-full transition-all ${
-                        index === 0 ? 'w-2 bg-verde-bosque' : 'w-1 bg-gray-300'
-                      }`}
+                      className={`h-0.5 rounded-full transition-all ${index === 0 ? 'w-2 bg-verde-bosque' : 'w-1 bg-gray-300'
+                        }`}
                     />
                   ))}
                 </div>

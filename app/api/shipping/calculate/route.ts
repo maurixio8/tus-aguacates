@@ -35,23 +35,42 @@ export async function POST(request: NextRequest) {
     });
 
     // Enhanced validation
+    console.log('📦 API: Validating subtotal:', {
+      subtotal,
+      type: typeof subtotal,
+      isNull: subtotal === null,
+      isUndefined: subtotal === undefined,
+      isNaN: isNaN(subtotal),
+      isFinite: isFinite(subtotal),
+      bodyKeys: Object.keys(body),
+      fullBody: body
+    });
+
     if (subtotal === undefined || subtotal === null) {
+      console.error('❌ API: Subtotal es null o undefined');
       return NextResponse.json(
         {
           success: false,
           error: 'Subtotal es requerido',
-          details: 'El campo subtotal es obligatorio'
+          details: 'El campo subtotal es obligatorio',
+          received: { subtotal, type: typeof subtotal }
         },
         { status: 400 }
       );
     }
 
-    if (typeof subtotal !== 'number' || isNaN(subtotal)) {
+    if (typeof subtotal !== 'number' || isNaN(subtotal) || !isFinite(subtotal)) {
+      console.error('❌ API: Subtotal no es un número válido:', {
+        subtotal,
+        type: typeof subtotal,
+        isNaN,
+        isFinite
+      });
       return NextResponse.json(
         {
           success: false,
-          error: 'Subtotal debe ser un número',
-          details: `Recibido: ${typeof subtotal} (${subtotal})`
+          error: 'Subtotal debe ser un número válido',
+          details: `Recibido: ${typeof subtotal} (${subtotal}), debe ser un número finito`
         },
         { status: 400 }
       );

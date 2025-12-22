@@ -46,7 +46,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
         // Filtrar productos que coincidan con la búsqueda
         const searchResults = allProducts
-          .filter(product => product.is_active !== false)
+          .filter(product => product.is_active === true)
           .filter(product =>
             product.name.toLowerCase().includes(query.toLowerCase()) ||
             product.description?.toLowerCase().includes(query.toLowerCase()) ||

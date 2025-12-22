@@ -1,11 +1,309 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, ShoppingCart, Loader2, Sparkles, ArrowLeft } from 'lucide-react';
+import { MessageCircle, X, Send, ShoppingCart, Loader2, Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useCartStore } from '@/lib/cart-store';
 import { getMessageGreeting } from '@/lib/greetings';
 import React from 'react';
+
+// --- FAQ Local: Respuestas predefinidas ---
+interface FAQItem {
+  keywords: string[];
+  response: string;
+  followUp?: Array<{ label: string; value: string }>;
+}
+
+const FAQ_DATABASE: FAQItem[] = [
+  // === ENVÍOS Y ENTREGAS ===
+  {
+    keywords: ['envío', 'envio', 'domicilio', 'entrega', 'entregan', 'llega', 'delivery', 'despacho', 'cuando llega', 'cuando entregan'],
+    response: '🚚 **Información de Envíos**\n\n• **Días de entrega:** Martes y Viernes\n• **Horario:** 8:00 am a 6:00 pm\n• **Costo:** $7.400 COP\n• **¡GRATIS en pedidos mayores a $68.900!**\n\nEl día de tu entrega te escribimos por WhatsApp con la hora aproximada de llegada.',
+    followUp: [
+      { label: '📍 ¿Dónde entregan?', value: 'zonas cobertura' },
+      { label: '💰 ¿Cuánto cuesta el envío?', value: 'costo envío' },
+      { label: '📅 ¿Qué días entregan?', value: 'dias entrega' }
+    ]
+  },
+  {
+    keywords: ['costo envío', 'precio envío', 'cuanto cuesta envio', 'valor envío', 'tarifa envio', 'domicilio gratis', 'envio gratis'],
+    response: '💰 **Costo de Envío**\n\n• **Valor fijo:** $7.400 COP\n• **¡ENVÍO GRATIS** en pedidos mayores a **$68.900!** 🎉\n\n💡 *Tip: Nuestro Combo Mercado Semanal Completo ($68.900) incluye envío gratis y tiene todo lo que necesitas para la semana.*',
+    followUp: [
+      { label: '🧺 Ver Combo Mercado', value: 'combo mercado' },
+      { label: '🛒 Ver productos', value: 'productos' },
+      { label: '⬅️ Volver al menú', value: 'menu principal' }
+    ]
+  },
+  {
+    keywords: ['dias entrega', 'que dias', 'cuando entregan', 'martes', 'viernes', 'domingo', 'festivo', 'festivos'],
+    response: '📅 **Días de Entrega**\n\n• **Martes y Viernes** son nuestros días de entrega\n• **Domingos y festivos:** No realizamos entregas\n\n⏰ El día de tu entrega te avisamos por WhatsApp la hora aproximada de llegada.',
+    followUp: [
+      { label: '🚚 Más info de envíos', value: 'envío' },
+      { label: '🛒 Hacer mi pedido', value: 'productos' }
+    ]
+  },
+  {
+    keywords: ['zonas', 'cobertura', 'donde entregan', 'ciudades', 'municipios', 'localidades', 'barrio', 'sector'],
+    response: '📍 **Zonas de Cobertura**\n\n✅ **Bogotá** - Todas las localidades\n✅ **Chía**\n✅ **Soacha**\n\nSi tu barrio está en Bogotá, ¡llegamos sin problema! 🚚\n\n¿No estás seguro si llegamos a tu zona? Escríbenos por WhatsApp.',
+    followUp: [
+      { label: '📞 Consultar mi zona', value: 'contacto whatsapp' },
+      { label: '🚚 Info de envíos', value: 'envío' }
+    ]
+  },
+
+  // === PAGOS ===
+  {
+    keywords: ['pago', 'pagar', 'transferencia', 'nequi', 'daviplata', 'efectivo', 'tarjeta', 'metodos', 'como pago', 'formas de pago'],
+    response: '💳 **Métodos de Pago**\n\n• **Nequi** ✅\n• **Daviplata** ✅\n• **Efectivo contra entrega** ✅\n\n💡 Puedes pagar al recibir tu pedido o antes, como prefieras. ¡Somos 100% confiables con 8 años de experiencia!',
+    followUp: [
+      { label: '🛒 Hacer mi pedido', value: 'productos' },
+      { label: '❓ Otra pregunta', value: 'menu principal' }
+    ]
+  },
+  {
+    keywords: ['contra entrega', 'pago al recibir', 'pagar cuando llegue'],
+    response: '💵 **Pago Contra Entrega**\n\n¡Sí! Aceptamos **efectivo contra entrega**. Pagas cuando recibes tu pedido en la puerta de tu casa.\n\nTambién puedes pagar antes por Nequi o Daviplata si lo prefieres.',
+    followUp: [
+      { label: '💳 Otros métodos de pago', value: 'pago' },
+      { label: '🛒 Hacer pedido', value: 'productos' }
+    ]
+  },
+
+  // === HORARIOS ===
+  {
+    keywords: ['horario', 'hora', 'abierto', 'atienden', 'trabajan', 'disponible', 'atencion'],
+    response: '🕐 **Horarios de Atención**\n\n📱 **WhatsApp:** 6:00 am a 8:00 pm\n🚚 **Entregas:** Martes y Viernes, 8am a 6pm\n\n¡Respondemos rápido! Escríbenos cuando quieras.',
+    followUp: [
+      { label: '📞 Escribir por WhatsApp', value: 'contacto whatsapp' },
+      { label: '📅 Días de entrega', value: 'dias entrega' }
+    ]
+  },
+
+  // === CONTACTO ===
+  {
+    keywords: ['whatsapp', 'contacto', 'telefono', 'llamar', 'asesor', 'hablar', 'ayuda humana', 'numero', 'cel', 'celular'],
+    response: '📱 **Contacto Directo**\n\n¡Con gusto te atendemos personalmente!\n\n📲 **WhatsApp: 304 258 2777**\n\n⏰ Horario: 6:00 am a 8:00 pm\n\nHaz clic abajo para abrir WhatsApp directamente 👇',
+    followUp: [
+      { label: '💬 Abrir WhatsApp', value: 'abrir whatsapp' },
+      { label: '⬅️ Volver al menú', value: 'menu principal' }
+    ]
+  },
+
+  // === PRODUCTOS ===
+  {
+    keywords: ['productos', 'que venden', 'catalogo', 'catálogo', 'tienda', 'que tienen'],
+    response: '🛒 **Nuestros Productos**\n\n🥑 **Aguacates:** Hass (baby, mediano, premium), Injerto, Criollo\n🧺 **Combos:** Ahorro y Mercado Semanal\n🍓 **Frutas:** Fresas, arándanos, kiwi, banano, uvas y más\n🥕 **Verduras:** Papa, zanahoria, tomate, cebolla\n🌿 **Especiales:** Pasta de ajo, flor de jamaica, germinados\n\n¡Revisa nuestra tienda para ver todos los productos!',
+    followUp: [
+      { label: '🥑 Ver Aguacates', value: 'aguacates' },
+      { label: '🧺 Ver Combos', value: 'combos' },
+      { label: '📞 Hablar con asesor', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['aguacate', 'aguacates', 'hass', 'palta', 'avocado'],
+    response: '🥑 **Nuestros Aguacates**\n\n**Variedades disponibles:**\n• **Hass Baby** - Pequeño y cremoso\n• **Hass Mediano** - El más popular\n• **Hass Premium** - Grande y de exportación\n• **Injerto** - Más grande, sabor suave\n• **Criollo** - Tradicional colombiano\n\n**Presentaciones:** Paquetes de 4, 8, 12 unidades o cajas de 24 y 35 unidades.\n\n🌟 Todos vienen en **3 estados de maduración** para consumo durante toda la semana.',
+    followUp: [
+      { label: '🍃 ¿Puedo elegir madurez?', value: 'madurez' },
+      { label: '🧺 Ver Combos', value: 'combos' },
+      { label: '💰 Ver precios', value: 'precios aguacate' }
+    ]
+  },
+  {
+    keywords: ['madurez', 'maduro', 'verde', 'pintón', 'pinton', 'listo para comer', 'estado'],
+    response: '🍃 **Estados de Maduración**\n\nNuestras cajas de aguacates vienen en **3 estados de maduración:**\n\n1️⃣ **Verde** - Para consumir en 4-5 días\n2️⃣ **Pintón** - Listo en 2-3 días\n3️⃣ **Maduro** - Listo para comer hoy\n\n💡 *¿Quieres todos en un mismo estado? Escríbelo en los **comentarios de tu pedido** y lo preparamos especialmente para ti.*',
+    followUp: [
+      { label: '🥑 Ver Aguacates', value: 'aguacates' },
+      { label: '🛒 Hacer pedido', value: 'productos' }
+    ]
+  },
+  {
+    keywords: ['combo', 'combos', 'paquete', 'oferta', 'promocion', 'promoción', 'ahorro'],
+    response: '🧺 **Nuestros Combos**\n\n🌟 **Combo Mercado Semanal Completo** - $68.900\n*Incluye: 24 aguacates, fresas, banano, tomate, cebolla, papa, zanahoria, pasta de ajo, arándanos, uva, duraznos, limón + ¡ENVÍO GRATIS!*\n\n💰 **Combo Ahorro #1** - $34.100\n*Fresas premium + Kiwis premium*\n\n💰 **Combo Ahorro #2** - $29.900\n*Caja 24 aguacates + Arándanos orgánicos*\n\n¡Los combos son la mejor forma de ahorrar!',
+    followUp: [
+      { label: '🛒 Ver todos los productos', value: 'productos' },
+      { label: '🚚 Info de envíos', value: 'envío' }
+    ]
+  },
+  {
+    keywords: ['combo mercado', 'mercado semanal', 'mercado completo'],
+    response: '🧺 **Combo Mercado Semanal Completo**\n\n**Precio:** $68.900 (¡ENVÍO GRATIS!)\n\n**Incluye:**\n• 24 Aguacates Hass mediano\n• Fresas premium (500g)\n• Banano criollo (1kg)\n• Tomate chonto (500g)\n• Cebolla cabezona (500g)\n• Papa sabanera (500g)\n• Zanahoria (500g)\n• Pasta de ajo (100g)\n• Arándanos orgánicos (125g)\n• Uva isabelina\n• Duraznos (500g)\n• Limón Tahití (1kg)\n\n¡Todo lo que necesitas para la semana en un solo pedido!',
+    followUp: [
+      { label: '🛒 Hacer pedido', value: 'productos' },
+      { label: '📞 Preguntar por WhatsApp', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['precio', 'precios', 'cuanto cuesta', 'cuánto vale', 'valor'],
+    response: '💰 **Algunos Precios**\n\n🥑 **Aguacates:**\n• Paquete 8 medianos: $8.900\n• Paquete 4 premium: $9.900\n• Caja 24 medianos: $16.600\n• Caja 12 premium: $24.700\n\n🧺 **Combos:**\n• Combo Ahorro #2: $29.900\n• Combo Mercado Completo: $68.900 (envío gratis)\n\n¡Revisa la tienda para ver todos los precios actualizados!',
+    followUp: [
+      { label: '🛒 Ver tienda', value: 'productos' },
+      { label: '🧺 Ver combos', value: 'combos' }
+    ]
+  },
+  {
+    keywords: ['organico', 'orgánico', 'organicos', 'natural', 'sin quimicos'],
+    response: '🌿 **Productos Orgánicos**\n\nTenemos productos orgánicos certificados:\n\n• **Arándanos orgánicos** 🫐\n• **Frambuesas orgánicas** 🍇\n\nEstos productos son cultivados sin químicos y son ideales para una alimentación más saludable.',
+    followUp: [
+      { label: '🛒 Ver productos', value: 'productos' },
+      { label: '❓ Otra pregunta', value: 'menu principal' }
+    ]
+  },
+
+  // === DEVOLUCIONES Y GARANTÍA ===
+  {
+    keywords: ['problema', 'queja', 'reclamo', 'devolución', 'devolver', 'mal estado', 'dañado', 'podrido', 'golpeado'],
+    response: '😔 **¿Problema con tu Pedido?**\n\n¡Lo sentimos! Tu satisfacción es nuestra prioridad.\n\n**¿Qué hacer?**\n1. Toma fotos del producto\n2. Escríbenos por WhatsApp\n3. Tienes máximo **12-18 horas** después de recibir para reportar\n\n✅ Te hacemos **cambio o devolución** del dinero como prefieras.\n\nHaz clic abajo para reportar tu problema 👇',
+    followUp: [
+      { label: '📲 Reportar problema', value: 'abrir whatsapp problema' }
+    ]
+  },
+  {
+    keywords: ['garantia', 'garantía', 'calidad', 'fresco', 'frescos'],
+    response: '✅ **Nuestra Garantía de Calidad**\n\n• **8 años** de experiencia en el mercado\n• Productos **frescos del campo** a tu mesa\n• Aguacates en **3 estados de maduración**\n• Si no estás satisfecho, ¡te devolvemos tu dinero!\n\n🥑 Cada aguacate es seleccionado con cuidado para garantizar la mejor calidad.',
+    followUp: [
+      { label: '🥑 Ver aguacates', value: 'aguacates' },
+      { label: '📞 Hablar con asesor', value: 'contacto whatsapp' }
+    ]
+  },
+
+  // === CUENTA Y PEDIDOS ===
+  {
+    keywords: ['cuenta', 'registrar', 'registro', 'crear cuenta', 'necesito cuenta'],
+    response: '👤 **¿Necesito crear cuenta?**\n\n**No es obligatorio.** Puedes comprar como invitado sin problema.\n\n**Beneficios de tener cuenta:**\n• Cupones de descuento exclusivos 🎟️\n• Promociones especiales 🔥\n• Historial de pedidos\n• Reordenar más rápido\n\n¡Regístrate y aprovecha los beneficios!',
+    followUp: [
+      { label: '🛒 Comprar ahora', value: 'productos' },
+      { label: '❓ Otra pregunta', value: 'menu principal' }
+    ]
+  },
+  {
+    keywords: ['pedido minimo', 'mínimo', 'minimo', 'cuanto es lo minimo'],
+    response: '📦 **Pedido Mínimo**\n\n¡No tenemos pedido mínimo! Puedes pedir lo que quieras, aunque sea un solo producto.\n\n💡 *Recuerda: El envío cuesta $7.400, pero es GRATIS en pedidos mayores a $68.900.*',
+    followUp: [
+      { label: '🛒 Ver productos', value: 'productos' },
+      { label: '🧺 Ver combos', value: 'combos' }
+    ]
+  },
+  {
+    keywords: ['descuento', 'cupón', 'cupon', 'promoción', 'codigo', 'código'],
+    response: '🎟️ **Descuentos y Cupones**\n\nLos **clientes registrados** tienen acceso a:\n\n• Cupones de descuento exclusivos\n• Promociones especiales\n• Ofertas por temporada\n\n¡Crea tu cuenta para no perderte ninguna promoción!',
+    followUp: [
+      { label: '🛒 Ver productos', value: 'productos' },
+      { label: '📞 Consultar promociones', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['cancelar', 'modificar', 'cambiar pedido', 'editar pedido'],
+    response: '✏️ **Modificar o Cancelar Pedido**\n\nSí puedes modificar o cancelar tu pedido. Solo escríbenos por WhatsApp lo antes posible y te ayudamos.\n\n📲 WhatsApp: 304 258 2777',
+    followUp: [
+      { label: '📞 Escribir por WhatsApp', value: 'contacto whatsapp' },
+      { label: '⬅️ Volver al menú', value: 'menu principal' }
+    ]
+  },
+
+  // === SOBRE EL NEGOCIO ===
+  {
+    keywords: ['tienda fisica', 'punto fisico', 'local', 'direccion', 'dirección', 'ubicacion', 'ubicación'],
+    response: '🏪 **Punto Físico**\n\nActualmente solo vendemos **en línea**. No tenemos tienda física.\n\n✅ Hacemos entregas a domicilio en Bogotá, Chía y Soacha los martes y viernes.\n\n¡Es más cómodo! Pide desde tu casa y te lo llevamos.',
+    followUp: [
+      { label: '🚚 Info de envíos', value: 'envío' },
+      { label: '🛒 Hacer pedido', value: 'productos' }
+    ]
+  },
+  {
+    keywords: ['empresa', 'empresas', 'restaurante', 'restaurantes', 'mayorista', 'al por mayor', 'grandes cantidades'],
+    response: '🏢 **Ventas para Empresas**\n\n¡Sí! Vendemos a empresas, restaurantes y mayoristas.\n\nTenemos una **página especial para empresas** con precios y condiciones especiales.\n\nEscríbenos por WhatsApp para más información.',
+    followUp: [
+      { label: '📞 Consultar precios empresas', value: 'contacto whatsapp' },
+      { label: '⬅️ Volver al menú', value: 'menu principal' }
+    ]
+  },
+  {
+    keywords: ['quienes son', 'quien es', 'historia', 'sobre ustedes', 'experiencia', 'años', 'trayectoria'],
+    response: '🥑 **Sobre Tus Aguacates**\n\n¡Llevamos **8 años** llevando productos frescos a las mesas colombianas!\n\n• Productos seleccionados del campo\n• Entregas a domicilio en Bogotá, Chía y Soacha\n• 100% confiables\n• Miles de clientes satisfechos\n\n¡Gracias por confiar en nosotros! 💚',
+    followUp: [
+      { label: '🛒 Ver productos', value: 'productos' },
+      { label: '📞 Contactarnos', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['confiable', 'seguro', 'estafa', 'real', 'verdad'],
+    response: '🛡️ **Somos 100% Confiables**\n\n• **8 años** de experiencia\n• Miles de clientes satisfechos\n• Aceptamos pago contra entrega (¡pagas cuando recibes!)\n• Garantía de devolución si no estás satisfecho\n\n¡Confía en nosotros! 💚',
+    followUp: [
+      { label: '🛒 Hacer pedido', value: 'productos' },
+      { label: '📞 Hablar con asesor', value: 'contacto whatsapp' }
+    ]
+  },
+
+  // === MENÚS Y NAVEGACIÓN ===
+  {
+    keywords: ['menu principal', 'volver', 'inicio', 'opciones', 'ayuda', 'que puedes hacer'],
+    response: '¿En qué más puedo ayudarte? 🥑',
+    followUp: [
+      { label: '🥑 Aguacates', value: 'aguacates' },
+      { label: '🧺 Combos', value: 'combos' },
+      { label: '🚚 Envíos', value: 'envío' },
+      { label: '💳 Pagos', value: 'pago' },
+      { label: '❓ Más opciones', value: 'faq menu' },
+      { label: '📞 Contacto', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['faq menu', 'preguntas frecuentes', 'mas opciones', 'otras preguntas'],
+    response: '❓ **Preguntas Frecuentes**\n\nSelecciona la categoría que te interesa:',
+    followUp: [
+      { label: '👤 ¿Necesito cuenta?', value: 'cuenta' },
+      { label: '📦 ¿Pedido mínimo?', value: 'pedido minimo' },
+      { label: '🎟️ Descuentos', value: 'descuento' },
+      { label: '✏️ Modificar pedido', value: 'modificar' },
+      { label: '😔 Tengo un problema', value: 'problema' },
+      { label: '🛡️ Garantía', value: 'garantia' },
+      { label: '🏢 Empresas', value: 'empresas' },
+      { label: '🥑 Sobre nosotros', value: 'quienes son' },
+      { label: '⬅️ Volver', value: 'menu principal' }
+    ]
+  },
+  {
+    keywords: ['hola', 'buenas', 'buenos días', 'buenas tardes', 'hey', 'ey', 'buen dia'],
+    response: '¡Hola! 👋 Bienvenido a **Tus Aguacates**.\n\n**Selecciona una opción** para obtener información:',
+    followUp: [
+      { label: '🥑 Aguacates', value: 'aguacates' },
+      { label: '🧺 Combos', value: 'combos' },
+      { label: '🚚 Envíos', value: 'envío' },
+      { label: '💳 Pagos', value: 'pago' },
+      { label: '📞 Hablar con asesor', value: 'contacto whatsapp' }
+    ]
+  },
+  {
+    keywords: ['gracias', 'genial', 'perfecto', 'excelente', 'ok', 'listo', 'vale', 'entendido'],
+    response: '¡Con mucho gusto! 😊\n\n¿Hay algo más en lo que pueda ayudarte?',
+    followUp: [
+      { label: '🏠 Menú principal', value: 'menu principal' },
+      { label: '❌ No, gracias', value: 'despedida' }
+    ]
+  },
+  {
+    keywords: ['despedida', 'adios', 'chao', 'bye', 'hasta luego', 'nos vemos'],
+    response: '¡Gracias por visitarnos! 🥑💚\n\nRecuerda: entregas los **martes y viernes**.\n\n¡Que tengas un excelente día y nos vemos pronto!',
+    followUp: [
+      { label: '🏠 Volver al inicio', value: 'menu principal' }
+    ]
+  }
+];
+
+// Función para buscar respuesta en FAQ local
+const findLocalAnswer = (message: string): FAQItem | null => {
+  const normalizedMsg = message.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  for (const faq of FAQ_DATABASE) {
+    for (const keyword of faq.keywords) {
+      const normalizedKeyword = keyword.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (normalizedMsg.includes(normalizedKeyword)) {
+        return faq;
+      }
+    }
+  }
+  return null;
+};
 
 // --- Interfaces del Protocolo "Timeline" ---
 interface ProductRef {
@@ -19,8 +317,8 @@ interface ProductRef {
 interface TimelineItem {
   type: 'text' | 'typing' | 'products' | 'options';
   content?: string;
-  delay?: number;    // Para 'text': espera DESPUÉS de mostrar
-  duration?: number; // Para 'typing': cuánto tiempo muestra "Escribiendo..."
+  delay?: number;
+  duration?: number;
   options?: Array<{ label: string; value: string }>;
   items?: ProductRef[];
 }
@@ -31,16 +329,15 @@ interface Message {
   sender: 'bot' | 'user';
   timestamp: Date;
   products?: ProductRef[];
-  quickReplies?: Array<{ label: string; value: string }>; // Estructura unificada
-  isTyping?: boolean; // Para mostrar burbuja de "..."
+  quickReplies?: Array<{ label: string; value: string }>;
+  isTyping?: boolean;
 }
 
 export function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
-  const [hasAutoOpened, setHasAutoOpened] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
-  const [isBotTyping, setIsBotTyping] = useState(false); // Estado global de typing del bot
+  const [isBotTyping, setIsBotTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { addItem, items: cartItems, getSubtotal } = useCartStore();
   const hasInteractedRef = useRef(false);
@@ -53,17 +350,7 @@ export function ChatBot() {
     scrollToBottom();
   }, [messages, isBotTyping]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!hasInteractedRef.current && !hasAutoOpened) {
-        setIsOpen(true);
-        setHasAutoOpened(true);
-        if (messages.length === 0) handleBotGreeting();
-        if (typeof window !== 'undefined') localStorage.setItem('chatbot_visited_v2', 'true');
-      }
-    }, 20000);
-    return () => clearTimeout(timer);
-  }, [hasAutoOpened, messages.length]);
+  // Auto-despliegue REMOVIDO - ahora el usuario debe hacer clic para abrir
 
   const handleBotGreeting = async () => {
     setIsBotTyping(true);
@@ -84,16 +371,20 @@ export function ChatBot() {
       ? `${greeting} 👋 Soy tu asistente personal de Tus Aguacates.`
       : '¡Hola! Bienvenido a Tus Aguacates. 🥑';
 
-    // Mensaje inicial hardcoded pero con estructura compatible
+    // Mensaje inicial con menú de categorías principales
     setMessages([{
       id: 'welcome',
-      text: `${fullGreeting}\n¿En qué puedo ayudarte hoy?`,
+      text: `${fullGreeting}\n\n**Selecciona una opción** para obtener información rápida:`,
       sender: 'bot',
       timestamp: new Date(),
       quickReplies: [
-        { label: '🥑 Aguacates Hass', value: 'intent_avocados' },
-        { label: '🧺 Combos & Mercado', value: 'intent_market' },
-        { label: '🔥 Ver ofertas', value: 'intent_offers' }
+        { label: '🥑 Aguacates', value: 'aguacates' },
+        { label: '🧺 Combos', value: 'combos' },
+        { label: '🚚 Envíos', value: 'envío' },
+        { label: '💳 Pagos', value: 'pago' },
+        { label: '📅 Días de Entrega', value: 'dias entrega' },
+        { label: '❓ Preguntas Frecuentes', value: 'faq menu' },
+        { label: '📞 Hablar con Asesor', value: 'contacto whatsapp' }
       ]
     }]);
   };
@@ -168,8 +459,6 @@ export function ChatBot() {
   const handleSendMessage = async (text: string, label?: string) => {
     if (!text.trim()) return;
 
-    // Si viene de un botón (label), mostramos el label, pero enviamos el value (text) por debajo si fuera necesario
-    // Por simplicidad, mostramos lo que se envía.
     const displayCheck = label || text;
 
     hasInteractedRef.current = true;
@@ -182,11 +471,62 @@ export function ChatBot() {
 
     setMessages(prev => [...prev, newUserMsg]);
     setInputValue('');
-    setIsBotTyping(true); // Feedback inmediato
+
+    // --- Acciones Especiales ---
+    if (text === 'abrir whatsapp') {
+      // Abrir WhatsApp directamente
+      window.open('https://wa.me/573042582777?text=Hola,%20necesito%20ayuda%20con%20mi%20pedido', '_blank');
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        text: '✅ Abriendo WhatsApp... Un asesor te atenderá pronto.\n\n📲 WhatsApp: 304 258 2777',
+        sender: 'bot',
+        timestamp: new Date(),
+        quickReplies: [
+          { label: '⬅️ Volver al menú', value: 'menu principal' }
+        ]
+      }]);
+      return;
+    }
+
+    if (text === 'abrir whatsapp problema') {
+      // Abrir WhatsApp para reportar problema de calidad
+      window.open('https://wa.me/573042582777?text=Hola,%20tengo%20un%20problema%20de%20calidad%20con%20mi%20pedido', '_blank');
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        text: '✅ Abriendo WhatsApp para reportar tu problema...\n\nRecuerda enviar fotos del producto. Te ayudaremos lo antes posible.',
+        sender: 'bot',
+        timestamp: new Date(),
+        quickReplies: [
+          { label: '⬅️ Volver al menú', value: 'menu principal' }
+        ]
+      }]);
+      return;
+    }
+
+    // --- Buscar primero en FAQ Local ---
+    const localAnswer = findLocalAnswer(text);
+
+    if (localAnswer) {
+      // Simular "escribiendo..." para efecto natural
+      setIsBotTyping(true);
+      await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 400));
+      setIsBotTyping(false);
+
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        text: localAnswer.response,
+        sender: 'bot',
+        timestamp: new Date(),
+        quickReplies: localAnswer.followUp
+      }]);
+      return;
+    }
+
+    // --- Si no hay respuesta local, intentar n8n (si está configurado) ---
+    setIsBotTyping(true);
 
     try {
       const { userId, cartContext } = await getUserContext();
-      // Historial para contexto: Convertimos a formato simple para la API
       const history = messages.slice(-10).map(m => ({
         role: m.sender === 'user' ? 'user' : 'assistant',
         content: m.text || (m.products ? '[Productos mostrados]' : '')
@@ -196,7 +536,7 @@ export function ChatBot() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: text, // Enviamos el valor real (value del botón o input)
+          message: text,
           history,
           userId,
           cartContext
@@ -204,14 +544,16 @@ export function ChatBot() {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Error en servidor');
 
-      setIsBotTyping(false); // Apagamos el typing "falso" inicial para dar paso al timeline real
+      if (!response.ok) {
+        throw new Error(data.error || 'Error en servidor');
+      }
+
+      setIsBotTyping(false);
 
       if (data.timeline && Array.isArray(data.timeline)) {
         await processTimeline(data.timeline);
       } else {
-        // Fallback porsiaca n8n manda formato antiguo
         await processTimeline([
           { type: 'text', content: data.text || 'No entendí.' },
           { type: 'products', items: data.products || [] },
@@ -220,13 +562,20 @@ export function ChatBot() {
       }
 
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error n8n:', error);
       setIsBotTyping(false);
+
+      // Fallback amigable cuando n8n no funciona
       setMessages(prev => [...prev, {
         id: Date.now().toString(),
-        text: 'Tuve un pequeño problema de conexión. ¿Intentamos de nuevo? 🔌',
+        text: '🤔 No estoy seguro de cómo responder eso, pero puedo ayudarte con:\n\n• Información de envíos y cobertura\n• Métodos de pago\n• Horarios de atención\n• Contacto con un asesor\n\n¿Qué te gustaría saber?',
         sender: 'bot',
-        timestamp: new Date()
+        timestamp: new Date(),
+        quickReplies: [
+          { label: '🚚 Envíos', value: 'envío' },
+          { label: '💳 Pagos', value: 'pago' },
+          { label: '📞 Hablar con asesor', value: 'contacto whatsapp' }
+        ]
       }]);
     }
   };
@@ -267,7 +616,7 @@ export function ChatBot() {
         className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 bg-naranja-frutal hover:bg-orange-600 text-white rounded-full p-4 shadow-xl transition-all hover:scale-110 flex items-center justify-center group"
       >
         <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
-        {!hasInteractedRef.current && !hasAutoOpened && (
+        {!hasInteractedRef.current && (
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>

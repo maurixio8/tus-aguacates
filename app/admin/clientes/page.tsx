@@ -17,7 +17,9 @@ import {
   ShoppingBag,
   Calendar,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Star,
+  UserPlus
 } from 'lucide-react';
 
 interface Customer {
@@ -34,6 +36,7 @@ interface Customer {
   last_order_date?: string;
   is_active: boolean;
   created_at: string;
+  is_guest?: boolean; // Flag para identificar clientes invitados
 }
 
 interface Pagination {
@@ -263,6 +266,50 @@ export default function CustomersPage() {
         </div>
       </div>
 
+      {/* Alerta de clientes VIP invitados */}
+      {(() => {
+        const vipGuests = customers.filter(c => c.is_guest && c.total_orders >= 3);
+        if (vipGuests.length > 0) {
+          return (
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                    <UserPlus className="w-5 h-5 text-purple-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-purple-900 mb-1">
+                    ¡Tienes {vipGuests.length} cliente{vipGuests.length > 1 ? 's' : ''} VIP sin cuenta!
+                  </h3>
+                  <p className="text-sm text-purple-700 mb-2">
+                    {vipGuests.length > 1 ? 'Estos clientes han' : 'Este cliente ha'} hecho 3 o más pedidos sin registrarse. Convertirlos en clientes registrados te permitirá:
+                  </p>
+                  <ul className="text-sm text-purple-600 space-y-1 mb-3">
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Seguimiento completo de sus pedidos
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Enviarles promociones y descuentos personalizados
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4" />
+                      Mejor experiencia de compra para ellos
+                    </li>
+                  </ul>
+                  <p className="text-xs text-purple-600">
+                    💡 <strong>Consejo:</strong> Busca clientes con el badge morado "¡Convertir!" y haz clic en Editar para crearles una cuenta.
+                  </p>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
       {/* Tabla de clientes */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
@@ -283,7 +330,21 @@ export default function CustomersPage() {
                 <div key={customer.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="font-semibold text-gray-900">{customer.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-900">{customer.name}</p>
+                        {customer.total_orders >= 2 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                            <Star className="w-3 h-3" />
+                            Cliente recurrente
+                          </span>
+                        )}
+                        {customer.is_guest && customer.total_orders >= 3 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            <UserPlus className="w-3 h-3" />
+                            ¡Convertir!
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
                         {customer.phone}
@@ -340,9 +401,23 @@ export default function CustomersPage() {
                   {customers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
-                        <p className="font-semibold text-gray-900">{customer.name}</p>
+                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                          <p className="font-semibold text-gray-900">{customer.name}</p>
+                          {customer.total_orders >= 2 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                              <Star className="w-3 h-3" />
+                              Recurrente
+                            </span>
+                          )}
+                          {customer.is_guest && customer.total_orders >= 3 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                              <UserPlus className="w-3 h-3" />
+                              ¡Convertir!
+                            </span>
+                          )}
+                        </div>
                         {customer.last_order_date && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
                             Último pedido: {formatDate(customer.last_order_date)}
                           </p>
