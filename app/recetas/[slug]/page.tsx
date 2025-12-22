@@ -2,10 +2,11 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Clock, Users, ChefHat, ArrowLeft, Printer, Share2 } from 'lucide-react';
+import { Clock, Users, ChefHat, ArrowLeft } from 'lucide-react';
 import { getRecipeBySlug, recipes, getCategoryInfo } from '@/data/recipes';
 import { RecipeCard } from '@/components/recipes';
 import { AddIngredientsButton } from './AddIngredientsButton';
+import { RecipeActions } from './RecipeActions';
 
 interface RecipePageProps {
   params: Promise<{ slug: string }>;
@@ -148,22 +149,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
               </div>
 
               {/* Acciones */}
-              <div className="flex flex-wrap gap-3">
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Printer className="w-4 h-4" />
-                  Imprimir
-                </button>
-                <button
-                  onClick={() => navigator.share?.({ title: recipe.title, url: window.location.href })}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  Compartir
-                </button>
-              </div>
+              <RecipeActions recipeTitle={recipe.title} />
             </div>
           </div>
         </div>
