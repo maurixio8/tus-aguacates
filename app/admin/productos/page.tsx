@@ -9,6 +9,8 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Package,
   X,
   Save,
@@ -88,7 +90,7 @@ export default function ProductsPage() {
 
   // New Image Audit State
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
-  
+
   // Estado para el producto que está actualizando su categoría
   const [updatingCategory, setUpdatingCategory] = useState<string | null>(null);
   const [uploadStep, setUploadStep] = useState<'select' | 'optimizing' | 'review'>('select');
@@ -98,6 +100,10 @@ export default function ProductsPage() {
   const [finalImageUrl, setFinalImageUrl] = useState<string | null>(null);
   const [finalFileName, setFinalFileName] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  // Variant editing state
+  const [editingVariant, setEditingVariant] = useState<{ productId: string; variantId: string; data: ProductVariant } | null>(null);
+  const [savingVariant, setSavingVariant] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -143,14 +149,14 @@ export default function ProductsPage() {
       });
       console.log('📊 [Categories] Response status:', response.status);
       console.log('📊 [Categories] Response ok:', response.ok);
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
       console.log('📦 [Categories] Response data:', data);
-      
+
       if (data.success || Array.isArray(data)) {
         const categoriesData = data.categories || data || [];
         console.log('✅ [Categories] Categories loaded successfully:', categoriesData.length, 'categories');
@@ -356,10 +362,10 @@ export default function ProductsPage() {
         setProducts(prev => prev.map(p =>
           p.id === productId
             ? {
-                ...p,
-                category_id: categoryId,
-                category_name: categories.find(c => c.id === categoryId)?.name || 'Sin categoría'
-              }
+              ...p,
+              category_id: categoryId,
+              category_name: categories.find(c => c.id === categoryId)?.name || 'Sin categoría'
+            }
             : p
         ));
         showToast('Categoría actualizada correctamente', 'success');
@@ -540,6 +546,67 @@ export default function ProductsPage() {
     setStatus('');
     setPagination(prev => ({ ...prev, page: 1 }));
   };
+
+  // Variant editing functions
+  const handleEditVariant = (productId: string, variant: ProductVariant) => {
+    setEditingVariant({
+      productId,
+      variantId: variant.id,
+      data: { ...variant }
+    });
+  };
+
+  const handleCancelVariantEdit = () => {
+    setEditingVariant(null);
+  };
+
+  const handleSaveVariant = async () => {
+    if (!editingVariant) return;
+    setSavingVariant(true);
+
+    try {
+      const response = await fetch(`/api/admin/variants/${editingVariant.variantId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          price: editingVariant.data.price,
+          stock_quantity: editingVariant.data.stock_quantity,
+          is_active: editingVariant.data.is_active
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the product's variants in the local state
+        setProducts(prev => prev.map(p => {
+          if (p.id === editingVariant.productId) {
+            const updatedVariants = (p.variants || p.product_variants || []).map(v =>
+              v.id === editingVariant.variantId ? data.data : v
+            );
+            return {
+              ...p,
+              variants: updatedVariants,
+              product_variants: updatedVariants
+            };
+          }
+          return p;
+        }));
+
+        showToast('Variante actualizada correctamente', 'success');
+        setEditingVariant(null);
+      } else {
+        showToast(data.error || 'Error al guardar la variante', 'error');
+      }
+    } catch (error) {
+      console.error('Error guardando variante:', error);
+      showToast('Error de conexión', 'error');
+    } finally {
+      setSavingVariant(false);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -812,134 +879,316 @@ export default function ProductsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 lg:px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="relative group">
-                            {product.main_image_url ? (
-                              <img
-                                src={product.main_image_url}
-                                alt={product.name}
-                                className="w-12 h-12 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                                <ImageIcon className="w-6 h-6 text-gray-400" />
+                  {products.map((product) => {
+                    const variants = product.variants || product.product_variants || [];
+                    const hasVariants = variants.length > 0;
+                    const isExpanded = expandedProduct === product.id;
+
+                    return (
+                      <>
+                        <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 lg:px-6 py-4">
+                            <div className="flex items-center gap-3">
+                              {/* Expand button for products with variants */}
+                              {hasVariants && (
+                                <button
+                                  onClick={() => setExpandedProduct(isExpanded ? null : product.id)}
+                                  className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                  title={isExpanded ? "Ocultar variantes" : "Ver variantes"}
+                                >
+                                  {isExpanded ? (
+                                    <ChevronUp className="w-4 h-4 text-gray-600" />
+                                  ) : (
+                                    <ChevronDown className="w-4 h-4 text-gray-600" />
+                                  )}
+                                </button>
+                              )}
+
+                              <div className="relative group">
+                                {product.main_image_url ? (
+                                  <img
+                                    src={product.main_image_url}
+                                    alt={product.name}
+                                    className="w-12 h-12 rounded-lg object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                    <ImageIcon className="w-6 h-6 text-gray-400" />
+                                  </div>
+                                )}
+                                {/* Botón de cámara rápida */}
+                                <button
+                                  onClick={() => handleQuickImageUpload(product.id)}
+                                  disabled={uploadingImage === product.id}
+                                  className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                                  title="Subir foto"
+                                >
+                                  {uploadingImage === product.id ? (
+                                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                                  ) : (
+                                    <Camera className="w-5 h-5 text-white" />
+                                  )}
+                                </button>
                               </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-gray-900 truncate">{product.name}</p>
+                                {hasVariants && (
+                                  <p className="text-xs text-blue-600 flex items-center gap-1">
+                                    <Layers className="w-3 h-3" />
+                                    {variants.length} variante(s)
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
+                            {updatingCategory === product.id ? (
+                              <div className="flex items-center gap-2">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                                <span className="text-xs text-gray-500">Actualizando...</span>
+                              </div>
+                            ) : (
+                              <select
+                                value={product.category_id}
+                                onChange={(e) => {
+                                  setUpdatingCategory(product.id);
+                                  handleUpdateCategory(product.id, e.target.value);
+                                }}
+                                className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
+                              >
+                                {categories.map((cat) => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {cat.name}
+                                  </option>
+                                ))}
+                              </select>
                             )}
-                            {/* Botón de cámara rápida */}
+                          </td>
+                          <td className="px-4 lg:px-6 py-4">
+                            <div>
+                              <span className="font-semibold text-gray-900">
+                                {formatCurrency(product.price)}
+                              </span>
+                              {product.discount_price && (
+                                <span className="block text-xs text-green-600">
+                                  Oferta: {formatCurrency(product.discount_price)}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
+                            <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                              {product.stock}
+                            </span>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4">
                             <button
-                              onClick={() => handleQuickImageUpload(product.id)}
-                              disabled={uploadingImage === product.id}
-                              className="absolute inset-0 bg-black/50 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                              title="Subir foto"
+                              onClick={() => handleToggleActive(product.id, product.is_active)}
+                              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active
+                                ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
                             >
-                              {uploadingImage === product.id ? (
-                                <Loader2 className="w-5 h-5 text-white animate-spin" />
+                              {product.is_active ? (
+                                <>
+                                  <Eye className="w-3 h-3" />
+                                  Activo
+                                </>
                               ) : (
-                                <Camera className="w-5 h-5 text-white" />
+                                <>
+                                  <EyeOff className="w-3 h-3" />
+                                  Inactivo
+                                </>
                               )}
                             </button>
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-gray-900 truncate">{product.name}</p>
-                            {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
-                              <p className="text-xs text-blue-600 flex items-center gap-1">
-                                <Layers className="w-3 h-3" />
-                                {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 hidden md:table-cell">
-                        {updatingCategory === product.id ? (
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
-                            <span className="text-xs text-gray-500">Actualizando...</span>
-                          </div>
-                        ) : (
-                          <select
-                            value={product.category_id}
-                            onChange={(e) => {
-                              setUpdatingCategory(product.id);
-                              handleUpdateCategory(product.id, e.target.value);
-                            }}
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent cursor-pointer"
-                          >
-                            {categories.map((cat) => (
-                              <option key={cat.id} value={cat.id}>
-                                {cat.name}
-                              </option>
-                            ))}
-                          </select>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 text-right">
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingProduct(product);
+                                }}
+                                className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                                title="Editar"
+                              >
+                                <Edit className="w-5 h-5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-5 h-5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+
+                        {/* Expanded Variants Section */}
+                        {isExpanded && hasVariants && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={6} className="px-4 lg:px-6 py-4">
+                              <div className="ml-12">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                  <Layers className="w-4 h-4" />
+                                  Variantes del Producto
+                                </h4>
+                                <div className="space-y-2">
+                                  {variants.map((variant) => {
+                                    const isEditing = editingVariant?.variantId === variant.id;
+                                    const editData = isEditing ? editingVariant.data : variant;
+
+                                    return (
+                                      <div
+                                        key={variant.id}
+                                        className="bg-white rounded-lg border border-gray-200 p-4"
+                                      >
+                                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
+                                          {/* Variant Name */}
+                                          <div>
+                                            <label className="text-xs text-gray-500 block mb-1">Variante</label>
+                                            <p className="font-medium text-gray-900">{variant.variant_value}</p>
+                                          </div>
+
+                                          {/* Price */}
+                                          <div>
+                                            <label className="text-xs text-gray-500 block mb-1">Precio</label>
+                                            {isEditing ? (
+                                              <input
+                                                type="number"
+                                                value={editData.price || 0}
+                                                onChange={(e) => setEditingVariant({
+                                                  ...editingVariant,
+                                                  data: { ...editData, price: parseFloat(e.target.value) || 0 }
+                                                })}
+                                                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                min="0"
+                                              />
+                                            ) : (
+                                              <p className="font-semibold text-gray-900">
+                                                {formatCurrency(variant.price || 0)}
+                                              </p>
+                                            )}
+                                          </div>
+
+                                          {/* Stock */}
+                                          <div>
+                                            <label className="text-xs text-gray-500 block mb-1">Stock</label>
+                                            {isEditing ? (
+                                              <input
+                                                type="number"
+                                                value={editData.stock_quantity || 0}
+                                                onChange={(e) => setEditingVariant({
+                                                  ...editingVariant,
+                                                  data: { ...editData, stock_quantity: parseInt(e.target.value) || 0 }
+                                                })}
+                                                className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                                min="0"
+                                              />
+                                            ) : (
+                                              <p className={`font-medium ${(variant.stock_quantity || 0) < 10 ? 'text-red-600' : 'text-gray-900'}`}>
+                                                {variant.stock_quantity || 0}
+                                              </p>
+                                            )}
+                                          </div>
+
+                                          {/* Status */}
+                                          <div>
+                                            <label className="text-xs text-gray-500 block mb-1">Estado</label>
+                                            {isEditing ? (
+                                              <button
+                                                onClick={() => setEditingVariant({
+                                                  ...editingVariant,
+                                                  data: { ...editData, is_active: !editData.is_active }
+                                                })}
+                                                className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${editData.is_active
+                                                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                                  }`}
+                                              >
+                                                {editData.is_active ? (
+                                                  <>
+                                                    <Eye className="w-3 h-3" />
+                                                    Activo
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <EyeOff className="w-3 h-3" />
+                                                    Inactivo
+                                                  </>
+                                                )}
+                                              </button>
+                                            ) : (
+                                              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${variant.is_active
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-gray-100 text-gray-600'
+                                                }`}>
+                                                {variant.is_active ? (
+                                                  <>
+                                                    <Eye className="w-3 h-3" />
+                                                    Activo
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <EyeOff className="w-3 h-3" />
+                                                    Inactivo
+                                                  </>
+                                                )}
+                                              </span>
+                                            )}
+                                          </div>
+
+                                          {/* Actions */}
+                                          <div className="flex justify-end gap-2">
+                                            {isEditing ? (
+                                              <>
+                                                <button
+                                                  onClick={handleCancelVariantEdit}
+                                                  className="px-3 py-1.5 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                                                  disabled={savingVariant}
+                                                >
+                                                  Cancelar
+                                                </button>
+                                                <button
+                                                  onClick={handleSaveVariant}
+                                                  disabled={savingVariant}
+                                                  className="px-3 py-1.5 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
+                                                >
+                                                  {savingVariant ? (
+                                                    <>
+                                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                                      Guardando...
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      <Save className="w-3 h-3" />
+                                                      Guardar
+                                                    </>
+                                                  )}
+                                                </button>
+                                              </>
+                                            ) : (
+                                              <button
+                                                onClick={() => handleEditVariant(product.id, variant)}
+                                                className="px-3 py-1.5 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1"
+                                              >
+                                                <Edit className="w-3 h-3" />
+                                                Editar
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td className="px-4 lg:px-6 py-4">
-                        <div>
-                          <span className="font-semibold text-gray-900">
-                            {formatCurrency(product.price)}
-                          </span>
-                          {product.discount_price && (
-                            <span className="block text-xs text-green-600">
-                              Oferta: {formatCurrency(product.discount_price)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
-                        <span className={`font-medium ${product.stock < 10 ? 'text-red-600' : 'text-gray-900'}`}>
-                          {product.stock}
-                        </span>
-                      </td>
-                      <td className="px-4 lg:px-6 py-4">
-                        <button
-                          onClick={() => handleToggleActive(product.id, product.is_active)}
-                          className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active
-                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                        >
-                          {product.is_active ? (
-                            <>
-                              <Eye className="w-3 h-3" />
-                              Activo
-                            </>
-                          ) : (
-                            <>
-                              <EyeOff className="w-3 h-3" />
-                              Inactivo
-                            </>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingProduct(product);
-                              // Solo cargar variantes si tiene
-                              if (product.variants?.length || product.product_variants?.length) {
-                                // Logic for variants if needed
-                              }
-                            }}
-                            className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
-                            title="Editar"
-                          >
-                            <Edit className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Eliminar"
-                          >
-                            <Trash2 className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                      </>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
