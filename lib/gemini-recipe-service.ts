@@ -1,9 +1,7 @@
 /**
- * Servicio para generar recetas usando Google Gemini API
- * El Chef Virtual genera recetas personalizadas basadas en los ingredientes del usuario
+ * Servicio para generar recetas usando DeepSeek API
+ * DeepSeek es más económico y tiene mejor cuota gratuita
  */
-
-import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // Tipos para la receta generada
 export interface GeneratedRecipe {
@@ -29,15 +27,13 @@ export interface ChefVirtualResponse {
   error?: string;
 }
 
-// Inicializar cliente de Gemini
-const genAI = process.env.GEMINI_API_KEY
-  ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-  : null;
-
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.0-flash-exp';
+// Configuración de DeepSeek
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+const DEEPSEEK_MODEL = 'deepseek-chat';
 
 /**
- * Genera una receta basada en los ingredientes disponibles
+ * Genera una receta basada en los ingredientes disponibles usando DeepSeek
  */
 export async function generateRecipe(
   ingredients: string[],
@@ -48,7 +44,7 @@ export async function generateRecipe(
   }
 ): Promise<ChefVirtualResponse> {
   // Verificar que la API key esté configurada
-  if (!genAI) {
+  if (!DEEPSEEK_API_KEY) {
     return {
       success: false,
       error: 'El servicio de Chef Virtual no está disponible. Contacta al administrador.'
@@ -64,35 +60,59 @@ export async function generateRecipe(
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: MODEL_NAME,
-      generationConfig: {
-        responseMimeType: 'application/json',
-        temperature: 0.8,
-        maxOutputTokens: 2048,
-      }
-    });
-
     // Construir el prompt optimizado
     const prompt = buildPrompt(ingredients, preferences);
 
-    console.log('🧑‍🍳 Chef Virtual: Generando receta con ingredientes:', ingredients);
+    console.log('🧑‍🍳 Chef Virtual: Generando receta con DeepSeek, ingredientes:', ingredients);
 
-    // Generar la receta
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    // Llamar a la API de DeepSeek
+    const response = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: 'Eres un chef experto colombiano especializado en cocina con aguacates y frutas tropicales frescas. Siempre respondes en formato JSON válido para recetas.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.8,
+        max_tokens: 2048,
+        response_format: { type: 'json_object' }
+      })
+    });
 
-    console.log('✅ Receta generada exitosamente');
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      console.error('Error en DeepSeek API:', errorData);
+      throw new Error(errorData.error?.message || 'Error en la API');
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No se recibió respuesta de la API');
+    }
+
+    console.log('✅ Receta generada exitosamente con DeepSeek');
 
     // Parsear el JSON
     let recipe: GeneratedRecipe;
     try {
-      recipe = JSON.parse(text);
+      recipe = JSON.parse(content);
     } catch (parseError) {
       console.error('Error parsing JSON:', parseError);
       // Intento extraer JSON del texto si hay errores
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         recipe = JSON.parse(jsonMatch[0]);
       } else {
@@ -120,7 +140,7 @@ export async function generateRecipe(
 }
 
 /**
- * Construye el prompt optimizado para Gemini
+ * Construye el prompt optimizado para DeepSeek
  */
 function buildPrompt(
   ingredients: string[],
@@ -142,9 +162,7 @@ function buildPrompt(
     ? `Cocina: ${preferences.cuisine}`
     : 'Cocina: Colombiana o latinoamericana';
 
-  return `Eres un chef experto colombiano especializado en cocina con aguacates y frutas tropicales frescas.
-
-INGREDIENTES DISPONIBLES: ${ingredients.join(', ')}
+  return `INGREDIENTES DISPONIBLES: ${ingredients.join(', ')}
 
 REQUISITOS:
 1. Genera UNA receta creativa y deliciosa usando principalmente estos ingredientes
@@ -181,7 +199,7 @@ Genera la receta ahora. Responde SOLO con el JSON, sin texto adicional.`;
  * Verifica si el servicio está disponible
  */
 export function isChefVirtualAvailable(): boolean {
-  return !!genAI;
+  return !!DEEPSEEK_API_KEY;
 }
 
 /**

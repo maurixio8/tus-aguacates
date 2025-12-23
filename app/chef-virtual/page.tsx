@@ -31,7 +31,7 @@ export default async function ChefVirtualPage() {
             </p>
             <div className="flex items-center justify-center gap-2 text-sm md:text-base text-white/80">
               <Sparkles className="w-5 h-5" />
-              <span>Powered by Google Gemini AI</span>
+              <span>Powered by DeepSeek AI</span>
             </div>
           </div>
         </div>
