@@ -12,7 +12,12 @@ import {
     Save,
     MessageCircle,
     Trash2,
-    AlertCircle
+    AlertCircle,
+    User,
+    Phone,
+    Mail,
+    MapPin,
+    FileText
 } from 'lucide-react';
 
 interface Category {
@@ -55,20 +60,33 @@ interface OrderItem {
     };
 }
 
+interface CustomerData {
+    customer_name: string;
+    customer_phone: string;
+    customer_email: string;
+    delivery_address: string;
+    delivery_notes: string;
+}
+
 interface Order {
     id: string;
     order_number: string;
     customer_name?: string;
     customer_phone?: string;
+    customer_email?: string;
+    delivery_address?: string;
+    delivery_notes?: string;
+    shipping_address?: string;
     total: number;
     order_items?: OrderItem[];
+    order_type?: 'registered' | 'guest';
 }
 
 interface EditOrderModalProps {
     order: Order;
     isOpen: boolean;
     onClose: () => void;
-    onSave: (updatedItems: OrderItem[], newTotal: number) => Promise<boolean>;
+    onSave: (updatedItems: OrderItem[], newTotal: number, customerData?: CustomerData) => Promise<boolean>;
 }
 
 export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditOrderModalProps) {
@@ -82,10 +100,38 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState<'products' | 'customer'>('customer');
+
+    // Estado para datos del cliente
+    const [customerData, setCustomerData] = useState<CustomerData>({
+        customer_name: '',
+        customer_phone: '',
+        customer_email: '',
+        delivery_address: '',
+        delivery_notes: ''
+    });
 
     // Reglas de domicilio
     const SHIPPING_COST = 7400;
     const FREE_SHIPPING_THRESHOLD = 68000;
+
+    // Helper para extraer dirección
+    const extractAddress = (order: Order): string => {
+        // Primero intentar con delivery_address
+        if (order.delivery_address) {
+            return order.delivery_address;
+        }
+        // Luego con shipping_address (puede ser JSON)
+        if (order.shipping_address) {
+            try {
+                const parsed = JSON.parse(order.shipping_address);
+                return parsed.street_address || parsed.address || '';
+            } catch {
+                return order.shipping_address;
+            }
+        }
+        return '';
+    };
 
     useEffect(() => {
         if (isOpen) {
@@ -102,6 +148,14 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                     variant_name: item.variant_name
                 })));
             }
+            // Inicializar datos del cliente
+            setCustomerData({
+                customer_name: order.customer_name || '',
+                customer_phone: order.customer_phone || '',
+                customer_email: order.customer_email || '',
+                delivery_address: extractAddress(order),
+                delivery_notes: order.delivery_notes || ''
+            });
         }
     }, [isOpen, order]);
 
@@ -219,11 +273,21 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
             return;
         }
 
+        if (!customerData.customer_name.trim()) {
+            setError('El nombre del cliente es requerido');
+            return;
+        }
+
+        if (!customerData.customer_phone.trim()) {
+            setError('El teléfono del cliente es requerido');
+            return;
+        }
+
         setSaving(true);
         setError('');
 
         try {
-            const success = await onSave(orderItems, calculateTotal());
+            const success = await onSave(orderItems, calculateTotal(), customerData);
             if (success) {
                 onClose();
             } else {
@@ -267,9 +331,144 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                     </div>
                 )}
 
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200 bg-gray-50">
+                    <button
+                        onClick={() => setActiveTab('customer')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                            activeTab === 'customer'
+                                ? 'bg-white text-green-600 border-b-2 border-green-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                    >
+                        <User className="w-4 h-4" />
+                        Datos del Cliente
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('products')}
+                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                            activeTab === 'products'
+                                ? 'bg-white text-green-600 border-b-2 border-green-600'
+                                : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                    >
+                        <Package className="w-4 h-4" />
+                        Productos ({orderItems.length})
+                    </button>
+                </div>
+
                 {/* Content */}
                 <div className="flex-1 overflow-hidden flex">
-                    {/* Left: Product selection */}
+                    {/* Tab: Customer Data */}
+                    {activeTab === 'customer' && (
+                        <div className="w-full p-6 overflow-y-auto">
+                            <div className="max-w-2xl mx-auto space-y-4">
+                                {/* Nombre */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <User className="w-4 h-4" />
+                                        Nombre del Cliente *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={customerData.customer_name}
+                                        onChange={(e) => setCustomerData({ ...customerData, customer_name: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="Nombre completo del cliente"
+                                    />
+                                </div>
+
+                                {/* Teléfono */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <Phone className="w-4 h-4" />
+                                        Teléfono / WhatsApp *
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        value={customerData.customer_phone}
+                                        onChange={(e) => setCustomerData({ ...customerData, customer_phone: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="300 123 4567"
+                                    />
+                                </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <Mail className="w-4 h-4" />
+                                        Correo Electrónico
+                                    </label>
+                                    <input
+                                        type="email"
+                                        value={customerData.customer_email}
+                                        onChange={(e) => setCustomerData({ ...customerData, customer_email: e.target.value })}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        placeholder="cliente@ejemplo.com"
+                                    />
+                                </div>
+
+                                {/* Dirección */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <MapPin className="w-4 h-4" />
+                                        Dirección de Entrega
+                                    </label>
+                                    <textarea
+                                        value={customerData.delivery_address}
+                                        onChange={(e) => setCustomerData({ ...customerData, delivery_address: e.target.value })}
+                                        rows={3}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                                        placeholder="Calle, número, edificio, apartamento, barrio..."
+                                    />
+                                </div>
+
+                                {/* Notas de entrega */}
+                                <div>
+                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
+                                        <FileText className="w-4 h-4" />
+                                        Notas de Entrega
+                                    </label>
+                                    <textarea
+                                        value={customerData.delivery_notes}
+                                        onChange={(e) => setCustomerData({ ...customerData, delivery_notes: e.target.value })}
+                                        rows={2}
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                                        placeholder="Instrucciones especiales para la entrega..."
+                                    />
+                                </div>
+
+                                {/* Resumen del pedido */}
+                                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <p className="text-sm font-medium text-gray-700 mb-2">Resumen del Pedido</p>
+                                    <div className="space-y-1 text-sm">
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Productos:</span>
+                                            <span className="font-medium">{orderItems.length} items</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Subtotal:</span>
+                                            <span className="font-medium">{formatCurrency(calculateSubtotal())}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-gray-600">Domicilio:</span>
+                                            <span className={calculateShipping() === 0 ? 'text-green-600 font-medium' : 'font-medium'}>
+                                                {calculateShipping() === 0 ? 'GRATIS' : formatCurrency(calculateShipping())}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between pt-2 border-t border-gray-300">
+                                            <span className="font-semibold">Total:</span>
+                                            <span className="font-bold text-green-600">{formatCurrency(calculateTotal())}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Tab: Products - Left: Product selection */}
+                    {activeTab === 'products' && (
+                    <>
                     <div className="w-1/2 border-r border-gray-200 flex flex-col overflow-hidden">
                         {/* Categories */}
                         <div className="p-4 border-b border-gray-200">
@@ -460,6 +659,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                             </div>
                         </div>
                     </div>
+                    </>
+                    )}
                 </div>
 
                 {/* Footer */}
