@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, KeyboardEvent } from 'react';
+import { useState, KeyboardEvent, useEffect, useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 
 interface IngredientInputProps {
@@ -40,6 +40,8 @@ export function IngredientInput({
 }: IngredientInputProps) {
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const filteredSuggestions = inputValue
     ? SUGGESTED_INGREDIENTS.filter(s =>
@@ -80,6 +82,22 @@ export function IngredientInput({
   };
 
   const isSelected = (ingredient: string) => ingredients.includes(ingredient);
+
+  // Calcular página actual basado en scroll (solo móvil)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const scrollLeft = container.scrollLeft;
+      const itemWidth = container.offsetWidth / 4; // 4 items por vista
+      const page = Math.round(scrollLeft / itemWidth);
+      setCurrentPage(Math.min(page, 4)); // Máximo 5 páginas (0-4)
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="w-full">
@@ -164,13 +182,73 @@ export function IngredientInput({
         </div>
       )}
 
-      {/* Sugerencias rápidas - Botones visuales */}
-      <div>
+      {/* Sugerencias rápidas - Slider para MÓVIL */}
+      <div className="md:hidden">
+        <p className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+          <span>✨</span>
+          Toca para seleccionar:
+        </p>
+
+        <div className="relative">
+          {/* Slider horizontal con snap-scroll */}
+          <div
+            ref={containerRef}
+            className="flex gap-2 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1 scrollbar-hide scroll-smooth"
+          >
+            {SUGGESTED_INGREDIENTS.map((item) => {
+              const selected = isSelected(item.name);
+              return (
+                <div key={item.name} className="snap-start w-[calc(25%-6px)] flex-shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleIngredient(item.name)}
+                    className={`
+                      relative overflow-hidden group w-full aspect-square rounded-xl font-medium text-xs
+                      transition-all duration-300 flex flex-col items-center justify-center gap-0.5
+                      ${selected
+                        ? 'bg-gradient-to-br from-verde-aguacate to-verde-bosque text-white shadow-md'
+                        : 'bg-white border-2 border-gray-200 text-gray-700 hover:border-verde-aguacate'
+                      }
+                    `}
+                  >
+                    <span className="text-2xl">{item.emoji}</span>
+                    <span className="text-[10px] leading-tight">{item.name}</span>
+                    {selected && (
+                      <div className="absolute top-1 right-1 w-4 h-4 bg-white/30 rounded-full flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Indicador de páginas (dots) */}
+          <div className="flex justify-center gap-1.5 mt-3">
+            {[0, 1, 2, 3, 4].map((page) => (
+              <div
+                key={page}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  currentPage === page
+                    ? 'bg-verde-aguacate w-4'
+                    : 'bg-gray-300 w-2'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sugerencias rápidas - Grid normal para TABLET/DESKTOP */}
+      <div className="hidden md:block">
         <p className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
           <span className="text-lg">✨</span>
           Ingredientes populares (toca para seleccionar):
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+        <div className="grid grid-cols-4 lg:grid-cols-5 gap-2">
           {SUGGESTED_INGREDIENTS.map((item) => {
             const selected = isSelected(item.name);
             return (
@@ -214,6 +292,13 @@ export function IngredientInput({
         }
         .animate-shimmer {
           animation: shimmer 1.5s infinite;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
       `}</style>
     </div>

@@ -18,8 +18,8 @@ export default async function ChefVirtualPage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/30 to-emerald-50/20">
-      {/* Hero Section con animaciones */}
-      <section className="relative bg-gradient-to-br from-verde-bosque via-verde-aguacate to-emerald-600 text-white py-16 md:py-20 overflow-hidden">
+      {/* Hero Section con animaciones - Compacto en móvil */}
+      <section className="relative bg-gradient-to-br from-verde-bosque via-verde-aguacate to-emerald-600 text-white py-8 md:py-20 overflow-hidden">
         {/* Decoración de fondo animada */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-10 left-10 w-32 h-32 bg-yellow-300 rounded-full blur-3xl animate-pulse"></div>
@@ -29,31 +29,31 @@ export default async function ChefVirtualPage() {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-3 mb-6 animate-bounce">
-              <ChefHat className="w-14 h-14 md:w-20 md:h-20 drop-shadow-2xl" />
-              <h1 className="text-4xl md:text-6xl font-bold drop-shadow-lg">Chef Virtual</h1>
+            <div className="flex items-center justify-center gap-2 md:gap-3 mb-3 md:mb-6 animate-bounce">
+              <ChefHat className="w-10 h-10 md:w-20 md:h-20 drop-shadow-2xl" />
+              <h1 className="text-3xl md:text-6xl font-bold drop-shadow-lg">Chef Virtual</h1>
             </div>
-            <p className="text-xl md:text-2xl text-white/95 mb-6 leading-relaxed">
+            <p className="text-base md:text-xl text-white/95 mb-4 md:mb-6 leading-relaxed">
               Tu chef personal con IA. Dile qué ingredientes tienes y generará una receta única para ti.
             </p>
-            <div className="inline-flex items-center gap-3 px-6 py-3 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30 shadow-xl">
-              <Sparkles className="w-6 h-6 text-yellow-300 animate-spin-slow" />
-              <span className="font-semibold">IA de Tus Aguacates</span>
+            <div className="inline-flex items-center gap-2 md:gap-3 px-4 md:px-6 py-2 md:py-3 bg-white/20 backdrop-blur-sm rounded-full border-2 border-white/30 shadow-xl">
+              <Sparkles className="w-4 h-4 md:w-6 md:h-6 text-yellow-300 animate-spin-slow" />
+              <span className="text-sm md:text-base font-semibold">IA de Tus Aguacates</span>
             </div>
 
-            {/* Stats animados */}
-            <div className="mt-10 grid grid-cols-3 gap-4 max-w-lg mx-auto">
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
-                <div className="text-3xl font-bold">∞</div>
-                <div className="text-xs text-white/80">Recetas posibles</div>
+            {/* Stats animados - Compacto en móvil */}
+            <div className="mt-4 md:mt-10 flex justify-center gap-2 md:grid md:grid-cols-3 md:gap-4 max-w-lg mx-auto">
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 md:rounded-2xl md:p-4 border border-white/30 min-w-[70px] md:min-w-0">
+                <div className="text-xl md:text-3xl font-bold">∞</div>
+                <div className="text-[10px] md:text-xs text-white/80">Recetas</div>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
-                <div className="text-3xl font-bold">2</div>
-                <div className="text-xs text-white/80">Gratis al día</div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 md:rounded-2xl md:p-4 border border-white/30 min-w-[70px] md:min-w-0">
+                <div className="text-xl md:text-3xl font-bold">2</div>
+                <div className="text-[10px] md:text-xs text-white/80">Gratis/día</div>
               </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 border border-white/30">
-                <div className="text-3xl font-bold">30s</div>
-                <div className="text-xs text-white/80">Tiempo promedio</div>
+              <div className="bg-white/20 backdrop-blur-sm rounded-xl px-3 py-2 md:rounded-2xl md:p-4 border border-white/30 min-w-[70px] md:min-w-0">
+                <div className="text-xl md:text-3xl font-bold">30s</div>
+                <div className="text-[10px] md:text-xs text-white/80">Promedio</div>
               </div>
             </div>
           </div>
