@@ -44,13 +44,23 @@ export function ConversionHero() {
                 {/* Contenido debajo de la imagen */}
                 <div className="bg-gradient-to-b from-verde-bosque-600 to-verde-bosque-700 px-4 py-6">
                     <div className="container mx-auto">
-                        {/* Botón de Ofertas - Solo móvil */}
-                        <Link
-                            href="/tienda?categoria=ofertas"
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full mb-4 shadow-lg text-sm font-bold animate-pulse hover:animate-none hover:scale-105 transition-transform"
-                        >
-                            🔥 Ver Ofertas
-                        </Link>
+                        {/* Botones pequeños - Solo móvil */}
+                        <div className="flex gap-2 mb-4">
+                            <Link
+                                href="/tienda?categoria=ofertas"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-pulse hover:animate-none hover:scale-105 transition-transform"
+                            >
+                                🔥 Ver Ofertas
+                            </Link>
+
+                            <Link
+                                href="/recetas"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold hover:from-green-600 hover:to-green-800 hover:scale-105 transition-transform"
+                            >
+                                <ChefHat className="w-4 h-4" />
+                                Recetas
+                            </Link>
+                        </div>
 
                         {/* Headline */}
                         <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
@@ -81,14 +91,6 @@ export function ConversionHero() {
                                 className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl transition-all transform hover:scale-105 border-2 border-verde-aguacate"
                             >
                                 🛒 Ver Productos
-                            </Link>
-
-                            <Link
-                                href="/recetas"
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl transition-all transform hover:scale-105 border-2 border-verde-aguacate"
-                            >
-                                <ChefHat className="w-5 h-5 text-green-600" />
-                                Descubre Recetas
                             </Link>
                         </div>
 
