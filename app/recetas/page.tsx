@@ -75,7 +75,7 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
             </p>
 
             {/* Barra de búsqueda */}
-            <form action="/recetas" method="GET" className="max-w-xl mx-auto">
+            <form action="/recetas" method="GET" className="max-w-xl mx-auto mb-4">
               <div className="relative">
                 <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
@@ -87,6 +87,14 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
                 />
               </div>
             </form>
+
+            {/* Chef Virtual CTA */}
+            <a
+              href="/chef-virtual"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 text-white rounded-full font-medium transition-colors border-2 border-white/30"
+            >
+              🧑‍🍳 Chef Virtual
+            </a>
           </div>
         </div>
       </section>
