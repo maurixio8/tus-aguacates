@@ -24,44 +24,63 @@ export async function GET(request: NextRequest) {
     // 1. FUENTE PRINCIPAL: Tabla customers
     // ========================================
     if (source === 'all' || source === 'customers') {
-      let customersQuery = supabase
-        .from('customers')
-        .select('*', { count: 'exact' });
+      // Supabase limita a 1000 por defecto, necesitamos cargar todos
+      // Usamos paginación interna para cargar todos los registros
+      let allCustomersData: any[] = [];
+      let hasMore = true;
+      let offset = 0;
+      const batchSize = 1000;
 
-      // Búsqueda
-      if (search) {
-        customersQuery = customersQuery.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+      while (hasMore) {
+        let customersQuery = supabase
+          .from('customers')
+          .select('*', { count: 'exact' })
+          .range(offset, offset + batchSize - 1);
+
+        // Búsqueda (solo en la primera consulta para obtener IDs filtrados)
+        if (search) {
+          customersQuery = customersQuery.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+        }
+
+        const { data: customersData, error: customersError, count } = await customersQuery;
+
+        if (customersError) {
+          console.log('⚠️ Tabla customers no existe o error:', customersError.message);
+          hasMore = false;
+        } else if (customersData && customersData.length > 0) {
+          allCustomersData = [...allCustomersData, ...customersData];
+          offset += batchSize;
+          // Si obtuvimos menos registros que el batch, ya no hay más
+          hasMore = customersData.length === batchSize;
+          console.log(`📊 Cargados ${allCustomersData.length} clientes de ${count || '?'} total`);
+        } else {
+          hasMore = false;
+        }
       }
 
-      const { data: customersData, error: customersError } = await customersQuery;
+      console.log(`✅ Total encontrados: ${allCustomersData.length} clientes en tabla customers`);
 
-      if (customersError) {
-        console.log('⚠️ Tabla customers no existe o error:', customersError.message);
-      } else if (customersData) {
-        console.log(`✅ Encontrados ${customersData.length} clientes en tabla customers`);
-
-        for (const customer of customersData) {
-          const phoneKey = (customer.phone || '').trim().toLowerCase();
-          if (phoneKey && !phonesSeen.has(phoneKey)) {
-            phonesSeen.add(phoneKey);
-            allCustomers.push({
-              id: customer.id,
-              name: customer.name,
-              phone: customer.phone,
-              email: customer.email || null,
-              address: customer.address,
-              neighborhood: customer.neighborhood,
-              city: customer.city || 'Bogotá',
-              notes: customer.notes,
-              total_orders: customer.total_orders || 0,
-              total_spent: parseFloat(customer.total_spent) || 0,
-              last_order_date: customer.last_order_date,
-              is_active: customer.is_active !== false,
-              created_at: customer.created_at,
-              is_guest: false,
-              source: 'customers'
-            });
-          }
+      for (const customer of allCustomersData) {
+        const phoneKey = (customer.phone || '').trim().toLowerCase();
+        if (phoneKey && !phonesSeen.has(phoneKey)) {
+          phonesSeen.add(phoneKey);
+          allCustomers.push({
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email || null,
+            address: customer.address,
+            neighborhood: customer.neighborhood,
+            city: customer.city || 'Bogotá',
+            notes: customer.notes,
+            total_orders: customer.total_orders || 0,
+            total_spent: parseFloat(customer.total_spent) || 0,
+            last_order_date: customer.last_order_date,
+            is_active: customer.is_active !== false,
+            created_at: customer.created_at,
+            is_guest: false,
+            source: 'customers'
+          });
         }
       }
     }
