@@ -336,7 +336,7 @@ export default function OrdersPage() {
     }
   };
 
-  const handleSaveOrderEdit = async (items: any[], newTotal: number): Promise<boolean> => {
+  const handleSaveOrderEdit = async (items: any[], newTotal: number, customerData?: any): Promise<boolean> => {
     if (!editingOrder) return false;
 
     try {
@@ -344,7 +344,7 @@ export default function OrdersPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ items, total: newTotal }),
+        body: JSON.stringify({ items, total: newTotal, customerData }),
       });
 
       const data = await response.json();
@@ -809,16 +809,14 @@ export default function OrdersPage() {
                         </div>
                       )}
 
-                      {/* Edit button - only for registered orders with order_items */}
-                      {order.order_type === 'registered' && (
-                        <button
-                          onClick={() => setEditingOrder(order)}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
-                        >
-                          <Edit className="w-4 h-4" />
-                          Editar
-                        </button>
-                      )}
+                      {/* Edit button - for all orders */}
+                      <button
+                        onClick={() => setEditingOrder(order)}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Editar
+                      </button>
 
                       {/* Delete button */}
                       <button

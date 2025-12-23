@@ -19,7 +19,11 @@ import {
   AlertCircle,
   CheckCircle,
   Star,
-  UserPlus
+  UserPlus,
+  Users,
+  TrendingUp,
+  DollarSign,
+  UserCheck
 } from 'lucide-react';
 
 interface Customer {
@@ -46,8 +50,22 @@ interface Pagination {
   totalPages: number;
 }
 
+interface CustomerStats {
+  total: number;
+  registered: number;
+  guests: number;
+  withPhone: number;
+  withEmail: number;
+  withAddress: number;
+  totalSpent: number;
+  totalOrders: number;
+  avgTicket: number;
+  recurring: number; // 2+ pedidos
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [allCustomers, setAllCustomers] = useState<Customer[]>([]); // Para estadísticas
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [pagination, setPagination] = useState<Pagination>({
@@ -55,6 +73,18 @@ export default function CustomersPage() {
     limit: 20,
     total: 0,
     totalPages: 1,
+  });
+  const [stats, setStats] = useState<CustomerStats>({
+    total: 0,
+    registered: 0,
+    guests: 0,
+    withPhone: 0,
+    withEmail: 0,
+    withAddress: 0,
+    totalSpent: 0,
+    totalOrders: 0,
+    avgTicket: 0,
+    recurring: 0
   });
 
   // Modal states
@@ -80,6 +110,52 @@ export default function CustomersPage() {
     }, 300);
     return () => clearTimeout(timer);
   }, [search, pagination.page]);
+
+  // Cargar estadísticas una vez al inicio
+  useEffect(() => {
+    loadStats();
+  }, []);
+
+  const loadStats = async () => {
+    try {
+      // Cargar todos los clientes sin paginación para estadísticas
+      const response = await fetch(`/api/admin/customers/?page=1&limit=1000`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        const allCust = data.data as Customer[];
+        setAllCustomers(allCust);
+
+        // Calcular estadísticas
+        const registered = allCust.filter(c => !c.is_guest).length;
+        const guests = allCust.filter(c => c.is_guest).length;
+        const withPhone = allCust.filter(c => c.phone && c.phone !== 'Sin teléfono').length;
+        const withEmail = allCust.filter(c => c.email).length;
+        const withAddress = allCust.filter(c => c.address).length;
+        const totalSpent = allCust.reduce((sum, c) => sum + (c.total_spent || 0), 0);
+        const totalOrders = allCust.reduce((sum, c) => sum + (c.total_orders || 0), 0);
+        const recurring = allCust.filter(c => c.total_orders >= 2).length;
+        const avgTicket = totalOrders > 0 ? totalSpent / totalOrders : 0;
+
+        setStats({
+          total: allCust.length,
+          registered,
+          guests,
+          withPhone,
+          withEmail,
+          withAddress,
+          totalSpent,
+          totalOrders,
+          avgTicket,
+          recurring
+        });
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+    }
+  };
 
   const loadCustomers = async () => {
     setLoading(true);
@@ -247,6 +323,105 @@ export default function CustomersPage() {
           <Plus className="w-5 h-5" />
           Nuevo Cliente
         </button>
+      </div>
+
+      {/* Estadísticas de Clientes */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {/* Total de Clientes */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-500">Total Clientes</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Registrados vs Invitados */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <UserCheck className="w-5 h-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{stats.registered}</p>
+              <p className="text-xs text-gray-500">Registrados</p>
+              <p className="text-xs text-purple-600">{stats.guests} invitados</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Clientes Recurrentes */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-yellow-100 flex items-center justify-center">
+              <Star className="w-5 h-5 text-yellow-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">{stats.recurring}</p>
+              <p className="text-xs text-gray-500">Recurrentes</p>
+              <p className="text-xs text-gray-400">(2+ pedidos)</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Total Ventas */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-900">{formatCurrency(stats.totalSpent)}</p>
+              <p className="text-xs text-gray-500">Total Ventas</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Ticket Promedio */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-lg font-bold text-gray-900">{formatCurrency(stats.avgTicket)}</p>
+              <p className="text-xs text-gray-500">Ticket Promedio</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Resumen de Datos */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="flex flex-wrap gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <Phone className="w-4 h-4 text-green-600" />
+            <span className="text-gray-600">Con teléfono:</span>
+            <span className="font-semibold text-green-600">{stats.withPhone}</span>
+            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withPhone / stats.total) * 100) : 0}%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Mail className="w-4 h-4 text-blue-600" />
+            <span className="text-gray-600">Con email:</span>
+            <span className="font-semibold text-blue-600">{stats.withEmail}</span>
+            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withEmail / stats.total) * 100) : 0}%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-orange-600" />
+            <span className="text-gray-600">Con dirección:</span>
+            <span className="font-semibold text-orange-600">{stats.withAddress}</span>
+            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withAddress / stats.total) * 100) : 0}%)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4 text-purple-600" />
+            <span className="text-gray-600">Total pedidos:</span>
+            <span className="font-semibold text-purple-600">{stats.totalOrders}</span>
+          </div>
+        </div>
       </div>
 
       {/* Búsqueda */}
