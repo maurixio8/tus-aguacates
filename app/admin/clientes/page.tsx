@@ -61,6 +61,10 @@ interface CustomerStats {
   totalOrders: number;
   avgTicket: number;
   recurring: number; // 2+ pedidos
+  // Fuentes de datos
+  fromCustomers: number;
+  fromProfiles: number;
+  fromGuestOrders: number;
 }
 
 export default function CustomersPage() {
@@ -84,7 +88,10 @@ export default function CustomersPage() {
     totalSpent: 0,
     totalOrders: 0,
     avgTicket: 0,
-    recurring: 0
+    recurring: 0,
+    fromCustomers: 0,
+    fromProfiles: 0,
+    fromGuestOrders: 0
   });
 
   // Modal states
@@ -118,14 +125,14 @@ export default function CustomersPage() {
 
   const loadStats = async () => {
     try {
-      // Cargar todos los clientes sin paginación para estadísticas
-      const response = await fetch(`/api/admin/customers/?page=1&limit=1000`, {
+      // Cargar todos los clientes sin paginación para estadísticas (límite alto)
+      const response = await fetch(`/api/admin/customers/?page=1&limit=10000`, {
         credentials: 'include',
       });
       const data = await response.json();
 
       if (data.success && data.data) {
-        const allCust = data.data as Customer[];
+        const allCust = data.data as (Customer & { source?: string })[];
         setAllCustomers(allCust);
 
         // Calcular estadísticas
@@ -139,8 +146,13 @@ export default function CustomersPage() {
         const recurring = allCust.filter(c => c.total_orders >= 2).length;
         const avgTicket = totalOrders > 0 ? totalSpent / totalOrders : 0;
 
+        // Obtener fuentes de datos de la respuesta
+        const fromCustomers = data.sources?.customers || allCust.filter(c => c.source === 'customers').length;
+        const fromProfiles = data.sources?.profiles || allCust.filter(c => c.source === 'profiles').length;
+        const fromGuestOrders = data.sources?.guests || allCust.filter(c => c.source === 'guest_orders').length;
+
         setStats({
-          total: allCust.length,
+          total: data.pagination?.total || allCust.length,
           registered,
           guests,
           withPhone,
@@ -149,7 +161,10 @@ export default function CustomersPage() {
           totalSpent,
           totalOrders,
           avgTicket,
-          recurring
+          recurring,
+          fromCustomers,
+          fromProfiles,
+          fromGuestOrders
         });
       }
     } catch (error) {
@@ -421,6 +436,19 @@ export default function CustomersPage() {
             <span className="text-gray-600">Total pedidos:</span>
             <span className="font-semibold text-purple-600">{stats.totalOrders}</span>
           </div>
+        </div>
+        {/* Fuentes de datos */}
+        <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs">
+          <span className="text-gray-500 font-medium">Fuentes de datos:</span>
+          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">
+            Tabla Customers: {stats.fromCustomers}
+          </span>
+          <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full">
+            Usuarios Registrados: {stats.fromProfiles}
+          </span>
+          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
+            Pedidos Invitados: {stats.fromGuestOrders}
+          </span>
         </div>
       </div>
 
