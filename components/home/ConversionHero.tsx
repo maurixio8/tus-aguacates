@@ -85,9 +85,9 @@ export function ConversionHero() {
 
                             <Link
                                 href="/recetas"
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-700 text-white px-6 py-3 rounded-full text-lg font-bold shadow-xl hover:from-green-600 hover:to-green-800 transition-all transform hover:scale-105 border-2 border-green-800"
+                                className="w-full flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl transition-all transform hover:scale-105"
                             >
-                                <ChefHat className="w-5 h-5" />
+                                <ChefHat className="w-5 h-5 text-green-600" />
                                 Descubre Recetas
                             </Link>
                         </div>
@@ -175,9 +175,9 @@ export function ConversionHero() {
 
                             <Link
                                 href="/recetas"
-                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-green-800"
+                                className="group flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
                             >
-                                <ChefHat className="w-6 h-6" />
+                                <ChefHat className="w-6 h-6 text-green-600" />
                                 Descubre Recetas
                             </Link>
                         </div>
