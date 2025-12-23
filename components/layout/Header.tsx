@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, BookOpen } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, BookOpen, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
@@ -236,6 +236,17 @@ export function Header() {
                 >
                   <span className="w-5 h-5 flex items-center justify-center">🔥</span>
                   <span>Ofertas y Combos</span>
+                </Link>
+
+                <Link
+                  href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition-colors font-semibold"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>WhatsApp</span>
                 </Link>
 
                 <div className="border-t border-white/10 my-2" />
