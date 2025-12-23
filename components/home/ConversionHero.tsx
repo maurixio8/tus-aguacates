@@ -177,9 +177,9 @@ export function ConversionHero() {
 
                             <Link
                                 href="/recetas"
-                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate"
+                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate"
                             >
-                                <ChefHat className="w-6 h-6 text-green-600" />
+                                <ChefHat className="w-6 h-6 text-white" />
                                 Descubre Recetas
                             </Link>
                         </div>
