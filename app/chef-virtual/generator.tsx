@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { IngredientInput, RecipeDisplay } from '@/components/chef-virtual';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
@@ -14,19 +14,23 @@ export function ChefVirtualGenerator() {
   const [error, setError] = useState<string | null>(null);
   const [dailyCount, setDailyCount] = useState(0);
 
-  // Load daily count from localStorage on mount
-  useState(() => {
+  // Load daily count from localStorage on mount (client-side only)
+  useEffect(() => {
     const today = new Date().toDateString();
     const saved = localStorage.getItem('chefVirtualCount');
     if (saved) {
-      const { date, count } = JSON.parse(saved);
-      if (date === today) {
-        setDailyCount(count);
-      } else {
-        localStorage.setItem('chefVirtualCount', JSON.stringify({ date: today, count: 0 }));
+      try {
+        const { date, count } = JSON.parse(saved);
+        if (date === today) {
+          setDailyCount(count);
+        } else {
+          localStorage.setItem('chefVirtualCount', JSON.stringify({ date: today, count: 0 }));
+        }
+      } catch (e) {
+        console.error('Error parsing chefVirtualCount:', e);
       }
     }
-  });
+  }, []);
 
   const generateRecipe = async () => {
     if (ingredients.length === 0) {
@@ -40,9 +44,13 @@ export function ChefVirtualGenerator() {
     let currentCount = 0;
 
     if (saved) {
-      const { date, count } = JSON.parse(saved);
-      if (date === today) {
-        currentCount = count;
+      try {
+        const { date, count } = JSON.parse(saved);
+        if (date === today) {
+          currentCount = count;
+        }
+      } catch (e) {
+        console.error('Error parsing chefVirtualCount:', e);
       }
     }
 
