@@ -120,6 +120,16 @@ const statusConfig: Record<string, { label: string; color: string; bgColor: stri
   },
 };
 
+interface OrderStats {
+  pending: number;
+  confirmed: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  total: number;
+}
+
 export default function OrdersPage() {
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -136,10 +146,37 @@ export default function OrdersPage() {
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [updatingOrder, setUpdatingOrder] = useState<string | null>(null);
   const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+  const [orderStats, setOrderStats] = useState<OrderStats>({
+    pending: 0,
+    confirmed: 0,
+    processing: 0,
+    shipped: 0,
+    delivered: 0,
+    cancelled: 0,
+    total: 0
+  });
 
   useEffect(() => {
     loadOrders();
   }, [status, dateFrom, dateTo, pagination.page]);
+
+  useEffect(() => {
+    loadOrderStats();
+  }, []);
+
+  const loadOrderStats = async () => {
+    try {
+      const response = await fetch('/api/admin/orders/stats', {
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (data.success && data.stats) {
+        setOrderStats(data.stats);
+      }
+    } catch (error) {
+      console.error('Error cargando estadísticas:', error);
+    }
+  };
 
   const loadOrders = async () => {
     setLoading(true);
@@ -185,6 +222,7 @@ export default function OrdersPage() {
 
       if (data.success) {
         loadOrders();
+        loadOrderStats(); // Refresh stats after status update
       } else {
         alert(data.error || 'Error al actualizar el estado');
       }
@@ -370,6 +408,132 @@ export default function OrdersPage() {
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Pedidos</h1>
         <p className="text-gray-600 mt-1">Administra y da seguimiento a todos los pedidos</p>
       </div>
+
+      {/* Quick Stats Panel */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+        {/* Total */}
+        <button
+          onClick={() => { setStatus(''); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === ''
+              ? 'bg-gray-100 border-gray-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-gray-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-gray-900">{orderStats.total}</div>
+          <div className="text-xs text-gray-600">Total</div>
+        </button>
+
+        {/* Pending */}
+        <button
+          onClick={() => { setStatus('pending'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'pending'
+              ? 'bg-yellow-100 border-yellow-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-yellow-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-yellow-600">{orderStats.pending}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <Clock className="w-3 h-3" /> Pendientes
+          </div>
+        </button>
+
+        {/* Confirmed */}
+        <button
+          onClick={() => { setStatus('confirmed'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'confirmed'
+              ? 'bg-blue-100 border-blue-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-blue-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-blue-600">{orderStats.confirmed}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" /> Confirmados
+          </div>
+        </button>
+
+        {/* Processing */}
+        <button
+          onClick={() => { setStatus('processing'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'processing'
+              ? 'bg-purple-100 border-purple-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-purple-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-purple-600">{orderStats.processing}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <ChefHat className="w-3 h-3" /> Preparación
+          </div>
+        </button>
+
+        {/* Shipped */}
+        <button
+          onClick={() => { setStatus('shipped'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'shipped'
+              ? 'bg-blue-100 border-blue-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-blue-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-blue-500">{orderStats.shipped}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <Truck className="w-3 h-3" /> En Camino
+          </div>
+        </button>
+
+        {/* Delivered */}
+        <button
+          onClick={() => { setStatus('delivered'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'delivered'
+              ? 'bg-green-100 border-green-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-green-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-green-600">{orderStats.delivered}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <CheckCircle className="w-3 h-3" /> Entregados
+          </div>
+        </button>
+
+        {/* Cancelled */}
+        <button
+          onClick={() => { setStatus('cancelled'); setPagination(prev => ({ ...prev, page: 1 })); }}
+          className={`p-4 rounded-xl border-2 transition-all ${
+            status === 'cancelled'
+              ? 'bg-red-100 border-red-400 shadow-md'
+              : 'bg-white border-gray-200 hover:border-red-300'
+          }`}
+        >
+          <div className="text-2xl font-bold text-red-600">{orderStats.cancelled}</div>
+          <div className="text-xs text-gray-600 flex items-center gap-1">
+            <XCircle className="w-3 h-3" /> Cancelados
+          </div>
+        </button>
+      </div>
+
+      {/* Active Orders Alert */}
+      {(orderStats.pending + orderStats.confirmed + orderStats.processing + orderStats.shipped) > 0 && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-center gap-4">
+          <div className="bg-amber-100 p-2 rounded-lg">
+            <AlertTriangle className="w-6 h-6 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-amber-800">
+              {orderStats.pending + orderStats.confirmed + orderStats.processing + orderStats.shipped} pedidos activos requieren atención
+            </p>
+            <p className="text-sm text-amber-700">
+              {orderStats.pending > 0 && `${orderStats.pending} pendientes • `}
+              {orderStats.confirmed > 0 && `${orderStats.confirmed} confirmados • `}
+              {orderStats.processing > 0 && `${orderStats.processing} en preparación • `}
+              {orderStats.shipped > 0 && `${orderStats.shipped} en camino`}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Filtros */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
@@ -755,6 +919,48 @@ export default function OrdersPage() {
                         {expandedOrder === order.id ? 'Ocultar detalles' : 'Ver detalles'}
                       </button>
 
+                      {/* Quick action buttons based on current status */}
+                      {order.status === 'pending' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'confirmed')}
+                          disabled={updatingOrder === order.id}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Confirmar
+                        </button>
+                      )}
+                      {order.status === 'confirmed' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'processing')}
+                          disabled={updatingOrder === order.id}
+                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <ChefHat className="w-4 h-4" />
+                          En Preparación
+                        </button>
+                      )}
+                      {order.status === 'processing' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'shipped')}
+                          disabled={updatingOrder === order.id}
+                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <Truck className="w-4 h-4" />
+                          Enviar
+                        </button>
+                      )}
+                      {order.status === 'shipped' && (
+                        <button
+                          onClick={() => handleUpdateStatus(order.id, 'delivered')}
+                          disabled={updatingOrder === order.id}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Marcar Entregado
+                        </button>
+                      )}
+
                       <div className="flex-1 sm:flex-none">
                         <select
                           value={order.status || 'pending'}
@@ -763,10 +969,11 @@ export default function OrdersPage() {
                           className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:opacity-50"
                         >
                           <option value="pending">Pendiente</option>
-                          <option value="en_preparacion">En Preparación</option>
-                          <option value="listo_entrega">Listo para Entrega</option>
-                          <option value="entregado">Entregado</option>
-                          <option value="cancelado">Cancelado</option>
+                          <option value="confirmed">Confirmado</option>
+                          <option value="processing">En Preparación</option>
+                          <option value="shipped">En Camino</option>
+                          <option value="delivered">Entregado</option>
+                          <option value="cancelled">Cancelado</option>
                         </select>
                       </div>
 
