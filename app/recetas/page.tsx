@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { recipes, recipeCategories, getRecipesByCategory, getFeaturedRecipes, type RecipeCategory } from '@/data/recipes';
 import { RecipeCard, RecipeCategoryCard } from '@/components/recipes';
 import { Search } from 'lucide-react';
+import { getRecipeCategoryBySlug } from '@/lib/recipe-categories';
 
 export const metadata: Metadata = {
   title: 'Recetas Saludables | Tus Aguacates',
@@ -23,6 +24,11 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
   const selectedCategory = params.categoria as RecipeCategory | undefined;
   const searchQuery = params.buscar?.toLowerCase();
 
+  // Obtener datos de la categoría desde BD si hay una seleccionada
+  const categoryData = selectedCategory
+    ? await getRecipeCategoryBySlug(selectedCategory)
+    : null;
+
   // Filtrar recetas
   let filteredRecipes = selectedCategory
     ? getRecipesByCategory(selectedCategory)
@@ -38,18 +44,34 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
 
   const featuredRecipes = getFeaturedRecipes();
 
+  // Obtener nombre de la categoría para el título
+  const categoryName = selectedCategory
+    ? (categoryData?.name || recipeCategories.find(c => c.slug === selectedCategory)?.name || selectedCategory)
+    : null;
+
   return (
     <main className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-verde-bosque to-verde-aguacate text-white py-16">
-        <div className="container mx-auto px-4">
+      <section className="relative bg-gradient-to-br from-verde-bosque to-verde-aguacate text-white py-16 md:py-24 overflow-hidden">
+        {/* Imagen de fondo si existe */}
+        {categoryData?.image_url && (
+          <div className="absolute inset-0 z-0">
+            <img
+              src={categoryData.image_url}
+              alt={categoryData.name}
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-br from-verde-bosque/85 to-verde-aguacate/85"></div>
+          </div>
+        )}
+
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Recetas Saludables
+              {categoryName ? `Recetas de ${categoryName}` : 'Recetas Saludables'}
             </h1>
             <p className="text-xl text-white/90 mb-8">
-              Descubre cómo preparar platos deliciosos con los productos más frescos.
-              Recetas fáciles, nutritivas y llenas de sabor.
+              {categoryData?.description || 'Descubre cómo preparar platos deliciosos con los productos más frescos. Recetas fáciles, nutritivas y llenas de sabor.'}
             </p>
 
             {/* Barra de búsqueda */}
@@ -116,7 +138,7 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
               {selectedCategory
-                ? `Recetas de ${recipeCategories.find(c => c.slug === selectedCategory)?.name || selectedCategory}`
+                ? `Recetas de ${categoryName || selectedCategory}`
                 : searchQuery
                 ? `Resultados para "${searchQuery}"`
                 : 'Todas las Recetas'}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { TrendingUp, ShoppingBag, Clock, Package, DollarSign, Users } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Clock, Package, DollarSign, Users, ChefHat } from 'lucide-react';
 
 interface Metrics {
   today: {
@@ -233,7 +233,7 @@ export default function AdminDashboardPage() {
       {/* Acciones Rápidas */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Acciones Rápidas</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <a
             href="/admin/crear-pedido"
             className="flex flex-col items-center justify-center p-4 bg-green-50 hover:bg-green-100 rounded-xl transition-colors border border-green-200"
@@ -254,6 +254,13 @@ export default function AdminDashboardPage() {
           >
             <Package className="w-8 h-8 text-blue-600 mb-2" />
             <span className="text-sm font-medium text-blue-700">Productos</span>
+          </a>
+          <a
+            href="/admin/recetas/categorias"
+            className="flex flex-col items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors border border-orange-200"
+          >
+            <ChefHat className="w-8 h-8 text-orange-600 mb-2" />
+            <span className="text-sm font-medium text-orange-700">Cat. Recetas</span>
           </a>
           <a
             href="/admin/reportes"
