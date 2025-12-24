@@ -104,7 +104,7 @@ export async function PATCH(
 
     const { id } = await params;
     const supabase = getSupabaseClient();
-    const body: UpdateRecipeRequest & { ingredients?: any[]; steps?: any[] } = await request.json();
+    const body = await request.json() as UpdateRecipeRequest & { ingredients?: Record<string, unknown>[]; steps?: Record<string, unknown>[] };
 
     // Separate recipe fields from relations
     const { ingredients, steps, ...recipeFields } = body;
