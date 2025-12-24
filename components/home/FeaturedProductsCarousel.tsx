@@ -140,7 +140,11 @@ export function FeaturedProductsCarousel({
         {products.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <div key={product.id} className="flex items-center justify-center">
+                <div className="transform scale-70 origin-center">
+                  <ProductCard product={product} />
+                </div>
+              </div>
             ))}
           </div>
         ) : (
@@ -158,10 +162,12 @@ export function FeaturedProductsCarousel({
       <div className={className}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(itemsPerPage)].map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="bg-gray-200 rounded-2xl h-64 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded mb-2"></div>
-              <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div key={i} className="flex items-center justify-center">
+              <div className="animate-pulse transform scale-70 origin-center">
+                <div className="bg-gray-200 rounded-2xl h-64 mb-4"></div>
+                <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
             </div>
           ))}
         </div>
@@ -197,10 +203,12 @@ export function FeaturedProductsCarousel({
             {products.map((product) => (
               <div
                 key={product.id}
-                className="flex-shrink-0 px-2"
+                className="flex-shrink-0 px-2 flex items-center justify-center"
                 style={{ width: `${100 / itemsPerPage}%` }}
               >
-                <ProductCard product={product} />
+                <div className="transform scale-70 origin-center">
+                  <ProductCard product={product} />
+                </div>
               </div>
             ))}
           </div>
