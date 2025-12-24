@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { convertLegacyIdsToUuids } from '@/lib/legacyIdMapper';
+import { createSupabaseRequestClient } from '@/lib/supabaseRequestClient';
 
 // IDs legacy que no tienen mapeo y deben ser eliminados
 const OBSOLETE_LEGACY_IDS = [
@@ -25,8 +25,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
+    // Usar cliente scoped al usuario para RLS
+    const sb = createSupabaseRequestClient(token);
+
     // Obtener el wishlist actual del usuario
-    const { data: wishlistItems, error: fetchError } = await supabase
+    const { data: wishlistItems, error: fetchError } = await sb
       .from('wishlist')
       .select('*')
       .eq('user_id', user.id);
@@ -59,7 +62,7 @@ export async function POST(request: NextRequest) {
 
     // Eliminar items obsoletos
     const obsoleteIds = obsoleteItems.map(item => item.id);
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sb
       .from('wishlist')
       .delete()
       .in('id', obsoleteIds);
@@ -101,8 +104,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
     }
 
+    // Usar cliente scoped al usuario para RLS
+    const sb = createSupabaseRequestClient(token);
+
     // Obtener el wishlist actual del usuario
-    const { data: wishlistItems, error: fetchError } = await supabase
+    const { data: wishlistItems, error: fetchError } = await sb
       .from('wishlist')
       .select('*')
       .eq('user_id', user.id);
