@@ -54,7 +54,7 @@ export function RecipeCategoryCard({ category, recipeCount }: RecipeCategoryCard
       <div className={`
         relative group cursor-pointer overflow-hidden rounded-2xl
         bg-gradient-to-br ${style.gradient}
-        hover:shadow-2xl hover:scale-105
+        hover:shadow-2xl hover:scale-110 hover:-translate-y-2
         transition-all duration-300
         before:absolute before:inset-0
         before:bg-gradient-to-t before:from-black/50 via-transparent to-transparent

@@ -12,6 +12,9 @@ import { useCartStore } from '@/lib/cart-store';
 import { ProductCard } from '@/components/product/ProductCard';
 import { OrderSummaryCard } from '@/components/account/OrderSummaryCard';
 import { ReorderConfirmDialog } from '@/components/account/ReorderConfirmDialog';
+import { ChefVirtualPromo } from '@/components/account/ChefVirtualPromo';
+import { MyRecipesTab } from '@/components/account/MyRecipesTab';
+import { EditProfileModal } from '@/components/account/EditProfileModal';
 import {
   User,
   Mail,
@@ -27,11 +30,13 @@ import {
   X,
   RefreshCw,
   ChevronRight,
+  ChevronDown,
   Package,
   Calendar,
   Copy,
   Gift,
-  ShoppingCart
+  ShoppingCart,
+  ChefHat
 } from 'lucide-react';
 
 interface OrderItem {
@@ -77,10 +82,32 @@ interface Coupon {
   free_shipping: boolean;
 }
 
+// Función para generar iniciales y gradiente del avatar
+function getAvatarInitials(name: string) {
+  const initials = name
+    .split(' ')
+    .map(word => word[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+
+  const gradients = [
+    'from-verde-aguacate to-verde-bosque',
+    'from-naranja-frutal to-rojo-natural',
+    'from-blue-500 to-indigo-600',
+    'from-purple-500 to-pink-600',
+    'from-teal-500 to-emerald-600',
+  ];
+
+  const colorIndex = (name.charCodeAt(0) || 0) % gradients.length;
+  return { initials, gradient: gradients[colorIndex] };
+}
+
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { items: wishlist } = useWishlistStore();
+  const wishlistStore = useWishlistStore();
+  const wishlist = wishlistStore.items;
   const { addItem } = useCartStore();
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -88,7 +115,7 @@ export default function CuentaPage() {
   const [favoriteProducts, setFavoriteProducts] = useState<UnifiedProduct[]>([]);
   const [availableCoupons, setAvailableCoupons] = useState<Coupon[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones'>('favoritos');
+  const [activeTab, setActiveTab] = useState<'pedidos' | 'favoritos' | 'cupones' | 'mis-recetas'>('favoritos');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [copiedCoupon, setCopiedCoupon] = useState<string | null>(null);
 
@@ -97,9 +124,8 @@ export default function CuentaPage() {
   const [isReorderDialogOpen, setIsReorderDialogOpen] = useState(false);
   const [isRepeatingOrder, setIsRepeatingOrder] = useState(false);
 
-  // Edit profile state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({ full_name: '', preferred_name: '', phone: '' });
+  // Edit profile modal state
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
   const [savingProfile, setSavingProfile] = useState(false);
 
   useEffect(() => {
@@ -120,7 +146,7 @@ export default function CuentaPage() {
     } else {
       setFavoriteProducts([]);
     }
-  }, [wishlist]);
+  }, [wishlist.length]);
 
   async function loadUserData() {
     try {
@@ -133,11 +159,6 @@ export default function CuentaPage() {
 
       if (profileData) {
         setProfile(profileData);
-        setEditedProfile({
-          full_name: profileData.full_name || '',
-          preferred_name: profileData.preferred_name || '',
-          phone: profileData.phone || '',
-        });
       }
 
       // Load orders with their items
@@ -275,7 +296,7 @@ export default function CuentaPage() {
     }
   }
 
-  async function handleSaveProfile() {
+  async function handleSaveProfile(data: { full_name: string; preferred_name: string; phone: string }) {
     if (!user) return;
 
     setSavingProfile(true);
@@ -283,19 +304,19 @@ export default function CuentaPage() {
       const { error } = await supabase
         .from('profiles')
         .update({
-          full_name: editedProfile.full_name,
-          preferred_name: editedProfile.preferred_name,
-          phone: editedProfile.phone,
+          full_name: data.full_name,
+          preferred_name: data.preferred_name,
+          phone: data.phone,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (!error) {
-        setProfile((prev) => prev ? { ...prev, ...editedProfile } : null);
-        setIsEditing(false);
+        setProfile((prev) => prev ? { ...prev, ...data } : null);
       }
     } catch (error) {
       console.error('Error guardando perfil:', error);
+      throw error;
     } finally {
       setSavingProfile(false);
     }
@@ -449,198 +470,156 @@ export default function CuentaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 md:py-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50/30 to-emerald-50/20 py-6 md:py-8 md:py-12">
       <div className="container mx-auto px-4">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="font-display font-bold text-3xl md:text-4xl mb-2">Mi Cuenta</h1>
-          <p className="text-gray-600">Gestiona tu información personal y pedidos</p>
+        <div className="mb-6 md:mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="font-display font-bold text-2xl md:text-3xl lg:text-4xl mb-1 md:mb-2">Mi Cuenta</h1>
+            <p className="text-sm md:text-base text-gray-600">Gestiona tu información personal y pedidos</p>
+          </div>
+          {/* Botón dorado de cuenta - visible en móvil */}
+          <button
+            onClick={() => setIsEditProfileModalOpen(true)}
+            className="lg:hidden flex items-center gap-2 bg-gradient-to-r from-dorado to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-white px-3 py-2 rounded-full text-xs font-bold shadow-md border-2 border-yellow-300 transition-all"
+          >
+            <User className="w-3.5 h-3.5" />
+            Mi Cuenta
+          </button>
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6 lg:gap-8">
           {/* Sidebar - Info del Usuario */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-              {/* Avatar */}
-              <div className="flex flex-col items-center mb-6">
-                <div className="w-20 h-20 bg-verde-bosque rounded-full flex items-center justify-center mb-3">
-                  <User className="w-10 h-10 text-white" />
-                </div>
-                {isEditing ? (
-                  <div className="w-full space-y-2">
-                    <input
-                      type="text"
-                      value={editedProfile.preferred_name}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, preferred_name: e.target.value })}
-                      className="w-full text-center font-display font-bold text-xl border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
-                      placeholder="Nombre preferido (cómo te gustas que te llamemos)"
-                    />
-                    <input
-                      type="text"
-                      value={editedProfile.full_name}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, full_name: e.target.value })}
-                      className="w-full text-center text-sm border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
-                      placeholder="Nombre completo"
-                    />
-                  </div>
-                ) : (
-                  <div className="text-center">
-                    <h2 className="font-display font-bold text-xl">
+          <div className="lg:col-span-1 order-2 lg:order-1">
+            <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border-2 border-verde-aguacate/20 p-4 sticky top-6">
+              {/* Layout minimalista: Nombre + Correo + Botón editar */}
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-display font-bold text-base truncate text-gray-900">
                       {profile?.preferred_name || profile?.full_name || 'Usuario'}
                     </h2>
-                    {profile?.preferred_name && profile?.full_name && (
-                      <p className="text-sm text-gray-500 mt-1">{profile.full_name}</p>
-                    )}
+                    <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </div>
-                )}
-                <span className="text-sm text-gray-500 mt-1">Cliente</span>
-              </div>
-
-              {/* Información de Contacto */}
-              <div className="space-y-3 mb-6 border-t border-gray-100 pt-6">
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  <span className="text-gray-700 truncate">{user.email}</span>
-                </div>
-                {isEditing ? (
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                    <input
-                      type="tel"
-                      value={editedProfile.phone}
-                      onChange={(e) => setEditedProfile({ ...editedProfile, phone: e.target.value })}
-                      className="flex-1 text-sm border-b border-gray-300 focus:border-verde-bosque outline-none pb-1"
-                      placeholder="Tu teléfono"
-                    />
-                  </div>
-                ) : (
-                  profile?.phone && (
-                    <div className="flex items-center gap-3 text-sm">
-                      <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-700">{profile.phone}</span>
-                    </div>
-                  )
-                )}
-              </div>
-
-              {/* Edit/Save buttons */}
-              {isEditing ? (
-                <div className="flex gap-2 mb-4">
                   <button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="flex-1 flex items-center justify-center gap-2 bg-verde-bosque text-white py-2 rounded-lg hover:bg-verde-bosque/90 transition-colors disabled:opacity-50"
+                    onClick={() => setIsEditProfileModalOpen(true)}
+                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    aria-label="Editar perfil"
                   >
-                    {savingProfile ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Check className="w-4 h-4" />
-                    )}
-                    Guardar
+                    <Edit className="w-3.5 h-3.5 text-gray-400" />
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditedProfile({
-                        full_name: profile?.full_name || '',
-                        preferred_name: profile?.preferred_name || '',
-                        phone: profile?.phone || '',
-                      });
-                    }}
-                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full flex items-center justify-center gap-2 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors mb-4"
-                >
-                  <Edit className="w-4 h-4" />
-                  Editar Perfil
-                </button>
-              )}
-
-              {/* Logout button */}
-              <button
-                onClick={handleSignOut}
-                className="w-full bg-red-50 hover:bg-red-100 text-red-600 font-semibold py-3 rounded-lg transition-all flex items-center justify-center gap-2"
-              >
-                <LogOut className="w-5 h-5" />
-                Cerrar Sesión
-              </button>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-3 mt-6 pt-6 border-t border-gray-100">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-verde-bosque">{orders.length}</p>
-                  <p className="text-xs text-gray-500">Pedidos</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-red-500">{wishlist.length}</p>
-                  <p className="text-xs text-gray-500">Favoritos</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-purple-500">{availableCoupons.length}</p>
-                  <p className="text-xs text-gray-500">Cupones</p>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Tabs */}
-            <div className="bg-white rounded-xl shadow-sm p-1 flex">
+          <div className="lg:col-span-2 order-1 lg:order-2 space-y-6">
+            {/* Chef Virtual Promo */}
+            <ChefVirtualPromo />
+
+            {/* Tabs - Desktop version */}
+            <div className="hidden sm:block bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-1 flex">
               <button
                 onClick={() => setActiveTab('pedidos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'pedidos'
-                    ? 'bg-verde-bosque text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'pedidos'
+                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                    : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <ShoppingBag className="w-5 h-5" />
-                <span className="hidden sm:inline">Pedidos</span>
+                Pedidos
               </button>
               <button
                 onClick={() => setActiveTab('favoritos')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'favoritos'
-                    ? 'bg-verde-bosque text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'favoritos'
+                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                    : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <Heart className="w-5 h-5" />
-                <span className="hidden sm:inline">Favoritos</span>
+                Favoritos
                 {wishlist.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'favoritos' ? 'bg-white/20' : 'bg-red-100 text-red-600'
-                    }`}>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
                     {wishlist.length}
                   </span>
                 )}
               </button>
               <button
+                onClick={() => setActiveTab('mis-recetas')}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'mis-recetas'
+                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                    : 'text-gray-600 hover:bg-verde-aguacate/10'
+                  }`}
+              >
+                <ChefHat className="w-5 h-5" />
+                Mis Recetas
+              </button>
+              <button
                 onClick={() => setActiveTab('cupones')}
-                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-colors ${activeTab === 'cupones'
-                    ? 'bg-verde-bosque text-white'
-                    : 'text-gray-600 hover:bg-gray-100'
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'cupones'
+                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                    : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <Ticket className="w-5 h-5" />
-                <span className="hidden sm:inline">Cupones</span>
+                Cupones
                 {availableCoupons.length > 0 && (
-                  <span className={`px-2 py-0.5 text-xs rounded-full ${activeTab === 'cupones' ? 'bg-white/20' : 'bg-purple-100 text-purple-600'
-                    }`}>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-white/20">
                     {availableCoupons.length}
                   </span>
                 )}
               </button>
             </div>
 
+            {/* Tabs - Mobile version (select dropdown) */}
+            <div className="sm:hidden bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-4">
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Selecciona una sección:
+              </label>
+              <div className="relative">
+                <select
+                  value={activeTab}
+                  onChange={(e) => setActiveTab(e.target.value as any)}
+                  className="w-full px-4 py-3 bg-white border-2 border-verde-aguacate/30 rounded-xl appearance-none font-medium text-gray-700 focus:border-verde-aguacate focus:ring-2 focus:ring-verde-aguacate/20 outline-none cursor-pointer"
+                >
+                  <option value="pedidos">🛒 Pedidos ({orders.length})</option>
+                  <option value="favoritos">❤️ Favoritos ({wishlist.length})</option>
+                  <option value="mis-recetas">👨‍🍳 Mis Recetas</option>
+                  <option value="cupones">🎟️ Cupones ({availableCoupons.length})</option>
+                </select>
+                {/* Custom arrow icon */}
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-verde-aguacate pointer-events-none" />
+              </div>
+
+              {/* Quick preview cards */}
+              <div className="mt-4 grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setActiveTab('pedidos')}
+                  className={`p-2 rounded-lg text-center transition-all ${activeTab === 'pedidos' ? 'bg-verde-aguacate text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  <ShoppingBag className="w-5 h-5 mx-auto mb-1" />
+                  <span className="text-xs">{orders.length}</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('favoritos')}
+                  className={`p-2 rounded-lg text-center transition-all ${activeTab === 'favoritos' ? 'bg-verde-aguacate text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  <Heart className="w-5 h-5 mx-auto mb-1" />
+                  <span className="text-xs">{wishlist.length}</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('mis-recetas')}
+                  className={`p-2 rounded-lg text-center transition-all ${activeTab === 'mis-recetas' ? 'bg-verde-aguacate text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                >
+                  <ChefHat className="w-5 h-5 mx-auto mb-1" />
+                </button>
+              </div>
+            </div>
+
             {/* Tab Content: Pedidos */}
             {activeTab === 'pedidos' && (
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-4 md:p-6 animate-in fade-in">
                 <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
                   <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-verde-bosque" />
                   <h3 className="font-display font-bold text-lg md:text-xl">Historial de Pedidos</h3>
@@ -674,7 +653,7 @@ export default function CuentaPage() {
 
             {/* Tab Content: Favoritos */}
             {activeTab === 'favoritos' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-6 animate-in fade-in">
                 <div className="flex items-center gap-3 mb-6">
                   <Heart className="w-6 h-6 text-red-500" />
                   <h3 className="font-display font-bold text-xl">Mis Favoritos</h3>
@@ -706,7 +685,7 @@ export default function CuentaPage() {
 
             {/* Tab Content: Cupones */}
             {activeTab === 'cupones' && (
-              <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-4 md:p-6 animate-in fade-in">
                 <div className="flex items-center gap-2 md:gap-3 mb-4 md:mb-6">
                   <Ticket className="w-5 h-5 md:w-6 md:h-6 text-purple-500" />
                   <h3 className="font-display font-bold text-lg md:text-xl">Cupones Disponibles</h3>
@@ -795,6 +774,13 @@ export default function CuentaPage() {
                 )}
               </div>
             )}
+
+            {/* Tab Content: Mis Recetas */}
+            {activeTab === 'mis-recetas' && (
+              <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-verde-aguacate/20 p-6 animate-in fade-in">
+                <MyRecipesTab />
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -812,6 +798,19 @@ export default function CuentaPage() {
           isProcessing={isRepeatingOrder}
         />
       )}
+
+      {/* Modal para editar perfil */}
+      <EditProfileModal
+        isOpen={isEditProfileModalOpen}
+        onClose={() => setIsEditProfileModalOpen(false)}
+        profile={profile ? {
+          full_name: profile.full_name || '',
+          preferred_name: profile.preferred_name || '',
+          phone: profile.phone || ''
+        } : null}
+        email={user.email || ''}
+        onSave={handleSaveProfile}
+      />
     </div>
   );
 }

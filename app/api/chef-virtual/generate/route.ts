@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRecipe, isChefVirtualAvailable } from '@/lib/gemini-recipe-service';
+import { supabase } from '@/lib/supabase';
+import { extractBearerToken } from '@/lib/supabaseRequestClient';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * API para generar recetas con el Chef Virtual
  * POST /api/chef-virtual/generate
+ *
+ * Genera una receta con IA y la guarda en BD si el usuario está autenticado
  */
 export async function POST(request: NextRequest) {
   try {
@@ -44,6 +48,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar autenticación
+    const authHeader = request.headers.get('authorization');
+    const token = extractBearerToken(authHeader);
+    let userId: string | null = null;
+
+    if (token) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (!authError && user) {
+        userId = user.id;
+      }
+    }
+
     // Generar la receta
     const result = await generateRecipe(ingredients, preferences);
 
@@ -54,13 +70,97 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Si el usuario está autenticado, guardar la receta en BD
+    if (userId && result.recipe) {
+      const today = new Date().toISOString().split('T')[0];
+
+      try {
+        // 1. Guardar la receta generada
+        const { error: recipeError } = await supabase
+          .from('generated_recipes')
+          .insert({
+            user_id: userId,
+            ingredients: JSON.stringify(ingredients),
+            recipe_data: result.recipe,
+            is_favorited: false
+          });
+
+        if (recipeError) {
+          console.error('[CHEF-VIRTUAL-GENERATE] Error guardando receta:', recipeError);
+          // No fallar el request si hay error al guardar
+        }
+
+        // 2. Actualizar/crear registro de límites
+        const { data: existingLimits } = await supabase
+          .from('user_recipe_limits')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (existingLimits) {
+          // Verificar si es un nuevo día
+          if (existingLimits.last_reset !== today) {
+            // Resetear contador y actualizar
+            await supabase
+              .from('user_recipe_limits')
+              .update({
+                recipes_generated_today: 1,
+                last_reset: today
+              })
+              .eq('user_id', userId);
+          } else {
+            // Incrementar contador
+            await supabase
+              .from('user_recipe_limits')
+              .update({
+                recipes_generated_today: (existingLimits.recipes_generated_today || 0) + 1
+              })
+              .eq('user_id', userId);
+          }
+        } else {
+          // Crear nuevo registro
+          await supabase
+            .from('user_recipe_limits')
+            .insert({
+              user_id: userId,
+              recipes_generated_today: 1,
+              last_reset: today
+            });
+        }
+
+        // 3. Asegurar que el usuario tenga suscripción registrada
+        const { data: existingSubscription } = await supabase
+          .from('user_chef_subscription')
+          .select('*')
+          .eq('user_id', userId)
+          .single();
+
+        if (!existingSubscription) {
+          await supabase
+            .from('user_chef_subscription')
+            .insert({
+              user_id: userId,
+              tier: 'registered',
+              recipes_limit: 5,
+              can_save: true,
+              saved_recipes_limit: 10
+            });
+        }
+
+        console.log('[CHEF-VIRTUAL-GENERATE] Receta guardada para usuario:', userId);
+      } catch (dbError) {
+        console.error('[CHEF-VIRTUAL-GENERATE] Error en operaciones de BD:', dbError);
+        // No fallar el request por errores de BD
+      }
+    }
+
     return NextResponse.json({
       success: true,
       recipe: result.recipe
     });
 
   } catch (error) {
-    console.error('Error en Chef Virtual API:', error);
+    console.error('[CHEF-VIRTUAL-GENERATE] Error:', error);
     return NextResponse.json(
       { error: 'Error interno del servidor', success: false },
       { status: 500 }
