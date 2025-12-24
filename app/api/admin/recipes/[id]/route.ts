@@ -107,16 +107,19 @@ export async function PATCH(
     const body: UpdateRecipeRequest & { ingredients?: any[]; steps?: any[] } = await request.json();
 
     // Separate recipe fields from relations
-    const { ingredients, steps, ...recipeUpdates } = body;
+    const { ingredients, steps, ...recipeFields } = body;
 
     // Update recipe if there are recipe-level changes
-    if (Object.keys(recipeUpdates).length > 0) {
-      // Add metadata
-      recipeUpdates.updated_by = auth.adminId;
+    if (Object.keys(recipeFields).length > 0) {
+      // Build updates object with metadata
+      const recipeUpdates: Record<string, unknown> = {
+        ...recipeFields,
+        updated_by: auth.adminId
+      };
 
       // If publishing, set published_at
-      if (recipeUpdates.video_status === 'published') {
-        (recipeUpdates as any).published_at = new Date().toISOString();
+      if (recipeFields.video_status === 'published') {
+        recipeUpdates.published_at = new Date().toISOString();
       }
 
       const { error: recipeError } = await supabase
