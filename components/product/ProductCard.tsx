@@ -176,9 +176,13 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Botón Favorito */}
           <button
-            className={`absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all ${isProductInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-red-500'
+            className={`absolute top-3 right-3 bg-white/90 hover:bg-white p-2 rounded-full shadow-md transition-all pointer-events-auto z-10 ${isProductInWishlist ? 'text-red-500 hover:text-red-600' : 'text-gray-600 hover:text-red-500'
               } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-            onClick={handleWishlistClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleWishlistClick(e);
+            }}
             disabled={isWishlistLoading}
           >
             <Heart className={`w-4 h-4 ${isProductInWishlist ? 'fill-current' : ''}`} />
