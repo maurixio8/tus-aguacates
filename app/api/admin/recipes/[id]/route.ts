@@ -143,7 +143,7 @@ export async function PATCH(
 
       // Insert new ingredients
       if (ingredients.length > 0) {
-        const ingredientsToInsert = ingredients.map((ing, index) => ({
+        const ingredientsToInsert = ingredients.map((ing: Record<string, unknown>, index: number) => ({
           recipe_id: id,
           product_id: ing.product_id,
           name_es: ing.name_es,
@@ -177,12 +177,12 @@ export async function PATCH(
 
       // Insert new steps
       if (steps.length > 0) {
-        const stepsToInsert = steps.map((step, index) => ({
+        const stepsToInsert = steps.map((step: Record<string, unknown>, index: number) => ({
           recipe_id: id,
           step_number: index + 1,
           instruction_es: step.instruction_es,
           instruction_en: step.instruction_en,
-          subtitle_es: step.subtitle_es || step.instruction_es?.substring(0, 100),
+          subtitle_es: step.subtitle_es || (step.instruction_es as string)?.substring(0, 100),
           subtitle_en: step.subtitle_en,
           image_prompt: step.image_prompt,
           image_url: step.image_url,
