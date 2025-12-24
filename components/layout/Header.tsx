@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, BookOpen, MessageCircle } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn, LogOut, Menu, X, Home, BookOpen, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import branding from '@/lib/config/branding';
 import { SearchModal } from '../search/SearchModal';
 import { supabase, Profile } from '@/lib/supabase';
@@ -12,7 +13,8 @@ import { getHeaderGreeting } from '@/lib/greetings';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -52,6 +54,17 @@ export function Header() {
 
   // Cerrar menú móvil al cambiar de página
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Cerrar sesión
+  async function handleSignOut() {
+    try {
+      await signOut();
+      setMobileMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+    }
+  }
 
   return (
     <>
@@ -261,14 +274,23 @@ export function Header() {
                 </Link>
 
                 {user ? (
-                  <Link
-                    href="/cuenta"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <User className="w-5 h-5" />
-                    <span>Mi Cuenta</span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/cuenta"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <User className="w-5 h-5" />
+                      <span>Mi Cuenta</span>
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </>
                 ) : (
                   <Link
                     href="/auth/login"

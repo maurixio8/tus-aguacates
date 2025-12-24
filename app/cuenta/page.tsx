@@ -509,6 +509,18 @@ export default function CuentaPage() {
                     <Edit className="w-3.5 h-3.5 text-gray-400" />
                   </button>
                 </div>
+
+                {/* Separador */}
+                <div className="border-t border-gray-200" />
+
+                {/* Botón Cerrar Sesión */}
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors border border-red-200 hover:border-red-300"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Cerrar Sesión
+                </button>
               </div>
             </div>
           </div>
