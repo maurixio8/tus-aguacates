@@ -8,10 +8,22 @@
 
 ## Estado del Proyecto
 
-- **Fase actual**: Planificación
+- **Fase actual**: ✅ Planificación Completa → Listo para Implementación
 - **Fecha inicio**: 2024-12-24
+- **Última actualización**: 2024-12-26
 - **Repositorio tienda**: tus-aguacates (Vercel)
-- **Repositorio video generator**: Por definir
+- **Sistema video generator**: Oracle Cloud (mismo servidor que n8n)
+
+### Resumen de Decisiones
+
+| Aspecto | Decisión |
+|---------|----------|
+| **Arquitectura** | ARM64 Oracle Cloud + n8n + Google AI |
+| **Presupuesto** | $0-5/mes (usando Gemini Premium incluido) |
+| **Stack IA** | Gemini 1.5 Pro + Google Imagen 3 |
+| **Procesamiento** | FFmpeg local |
+| **Storage** | Google Drive 2TB (incluido con Premium) |
+| **Meta** | 2 videos/día = 60/mes |
 
 ---
 
@@ -355,33 +367,47 @@ Crear un sistema **independiente** de la tienda que permita:
 
 ## Decisiones Técnicas
 
-> Decisiones que necesitamos tomar una vez respondidas las preguntas.
+> ✅ Decisiones tomadas basadas en restricciones de presupuesto ($5/mes) y recursos (Gemini Premium).
 
-### Por decidir
+### Decisiones Finales
 
-| Decisión | Opciones | Elegida |
-|----------|----------|---------|
-| Lenguaje backend | Python / Node.js / Go | ❓ |
-| Framework | FastAPI / Express / Fiber | ❓ |
-| Cola de trabajos | Redis Queue / Bull / Celery | ❓ |
-| Generación imágenes | DALL-E / Midjourney API / ComfyUI local | ❓ |
-| Animación | Runway / Kling / Pika | ❓ |
-| TTS | ElevenLabs / OpenAI TTS / Coqui local | ❓ |
-| Storage videos | Oracle Object Storage / Cloudflare R2 / Supabase | ❓ |
+| Decisión | Elegida | Justificación |
+|----------|---------|---------------|
+| Orquestación | **n8n** | Ya instalado, visual, fácil de mantener |
+| Generación texto | **Gemini 1.5 Pro** | GRATIS con Premium, excelente calidad |
+| Generación imágenes | **Google Imagen 3** | GRATIS vía AI Studio, consistente |
+| Procesamiento video | **FFmpeg** | GRATIS, funciona en ARM, muy potente |
+| Storage videos | **Google Drive 2TB** | Incluido con Gemini Premium |
+| Hosting público | **YouTube (unlisted)** | GRATIS, fácil embed |
+| TTS (futuro) | Por decidir | No prioritario para MVP |
+| Animación (futuro) | Por decidir | Empezar con slideshow estático |
+
+### Alternativas de Backup (si límites de Google)
+
+| Servicio | Costo | Cuándo usar |
+|----------|-------|-------------|
+| Ideogram AI | $7/mes | Si Imagen 3 no alcanza |
+| Leonardo AI | $10/mes | Mejor calidad de imágenes |
+| DALL-E 3 | ~$15/mes | Máxima calidad |
 
 ---
 
 ## Archivos Relacionados
 
-- [Preguntas y Respuestas](./QUESTIONS.md) - Respuestas detalladas
-- [Arquitectura](./ARCHITECTURE.md) - Diseño técnico detallado
-- [API Spec](./API.md) - Especificación de endpoints
-- [Workflows n8n](./N8N_WORKFLOWS.md) - Automatizaciones
+### Documentación Principal
+- [✅ QUESTIONS.md](./QUESTIONS.md) - Preguntas respondidas sobre infraestructura
+- [✅ MVP_ARCHITECTURE.md](./MVP_ARCHITECTURE.md) - **Arquitectura final con Stack Google**
+- [✅ PROMPTS_GUIDE.md](./PROMPTS_GUIDE.md) - Guía de prompts para imágenes
+
+### Por Crear (durante implementación)
+- [ ] [N8N_WORKFLOWS.md](./N8N_WORKFLOWS.md) - Workflows exportados
+- [ ] [SETUP_GUIDE.md](./SETUP_GUIDE.md) - Guía de instalación paso a paso
 
 ---
 
 ## Notas
 
-- Este documento se actualizará conforme avance la planificación
-- Todas las decisiones deben documentarse con su justificación
-- El objetivo es tener claridad ANTES de escribir código
+- ✅ Planificación completada el 2024-12-26
+- ✅ Arquitectura definida: Google AI + FFmpeg + n8n
+- ✅ Costo estimado: $0-5/mes (usando recursos incluidos en Gemini Premium)
+- 📋 **Siguiente paso**: Implementar en Oracle Cloud siguiendo [MVP_ARCHITECTURE.md](./MVP_ARCHITECTURE.md)
