@@ -322,75 +322,39 @@ export default function CreateOrderPage() {
 
     let message = '';
 
-    // Saludo inicial personalizado
+    // Saludo inicial
     message += `Hola ${firstName}! 👋\n`;
-    message += `Hemos recibido tu pedido exitosamente y aquí está el resumen:\n\n`;
+    message += `Tu pedido #${orderData.orderId.slice(-6).toUpperCase()} ha sido confirmado.\n\n`;
 
-    // Número de pedido
-    message += `📋 *PEDIDO #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
-
-    // === DATOS DEL CLIENTE ===
-    message += `👤 *DATOS DEL CLIENTE*\n`;
-    message += `Nombre: ${orderData.customerName}\n`;
-
-    // Obtener la dirección de deliveryAddress si está disponible
-    const address = (typeof deliveryAddress === 'string' && deliveryAddress.trim())
-      ? deliveryAddress.trim()
-      : 'No especificada';
-    message += `📍 Dirección: ${address}\n`;
-
-    // Agregar teléfono si está disponible
-    if (orderData.customerPhone) {
-      message += `📱 Teléfono: ${orderData.customerPhone}\n`;
-    }
-
-    message += `\n`;
-
-    // === PRODUCTOS ===
-    message += `🛒 *PRODUCTOS*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    // === PRODUCTOS (formato compacto) ===
+    message += `🛒 *PRODUCTOS:*\n`;
 
     let subtotal = 0;
-    orderData.items.forEach((item, index) => {
-      // Nombre del producto con variante si existe
-      const itemName = item.variant
-        ? `${item.product.name}`
-        : item.product.name;
-
-      // Variante (peso, tamaño, etc.)
-      const variantInfo = item.variant
-        ? ` - ${item.variant.variant_value}`
-        : '';
-
+    orderData.items.forEach((item) => {
+      const itemName = item.product.name;
+      const variantInfo = item.variant ? ` (${item.variant.variant_value})` : '';
       const itemPrice = item.variant?.price_adjustment || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
 
-      message += `\n${index + 1}. ${itemName}${variantInfo}\n`;
-      message += `   • Cantidad: ${item.quantity}\n`;
-      message += `   • Precio: ${formatCurrency(itemPrice)}\n`;
+      // Formato: "• 2x Duraznos (500grs) - $10.400"
+      message += `• ${item.quantity}x ${itemName}${variantInfo} - ${formatCurrency(itemTotal)}\n`;
     });
 
-    message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
-
-    // === RESUMEN FINANCIERO ===
-    message += `\n💰 *RESUMEN*\n`;
-    message += `Subtotal: ${formatCurrency(subtotal)}\n`;
-
+    // === RESUMEN ===
     const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
-    if (shipping === 0) {
-      message += `Envío: GRATIS 🎉\n`;
-    } else {
-      message += `Envío: ${formatCurrency(shipping)}\n`;
-    }
+    message += `\n💰 *Subtotal:* ${formatCurrency(subtotal)}\n`;
+    message += `🚚 *Envío:* ${shipping === 0 ? 'GRATIS 🎉' : formatCurrency(shipping)}\n`;
+    message += `✨ *TOTAL:* ${formatCurrency(orderData.total)}\n\n`;
 
-    message += `\n✨ *TOTAL: ${formatCurrency(orderData.total)}*\n\n`;
+    // === ENTREGA ===
+    const address = (typeof deliveryAddress === 'string' && deliveryAddress.trim())
+      ? deliveryAddress.trim()
+      : 'No especificada';
+    message += `📍 *Entrega:* ${address}\n\n`;
 
-    // === MENSAJE DE CONFIRMACIÓN ===
-    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `${firstName}, por favor confírmame si toda la información de tu pedido está correcta. 📝\n\n`;
-    message += `Muchas gracias por tu compra! 💚\n`;
-    message += `En breve nos pondremos en contacto contigo para coordinar la entrega. 🚚`;
+    // === CONFIRMACIÓN ===
+    message += `${firstName}, confirma si todo está correcto. Gracias! 💚`;
 
     return encodeURIComponent(message);
   };
@@ -453,9 +417,8 @@ export default function CreateOrderPage() {
           quantity: item.quantity,
           price: calculateItemPrice(item),
           product_name: item.product.name,
-          variant_name: item.variant
-            ? `${item.variant.variant_name}: ${item.variant.variant_value}`
-            : null,
+          variant_name: item.variant?.variant_name || null,
+          variant_value: item.variant?.variant_value || null,
         })),
         total_amount: total,
       };
