@@ -27,6 +27,7 @@ interface Category {
   id: string;
   name: string;
   slug: string;
+  image_url?: string;
 }
 
 interface ProductVariant {
@@ -108,6 +109,7 @@ export default function CreateOrderPage() {
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerType, setCustomerType] = useState<'existing' | 'new'>('existing');
 
   useEffect(() => {
     loadCategories();
@@ -212,15 +214,17 @@ export default function CreateOrderPage() {
     setCustomerSearch('');
   };
 
-  // Efecto para buscar clientes con debounce
+  // Efecto para buscar clientes con debounce (solo para clientes existentes)
   useEffect(() => {
+    if (customerType !== 'existing') return;
+
     const timer = setTimeout(() => {
       if (customerSearch && !selectedCustomer) {
         searchCustomers(customerSearch);
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [customerSearch, selectedCustomer]);
+  }, [customerSearch, selectedCustomer, customerType]);
 
   const addToOrder = (product: Product, variant?: ProductVariant) => {
     const existingItemIndex = selectedItems.findIndex(
@@ -538,54 +542,102 @@ export default function CreateOrderPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Columna izquierda: Selección de productos */}
         <div className="space-y-4">
-          {/* Selector de Categoría */}
+          {/* Selector de Categoría - Carrusel Horizontal */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-3">
               1. Selecciona una categoría
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {loadingCategories ? (
-                <div className="col-span-full flex justify-center py-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+            {loadingCategories ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+              </div>
+            ) : (
+              <div className="overflow-x-auto -mx-2 px-2">
+                <div className="flex gap-3 pb-2" style={{ minWidth: 'min-content' }}>
+                  {categories.map((category) => (
+                    <button
+                      key={category.id}
+                      onClick={() => {
+                        setSelectedCategory(category.id);
+                        setSearch('');
+                      }}
+                      className={`flex-shrink-0 w-32 rounded-xl border-2 transition-all overflow-hidden ${
+                        selectedCategory === category.id
+                          ? 'border-green-600 shadow-md'
+                          : 'border-gray-200 hover:border-green-400'
+                      }`}
+                    >
+                      <div className="aspect-square relative">
+                        {category.image_url ? (
+                          <img
+                            src={category.image_url}
+                            alt={category.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+                            <Layers className="w-8 h-8 text-green-600" />
+                          </div>
+                        )}
+                        {selectedCategory === category.id && (
+                          <div className="absolute inset-0 bg-green-600 bg-opacity-20 flex items-center justify-center">
+                            <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                              <Check className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className={`p-2 text-center ${
+                        selectedCategory === category.id
+                          ? 'bg-green-600 text-white'
+                          : 'bg-gray-50 text-gray-700'
+                      }`}>
+                        <p className="text-xs font-medium truncate">{category.name}</p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                categories.map((category) => (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      setSelectedCategory(category.id);
-                      setSearch('');
-                    }}
-                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
-                      selectedCategory === category.id
-                        ? 'bg-green-600 text-white border-green-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-green-500 hover:bg-green-50'
-                    }`}
-                  >
-                    {category.name}
-                  </button>
-                ))
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Búsqueda y productos */}
           {selectedCategory && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  2. Buscar y agregar productos
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-white">
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Search className="w-4 h-4 text-green-600" />
+                  2. Buscar productos
                 </label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Buscar en esta categoría..."
+                    placeholder="Escribe el nombre del producto..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    className="w-full pl-10 pr-10 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all text-base"
                   />
+                  {loading && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                    </div>
+                  )}
+                  {search && !loading && (
+                    <button
+                      onClick={() => setSearch('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-200 rounded-full transition-colors"
+                    >
+                      <X className="w-4 h-4 text-gray-400" />
+                    </button>
+                  )}
                 </div>
+                {search && (
+                  <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    Buscando "{search}" en la categoría seleccionada...
+                  </p>
+                )}
               </div>
 
               {/* Lista de productos */}
@@ -704,7 +756,7 @@ export default function CreateOrderPage() {
                 <User className="w-5 h-5 text-green-600" />
                 <h2 className="text-lg font-semibold text-gray-900">Datos del Cliente</h2>
               </div>
-              {selectedCustomer && (
+              {selectedCustomer && customerType === 'existing' && (
                 <button
                   type="button"
                   onClick={clearSelectedCustomer}
@@ -716,67 +768,113 @@ export default function CreateOrderPage() {
               )}
             </div>
 
-            {/* Buscador de clientes */}
-            <div className="mb-4 relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Buscar cliente existente
-              </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  value={customerSearch}
-                  onChange={(e) => {
-                    setCustomerSearch(e.target.value);
-                    if (selectedCustomer) setSelectedCustomer(null);
+            {/* Toggle para tipo de cliente */}
+            <div className="mb-4">
+              <div className="inline-flex rounded-lg border border-gray-200 p-1 bg-gray-50 w-full">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerType('existing');
+                    clearSelectedCustomer();
                   }}
-                  onFocus={() => customerSuggestions.length > 0 && setShowCustomerSuggestions(true)}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-                  placeholder="Escribe nombre o teléfono..."
-                />
-                {loadingCustomers && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    customerType === 'existing'
+                      ? 'bg-white text-green-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cliente Existente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCustomerType('new');
+                    clearSelectedCustomer();
+                  }}
+                  className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    customerType === 'new'
+                      ? 'bg-white text-green-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Cliente Nuevo
+                </button>
+              </div>
+            </div>
+
+            {/* Búsqueda de cliente existente */}
+            {customerType === 'existing' && (
+              <div className="mb-4 relative">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Buscar por nombre o teléfono
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={customerSearch}
+                    onChange={(e) => {
+                      setCustomerSearch(e.target.value);
+                      if (selectedCustomer) setSelectedCustomer(null);
+                    }}
+                    onFocus={() => customerSuggestions.length > 0 && setShowCustomerSuggestions(true)}
+                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                    placeholder="Escribe nombre o teléfono..."
+                  />
+                  {loadingCustomers && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sugerencias de clientes */}
+                {showCustomerSuggestions && customerSuggestions.length > 0 && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    {customerSuggestions.map((customer) => (
+                      <button
+                        key={customer.id}
+                        type="button"
+                        onClick={() => selectCustomer(customer)}
+                        className="w-full px-4 py-3 text-left hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                      >
+                        <p className="font-medium text-gray-900">{customer.name}</p>
+                        <p className="text-sm text-gray-500 flex items-center gap-2">
+                          <Phone className="w-3 h-3" />
+                          {customer.phone}
+                          {customer.address && (
+                            <>
+                              <span className="text-gray-300">|</span>
+                              <MapPin className="w-3 h-3" />
+                              <span className="truncate max-w-[150px]">{customer.address}</span>
+                            </>
+                          )}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {showCustomerSuggestions && customerSuggestions.length === 0 && customerSearch.length >= 2 && !loadingCustomers && (
+                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
+                    <p className="text-gray-500 text-sm">No se encontraron clientes</p>
+                    <p className="text-xs text-gray-400 mt-1">Puedes cambiar a "Cliente Nuevo" para crear uno</p>
                   </div>
                 )}
               </div>
+            )}
 
-              {/* Sugerencias de clientes */}
-              {showCustomerSuggestions && customerSuggestions.length > 0 && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  {customerSuggestions.map((customer) => (
-                    <button
-                      key={customer.id}
-                      type="button"
-                      onClick={() => selectCustomer(customer)}
-                      className="w-full px-4 py-3 text-left hover:bg-green-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                    >
-                      <p className="font-medium text-gray-900">{customer.name}</p>
-                      <p className="text-sm text-gray-500 flex items-center gap-2">
-                        <Phone className="w-3 h-3" />
-                        {customer.phone}
-                        {customer.address && (
-                          <>
-                            <span className="text-gray-300">|</span>
-                            <MapPin className="w-3 h-3" />
-                            <span className="truncate max-w-[150px]">{customer.address}</span>
-                          </>
-                        )}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              )}
+            {/* Mensaje de cliente nuevo */}
+            {customerType === 'new' && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4" />
+                  Los datos del cliente serán guardados en la base de datos
+                </p>
+              </div>
+            )}
 
-              {showCustomerSuggestions && customerSuggestions.length === 0 && customerSearch.length >= 2 && !loadingCustomers && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-center">
-                  <p className="text-gray-500 text-sm">No se encontraron clientes</p>
-                  <p className="text-xs text-gray-400 mt-1">Puedes crear uno nuevo llenando los datos abajo</p>
-                </div>
-              )}
-            </div>
-
-            {selectedCustomer && (
+            {selectedCustomer && customerType === 'existing' && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                 <p className="text-sm text-green-800">
                   <CheckCircle className="w-4 h-4 inline mr-1" />
