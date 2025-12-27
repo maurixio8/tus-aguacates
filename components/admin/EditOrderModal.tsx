@@ -79,6 +79,11 @@ interface Order {
     shipping_address?: string;
     total: number;
     order_items?: OrderItem[];
+    items?: OrderItem[];
+    order_data?: {
+        items?: any[];
+        [key: string]: any;
+    };
     order_type?: 'registered' | 'guest';
 }
 
@@ -100,7 +105,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState<'products' | 'customer'>('customer');
+    const [activeTab, setActiveTab] = useState<'products' | 'customer'>('products');
 
     // Estado para datos del cliente
     const [customerData, setCustomerData] = useState<CustomerData>({
@@ -136,18 +141,57 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     useEffect(() => {
         if (isOpen) {
             loadCategories();
-            // Inicializar con los items actuales del pedido
-            if (order.order_items) {
-                setOrderItems(order.order_items.map(item => ({
-                    id: item.id,
-                    product_id: item.product_id,
-                    variant_id: item.variant_id,
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    product_name: item.product_snapshot?.name || item.product_name || 'Producto',
-                    variant_name: item.variant_name
-                })));
-            }
+
+            // Función para extraer items del pedido desde diferentes fuentes
+            const extractItemsFromOrder = (order: Order): OrderItem[] => {
+                // 1. Intentar desde order.order_items
+                if (order.order_items && Array.isArray(order.order_items) && order.order_items.length > 0) {
+                    return order.order_items.map(item => ({
+                        id: item.id,
+                        product_id: item.product_id,
+                        variant_id: item.variant_id,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        product_name: item.product_snapshot?.name || item.product_name || 'Producto',
+                        variant_name: item.variant_name
+                    }));
+                }
+
+                // 2. Intentar desde order.items
+                if (order.items && Array.isArray(order.items) && order.items.length > 0) {
+                    return order.items.map(item => ({
+                        id: item.id,
+                        product_id: item.product_id,
+                        variant_id: item.variant_id,
+                        quantity: item.quantity,
+                        unit_price: item.unit_price,
+                        product_name: item.product_snapshot?.name || item.product_name || 'Producto',
+                        variant_name: item.variant_name
+                    }));
+                }
+
+                // 3. Intentar desde order.order_data.items (para pedidos de invitados)
+                if (order.order_data && order.order_data.items && Array.isArray(order.order_data.items) && order.order_data.items.length > 0) {
+                    return order.order_data.items.map((item: any, index: number) => ({
+                        id: item.id || `item-${index}`,
+                        product_id: item.productId || item.product_id,
+                        variant_id: item.variant_id,
+                        quantity: item.quantity,
+                        unit_price: item.price || item.unit_price,
+                        product_name: item.productName || item.product_name || 'Producto',
+                        variant_name: item.variantName || item.variant_name
+                    }));
+                }
+
+                console.warn('⚠️ No se encontraron items en el pedido:', order);
+                return [];
+            };
+
+            // Inicializar con los items extraídos
+            const extractedItems = extractItemsFromOrder(order);
+            console.log('📦 Items extraídos del pedido:', extractedItems);
+            setOrderItems(extractedItems);
+
             // Inicializar datos del cliente
             setCustomerData({
                 customer_name: order.customer_name || '',
