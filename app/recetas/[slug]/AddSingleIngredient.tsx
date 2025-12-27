@@ -18,6 +18,22 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
   const [loaded, setLoaded] = useState(false);
   const { addItem } = useCartStore();
 
+  // Mapeo de slugs a términos de búsqueda alternativos
+  const searchTermsMap: Record<string, string[]> = {
+    'aguacate-hass': ['aguacate', 'hass'],
+    'cebolla-morada': ['cebolla roja', 'cebolla morada', 'cebolla'],
+    'limon-tahiti': ['limón tahiti', 'limon tahiti', 'limón', 'limon'],
+    'miel': ['miel'],
+    'banano': ['banano', 'banana'],
+    'mango': ['mango'],
+    'fresas': ['fresa', 'fresas'],
+    'tomate': ['tomate'],
+    'cilantro': ['cilantro'],
+    'lechuga': ['lechuga'],
+    'espinaca': ['espinaca'],
+    'platano': ['plátano', 'platano'],
+  };
+
   // Buscar producto por slug o por nombre similar
   useEffect(() => {
     async function fetchProduct() {
@@ -28,25 +44,47 @@ export function AddSingleIngredient({ ingredient }: AddSingleIngredientProps) {
 
       try {
         // Primero intentar por slug exacto
-        let { data, error } = await supabase
+        let { data } = await supabase
           .from('products')
           .select('*')
           .eq('slug', ingredient.productSlug)
           .eq('is_active', true)
           .maybeSingle();
 
-        // Si no encuentra por slug, buscar por nombre similar
+        // Si no encuentra por slug, buscar por términos alternativos
         if (!data) {
-          const searchTerm = ingredient.productSlug.replace(/-/g, ' ');
-          const { data: nameData } = await supabase
-            .from('products')
-            .select('*')
-            .ilike('name', `%${searchTerm}%`)
-            .eq('is_active', true)
-            .limit(1)
-            .maybeSingle();
+          const slug = ingredient.productSlug;
+          const searchTerms = searchTermsMap[slug] || [slug.replace(/-/g, ' ')];
 
-          data = nameData;
+          for (const term of searchTerms) {
+            // Buscar en nombre
+            const { data: nameData } = await supabase
+              .from('products')
+              .select('*')
+              .ilike('name', `%${term}%`)
+              .eq('is_active', true)
+              .limit(1)
+              .maybeSingle();
+
+            if (nameData) {
+              data = nameData;
+              break;
+            }
+
+            // Buscar en descripción si no encuentra en nombre
+            const { data: descData } = await supabase
+              .from('products')
+              .select('*')
+              .ilike('description', `%${term}%`)
+              .eq('is_active', true)
+              .limit(1)
+              .maybeSingle();
+
+            if (descData) {
+              data = descData;
+              break;
+            }
+          }
         }
 
         if (data) {
