@@ -136,7 +136,13 @@ export function generateOrderSummary(order: Order): string {
   // Build product list
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
-    const variantName = item.variantName || '';
+
+    // Extraer variante desde múltiples fuentes
+    const variantName = item.variantName ||
+                        item.product_snapshot?.variant_name ||
+                        item.product_snapshot?.variant_value ||
+                        '';
+
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
 
     // Format: "• 2x Zanahoria (1 kg) - $10,000" or "• 1x Cebolla - $3,000"
@@ -199,7 +205,12 @@ Nombre: ${order.customer_name || 'Cliente'}
 
 ${items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
-    const variantName = item.variantName || '';
+
+    // Extraer variante desde múltiples fuentes
+    const variantName = item.variantName ||
+                        item.product_snapshot?.variant_name ||
+                        item.product_snapshot?.variant_value ||
+                        '';
 
     // Mostrar variante claramente separada
     const variantInfo = variantName ? ` - ${variantName}` : '';
