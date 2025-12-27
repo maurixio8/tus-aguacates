@@ -135,16 +135,31 @@ export function generateOrderSummary(order: Order): string {
   const firstName = getFirstName(order.customer_name);
   const greeting = getGreeting();
 
+  // Helper function to format variant name
+  const formatVariantName = (item: OrderItem): string => {
+    const snapshot = item.product_snapshot || {};
+    const variantName = snapshot.variant_name || item.variantName;
+    const variantValue = snapshot.variant_value;
+
+    // Si tenemos ambos campos separados, combinarlos
+    if (variantName && variantValue) {
+      return `${variantName}: ${variantValue}`;
+    }
+    // Si solo tenemos variant_value (el valor específico)
+    if (variantValue) {
+      return variantValue;
+    }
+    // Si solo tenemos variant_name
+    if (variantName) {
+      return variantName;
+    }
+    return '';
+  };
+
   // Build product list
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
-
-    // Extraer variante desde múltiples fuentes
-    const variantName = item.variantName ||
-                        item.product_snapshot?.variant_name ||
-                        item.product_snapshot?.variant_value ||
-                        '';
-
+    const variantName = formatVariantName(item);
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
 
     // Format: "• 2x Zanahoria (1 kg) - $10,000" or "• 1x Cebolla - $3,000"
@@ -207,14 +222,7 @@ Nombre: ${order.customer_name || 'Cliente'}
 
 ${items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
-
-    // Extraer variante desde múltiples fuentes
-    const variantName = item.variantName ||
-                        item.product_snapshot?.variant_name ||
-                        item.product_snapshot?.variant_value ||
-                        '';
-
-    // Mostrar variante claramente separada
+    const variantName = formatVariantName(item);
     const variantInfo = variantName ? ` - ${variantName}` : '';
 
     return `${index + 1}. ${itemName}${variantInfo}

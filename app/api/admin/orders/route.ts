@@ -512,13 +512,22 @@ export async function POST(request: NextRequest) {
           if (item.price) {
             itemPrice = item.price;
           }
+          // Usar los datos de variante enviados desde el frontend
+          if (item.variant_name || item.variant_value) {
+            variantInfo = {
+              variant_id: item.variant_id,
+              variant_name: item.variant_name || null,
+              variant_value: item.variant_value || null,
+              price_adjustment: item.price
+            };
+          }
         } else {
           // El precio de la variante está guardado en price_adjustment como precio completo
           itemPrice = variant.price_adjustment || product.price;
           variantInfo = {
             variant_id: variant.id,
-            variant_name: variant.variant_name,
-            variant_value: variant.variant_value,
+            variant_name: item.variant_name || variant.variant_name,
+            variant_value: item.variant_value || variant.variant_value,
             price_adjustment: variant.price_adjustment
           };
         }
@@ -532,11 +541,12 @@ export async function POST(request: NextRequest) {
 
       orderItems.push({
         product_id: item.product_id,
-        product_name: product.name,
+        product_name: item.product_name || product.name,
         quantity: item.quantity,
         price: itemPrice,
         total: itemTotal,
-        ...variantInfo
+        variant_name: variantInfo?.variant_name || null,
+        variant_value: variantInfo?.variant_value || null
       });
     }
 

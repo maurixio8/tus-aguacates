@@ -619,15 +619,32 @@ export default function OrdersPage() {
 
               // Función para extraer items de order_data si no hay order_items
               const extractItemsFromOrderData = (order: any) => {
+                // Función auxiliar para combinar variant_name y variant_value
+                const formatVariantName = (item: any) => {
+                  const snapshot = item.product_snapshot || {};
+                  const variantName = snapshot.variant_name || item.variantName;
+                  const variantValue = snapshot.variant_value;
+
+                  // Si tenemos ambos campos separados, combinarlos
+                  if (variantName && variantValue) {
+                    return `${variantName}: ${variantValue}`;
+                  }
+                  // Si solo tenemos variant_value (el valor específico)
+                  if (variantValue) {
+                    return variantValue;
+                  }
+                  // Si solo tenemos variant_name
+                  if (variantName) {
+                    return variantName;
+                  }
+                  return null;
+                };
+
                 // Primero intentar con order_items
                 if (order.order_items && order.order_items.length > 0) {
                   return order.order_items.map((item: any) => ({
                     ...item,
-                    // Extraer variantName desde product_snapshot si existe
-                    variantName: item.product_snapshot?.variant_name ||
-                                 item.product_snapshot?.variant_value ||
-                                 item.variantName ||
-                                 null
+                    variantName: formatVariantName(item)
                   }));
                 }
 
@@ -635,11 +652,7 @@ export default function OrdersPage() {
                 if (order.items && order.items.length > 0) {
                   return order.items.map((item: any) => ({
                     ...item,
-                    // Extraer variantName desde product_snapshot si existe
-                    variantName: item.product_snapshot?.variant_name ||
-                                 item.product_snapshot?.variant_value ||
-                                 item.variantName ||
-                                 null
+                    variantName: formatVariantName(item)
                   }));
                 }
 
