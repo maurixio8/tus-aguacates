@@ -9,6 +9,8 @@ export interface OrderItem {
     price?: number;
     main_image_url?: string;
     image?: string;
+    variant_name?: string;
+    variant_value?: string;
   };
   quantity: number;
   unit_price: number;
