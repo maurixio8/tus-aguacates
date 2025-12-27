@@ -736,13 +736,27 @@ export default function CreateOrderPage() {
                               </button>
                             )}
                           </div>
-                          <button
-                            onClick={() => addToOrder(product)}
-                            className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span className="hidden sm:inline">Agregar</span>
-                          </button>
+
+                          {/* Botón Agregar - Solo si NO tiene variantes */}
+                          {!((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) ? (
+                            <button
+                              onClick={() => addToOrder(product)}
+                              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                            >
+                              <Plus className="w-4 h-4" />
+                              <span className="hidden sm:inline">Agregar</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                setExpandedProduct(expandedProduct === product.id ? null : product.id)
+                              }
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                            >
+                              <Layers className="w-4 h-4" />
+                              <span className="hidden sm:inline">Ver variantes</span>
+                            </button>
+                          )}
                         </div>
 
                         {/* Variantes expandidas */}
