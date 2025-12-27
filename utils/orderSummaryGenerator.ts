@@ -184,43 +184,44 @@ export function generateOrderSummary(order: Order): string {
     }
   }
 
-  // Build complete message following the new structure
-  const message = `Hola ${order.customer_name || firstName}!
-Tu pedido ha sido confirmado exitosamente.
+  // Build complete message with emojis and proper structure
+  const message = `Hola ${firstName}! 👋
+Hemos recibido tu pedido exitosamente y aquí está el resumen:
 
-*PEDIDO #${orderNumber}*
+📋 *PEDIDO #${orderNumber}*
 
-*DATOS DEL CLIENTE*
+👤 *DATOS DEL CLIENTE*
 Nombre: ${order.customer_name || 'Cliente'}
-Direccion: ${deliveryAddress}${order.customer_phone ? `\nTelefono: ${order.customer_phone}` : ''}
+📍 Dirección: ${deliveryAddress}${order.customer_phone ? `\n📱 Teléfono: ${order.customer_phone}` : ''}
 
-*DETALLE DE PRODUCTOS*
------------------------------------
+🛒 *PRODUCTOS*
+━━━━━━━━━━━━━━━━━━━━━
 
 ${items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = item.variantName || '';
-    const productDisplayName = variantName ? `${itemName} (${variantName})` : itemName;
-    const itemTotal = item.subtotal || (item.unit_price * item.quantity);
 
-    return `${index + 1}. ${productDisplayName}
-   Cantidad: ${item.quantity}
-   Precio unitario: ${formatCurrency(item.unit_price)}
-   Subtotal: ${formatCurrency(itemTotal)}`;
+    // Mostrar variante claramente separada
+    const variantInfo = variantName ? ` - ${variantName}` : '';
+
+    return `${index + 1}. ${itemName}${variantInfo}
+   • Cantidad: ${item.quantity}
+   • Precio: ${formatCurrency(item.unit_price)}`;
   }).join('\n\n')}
 
------------------------------------
+━━━━━━━━━━━━━━━━━━━━━
 
-*RESUMEN DEL PEDIDO*
-Subtotal productos: ${formatCurrency(subtotal)}
-Costo de envio: ${shippingCost === 0 ? 'GRATIS' : formatCurrency(shippingCost)}
+💰 *RESUMEN*
+Subtotal: ${formatCurrency(subtotal)}
+Envío: ${shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost)}
 
-*TOTAL A PAGAR: ${formatCurrency(total)}*
+✨ *TOTAL: ${formatCurrency(total)}*
 
------------------------------------
-${order.customer_name || firstName}, por favor confirmame si toda la informacion de tu pedido esta correcta.
+━━━━━━━━━━━━━━━━━━━━━
+${firstName}, por favor confírmame si toda la información de tu pedido está correcta. 📝
 
-Muchas gracias por tu compra! En breve nos pondremos en contacto contigo para coordinar la entrega.`;
+Muchas gracias por tu compra! 💚
+En breve nos pondremos en contacto contigo para coordinar la entrega. 🚚`;
 
   return message;
 }

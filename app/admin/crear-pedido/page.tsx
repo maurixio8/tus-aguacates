@@ -317,70 +317,80 @@ export default function CreateOrderPage() {
   const generateWhatsAppMessage = (orderData: typeof createdOrderData) => {
     if (!orderData) return '';
 
+    // Obtener solo el primer nombre
+    const firstName = orderData.customerName.split(' ')[0];
+
     let message = '';
 
-    // Saludo inicial
-    message += `Hola ${orderData.customerName}!\n`;
-    message += `Tu pedido ha sido confirmado exitosamente.\n\n`;
+    // Saludo inicial personalizado
+    message += `Hola ${firstName}! 👋\n`;
+    message += `Hemos recibido tu pedido exitosamente y aquí está el resumen:\n\n`;
 
     // Número de pedido
-    message += `*PEDIDO #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
+    message += `📋 *PEDIDO #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
 
     // === DATOS DEL CLIENTE ===
-    message += `*DATOS DEL CLIENTE*\n`;
+    message += `👤 *DATOS DEL CLIENTE*\n`;
     message += `Nombre: ${orderData.customerName}\n`;
 
     // Obtener la dirección de deliveryAddress si está disponible
     const address = (typeof deliveryAddress === 'string' && deliveryAddress.trim())
       ? deliveryAddress.trim()
       : 'No especificada';
-    message += `Direccion: ${address}\n`;
+    message += `📍 Dirección: ${address}\n`;
 
     // Agregar teléfono si está disponible
     if (orderData.customerPhone) {
-      message += `Telefono: ${orderData.customerPhone}\n`;
+      message += `📱 Teléfono: ${orderData.customerPhone}\n`;
     }
 
     message += `\n`;
 
     // === PRODUCTOS ===
-    message += `*DETALLE DE PRODUCTOS*\n`;
-    message += `-----------------------------------\n`;
+    message += `🛒 *PRODUCTOS*\n`;
+    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
 
     let subtotal = 0;
     orderData.items.forEach((item, index) => {
+      // Nombre del producto con variante si existe
       const itemName = item.variant
-        ? `${item.product.name} (${item.variant.variant_value})`
+        ? `${item.product.name}`
         : item.product.name;
+
+      // Variante (peso, tamaño, etc.)
+      const variantInfo = item.variant
+        ? ` - ${item.variant.variant_value}`
+        : '';
+
       const itemPrice = item.variant?.price_adjustment || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
 
-      message += `\n${index + 1}. ${itemName}\n`;
-      message += `   Cantidad: ${item.quantity}\n`;
-      message += `   Precio unitario: ${formatCurrency(itemPrice)}\n`;
-      message += `   Subtotal: ${formatCurrency(itemTotal)}\n`;
+      message += `\n${index + 1}. ${itemName}${variantInfo}\n`;
+      message += `   • Cantidad: ${item.quantity}\n`;
+      message += `   • Precio: ${formatCurrency(itemPrice)}\n`;
     });
 
-    message += `\n-----------------------------------\n`;
+    message += `\n━━━━━━━━━━━━━━━━━━━━━\n`;
 
     // === RESUMEN FINANCIERO ===
-    message += `\n*RESUMEN DEL PEDIDO*\n`;
-    message += `Subtotal productos: ${formatCurrency(subtotal)}\n`;
+    message += `\n💰 *RESUMEN*\n`;
+    message += `Subtotal: ${formatCurrency(subtotal)}\n`;
 
     const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
     if (shipping === 0) {
-      message += `Costo de envio: GRATIS\n`;
+      message += `Envío: GRATIS 🎉\n`;
     } else {
-      message += `Costo de envio: ${formatCurrency(shipping)}\n`;
+      message += `Envío: ${formatCurrency(shipping)}\n`;
     }
 
-    message += `\n*TOTAL A PAGAR: ${formatCurrency(orderData.total)}*\n\n`;
+    message += `\n✨ *TOTAL: ${formatCurrency(orderData.total)}*\n\n`;
 
     // === MENSAJE DE CONFIRMACIÓN ===
-    message += `-----------------------------------\n`;
-    message += `${orderData.customerName}, por favor confirmame si toda la informacion de tu pedido esta correcta.\n\n`;
-    message += `Muchas gracias por tu compra! En breve nos pondremos en contacto contigo para coordinar la entrega.`;
+    message += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    message += `${firstName}, por favor confírmame si toda la información de tu pedido está correcta. 📝\n\n`;
+    message += `Muchas gracias por tu compra! 💚\n`;
+    message += `En breve nos pondremos en contacto contigo para coordinar la entrega. 🚚`;
 
     return encodeURIComponent(message);
   };
