@@ -7,6 +7,82 @@ import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
 
 const MAX_FREE_DAILY = 2;
 
+// Componente de carga animado para el Chef Virtual
+function ChefLoadingAnimation() {
+  const [dots, setDots] = useState('');
+  const [currentEmoji, setCurrentEmoji] = useState(0);
+
+  const cookingEmojis = ['👨‍🍳', '🍳', '🔥', '✨', '🥘', '🧑‍🍳'];
+
+  useEffect(() => {
+    // Animar los puntos
+    const dotsInterval = setInterval(() => {
+      setDots(prev => prev.length >= 3 ? '' : prev + '.');
+    }, 500);
+
+    // Cambiar emoji cada 1.5 segundos
+    const emojiInterval = setInterval(() => {
+      setCurrentEmoji(prev => (prev + 1) % cookingEmojis.length);
+    }, 1500);
+
+    return () => {
+      clearInterval(dotsInterval);
+      clearInterval(emojiInterval);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 rounded-3xl border-2 border-amber-200">
+      {/* Emoji animado grande */}
+      <div className="text-8xl mb-6 animate-bounce" style={{ animationDuration: '1.5s' }}>
+        {cookingEmojis[currentEmoji]}
+      </div>
+
+      {/* Texto de carga */}
+      <div className="text-center">
+        <h3 className="text-2xl md:text-3xl font-bold text-gray-800 mb-3">
+          El Chef Virtual está cocinando{dots}
+        </h3>
+        <p className="text-gray-600 text-lg mb-4">
+          Creando una receta deliciosa con tus ingredientes
+        </p>
+
+        {/* Frases motivacionales aleatorias */}
+        <div className="mt-6 p-4 bg-white/70 rounded-2xl max-w-md">
+          <p className="text-sm text-gray-700 font-medium">
+            💡 {getRandomCookingPhrase()}
+          </p>
+        </div>
+      </div>
+
+      {/* Spinner de progreso */}
+      <div className="mt-8 flex items-center gap-2">
+        <div className="w-3 h-3 bg-amber-500 rounded-full animate-ping" />
+        <div className="w-3 h-3 bg-orange-500 rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
+        <div className="w-3 h-3 bg-yellow-500 rounded-full animate-ping" style={{ animationDelay: '0.4s' }} />
+      </div>
+
+      {/* Barra de progreso animada */}
+      <div className="mt-6 w-64 h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-yellow-500 rounded-full animate-[shimmer_2s_infinite]" style={{ width: '70%' }} />
+      </div>
+    </div>
+  );
+}
+
+function getRandomCookingPhrase(): string {
+  const phrases = [
+    'Mezclando sabores mágicos...',
+    'Añadiendo un toque de creatividad...',
+    'Buscando la combinación perfecta...',
+    'Preparando algo especial para ti...',
+    'El secreto está en los ingredientes...',
+    'Casi listo, paciencia chef...',
+    'La magia sucede en la cocina...'
+  ];
+  return phrases[Math.floor(Math.random() * phrases.length)];
+}
+
 export function ChefVirtualGenerator() {
   const [ingredients, setIngredients] = useState<string[]>([]);
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
@@ -222,6 +298,12 @@ export function ChefVirtualGenerator() {
       </div>
 
       {/* Recipe Result */}
+      {loading && (
+        <div id="recipe-loading" className="animate-in fade-in slide-in-from-bottom-8 duration-700">
+          <ChefLoadingAnimation />
+        </div>
+      )}
+
       {recipe && (
         <div id="recipe-result" className="animate-in fade-in slide-in-from-bottom-8 duration-700">
           <RecipeDisplay recipe={recipe} ingredients={ingredients} />

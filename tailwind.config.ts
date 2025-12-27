@@ -131,11 +131,16 @@ const config: Config = {
           '0%': { transform: 'translateY(1rem)', opacity: '0' },
           '100%': { transform: 'translateY(0)', opacity: '1' },
         },
+        'shimmer': {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
         'spin-slow': 'spin-slow 3s linear infinite',
         'fade-in': 'fade-in 0.5s ease-out',
         'slide-in-from-bottom-4': 'slide-in-from-bottom-4 0.5s ease-out',
+        'shimmer': 'shimmer 2s ease-in-out infinite',
       },
     },
   },

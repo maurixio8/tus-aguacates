@@ -54,7 +54,7 @@ VALUES (
 -- Insert welcome coupon example (10% off, min purchase $30,000, unlimited usage)
 INSERT INTO coupons (code, description, discount_type, discount_value, min_purchase, is_welcome_coupon, usage_limit, valid_until)
 VALUES (
-  'BIENVENIDO10',
+  'ONLINE10',
   'Cupón de bienvenida - 10% de descuento en tu primer pedido',
   'percentage',
   10.00,

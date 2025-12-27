@@ -110,7 +110,8 @@ export async function GET(request: NextRequest) {
         console.log('❌ User already used this coupon:', { userEmail });
         return NextResponse.json({
           success: false,
-          error: 'Ya has usado este cupón anteriormente'
+          error: '🎁 Ya utilizaste este cupón anteriormente. Cada cupón solo se puede usar una vez por cliente.',
+          alreadyUsed: true
         });
       }
     }
