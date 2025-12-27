@@ -184,26 +184,43 @@ export function generateOrderSummary(order: Order): string {
     }
   }
 
-  // Build complete message with warm, personal tone
-  const message = `🥑 *TUS AGUACATES*
+  // Build complete message following the new structure
+  const message = `Hola ${order.customer_name || firstName}!
+Tu pedido ha sido confirmado exitosamente.
 
-${greeting}, ${firstName}! 👋
+*PEDIDO #${orderNumber}*
 
-Gracias por confiar en nosotros. Aquí está el resumen de tu pedido:
+*DATOS DEL CLIENTE*
+Nombre: ${order.customer_name || 'Cliente'}
+Direccion: ${deliveryAddress}${order.customer_phone ? `\nTelefono: ${order.customer_phone}` : ''}
 
-📋 *Pedido #${orderNumber}*
+*DETALLE DE PRODUCTOS*
+-----------------------------------
 
-📦 *Productos:*
-${productList}
+${items.map((item, index) => {
+    const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
+    const variantName = item.variantName || '';
+    const productDisplayName = variantName ? `${itemName} (${variantName})` : itemName;
+    const itemTotal = item.subtotal || (item.unit_price * item.quantity);
 
-${financialSummary}
+    return `${index + 1}. ${productDisplayName}
+   Cantidad: ${item.quantity}
+   Precio unitario: ${formatCurrency(item.unit_price)}
+   Subtotal: ${formatCurrency(itemTotal)}`;
+  }).join('\n\n')}
 
-📍 *Entrega:* ${deliveryAddress}
-📅 *Fecha estimada:* ${formattedDeliveryDate}
+-----------------------------------
 
-¿Tienes alguna duda o necesitas modificar algo? Responde a este mensaje y con gusto te ayudamos. 💬
+*RESUMEN DEL PEDIDO*
+Subtotal productos: ${formatCurrency(subtotal)}
+Costo de envio: ${shippingCost === 0 ? 'GRATIS' : formatCurrency(shippingCost)}
 
-¡Gracias por elegirnos, ${firstName}! Nos alegra tenerte como cliente 💚🥑`;
+*TOTAL A PAGAR: ${formatCurrency(total)}*
+
+-----------------------------------
+${order.customer_name || firstName}, por favor confirmame si toda la informacion de tu pedido esta correcta.
+
+Muchas gracias por tu compra! En breve nos pondremos en contacto contigo para coordinar la entrega.`;
 
   return message;
 }

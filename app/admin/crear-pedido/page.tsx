@@ -317,31 +317,70 @@ export default function CreateOrderPage() {
   const generateWhatsAppMessage = (orderData: typeof createdOrderData) => {
     if (!orderData) return '';
 
-    let message = `Hola ${orderData.customerName}! Tu pedido ha sido confirmado.\n\n`;
-    message += `*Resumen del Pedido #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
+    let message = '';
+
+    // Saludo inicial
+    message += `Hola ${orderData.customerName}!\n`;
+    message += `Tu pedido ha sido confirmado exitosamente.\n\n`;
+
+    // Número de pedido
+    message += `*PEDIDO #${orderData.orderId.slice(-6).toUpperCase()}*\n\n`;
+
+    // === DATOS DEL CLIENTE ===
+    message += `*DATOS DEL CLIENTE*\n`;
+    message += `Nombre: ${orderData.customerName}\n`;
+
+    // Obtener la dirección de deliveryAddress si está disponible
+    const address = (typeof deliveryAddress === 'string' && deliveryAddress.trim())
+      ? deliveryAddress.trim()
+      : 'No especificada';
+    message += `Direccion: ${address}\n`;
+
+    // Agregar teléfono si está disponible
+    if (orderData.customerPhone) {
+      message += `Telefono: ${orderData.customerPhone}\n`;
+    }
+
+    message += `\n`;
+
+    // === PRODUCTOS ===
+    message += `*DETALLE DE PRODUCTOS*\n`;
+    message += `-----------------------------------\n`;
 
     let subtotal = 0;
-    orderData.items.forEach((item) => {
+    orderData.items.forEach((item, index) => {
       const itemName = item.variant
         ? `${item.product.name} (${item.variant.variant_value})`
         : item.product.name;
       const itemPrice = item.variant?.price_adjustment || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
-      message += `- ${item.quantity}x ${itemName}: ${formatCurrency(itemTotal)}\n`;
+
+      message += `\n${index + 1}. ${itemName}\n`;
+      message += `   Cantidad: ${item.quantity}\n`;
+      message += `   Precio unitario: ${formatCurrency(itemPrice)}\n`;
+      message += `   Subtotal: ${formatCurrency(itemTotal)}\n`;
     });
 
-    message += `\n_Subtotal: ${formatCurrency(subtotal)}_\n`;
+    message += `\n-----------------------------------\n`;
+
+    // === RESUMEN FINANCIERO ===
+    message += `\n*RESUMEN DEL PEDIDO*\n`;
+    message += `Subtotal productos: ${formatCurrency(subtotal)}\n`;
 
     const shipping = subtotal >= FREE_SHIPPING_THRESHOLD ? 0 : SHIPPING_COST;
     if (shipping === 0) {
-      message += `_Domicilio: GRATIS_\n`;
+      message += `Costo de envio: GRATIS\n`;
     } else {
-      message += `_Domicilio: ${formatCurrency(shipping)}_\n`;
+      message += `Costo de envio: ${formatCurrency(shipping)}\n`;
     }
 
-    message += `\n*Total: ${formatCurrency(orderData.total)}*\n\n`;
-    message += `Gracias por tu compra! Pronto te contactaremos para coordinar la entrega.`;
+    message += `\n*TOTAL A PAGAR: ${formatCurrency(orderData.total)}*\n\n`;
+
+    // === MENSAJE DE CONFIRMACIÓN ===
+    message += `-----------------------------------\n`;
+    message += `${orderData.customerName}, por favor confirmame si toda la informacion de tu pedido esta correcta.\n\n`;
+    message += `Muchas gracias por tu compra! En breve nos pondremos en contacto contigo para coordinar la entrega.`;
 
     return encodeURIComponent(message);
   };
