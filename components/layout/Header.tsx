@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn, Menu, X, Home, Tag, BookOpen } from 'lucide-react';
+import { ShoppingCart, User, Search, Heart, LogIn, LogOut, Menu, X, Home, BookOpen, MessageCircle } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import branding from '@/lib/config/branding';
 import { SearchModal } from '../search/SearchModal';
 import { supabase, Profile } from '@/lib/supabase';
@@ -12,7 +13,8 @@ import { getHeaderGreeting } from '@/lib/greetings';
 
 export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -53,6 +55,17 @@ export function Header() {
   // Cerrar menú móvil al cambiar de página
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  // Cerrar sesión
+  async function handleSignOut() {
+    try {
+      await signOut();
+      setMobileMenuOpen(false);
+      router.push('/');
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+    }
+  }
+
   return (
     <>
       <header className="bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
@@ -84,12 +97,11 @@ export function Header() {
               <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
                 Frutas Tropicales
               </Link>
+              <Link href="/recetas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
+                Recetas
+              </Link>
               <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
                 Más Categorías
-              </Link>
-              <Link href="/recetas" className="flex items-center gap-1 hover:text-verde-aguacate-200 transition-colors">
-                <BookOpen className="w-4 h-4" />
-                Recetas
               </Link>
             </nav>
 
@@ -222,6 +234,15 @@ export function Header() {
                 </Link>
 
                 <Link
+                  href="/recetas"
+                  onClick={closeMobileMenu}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                >
+                  <BookOpen className="w-5 h-5" />
+                  <span>Recetas</span>
+                </Link>
+
+                <Link
                   href="/tienda/ofertas-combos"
                   onClick={closeMobileMenu}
                   className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold transition-colors"
@@ -231,12 +252,14 @@ export function Header() {
                 </Link>
 
                 <Link
-                  href="/recetas"
+                  href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition-colors font-semibold"
                 >
-                  <BookOpen className="w-5 h-5" />
-                  <span>Recetas</span>
+                  <MessageCircle className="w-5 h-5" />
+                  <span>WhatsApp</span>
                 </Link>
 
                 <div className="border-t border-white/10 my-2" />
@@ -251,14 +274,23 @@ export function Header() {
                 </Link>
 
                 {user ? (
-                  <Link
-                    href="/cuenta"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <User className="w-5 h-5" />
-                    <span>Mi Cuenta</span>
-                  </Link>
+                  <>
+                    <Link
+                      href="/cuenta"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <User className="w-5 h-5" />
+                      <span>Mi Cuenta</span>
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
+                    >
+                      <LogOut className="w-5 h-5" />
+                      <span>Cerrar Sesión</span>
+                    </button>
+                  </>
                 ) : (
                   <Link
                     href="/auth/login"

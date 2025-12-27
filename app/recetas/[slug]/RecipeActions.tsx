@@ -3,10 +3,10 @@
 import { Printer, Share2 } from 'lucide-react';
 
 interface RecipeActionsProps {
-  title: string;
+  recipeTitle: string;
 }
 
-export function RecipeActions({ title }: RecipeActionsProps) {
+export function RecipeActions({ recipeTitle }: RecipeActionsProps) {
   const handlePrint = () => {
     window.print();
   };
@@ -15,17 +15,12 @@ export function RecipeActions({ title }: RecipeActionsProps) {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: title,
-          url: window.location.href
+          title: recipeTitle,
+          url: window.location.href,
         });
       } catch (error) {
-        // User cancelled or error
-        console.log('Share cancelled or failed');
+        console.error('Error sharing:', error);
       }
-    } else {
-      // Fallback: copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copiado al portapapeles');
     }
   };
 

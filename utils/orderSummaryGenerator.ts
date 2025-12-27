@@ -136,8 +136,15 @@ export function generateOrderSummary(order: Order): string {
   // Build product list
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
+    const variantName = item.variantName || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
-    return `• ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
+
+    // Format: "• 2x Zanahoria (1 kg) - $10,000" or "• 1x Cebolla - $3,000"
+    const productDisplay = variantName
+      ? `• ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
+      : `• ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
+
+    return productDisplay;
   }).join('\n');
 
   // Build financial summary based on whether there's a discount

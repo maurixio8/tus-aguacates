@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle } from 'lucide-react'
+import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle, ChefHat } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { defaultScheduler } from '@/lib/services/delivery-scheduler'
 
@@ -44,13 +44,23 @@ export function ConversionHero() {
                 {/* Contenido debajo de la imagen */}
                 <div className="bg-gradient-to-b from-verde-bosque-600 to-verde-bosque-700 px-4 py-6">
                     <div className="container mx-auto">
-                        {/* Botón de Ofertas - Solo móvil */}
-                        <Link
-                            href="/tienda?categoria=ofertas"
-                            className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full mb-4 shadow-lg text-sm font-bold animate-pulse hover:animate-none hover:scale-105 transition-transform"
-                        >
-                            🔥 Ver Ofertas
-                        </Link>
+                        {/* Botones pequeños - Solo móvil */}
+                        <div className="flex gap-2 mb-4">
+                            <Link
+                                href="/tienda?categoria=ofertas"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-red-500 to-orange-500 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold animate-pulse hover:animate-none hover:scale-105 transition-transform"
+                            >
+                                🔥 Ver Ofertas
+                            </Link>
+
+                            <Link
+                                href="/recetas"
+                                className="inline-flex items-center gap-2 bg-gradient-to-r from-green-500 to-green-700 text-white px-4 py-2 rounded-full shadow-lg text-sm font-bold hover:from-green-600 hover:to-green-800 hover:scale-105 transition-transform"
+                            >
+                                <ChefHat className="w-4 h-4" />
+                                Recetas
+                            </Link>
+                        </div>
 
                         {/* Headline */}
                         <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
@@ -82,14 +92,6 @@ export function ConversionHero() {
                             >
                                 🛒 Ver Productos
                             </Link>
-
-                            <a
-                                href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
-                                className="w-full flex items-center justify-center gap-2 bg-white/95 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl"
-                            >
-                                <MessageCircle className="w-5 h-5 text-green-600" />
-                                WhatsApp
-                            </a>
                         </div>
 
                         {/* Trust badges */}
@@ -173,13 +175,13 @@ export function ConversionHero() {
                                 🛒 Ver Productos
                             </Link>
 
-                            <a
-                                href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
-                                className="group flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105"
+                            <Link
+                                href="/recetas"
+                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate"
                             >
-                                <MessageCircle className="w-6 h-6 text-green-600" />
-                                WhatsApp
-                            </a>
+                                <ChefHat className="w-6 h-6 text-white" />
+                                Descubre Recetas
+                            </Link>
                         </div>
 
                         {/* Trust badges */}

@@ -6,8 +6,8 @@ export interface RecipeIngredient {
   quantity: string;
   unit: string;
   productSlug?: string; // Slug del producto en la tienda (si existe)
-  productQty?: number;  // Cantidad del producto a agregar al carrito (default: 1)
-  productNote?: string; // Nota explicativa para el cliente (ej: "1 libra ≈ 5 limones")
+  productQty?: number; // Cantidad sugerida del producto
+  productNote?: string; // Nota sobre el producto (ej: "1 libra ≈ 5-6 limones")
   isOptional?: boolean;
 }
 
@@ -126,11 +126,11 @@ export const recipes: Recipe[] = [
     tags: ['mexicano', 'dip', 'sin cocción', 'vegetariano', 'vegano'],
     isFeatured: true,
     ingredients: [
-      { name: 'Aguacate Hass maduro', quantity: '3', unit: 'unidades', productSlug: 'aguacate-hass', productQty: 3, productNote: '3 unidades' },
-      { name: 'Tomate', quantity: '1', unit: 'grande', productSlug: 'tomate', productQty: 1, productNote: '1 libra ≈ 3-4 tomates' },
-      { name: 'Cebolla morada', quantity: '1/4', unit: 'taza', productSlug: 'cebolla-morada', productQty: 1, productNote: '1 unidad rinde para varias recetas' },
-      { name: 'Cilantro fresco', quantity: '1/4', unit: 'taza', productSlug: 'cilantro', productQty: 1, productNote: '1 manojo' },
-      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti', productQty: 1, productNote: '1 libra ≈ 5-6 limones' },
+      { name: 'Aguacate Hass maduro', quantity: '3', unit: 'unidades', productSlug: 'aguacate-hass' },
+      { name: 'Tomate', quantity: '1', unit: 'grande', productSlug: 'tomate' },
+      { name: 'Cebolla morada', quantity: '1/4', unit: 'taza', productSlug: 'cebolla-morada' },
+      { name: 'Cilantro fresco', quantity: '1/4', unit: 'taza', productSlug: 'cilantro' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
       { name: 'Sal', quantity: '1', unit: 'cucharadita' },
       { name: 'Chile jalapeño', quantity: '1', unit: 'unidad', isOptional: true }
     ],
@@ -174,10 +174,10 @@ export const recipes: Recipe[] = [
     tags: ['desayuno', 'proteína', 'saludable', 'rápido'],
     isFeatured: true,
     ingredients: [
-      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass', productQty: 1, productNote: '1 unidad' },
+      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass' },
       { name: 'Pan integral', quantity: '2', unit: 'rebanadas' },
       { name: 'Huevos', quantity: '2', unit: 'unidades' },
-      { name: 'Limón', quantity: '1/2', unit: 'unidad', productSlug: 'limon-tahiti', productQty: 1, productNote: '1 libra ≈ 5-6 limones' },
+      { name: 'Limón', quantity: '1/2', unit: 'unidad', productSlug: 'limon-tahiti' },
       { name: 'Sal', quantity: 'al gusto', unit: '' },
       { name: 'Pimienta', quantity: 'al gusto', unit: '' },
       { name: 'Hojuelas de chile', quantity: '1', unit: 'pizca', isOptional: true },
@@ -223,10 +223,10 @@ export const recipes: Recipe[] = [
     tags: ['bebida', 'saludable', 'verde', 'energía', 'vegano'],
     isFeatured: true,
     ingredients: [
-      { name: 'Aguacate Hass', quantity: '1/2', unit: 'unidad', productSlug: 'aguacate-hass', productQty: 1, productNote: '1 unidad (sobra para otra receta)' },
-      { name: 'Banano', quantity: '1', unit: 'grande', productSlug: 'banano', productQty: 1, productNote: '1 libra ≈ 3-4 bananos' },
-      { name: 'Espinaca', quantity: '2', unit: 'tazas', productSlug: 'espinaca', productQty: 1, productNote: '250g' },
-      { name: 'Mango', quantity: '1/2', unit: 'taza', productSlug: 'mango', productQty: 1, productNote: '1 unidad' },
+      { name: 'Aguacate Hass', quantity: '1/2', unit: 'unidad', productSlug: 'aguacate-hass' },
+      { name: 'Banano', quantity: '1', unit: 'grande', productSlug: 'banano' },
+      { name: 'Espinaca', quantity: '2', unit: 'tazas', productSlug: 'espinaca' },
+      { name: 'Mango', quantity: '1/2', unit: 'taza', productSlug: 'mango' },
       { name: 'Leche de almendras', quantity: '1', unit: 'taza' },
       { name: 'Miel o agave', quantity: '1', unit: 'cucharada', isOptional: true },
       { name: 'Hielo', quantity: '1/2', unit: 'taza' }
@@ -269,14 +269,14 @@ export const recipes: Recipe[] = [
     tags: ['ensalada', 'tropical', 'fresco', 'vegetariano', 'sin cocción'],
     isFeatured: false,
     ingredients: [
-      { name: 'Aguacate Hass', quantity: '2', unit: 'unidades', productSlug: 'aguacate-hass', productQty: 2, productNote: '2 unidades' },
-      { name: 'Mango maduro', quantity: '1', unit: 'grande', productSlug: 'mango', productQty: 1, productNote: '1 unidad' },
-      { name: 'Lechuga mixta', quantity: '4', unit: 'tazas', productSlug: 'lechuga', productQty: 1, productNote: '1 unidad' },
-      { name: 'Cebolla morada', quantity: '1/4', unit: 'unidad', productSlug: 'cebolla-morada', productQty: 1, productNote: '1 unidad' },
-      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti', productQty: 1, productNote: '1 libra ≈ 5-6 limones' },
+      { name: 'Aguacate Hass', quantity: '2', unit: 'unidades', productSlug: 'aguacate-hass' },
+      { name: 'Mango maduro', quantity: '1', unit: 'grande', productSlug: 'mango' },
+      { name: 'Lechuga mixta', quantity: '4', unit: 'tazas', productSlug: 'lechuga' },
+      { name: 'Cebolla morada', quantity: '1/4', unit: 'unidad', productSlug: 'cebolla-morada' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
       { name: 'Aceite de oliva', quantity: '3', unit: 'cucharadas' },
       { name: 'Miel', quantity: '1', unit: 'cucharada' },
-      { name: 'Cilantro', quantity: '2', unit: 'cucharadas', productSlug: 'cilantro', productQty: 1, productNote: '1 manojo' },
+      { name: 'Cilantro', quantity: '2', unit: 'cucharadas', productSlug: 'cilantro' },
       { name: 'Sal y pimienta', quantity: 'al gusto', unit: '' }
     ],
     steps: [
@@ -320,9 +320,9 @@ export const recipes: Recipe[] = [
     isFeatured: false,
     ingredients: [
       { name: 'Pulpa de açaí congelada', quantity: '100', unit: 'gramos' },
-      { name: 'Banano congelado', quantity: '1', unit: 'unidad', productSlug: 'banano', productQty: 1, productNote: '1 libra ≈ 3-4 bananos' },
-      { name: 'Fresas', quantity: '1/2', unit: 'taza', productSlug: 'fresas', productQty: 1, productNote: '250g' },
-      { name: 'Banano fresco', quantity: '1/2', unit: 'unidad', productSlug: 'banano', productQty: 1, productNote: '1 libra ≈ 3-4 bananos' },
+      { name: 'Banano congelado', quantity: '1', unit: 'unidad', productSlug: 'banano' },
+      { name: 'Fresas', quantity: '1/2', unit: 'taza', productSlug: 'fresas' },
+      { name: 'Banano fresco', quantity: '1/2', unit: 'unidad', productSlug: 'banano' },
       { name: 'Arándanos', quantity: '1/4', unit: 'taza' },
       { name: 'Granola', quantity: '1/4', unit: 'taza' },
       { name: 'Coco rallado', quantity: '1', unit: 'cucharada' },
@@ -370,11 +370,11 @@ export const recipes: Recipe[] = [
     isFeatured: false,
     ingredients: [
       { name: 'Pechuga de pollo', quantity: '250', unit: 'gramos' },
-      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass', productQty: 1, productNote: '1 unidad' },
+      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass' },
       { name: 'Tortillas de trigo', quantity: '2', unit: 'grandes' },
-      { name: 'Lechuga', quantity: '1', unit: 'taza', productSlug: 'lechuga', productQty: 1, productNote: '1 unidad' },
-      { name: 'Tomate', quantity: '1', unit: 'mediano', productSlug: 'tomate', productQty: 1, productNote: '1 libra ≈ 3-4 tomates' },
-      { name: 'Limón', quantity: '1', unit: 'unidad', productSlug: 'limon-tahiti', productQty: 1, productNote: '1 libra ≈ 5-6 limones' },
+      { name: 'Lechuga', quantity: '1', unit: 'taza', productSlug: 'lechuga' },
+      { name: 'Tomate', quantity: '1', unit: 'mediano', productSlug: 'tomate' },
+      { name: 'Limón', quantity: '1', unit: 'unidad', productSlug: 'limon-tahiti' },
       { name: 'Aceite de oliva', quantity: '2', unit: 'cucharadas' },
       { name: 'Sal y pimienta', quantity: 'al gusto', unit: '' },
       { name: 'Yogurt griego', quantity: '2', unit: 'cucharadas', isOptional: true }
@@ -420,9 +420,9 @@ export const recipes: Recipe[] = [
     tags: ['salsa', 'aderezo', 'vegano', 'sin cocción', 'versátil'],
     isFeatured: false,
     ingredients: [
-      { name: 'Aguacate Hass', quantity: '2', unit: 'maduros', productSlug: 'aguacate-hass', productQty: 2, productNote: '2 unidades' },
-      { name: 'Cilantro', quantity: '1', unit: 'taza', productSlug: 'cilantro', productQty: 1, productNote: '1 manojo' },
-      { name: 'Limón', quantity: '3', unit: 'unidades', productSlug: 'limon-tahiti', productQty: 1, productNote: '1 libra ≈ 5-6 limones' },
+      { name: 'Aguacate Hass', quantity: '2', unit: 'maduros', productSlug: 'aguacate-hass' },
+      { name: 'Cilantro', quantity: '1', unit: 'taza', productSlug: 'cilantro' },
+      { name: 'Limón', quantity: '3', unit: 'unidades', productSlug: 'limon-tahiti' },
       { name: 'Ajo', quantity: '1', unit: 'diente' },
       { name: 'Jalapeño', quantity: '1', unit: 'pequeño', isOptional: true },
       { name: 'Aceite de oliva', quantity: '2', unit: 'cucharadas' },
@@ -460,7 +460,7 @@ export const recipes: Recipe[] = [
     title: 'Pudding de Chía con Mango',
     description: 'Un postre saludable y nutritivo que se prepara la noche anterior. Perfecto para desayuno o merienda, rico en omega-3 y fibra.',
     shortDescription: 'Postre saludable con semillas de chía y mango',
-    image: 'https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?w=800&h=600&fit=crop',
+    image: 'https://images.unsplash.com/photo-1546039907-7b67f9e10173?w=800&h=600&fit=crop',
     prepTime: 10,
     cookTime: 0,
     servings: 2,
@@ -471,7 +471,7 @@ export const recipes: Recipe[] = [
     ingredients: [
       { name: 'Semillas de chía', quantity: '4', unit: 'cucharadas' },
       { name: 'Leche de coco', quantity: '1', unit: 'taza' },
-      { name: 'Mango maduro', quantity: '1', unit: 'grande', productSlug: 'mango', productQty: 1, productNote: '1 unidad' },
+      { name: 'Mango maduro', quantity: '1', unit: 'grande', productSlug: 'mango' },
       { name: 'Miel o agave', quantity: '2', unit: 'cucharadas' },
       { name: 'Extracto de vainilla', quantity: '1/2', unit: 'cucharadita' },
       { name: 'Coco rallado', quantity: '1', unit: 'cucharada', isOptional: true }
@@ -515,8 +515,8 @@ export const recipes: Recipe[] = [
     tags: ['proteína', 'fitness', 'post-entreno', 'batido', 'energía'],
     isFeatured: false,
     ingredients: [
-      { name: 'Aguacate Hass', quantity: '1/2', unit: 'unidad', productSlug: 'aguacate-hass', productQty: 1, productNote: '1 unidad (sobra para otra receta)' },
-      { name: 'Banano maduro', quantity: '1', unit: 'grande', productSlug: 'banano', productQty: 1, productNote: '1 libra ≈ 3-4 bananos' },
+      { name: 'Aguacate Hass', quantity: '1/2', unit: 'unidad', productSlug: 'aguacate-hass' },
+      { name: 'Banano maduro', quantity: '1', unit: 'grande', productSlug: 'banano' },
       { name: 'Leche', quantity: '1', unit: 'taza' },
       { name: 'Proteína en polvo', quantity: '1', unit: 'scoop' },
       { name: 'Mantequilla de maní', quantity: '1', unit: 'cucharada' },
@@ -561,7 +561,7 @@ export const recipes: Recipe[] = [
     tags: ['snack', 'saludable', 'horneado', 'sin freír', 'crujiente'],
     isFeatured: false,
     ingredients: [
-      { name: 'Plátano verde', quantity: '3', unit: 'grandes', productSlug: 'platano', productQty: 3, productNote: '3 unidades' },
+      { name: 'Plátano verde', quantity: '3', unit: 'grandes', productSlug: 'platano' },
       { name: 'Aceite de coco', quantity: '1', unit: 'cucharada' },
       { name: 'Sal marina', quantity: '1/2', unit: 'cucharadita' },
       { name: 'Canela', quantity: '1/4', unit: 'cucharadita', isOptional: true },

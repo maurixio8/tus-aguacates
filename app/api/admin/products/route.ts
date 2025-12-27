@@ -327,6 +327,10 @@ export async function GET(request: NextRequest) {
         });
       }
       console.log('📦 Variants fetched:', variants?.length || 0);
+      if (variants && variants.length > 0) {
+        console.log('🔍 First variant structure:', JSON.stringify(variants[0], null, 2));
+        console.log('🔍 Variant fields:', Object.keys(variants[0]));
+      }
     }
 
     // Transform data to include category_name and variants

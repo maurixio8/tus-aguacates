@@ -747,9 +747,55 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { status, items, total } = body;
+    const { status, items, total, customerData } = body;
 
     const supabase = createSupabaseClient();
+
+    // If updating customer data
+    if (customerData) {
+      console.log('📝 API: Updating customer data for order:', orderId, customerData);
+
+      const updateData: Record<string, unknown> = {
+        updated_at: new Date().toISOString()
+      };
+
+      if (customerData.customer_name !== undefined) {
+        updateData.customer_name = customerData.customer_name.trim();
+      }
+      if (customerData.customer_phone !== undefined) {
+        updateData.customer_phone = customerData.customer_phone.trim();
+      }
+      if (customerData.customer_email !== undefined) {
+        updateData.customer_email = customerData.customer_email.trim() || null;
+      }
+      if (customerData.delivery_address !== undefined) {
+        updateData.delivery_address = customerData.delivery_address.trim();
+        // También actualizar shipping_address como JSON
+        updateData.shipping_address = JSON.stringify({
+          street_address: customerData.delivery_address.trim(),
+          city: 'Bogotá',
+          state: 'Cundinamarca'
+        });
+      }
+      if (customerData.delivery_notes !== undefined) {
+        updateData.delivery_notes = customerData.delivery_notes.trim() || null;
+      }
+
+      const { error: customerUpdateError } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', orderId);
+
+      if (customerUpdateError) {
+        console.error('❌ API: Error updating customer data:', customerUpdateError);
+        return NextResponse.json(
+          { error: 'Error al actualizar datos del cliente', details: customerUpdateError.message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      console.log('✅ API: Customer data updated successfully');
+    }
 
     // If updating items
     if (items && Array.isArray(items)) {

@@ -14,14 +14,14 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
   return (
     <Link href={`/recetas/${recipe.slug}`}>
-      <article className="group bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100 h-full flex flex-col">
+      <article className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-gray-100 hover:border-verde-aguacate/50 h-full flex flex-col hover:-translate-y-2 hover:scale-105">
         {/* Imagen */}
         <div className="relative aspect-[4/3] overflow-hidden">
           <Image
             src={recipe.image}
             alt={recipe.title}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-110 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
 

@@ -4,6 +4,7 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 export const dynamic = 'force-dynamic';
 
 // GET - Listar clientes con búsqueda y paginación
+// Ahora lee de TODAS las fuentes: customers, profiles, y guest_orders
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,182 +13,262 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const sortBy = searchParams.get('sortBy') || 'created_at';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const source = searchParams.get('source') || 'all'; // 'all', 'customers', 'profiles', 'guests'
 
     const supabase = createSupabaseClient();
 
-    // Consultar profiles con su email de auth.users y estadísticas de pedidos
-    let query = supabase
-      .from('profiles')
-      .select(`
-        id,
-        full_name,
-        phone,
-        avatar_url,
-        role,
-        created_at,
-        updated_at
-      `, { count: 'exact' });
+    let allCustomers: any[] = [];
+    const phonesSeen = new Set<string>();
 
-    // Solo clientes, no admins
-    query = query.eq('role', 'customer');
+    // ========================================
+    // 1. FUENTE PRINCIPAL: Tabla customers
+    // ========================================
+    if (source === 'all' || source === 'customers') {
+      // Supabase limita a 1000 por defecto, necesitamos cargar todos
+      // Usamos paginación interna para cargar todos los registros
+      let allCustomersData: any[] = [];
+      let hasMore = true;
+      let offset = 0;
+      const batchSize = 1000;
 
-    // Búsqueda por nombre o teléfono
-    if (search) {
-      query = query.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
-    }
+      while (hasMore) {
+        let customersQuery = supabase
+          .from('customers')
+          .select('*', { count: 'exact' })
+          .range(offset, offset + batchSize - 1);
 
-    // Ordenamiento
-    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-
-    // Paginación
-    query = query.range((page - 1) * limit, page * limit - 1);
-
-    const { data: profiles, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching customers:', error);
-      return NextResponse.json(
-        { error: 'Error al cargar clientes', details: error.message },
-        { status: 500 }
-      );
-    }
-
-    // Obtener clientes invitados únicos de guest_orders
-    const { data: guestOrders } = await supabase
-      .from('guest_orders')
-      .select('guest_name, guest_email, guest_phone, guest_address, total_amount, created_at')
-      .order('created_at', { ascending: false });
-
-    // Agrupar clientes invitados por teléfono (clave única)
-    const guestCustomersMap = new Map();
-    (guestOrders || []).forEach((order) => {
-      const key = order.guest_phone.trim();
-      if (!guestCustomersMap.has(key)) {
-        guestCustomersMap.set(key, {
-          phone: order.guest_phone,
-          name: order.guest_name,
-          email: order.guest_email || null,
-          address: order.guest_address,
-          orders: [],
-          created_at: order.created_at,
-        });
-      }
-      guestCustomersMap.get(key).orders.push({
-        total: order.total_amount,
-        created_at: order.created_at,
-      });
-    });
-
-    // Convertir clientes invitados a array con estadísticas
-    const guestCustomers = Array.from(guestCustomersMap.values()).map((guest) => ({
-      id: `guest-${guest.phone}`, // ID temporal para clientes invitados
-      name: guest.name,
-      phone: guest.phone,
-      email: guest.email,
-      address: guest.address,
-      city: null,
-      neighborhood: null,
-      notes: 'Cliente invitado (sin cuenta)',
-      total_orders: guest.orders.length,
-      total_spent: guest.orders.reduce((sum: number, order: any) => sum + order.total, 0),
-      last_order_date: guest.orders[0]?.created_at || null,
-      is_active: true,
-      created_at: guest.created_at,
-      is_guest: true, // Flag para identificar clientes invitados
-    }));
-
-    // Obtener emails de auth.users y estadísticas de pedidos para perfiles registrados
-    const enrichedProfiles = await Promise.all(
-      (profiles || []).map(async (profile) => {
-        // Obtener email de auth.users
-        const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
-
-        // Obtener estadísticas de pedidos registrados
-        const { data: orders } = await supabase
-          .from('orders')
-          .select('total, created_at')
-          .eq('user_id', profile.id)
-          .order('created_at', { ascending: false });
-
-        // Obtener pedidos invitados del mismo teléfono (antes de registrarse)
-        let guestOrdersForProfile: any[] = [];
-        if (profile.phone) {
-          const { data: guestOrdersData } = await supabase
-            .from('guest_orders')
-            .select('total_amount, created_at')
-            .eq('guest_phone', profile.phone);
-          guestOrdersForProfile = guestOrdersData || [];
+        // Búsqueda (solo en la primera consulta para obtener IDs filtrados)
+        if (search) {
+          customersQuery = customersQuery.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
         }
 
-        // Combinar pedidos registrados + pedidos invitados
-        const allOrders = [
-          ...(orders || []).map(o => ({ total: o.total, created_at: o.created_at })),
-          ...guestOrdersForProfile.map(o => ({ total: o.total_amount, created_at: o.created_at })),
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const { data: customersData, error: customersError, count } = await customersQuery;
 
-        const totalOrders = allOrders.length;
-        const totalSpent = allOrders.reduce((sum: number, order: any) => sum + (order.total || 0), 0);
-        const lastOrderDate = allOrders[0]?.created_at || null;
+        if (customersError) {
+          console.log('⚠️ Tabla customers no existe o error:', customersError.message);
+          hasMore = false;
+        } else if (customersData && customersData.length > 0) {
+          allCustomersData = [...allCustomersData, ...customersData];
+          offset += batchSize;
+          // Si obtuvimos menos registros que el batch, ya no hay más
+          hasMore = customersData.length === batchSize;
+          console.log(`📊 Cargados ${allCustomersData.length} clientes de ${count || '?'} total`);
+        } else {
+          hasMore = false;
+        }
+      }
 
-        // Obtener dirección principal del usuario
-        const { data: addresses } = await supabase
-          .from('addresses')
-          .select('street_address, city')
-          .eq('user_id', profile.id)
-          .eq('is_default', true)
-          .limit(1);
+      console.log(`✅ Total encontrados: ${allCustomersData.length} clientes en tabla customers`);
 
-        return {
-          id: profile.id,
-          name: profile.full_name || 'Sin nombre',
-          phone: profile.phone || 'Sin teléfono',
-          email: authUser?.user?.email || null,
-          address: addresses?.[0]?.street_address || null,
-          city: addresses?.[0]?.city || null,
-          neighborhood: null,
-          notes: null,
-          total_orders: totalOrders,
-          total_spent: totalSpent,
-          last_order_date: lastOrderDate,
-          is_active: true,
-          created_at: profile.created_at,
-          is_guest: false,
-        };
-      })
-    );
+      for (const customer of allCustomersData) {
+        const phoneKey = (customer.phone || '').trim().toLowerCase();
+        if (phoneKey && !phonesSeen.has(phoneKey)) {
+          phonesSeen.add(phoneKey);
+          allCustomers.push({
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            email: customer.email || null,
+            address: customer.address,
+            neighborhood: customer.neighborhood,
+            city: customer.city || 'Bogotá',
+            notes: customer.notes,
+            total_orders: customer.total_orders || 0,
+            total_spent: parseFloat(customer.total_spent) || 0,
+            last_order_date: customer.last_order_date,
+            is_active: customer.is_active !== false,
+            created_at: customer.created_at,
+            is_guest: false,
+            source: 'customers'
+          });
+        }
+      }
+    }
 
-    // Filtrar clientes invitados que ya están registrados (mismo teléfono)
-    const registeredPhones = new Set(
-      enrichedProfiles
-        .filter(p => p.phone && p.phone !== 'Sin teléfono')
-        .map(p => p.phone.trim())
-    );
+    // ========================================
+    // 2. FUENTE SECUNDARIA: Tabla profiles (usuarios registrados)
+    // ========================================
+    if (source === 'all' || source === 'profiles') {
+      let profilesQuery = supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'customer');
 
-    const uniqueGuestCustomers = guestCustomers.filter(
-      (guest) => !registeredPhones.has(guest.phone.trim())
-    );
+      if (search) {
+        profilesQuery = profilesQuery.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+      }
 
-    // Combinar clientes registrados + invitados únicos
-    const allCustomers = [...enrichedProfiles, ...uniqueGuestCustomers];
+      const { data: profilesData, error: profilesError } = await profilesQuery;
 
-    // Aplicar búsqueda a la lista combinada
-    let filteredCustomers = allCustomers;
+      if (profilesError) {
+        console.log('⚠️ Error en profiles:', profilesError.message);
+      } else if (profilesData) {
+        console.log(`✅ Encontrados ${profilesData.length} perfiles registrados`);
+
+        for (const profile of profilesData) {
+          const phoneKey = (profile.phone || '').trim().toLowerCase();
+
+          // Solo agregar si no existe ya (por teléfono)
+          if (!phoneKey || !phonesSeen.has(phoneKey)) {
+            if (phoneKey) phonesSeen.add(phoneKey);
+
+            // Obtener estadísticas de pedidos
+            const { data: orders } = await supabase
+              .from('orders')
+              .select('total, created_at')
+              .eq('user_id', profile.id);
+
+            const totalOrders = orders?.length || 0;
+            const totalSpent = orders?.reduce((sum: number, o: any) => sum + (parseFloat(o.total) || 0), 0) || 0;
+            const lastOrderDate = orders?.[0]?.created_at || null;
+
+            // Obtener email de auth.users
+            let email = null;
+            try {
+              const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+              email = authUser?.user?.email || null;
+            } catch (e) {
+              // Ignorar errores de auth
+            }
+
+            // Obtener dirección
+            const { data: addresses } = await supabase
+              .from('addresses')
+              .select('street_address, city, neighborhood')
+              .eq('user_id', profile.id)
+              .eq('is_default', true)
+              .limit(1);
+
+            allCustomers.push({
+              id: profile.id,
+              name: profile.full_name || 'Sin nombre',
+              phone: profile.phone || 'Sin teléfono',
+              email: email,
+              address: addresses?.[0]?.street_address || null,
+              neighborhood: addresses?.[0]?.neighborhood || null,
+              city: addresses?.[0]?.city || 'Bogotá',
+              notes: null,
+              total_orders: totalOrders,
+              total_spent: totalSpent,
+              last_order_date: lastOrderDate,
+              is_active: true,
+              created_at: profile.created_at,
+              is_guest: false,
+              source: 'profiles'
+            });
+          }
+        }
+      }
+    }
+
+    // ========================================
+    // 3. FUENTE TERCIARIA: guest_orders (clientes invitados)
+    // ========================================
+    if (source === 'all' || source === 'guests') {
+      const { data: guestOrders, error: guestError } = await supabase
+        .from('guest_orders')
+        .select('guest_name, guest_email, guest_phone, guest_address, total_amount, created_at')
+        .order('created_at', { ascending: false });
+
+      if (guestError) {
+        console.log('⚠️ Error en guest_orders:', guestError.message);
+      } else if (guestOrders) {
+        console.log(`✅ Encontrados ${guestOrders.length} pedidos de invitados`);
+
+        // Agrupar por teléfono
+        const guestMap = new Map<string, any>();
+
+        for (const order of guestOrders) {
+          const phoneKey = (order.guest_phone || '').trim().toLowerCase();
+          if (!phoneKey) continue;
+
+          // Solo procesar si no existe en otras fuentes
+          if (phonesSeen.has(phoneKey)) continue;
+
+          if (!guestMap.has(phoneKey)) {
+            guestMap.set(phoneKey, {
+              name: order.guest_name,
+              phone: order.guest_phone,
+              email: order.guest_email,
+              address: order.guest_address,
+              orders: [],
+              created_at: order.created_at
+            });
+          }
+
+          guestMap.get(phoneKey).orders.push({
+            total: parseFloat(order.total_amount) || 0,
+            created_at: order.created_at
+          });
+        }
+
+        // Convertir a array
+        for (const [phoneKey, guest] of guestMap) {
+          phonesSeen.add(phoneKey);
+
+          allCustomers.push({
+            id: `guest-${guest.phone}`,
+            name: guest.name,
+            phone: guest.phone,
+            email: guest.email || null,
+            address: guest.address,
+            neighborhood: null,
+            city: 'Bogotá',
+            notes: 'Cliente invitado (sin cuenta)',
+            total_orders: guest.orders.length,
+            total_spent: guest.orders.reduce((sum: number, o: any) => sum + o.total, 0),
+            last_order_date: guest.orders[0]?.created_at || null,
+            is_active: true,
+            created_at: guest.created_at,
+            is_guest: true,
+            source: 'guest_orders'
+          });
+        }
+      }
+    }
+
+    // ========================================
+    // 4. FILTRAR Y ORDENAR
+    // ========================================
+
+    // Aplicar búsqueda adicional si es necesario
     if (search) {
       const searchLower = search.toLowerCase();
-      filteredCustomers = allCustomers.filter(
-        (customer) =>
-          customer.name.toLowerCase().includes(searchLower) ||
-          customer.phone.toLowerCase().includes(searchLower) ||
-          (customer.email && customer.email.toLowerCase().includes(searchLower))
+      allCustomers = allCustomers.filter(c =>
+        c.name?.toLowerCase().includes(searchLower) ||
+        c.phone?.toLowerCase().includes(searchLower) ||
+        c.email?.toLowerCase().includes(searchLower)
       );
     }
 
-    // Aplicar paginación a la lista filtrada
-    const totalFiltered = filteredCustomers.length;
-    const paginatedCustomers = filteredCustomers.slice(
-      (page - 1) * limit,
-      page * limit
-    );
+    // Ordenar
+    allCustomers.sort((a, b) => {
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+
+      if (sortBy === 'total_spent' || sortBy === 'total_orders') {
+        aVal = parseFloat(aVal) || 0;
+        bVal = parseFloat(bVal) || 0;
+      }
+
+      if (aVal === null || aVal === undefined) aVal = '';
+      if (bVal === null || bVal === undefined) bVal = '';
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      } else {
+        return aVal < bVal ? 1 : -1;
+      }
+    });
+
+    // Total antes de paginar
+    const total = allCustomers.length;
+
+    // Aplicar paginación
+    const startIndex = (page - 1) * limit;
+    const paginatedCustomers = allCustomers.slice(startIndex, startIndex + limit);
+
+    console.log(`📊 Total clientes encontrados: ${total} (mostrando página ${page}, ${paginatedCustomers.length} items)`);
 
     return NextResponse.json({
       success: true,
@@ -195,8 +276,13 @@ export async function GET(request: NextRequest) {
       pagination: {
         page,
         limit,
-        total: totalFiltered,
-        totalPages: Math.ceil(totalFiltered / limit)
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      sources: {
+        customers: allCustomers.filter(c => c.source === 'customers').length,
+        profiles: allCustomers.filter(c => c.source === 'profiles').length,
+        guests: allCustomers.filter(c => c.source === 'guest_orders').length
       }
     });
 
@@ -222,95 +308,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Email es requerido para crear usuario en auth
-    if (!body.email) {
-      return NextResponse.json(
-        { error: 'Email es requerido para crear un cliente' },
-        { status: 400 }
-      );
-    }
-
     const supabase = createSupabaseClient();
 
-    // Verificar si ya existe un cliente con ese teléfono
-    const { data: existing } = await supabase
-      .from('profiles')
-      .select('id, full_name')
+    // Verificar si ya existe un cliente con ese teléfono en la tabla customers
+    const { data: existingCustomer } = await supabase
+      .from('customers')
+      .select('id, name')
       .eq('phone', body.phone)
       .single();
 
-    if (existing) {
+    if (existingCustomer) {
       return NextResponse.json(
-        { error: `Ya existe un cliente con ese teléfono: ${existing.full_name}`, existingCustomer: existing },
+        { error: `Ya existe un cliente con ese teléfono: ${existingCustomer.name}`, existingCustomer },
         { status: 409 }
       );
     }
 
-    // Crear usuario en auth.users con email y contraseña temporal
-    const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: body.email,
-      password: tempPassword,
-      email_confirm: true, // Auto-confirmar email
-      user_metadata: {
-        full_name: body.name,
-      }
-    });
-
-    if (authError) {
-      console.error('Error creating auth user:', authError);
-      return NextResponse.json(
-        { error: 'Error al crear usuario', details: authError.message },
-        { status: 500 }
-      );
-    }
-
-    // Actualizar perfil con información adicional
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .update({
+    // Crear cliente en la tabla customers
+    const { data: newCustomer, error: insertError } = await supabase
+      .from('customers')
+      .insert({
+        name: body.name,
         phone: body.phone,
-        full_name: body.name,
+        email: body.email || null,
+        address: body.address || null,
+        neighborhood: body.neighborhood || null,
+        city: body.city || 'Bogotá',
+        notes: body.notes || null,
+        total_orders: 0,
+        total_spent: 0,
+        is_active: true
       })
-      .eq('id', authData.user.id)
       .select()
       .single();
 
-    if (profileError) {
-      console.error('Error updating profile:', profileError);
-      // Intentar eliminar el usuario creado
-      await supabase.auth.admin.deleteUser(authData.user.id);
+    if (insertError) {
+      console.error('Error creating customer:', insertError);
       return NextResponse.json(
-        { error: 'Error al crear perfil de cliente', details: profileError.message },
+        { error: 'Error al crear cliente', details: insertError.message },
         { status: 500 }
       );
-    }
-
-    // Si hay dirección, crearla en la tabla addresses
-    if (body.address) {
-      await supabase
-        .from('addresses')
-        .insert({
-          user_id: authData.user.id,
-          label: 'Principal',
-          full_name: body.name,
-          phone: body.phone,
-          street_address: body.address,
-          city: body.city || 'Bogotá',
-          state: body.city || 'Bogotá',
-          is_default: true,
-        });
     }
 
     return NextResponse.json({
       success: true,
-      data: {
-        id: authData.user.id,
-        name: body.name,
-        phone: body.phone,
-        email: body.email,
-        created_at: authData.user.created_at,
-      },
+      data: newCustomer,
       message: 'Cliente creado exitosamente'
     }, { status: 201 });
 
@@ -323,7 +365,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH - Actualizar cliente o convertir cliente invitado en registrado
+// PATCH - Actualizar cliente
 export async function PATCH(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -339,151 +381,91 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const supabase = createSupabaseClient();
 
-    // Verificar si es un cliente invitado (ID empieza con 'guest-')
+    // Si es un cliente invitado (ID empieza con 'guest-')
     if (customerId.startsWith('guest-')) {
-      // Convertir cliente invitado en cliente registrado
       const phone = customerId.replace('guest-', '');
 
-      if (!body.email) {
-        return NextResponse.json(
-          { error: 'Email es requerido para convertir cliente invitado en registrado' },
-          { status: 400 }
-        );
-      }
+      // Crear nuevo cliente en la tabla customers
+      const { data: newCustomer, error: insertError } = await supabase
+        .from('customers')
+        .insert({
+          name: body.name,
+          phone: phone,
+          email: body.email || null,
+          address: body.address || null,
+          neighborhood: body.neighborhood || null,
+          city: body.city || 'Bogotá',
+          notes: body.notes || null,
+          is_active: true
+        })
+        .select()
+        .single();
 
-      // Crear usuario en auth.users
-      const tempPassword = Math.random().toString(36).slice(-12) + 'Aa1!';
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: body.email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-          full_name: body.name,
-        }
-      });
-
-      if (authError) {
+      if (insertError) {
         return NextResponse.json(
-          { error: 'Error al crear cuenta de usuario', details: authError.message },
+          { error: 'Error al convertir cliente invitado', details: insertError.message },
           { status: 500 }
         );
       }
 
-      // Actualizar perfil
-      await supabase
-        .from('profiles')
-        .update({
-          full_name: body.name,
-          phone: phone,
-        })
-        .eq('id', authData.user.id);
-
-      // Crear dirección si se proporcionó
-      if (body.address) {
-        await supabase
-          .from('addresses')
-          .insert({
-            user_id: authData.user.id,
-            label: 'Principal',
-            full_name: body.name,
-            phone: phone,
-            street_address: body.address,
-            city: body.city || 'Bogotá',
-            state: body.city || 'Bogotá',
-            is_default: true,
-          });
-      }
-
       return NextResponse.json({
         success: true,
-        data: { id: authData.user.id, converted: true },
-        message: 'Cliente invitado convertido a cliente registrado'
+        data: newCustomer,
+        message: 'Cliente invitado convertido exitosamente'
       });
     }
 
-    // Si se está actualizando el teléfono, verificar que no exista otro cliente con ese número
-    if (body.phone) {
-      const { data: existing } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('phone', body.phone)
-        .neq('id', customerId)
-        .single();
+    // Actualizar cliente existente en tabla customers
+    const updateData: Record<string, any> = {
+      updated_at: new Date().toISOString()
+    };
 
-      if (existing) {
-        return NextResponse.json(
-          { error: 'Ya existe otro cliente con ese teléfono' },
-          { status: 409 }
-        );
-      }
-    }
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.email !== undefined) updateData.email = body.email || null;
+    if (body.address !== undefined) updateData.address = body.address || null;
+    if (body.neighborhood !== undefined) updateData.neighborhood = body.neighborhood || null;
+    if (body.city !== undefined) updateData.city = body.city || 'Bogotá';
+    if (body.notes !== undefined) updateData.notes = body.notes || null;
+    if (body.is_active !== undefined) updateData.is_active = body.is_active;
 
-    // Actualizar perfil
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .update({
-        full_name: body.name,
-        phone: body.phone,
-      })
+    const { data: updatedCustomer, error: updateError } = await supabase
+      .from('customers')
+      .update(updateData)
       .eq('id', customerId)
       .select()
       .single();
 
-    if (profileError) {
-      console.error('Error updating profile:', profileError);
-      return NextResponse.json(
-        { error: 'Error al actualizar perfil', details: profileError.message },
-        { status: 500 }
-      );
-    }
-
-    // Si se actualizó el email, actualizar en auth.users
-    if (body.email) {
-      await supabase.auth.admin.updateUserById(customerId, {
-        email: body.email,
-      });
-    }
-
-    // Actualizar o crear dirección si se proporcionó
-    if (body.address) {
-      // Buscar dirección principal existente
-      const { data: existingAddress } = await supabase
-        .from('addresses')
-        .select('id')
-        .eq('user_id', customerId)
-        .eq('is_default', true)
+    if (updateError) {
+      // Si no existe en customers, intentar en profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          full_name: body.name,
+          phone: body.phone,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', customerId)
+        .select()
         .single();
 
-      if (existingAddress) {
-        // Actualizar dirección existente
-        await supabase
-          .from('addresses')
-          .update({
-            street_address: body.address,
-            city: body.city || 'Bogotá',
-            state: body.city || 'Bogotá',
-          })
-          .eq('id', existingAddress.id);
-      } else {
-        // Crear nueva dirección
-        await supabase
-          .from('addresses')
-          .insert({
-            user_id: customerId,
-            label: 'Principal',
-            full_name: body.name,
-            phone: body.phone,
-            street_address: body.address,
-            city: body.city || 'Bogotá',
-            state: body.city || 'Bogotá',
-            is_default: true,
-          });
+      if (profileError) {
+        return NextResponse.json(
+          { error: 'Error al actualizar cliente', details: updateError.message },
+          { status: 500 }
+        );
       }
+
+      return NextResponse.json({
+        success: true,
+        data: profileData,
+        message: 'Perfil actualizado exitosamente'
+      });
     }
 
     return NextResponse.json({
       success: true,
-      data: profileData,
+      data: updatedCustomer,
       message: 'Cliente actualizado exitosamente'
     });
 
@@ -496,7 +478,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE - Eliminar cliente (eliminar usuario de auth)
+// DELETE - Eliminar cliente
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -519,15 +501,22 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
-    // Eliminar usuario de auth.users (esto también eliminará el perfil en cascade)
-    const { error } = await supabase.auth.admin.deleteUser(customerId);
+    // Intentar eliminar de tabla customers primero
+    const { error: customersDeleteError } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', customerId);
 
-    if (error) {
-      console.error('Error deleting customer:', error);
-      return NextResponse.json(
-        { error: 'Error al eliminar cliente', details: error.message },
-        { status: 500 }
-      );
+    if (customersDeleteError) {
+      // Si no existe en customers, intentar en auth.users (que elimina profiles en cascade)
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(customerId);
+
+      if (authDeleteError) {
+        return NextResponse.json(
+          { error: 'Error al eliminar cliente', details: authDeleteError.message },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({

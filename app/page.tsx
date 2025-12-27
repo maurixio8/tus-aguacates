@@ -83,6 +83,24 @@ const Testimonials = dynamic(
   }
 );
 
+const FeaturedProductsCarousel = dynamic(
+  () => import('@/components/home/FeaturedProductsCarousel').then(mod => ({ default: mod.FeaturedProductsCarousel })),
+  {
+    loading: () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="animate-pulse">
+            <div className="bg-gray-200 rounded-2xl h-64 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded mb-2"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+          </div>
+        ))}
+      </div>
+    ),
+    ssr: true
+  }
+);
+
 export default function Home() {
 
   return (
@@ -92,6 +110,45 @@ export default function Home() {
 
       {/* Sprint 1: New Conversion Hero for guests, PersonalizedHero for authenticated users */}
       <ConversionHero />
+
+      {/* Explora por Categoría - Movido después del Hero */}
+      <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
+              Explora por Categoría
+            </h2>
+            <p className="text-gray-600">
+              Desliza para descubrir productos frescos de nuestra tierra
+            </p>
+          </div>
+          <UnifiedCategories
+            variant="scroll"
+            showProductCount={false}
+          />
+        </div>
+      </section>
+
+      {/* Productos Destacados - Carrusel Automático */}
+      <section className="py-12 bg-gradient-to-b from-white to-verde-bosque-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
+              Productos Más Populares
+            </h2>
+            <p className="text-gray-600">
+              Los favoritos de nuestros clientes
+            </p>
+          </div>
+          <FeaturedProductsCarousel
+            autoPlay={true}
+            interval={3500}
+            showDots={true}
+            showArrows={true}
+            maxProducts={8}
+          />
+        </div>
+      </section>
 
       {/* Promotion Slider - Destacado después del Hero */}
       <section className="py-8 bg-gradient-to-b from-verde-bosque-50 to-white">
@@ -144,24 +201,6 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Categorías Unificadas - Scroll Horizontal */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
-              Explora por Categoría
-            </h2>
-            <p className="text-gray-600">
-              Desliza para descubrir productos frescos de nuestra tierra
-            </p>
-          </div>
-          <UnifiedCategories
-            variant="scroll"
-            showProductCount={false}
-          />
         </div>
       </section>
 

@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { Clock, Users, ChefHat, ArrowLeft } from 'lucide-react';
 import { getRecipeBySlug, recipes, getCategoryInfo } from '@/data/recipes';
 import { RecipeCard } from '@/components/recipes';
+import { AddIngredientsButton } from './AddIngredientsButton';
 import { RecipeActions } from './RecipeActions';
-import { IngredientsList } from './IngredientsList';
 
 interface RecipePageProps {
   params: Promise<{ slug: string }>;
@@ -55,6 +55,9 @@ export default async function RecipePage({ params }: RecipePageProps) {
   const relatedRecipes = recipes
     .filter(r => r.category === recipe.category && r.id !== recipe.id)
     .slice(0, 3);
+
+  // Ingredientes que están en la tienda
+  const shopIngredients = recipe.ingredients.filter(ing => ing.productSlug);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -146,7 +149,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
               </div>
 
               {/* Acciones */}
-              <RecipeActions title={recipe.title} />
+              <RecipeActions recipeTitle={recipe.title} />
             </div>
           </div>
         </div>
@@ -158,7 +161,41 @@ export default async function RecipePage({ params }: RecipePageProps) {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Ingredientes (sidebar) */}
             <div className="lg:col-span-1">
-              <IngredientsList ingredients={recipe.ingredients} />
+              <div className="bg-white rounded-2xl p-6 shadow-sm sticky top-24">
+                <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <span>🥗</span>
+                  Ingredientes
+                </h2>
+
+                <ul className="space-y-3 mb-6">
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full border-2 border-verde-aguacate flex-shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-medium">{ingredient.quantity} {ingredient.unit}</span>
+                        {' '}
+                        <span className="text-gray-700">{ingredient.name}</span>
+                        {ingredient.isOptional && (
+                          <span className="text-gray-400 text-sm ml-1">(opcional)</span>
+                        )}
+                        {ingredient.productSlug && (
+                          <Link
+                            href={`/tienda?buscar=${encodeURIComponent(ingredient.name)}`}
+                            className="ml-2 text-verde-aguacate text-sm hover:underline"
+                          >
+                            Comprar
+                          </Link>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Botón de agregar ingredientes al carrito */}
+                {shopIngredients.length > 0 && (
+                  <AddIngredientsButton ingredients={shopIngredients} />
+                )}
+              </div>
             </div>
 
             {/* Preparación */}
