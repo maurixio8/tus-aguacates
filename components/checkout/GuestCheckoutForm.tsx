@@ -527,6 +527,9 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                         <label className="block text-sm font-medium mb-1">Email (opcional)</label>
                         <input
                           type="email"
+                          name="email"
+                          inputMode="email"
+                          autoComplete="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"

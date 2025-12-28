@@ -7,7 +7,7 @@ import { AuthRequiredModal } from '@/components/chef-virtual/AuthRequiredModal';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
 import { getCurrentAccessToken, isAuthenticated } from '@/lib/auth-utils';
 
-const MAX_FREE_DAILY = 2;
+const MAX_FREE_DAILY = 5; // Usuarios registrados pueden crear hasta 5 recetas al día
 
 // Componente de carga animado para el Chef Virtual
 function ChefLoadingAnimation() {

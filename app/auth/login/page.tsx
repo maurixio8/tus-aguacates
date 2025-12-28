@@ -152,6 +152,8 @@ export default function LoginPage() {
                   <input
                     id="email"
                     type="email"
+                    name="email"
+                    inputMode="email"
                     value={email}
                     onChange={handleEmailChange}
                     onBlur={() => setEmailTouched(true)}

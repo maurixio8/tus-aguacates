@@ -250,6 +250,8 @@ export default function RegistroPage() {
                   <input
                     id="email"
                     type="email"
+                    name="email"
+                    inputMode="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     onBlur={() => setEmailTouched(true)}
