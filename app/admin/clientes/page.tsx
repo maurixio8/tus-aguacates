@@ -147,27 +147,20 @@ export default function CustomersPage() {
         const withEmail = allCust.filter(c => c.email).length;
         const withAddress = allCust.filter(c => c.address).length;
 
-        // Validación estricta de nombre completo: debe tener al menos 2 palabras (nombre + apellido)
+        // Validación de nombre: solo verificar que exista y no esté vacío
         const withName = allCust.filter(c => {
-          if (!c.name || c.name === 'Cliente' || c.name.trim() === '') return false;
-          const words = c.name.trim().split(/\s+/); // Dividir por espacios
-          // Debe tener al menos 2 palabras y cada palabra debe tener al menos 2 caracteres
-          return words.length >= 2 && words.every(word => word.length >= 2);
+          return c.name && c.name.trim() !== '' && c.name !== 'Cliente';
         }).length;
 
         const incompleteData = allCust.filter(c => {
-          // Verificar nombre completo (al menos 2 palabras)
-          let hasCompleteName = false;
-          if (c.name && c.name !== 'Cliente' && c.name.trim() !== '') {
-            const words = c.name.trim().split(/\s+/);
-            hasCompleteName = words.length >= 2 && words.every(word => word.length >= 2);
-          }
+          // Verificar si tiene nombre válido
+          const hasName = c.name && c.name.trim() !== '' && c.name !== 'Cliente';
 
           return !c.email ||
                  !c.address ||
                  !c.phone ||
                  c.phone === 'Sin teléfono' ||
-                 !hasCompleteName;
+                 !hasName;
         }).length;
 
         const totalSpent = allCust.reduce((sum, c) => sum + (c.total_spent || 0), 0);
@@ -669,12 +662,13 @@ export default function CustomersPage() {
           </div>
         ) : (() => {
           // Aplicar filtro de calidad de datos
-          const filteredCustomers = dataFilter ? customers.filter(customer => {
-            // Función helper para verificar nombre completo
-            const hasCompleteName = (name: string) => {
-              if (!name || name === 'Cliente' || name.trim() === '') return false;
-              const words = name.trim().split(/\s+/);
-              return words.length >= 2 && words.every(word => word.length >= 2);
+          // Si hay filtro activo, usar TODOS los clientes (allCustomers), no solo la página actual
+          const baseCustomers = dataFilter ? allCustomers : customers;
+
+          const filteredCustomers = dataFilter ? baseCustomers.filter(customer => {
+            // Función helper para verificar si tiene nombre válido
+            const hasName = (name: string) => {
+              return name && name.trim() !== '' && name !== 'Cliente';
             };
 
             switch (dataFilter) {
@@ -691,19 +685,19 @@ export default function CustomersPage() {
               case 'noAddress':
                 return !customer.address;
               case 'withName':
-                return hasCompleteName(customer.name);
+                return hasName(customer.name);
               case 'noName':
-                return !hasCompleteName(customer.name);
+                return !hasName(customer.name);
               case 'incomplete':
                 return !customer.email ||
                        !customer.address ||
                        !customer.phone ||
                        customer.phone === 'Sin teléfono' ||
-                       !hasCompleteName(customer.name);
+                       !hasName(customer.name);
               default:
                 return true;
             }
-          }) : customers;
+          }) : baseCustomers;
 
           return filteredCustomers.length === 0 ? (
             <div className="text-center py-12">
@@ -740,6 +734,18 @@ export default function CustomersPage() {
                       </p>
                     </div>
                     <div className="flex gap-2">
+                      {/* Botón de WhatsApp */}
+                      {customer.phone && customer.phone !== 'Sin teléfono' && (
+                        <a
+                          href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-green-100 hover:bg-green-200 rounded-lg"
+                          title="Abrir WhatsApp"
+                        >
+                          <Phone className="w-4 h-4 text-green-600" />
+                        </a>
+                      )}
                       <button
                         onClick={() => openEditModal(customer)}
                         className="p-2 hover:bg-gray-100 rounded-lg"
@@ -847,9 +853,22 @@ export default function CustomersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-end gap-2">
+                          {/* Botón de WhatsApp */}
+                          {customer.phone && customer.phone !== 'Sin teléfono' && (
+                            <a
+                              href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                              title="Abrir WhatsApp"
+                            >
+                              <Phone className="w-4 h-4" />
+                              WhatsApp
+                            </a>
+                          )}
                           <button
                             onClick={() => openEditModal(customer)}
-                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
                           >
                             Editar
                           </button>
