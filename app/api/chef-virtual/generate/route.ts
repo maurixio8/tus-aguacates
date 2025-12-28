@@ -54,6 +54,8 @@ export async function POST(request: NextRequest) {
     let userId: string | null = null;
     let supabaseClient = supabase; // Cliente por defecto
 
+    console.log('[CHEF-VIRTUAL-GENERATE] Token present:', !!token);
+
     if (token) {
       // Crear cliente Supabase con el token del usuario para que RLS funcione
       supabaseClient = createSupabaseRequestClient(token);
@@ -61,7 +63,12 @@ export async function POST(request: NextRequest) {
       const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
       if (!authError && user) {
         userId = user.id;
+        console.log('[CHEF-VIRTUAL-GENERATE] User authenticated:', userId);
+      } else {
+        console.error('[CHEF-VIRTUAL-GENERATE] Auth error:', authError);
       }
+    } else {
+      console.log('[CHEF-VIRTUAL-GENERATE] No token provided, recipe will not be saved');
     }
 
     // Generar la receta
@@ -75,9 +82,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Si el usuario está autenticado, guardar la receta en BD
-    let recipeError = null;
+    let recipeError: { message: string; code?: string; details?: string; hint?: string } | null = null;
     if (userId && result.recipe) {
       const today = new Date().toISOString().split('T')[0];
+
+      console.log('[CHEF-VIRTUAL-GENERATE] Saving recipe for user:', userId);
 
       try {
         // 1. Guardar la receta generada usando el cliente con el token
@@ -92,7 +101,9 @@ export async function POST(request: NextRequest) {
 
         if (insertError) {
           console.error('[CHEF-VIRTUAL-GENERATE] Error guardando receta:', insertError);
-          recipeError = insertError;
+          recipeError = insertError as any;
+        } else {
+          console.log('[CHEF-VIRTUAL-GENERATE] Recipe saved successfully');
         }
 
         // 2. Actualizar/crear registro de límites
@@ -152,11 +163,14 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        console.log('[CHEF-VIRTUAL-GENERATE] Receta guardada para usuario:', userId);
-      } catch (dbError) {
+        console.log('[CHEF-VIRTUAL-GENERATE] Recipe and limits saved for user:', userId);
+      } catch (dbError: any) {
         console.error('[CHEF-VIRTUAL-GENERATE] Error en operaciones de BD:', dbError);
+        recipeError = dbError;
         // No fallar el request por errores de BD
       }
+    } else {
+      console.log('[CHEF-VIRTUAL-GENERATE] Recipe NOT saved (userId:', userId, ', recipe:', !!result.recipe, ')');
     }
 
     return NextResponse.json({

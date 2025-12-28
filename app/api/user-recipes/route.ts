@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { extractBearerToken } from '@/lib/supabaseRequestClient';
+import { extractBearerToken, createSupabaseRequestClient } from '@/lib/supabaseRequestClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,28 +14,35 @@ export async function GET(request: NextRequest) {
     const token = extractBearerToken(authHeader);
 
     if (!token) {
+      console.log('[USER-RECIPES] No token provided');
       return NextResponse.json(
         { error: 'No autorizado', success: false },
         { status: 401 }
       );
     }
 
+    // Crear cliente con el token del usuario para que RLS funcione correctamente
+    const supabaseClient = createSupabaseRequestClient(token);
+
     // Verificar token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
     if (authError || !user) {
+      console.error('[USER-RECIPES] Auth error:', authError);
       return NextResponse.json(
         { error: 'Token invalido', success: false },
         { status: 401 }
       );
     }
 
+    console.log('[USER-RECIPES] Fetching recipes for user:', user.id);
+
     // Obtener parámetro de filtro
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all';
 
-    // Construir query
-    let query = supabase
+    // Construir query usando el cliente con el token
+    let query = supabaseClient
       .from('generated_recipes')
       .select('*')
       .eq('user_id', user.id)
@@ -53,12 +60,14 @@ export async function GET(request: NextRequest) {
     const { data: recipes, error } = await query.limit(50);
 
     if (error) {
-      console.error('[USER-RECIPES] Error:', error);
+      console.error('[USER-RECIPES] Error fetching recipes:', error);
       return NextResponse.json(
         { error: 'Error al obtener recetas', success: false },
         { status: 500 }
       );
     }
+
+    console.log('[USER-RECIPES] Found recipes:', recipes?.length || 0);
 
     return NextResponse.json({
       success: true,

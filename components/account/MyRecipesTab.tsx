@@ -5,6 +5,7 @@ import { ChefHat, Clock, Sparkles, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { RecipeCard } from './RecipeCard';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
+import { getCurrentAccessToken } from '@/lib/auth-utils';
 
 interface RecipeWithId extends GeneratedRecipe {
   id: string;
@@ -38,7 +39,14 @@ export function MyRecipesTab() {
   const fetchRecipes = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('sb-access-token');
+      const token = await getCurrentAccessToken();
+      if (!token) {
+        console.error('[MyRecipesTab] No token available');
+        setLoading(false);
+        return;
+      }
+
+      console.log('[MyRecipesTab] Fetching recipes with filter:', activeFilter);
       const response = await fetch(`/api/user-recipes?filter=${activeFilter}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -48,11 +56,16 @@ export function MyRecipesTab() {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
+          console.log('[MyRecipesTab] Recipes loaded:', data.data?.length || 0);
           setRecipes(data.data);
+        } else {
+          console.error('[MyRecipesTab] API returned success=false:', data.error);
         }
+      } else {
+        console.error('[MyRecipesTab] API error:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error fetching recipes:', error);
+      console.error('[MyRecipesTab] Error fetching recipes:', error);
     } finally {
       setLoading(false);
     }
@@ -60,7 +73,12 @@ export function MyRecipesTab() {
 
   const fetchLimits = async () => {
     try {
-      const token = localStorage.getItem('sb-access-token');
+      const token = await getCurrentAccessToken();
+      if (!token) {
+        console.error('[MyRecipesTab] No token available for limits');
+        return;
+      }
+
       const response = await fetch('/api/chef-virtual/limits', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -72,13 +90,18 @@ export function MyRecipesTab() {
         setLimits(data);
       }
     } catch (error) {
-      console.error('Error fetching limits:', error);
+      console.error('[MyRecipesTab] Error fetching limits:', error);
     }
   };
 
   const handleToggleFavorite = async (recipeId: string) => {
     try {
-      const token = localStorage.getItem('sb-access-token');
+      const token = await getCurrentAccessToken();
+      if (!token) {
+        console.error('[MyRecipesTab] No token available for favorite toggle');
+        return;
+      }
+
       const response = await fetch(`/api/user-recipes/${recipeId}/favorite`, {
         method: 'PATCH',
         headers: {
@@ -100,7 +123,7 @@ export function MyRecipesTab() {
         }
       }
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.error('[MyRecipesTab] Error toggling favorite:', error);
     }
   };
 
