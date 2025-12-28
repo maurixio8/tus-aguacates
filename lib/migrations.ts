@@ -13,11 +13,12 @@ import { supabase } from './supabase';
 export async function migrateGuestOrders(userId: string, email: string) {
   try {
     // 1. Find all guest orders with this email that haven't been migrated
+    // Usar filter con sintaxis correcta para Supabase
     const { data: guestOrders, error: fetchError } = await supabase
       .from('guest_orders')
       .select('*')
       .eq('guest_email', email)
-      .is('migrated_to_user_id', null); // Only non-migrated orders
+      .filter('migrated_to_user_id', 'is', 'null'); // Only non-migrated orders
 
     if (fetchError) {
       console.error('Error fetching guest orders:', fetchError);
@@ -119,7 +120,7 @@ export async function checkGuestOrdersAvailable(email: string): Promise<number> 
       .from('guest_orders')
       .select('id', { count: 'exact', head: true })
       .eq('guest_email', email)
-      .is('migrated_to_user_id', null);
+      .filter('migrated_to_user_id', 'is', 'null');
 
     if (error) {
       console.error('Error checking guest orders:', error);
@@ -146,7 +147,7 @@ export async function getGuestOrdersSummary(email: string) {
       .from('guest_orders')
       .select('id, total_amount, created_at, status, order_data')
       .eq('guest_email', email)
-      .is('migrated_to_user_id', null)
+      .filter('migrated_to_user_id', 'is', 'null')
       .order('created_at', { ascending: false });
 
     if (error) {
