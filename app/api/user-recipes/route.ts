@@ -74,6 +74,12 @@ export async function GET(request: NextRequest) {
     const parsedRecipes = recipes?.map(recipe => {
       const recipeData = recipe.recipe_data as any;
 
+      console.log('[USER-RECIPES] Processing recipe:', {
+        id: recipe.id,
+        has_recipe_data: !!recipeData,
+        recipe_data_keys: recipeData ? Object.keys(recipeData) : []
+      });
+
       // Parsear ingredients si es un string JSON
       let ingredients = recipeData?.ingredients || [];
       if (typeof ingredients === 'string') {
@@ -85,8 +91,14 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      console.log('[USER-RECIPES] Parsed ingredients:', {
+        type: typeof ingredients,
+        is_array: Array.isArray(ingredients),
+        length: ingredients?.length || 0
+      });
+
       // Crear objeto con la estructura esperada por RecipeCard
-      return {
+      const structuredRecipe = {
         // Campos de GeneratedRecipe (desde recipe_data)
         title: recipeData?.title || 'Sin título',
         description: recipeData?.description || '',
@@ -104,6 +116,10 @@ export async function GET(request: NextRequest) {
         is_favorited: recipe.is_favorited || false,
         created_at: recipe.created_at
       };
+
+      console.log('[USER-RECIPES] Structured recipe keys:', Object.keys(structuredRecipe));
+
+      return structuredRecipe;
     }) || [];
 
     return NextResponse.json({
