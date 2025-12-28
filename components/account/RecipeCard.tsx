@@ -1,9 +1,9 @@
 'use client';
 
-import { Heart, Clock, Users, ChevronRight, Eye } from 'lucide-react';
+import { Heart, Clock, Users, Eye } from 'lucide-react';
 import { useState } from 'react';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
-import { RecipeDetailModal } from './RecipeDetailModal';
+import Link from 'next/link';
 
 interface RecipeCardProps {
   recipe: GeneratedRecipe & { id: string; is_favorited: boolean };
@@ -12,10 +12,11 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
   const [isFavoriting, setIsFavoriting] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
   const totalTime = recipe.prepTime + recipe.cookTime;
 
-  const handleFavorite = async () => {
+  const handleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setIsFavoriting(true);
     try {
       await onToggleFavorite(recipe.id);
@@ -25,7 +26,10 @@ export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
   };
 
   return (
-    <div className="group bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-xl hover:border-verde-aguacate/50 transition-all duration-300 hover:-translate-y-1">
+    <Link
+      href={`/cuenta/recetas/${recipe.id}`}
+      className="block group bg-white rounded-xl sm:rounded-2xl shadow-lg border-2 border-gray-100 overflow-hidden hover:shadow-xl hover:border-verde-aguacate/50 transition-all duration-300 hover:-translate-y-1"
+    >
       {/* Header con gradiente */}
       <div className="bg-gradient-to-br from-verde-bosque via-verde-aguacate to-emerald-600 text-white p-3 sm:p-4 relative overflow-hidden">
         {/* Decoración de fondo */}
@@ -87,34 +91,23 @@ export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
 
         {/* Acciones */}
         <div className="flex gap-2">
-          <button
-            onClick={() => setShowDetailModal(true)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm bg-verde-aguacate text-white hover:bg-verde-bosque border border-verde-aguacate"
-          >
+          <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium text-sm bg-verde-aguacate text-white">
             <Eye className="w-4 h-4" />
-            Ver receta
-          </button>
+            Ver receta completa
+          </div>
           <button
             onClick={handleFavorite}
             disabled={isFavoriting}
-            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
+            className={`px-4 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
               recipe.is_favorited
                 ? 'bg-red-100 text-red-600 hover:bg-red-200 border border-red-200'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
             } disabled:opacity-50`}
           >
             <Heart className={`w-4 h-4 ${recipe.is_favorited ? 'fill-current' : ''}`} />
-            {isFavoriting ? '...' : recipe.is_favorited ? 'Guardada' : 'Guardar'}
           </button>
         </div>
       </div>
-
-      {/* Modal de detalle */}
-      <RecipeDetailModal
-        recipe={recipe}
-        isOpen={showDetailModal}
-        onClose={() => setShowDetailModal(false)}
-      />
-    </div>
+    </Link>
   );
 }
