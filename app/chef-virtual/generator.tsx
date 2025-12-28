@@ -3,7 +3,9 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, RotateCcw } from 'lucide-react';
 import { IngredientInput, RecipeDisplay } from '@/components/chef-virtual';
+import { AuthRequiredModal } from '@/components/chef-virtual/AuthRequiredModal';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
+import { getCurrentAccessToken, isAuthenticated } from '@/lib/auth-utils';
 
 const MAX_FREE_DAILY = 2;
 
@@ -89,6 +91,9 @@ export function ChefVirtualGenerator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dailyCount, setDailyCount] = useState(0);
+  const [recipeSaved, setRecipeSaved] = useState(false);
+  const [saveWarning, setSaveWarning] = useState<string | null>(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   // Load daily count from localStorage on mount (client-side only)
   useEffect(() => {
@@ -111,6 +116,13 @@ export function ChefVirtualGenerator() {
   const generateRecipe = async () => {
     if (ingredients.length === 0) {
       setError('Por favor ingresa al menos un ingrediente');
+      return;
+    }
+
+    // Verificar autenticación
+    const authenticated = await isAuthenticated();
+    if (!authenticated) {
+      setShowAuthModal(true);
       return;
     }
 
@@ -137,12 +149,17 @@ export function ChefVirtualGenerator() {
 
     setLoading(true);
     setError(null);
+    setSaveWarning(null);
 
     try {
+      // Obtener token de autenticación
+      const token = await getCurrentAccessToken();
+
       const response = await fetch('/api/chef-virtual/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
         },
         body: JSON.stringify({ ingredients }),
       });
@@ -151,6 +168,10 @@ export function ChefVirtualGenerator() {
 
       if (data.success) {
         setRecipe(data.recipe);
+        setRecipeSaved(data.saved ?? false);
+        if (data.warning) {
+          setSaveWarning(data.warning);
+        }
 
         // Update daily count
         const newCount = currentCount + 1;
@@ -184,6 +205,7 @@ export function ChefVirtualGenerator() {
   const canGenerate = ingredients.length > 0 && !loading && dailyCount < MAX_FREE_DAILY;
 
   return (
+    <>
     <div className="max-w-5xl mx-auto">
       {/* Input Section */}
       <div className="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-6 md:p-10 mb-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -306,9 +328,16 @@ export function ChefVirtualGenerator() {
 
       {recipe && (
         <div id="recipe-result" className="animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <RecipeDisplay recipe={recipe} ingredients={ingredients} />
+          <RecipeDisplay recipe={recipe} ingredients={ingredients} recipeSaved={recipeSaved} saveWarning={saveWarning} />
         </div>
       )}
     </div>
+
+    {/* Modal de autenticación requerida */}
+    <AuthRequiredModal
+      isOpen={showAuthModal}
+      onClose={() => setShowAuthModal(false)}
+    />
+    </>
   );
 }

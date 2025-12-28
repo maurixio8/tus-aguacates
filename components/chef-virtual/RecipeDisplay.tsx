@@ -1,14 +1,16 @@
 'use client';
 
-import { Clock, Users, ChefHat, Heart, Share2, ShoppingCart, Sparkles } from 'lucide-react';
+import { Clock, Users, ChefHat, Heart, Share2, ShoppingCart, Sparkles, Check, AlertTriangle } from 'lucide-react';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
 
 interface RecipeDisplayProps {
   recipe: GeneratedRecipe;
   ingredients: string[];
+  recipeSaved?: boolean;
+  saveWarning?: string | null;
 }
 
-export function RecipeDisplay({ recipe, ingredients }: RecipeDisplayProps) {
+export function RecipeDisplay({ recipe, ingredients, recipeSaved = false, saveWarning = null }: RecipeDisplayProps) {
   const totalTime = recipe.prepTime + recipe.cookTime;
 
   const handleShare = async () => {
@@ -38,12 +40,26 @@ export function RecipeDisplay({ recipe, ingredients }: RecipeDisplayProps) {
         <div className="relative z-10">
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex-1">
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
                 <Sparkles className="w-6 h-6 text-yellow-300 animate-pulse" />
                 <span className="text-sm font-medium bg-white/20 px-3 py-1 rounded-full">
                   Receta generada con IA
                 </span>
+                {recipeSaved && (
+                  <span className="text-sm font-medium bg-green-500/30 px-3 py-1 rounded-full flex items-center gap-1.5">
+                    <Check className="w-4 h-4" />
+                    Guardada en Mis Recetas
+                  </span>
+                )}
               </div>
+              {saveWarning && (
+                <div className="mb-3 p-3 bg-amber-500/20 border border-amber-400/30 rounded-lg text-sm">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-300 flex-shrink-0" />
+                    <span>{saveWarning}</span>
+                  </div>
+                </div>
+              )}
               <h1 className="text-3xl md:text-4xl font-bold mb-3 leading-tight">{recipe.title}</h1>
               <p className="text-white/90 text-base md:text-lg leading-relaxed">{recipe.description}</p>
             </div>

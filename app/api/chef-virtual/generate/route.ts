@@ -71,12 +71,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Si el usuario está autenticado, guardar la receta en BD
+    let recipeError = null;
     if (userId && result.recipe) {
       const today = new Date().toISOString().split('T')[0];
 
       try {
         // 1. Guardar la receta generada
-        const { error: recipeError } = await supabase
+        const { error: insertError } = await supabase
           .from('generated_recipes')
           .insert({
             user_id: userId,
@@ -85,9 +86,9 @@ export async function POST(request: NextRequest) {
             is_favorited: false
           });
 
-        if (recipeError) {
-          console.error('[CHEF-VIRTUAL-GENERATE] Error guardando receta:', recipeError);
-          // No fallar el request si hay error al guardar
+        if (insertError) {
+          console.error('[CHEF-VIRTUAL-GENERATE] Error guardando receta:', insertError);
+          recipeError = insertError;
         }
 
         // 2. Actualizar/crear registro de límites
@@ -156,7 +157,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      recipe: result.recipe
+      recipe: result.recipe,
+      saved: !!userId && !recipeError, // true si se guardó correctamente
+      warning: recipeError ? 'La receta se generó pero hubo un error al guardarla en tu historial.' : undefined
     });
 
   } catch (error) {
