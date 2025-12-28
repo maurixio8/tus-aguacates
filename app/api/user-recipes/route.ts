@@ -69,9 +69,44 @@ export async function GET(request: NextRequest) {
 
     console.log('[USER-RECIPES] Found recipes:', recipes?.length || 0);
 
+    // Parsear ingredients que están guardados como JSON string
+    const parsedRecipes = recipes?.map(recipe => {
+      let parsedIngredients = recipe.ingredients;
+      let parsedRecipeData = recipe.recipe_data;
+
+      // Si ingredients es un string JSON, parsearlo
+      if (typeof recipe.ingredients === 'string') {
+        try {
+          parsedIngredients = JSON.parse(recipe.ingredients);
+        } catch (e) {
+          console.error('[USER-RECIPES] Error parsing ingredients:', e);
+          parsedIngredients = [];
+        }
+      }
+
+      // Si recipe_data tiene ingredients como JSON string, parsearlo también
+      if (recipe.recipe_data && typeof recipe.recipe_data === 'object') {
+        const recipeData = recipe.recipe_data as any;
+        if (recipeData.ingredients && typeof recipeData.ingredients === 'string') {
+          try {
+            recipeData.ingredients = JSON.parse(recipeData.ingredients);
+          } catch (e) {
+            console.error('[USER-RECIPES] Error parsing recipe_data.ingredients:', e);
+          }
+        }
+        parsedRecipeData = recipeData;
+      }
+
+      return {
+        ...recipe,
+        ingredients: parsedIngredients,
+        recipe_data: parsedRecipeData
+      };
+    }) || [];
+
     return NextResponse.json({
       success: true,
-      data: recipes || []
+      data: parsedRecipes
     });
 
   } catch (error) {
