@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { generateRecipe, isChefVirtualAvailable } from '@/lib/gemini-recipe-service';
 import { supabase } from '@/lib/supabase';
-import { extractBearerToken } from '@/lib/supabaseRequestClient';
+import { extractBearerToken, createSupabaseRequestClient } from '@/lib/supabaseRequestClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,9 +52,13 @@ export async function POST(request: NextRequest) {
     const authHeader = request.headers.get('authorization');
     const token = extractBearerToken(authHeader);
     let userId: string | null = null;
+    let supabaseClient = supabase; // Cliente por defecto
 
     if (token) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      // Crear cliente Supabase con el token del usuario para que RLS funcione
+      supabaseClient = createSupabaseRequestClient(token);
+
+      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
       if (!authError && user) {
         userId = user.id;
       }
@@ -76,8 +80,8 @@ export async function POST(request: NextRequest) {
       const today = new Date().toISOString().split('T')[0];
 
       try {
-        // 1. Guardar la receta generada
-        const { error: insertError } = await supabase
+        // 1. Guardar la receta generada usando el cliente con el token
+        const { error: insertError } = await supabaseClient
           .from('generated_recipes')
           .insert({
             user_id: userId,
@@ -92,7 +96,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 2. Actualizar/crear registro de límites
-        const { data: existingLimits } = await supabase
+        const { data: existingLimits } = await supabaseClient
           .from('user_recipe_limits')
           .select('*')
           .eq('user_id', userId)
@@ -102,7 +106,7 @@ export async function POST(request: NextRequest) {
           // Verificar si es un nuevo día
           if (existingLimits.last_reset !== today) {
             // Resetear contador y actualizar
-            await supabase
+            await supabaseClient
               .from('user_recipe_limits')
               .update({
                 recipes_generated_today: 1,
@@ -111,7 +115,7 @@ export async function POST(request: NextRequest) {
               .eq('user_id', userId);
           } else {
             // Incrementar contador
-            await supabase
+            await supabaseClient
               .from('user_recipe_limits')
               .update({
                 recipes_generated_today: (existingLimits.recipes_generated_today || 0) + 1
@@ -120,7 +124,7 @@ export async function POST(request: NextRequest) {
           }
         } else {
           // Crear nuevo registro
-          await supabase
+          await supabaseClient
             .from('user_recipe_limits')
             .insert({
               user_id: userId,
@@ -130,14 +134,14 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. Asegurar que el usuario tenga suscripción registrada
-        const { data: existingSubscription } = await supabase
+        const { data: existingSubscription } = await supabaseClient
           .from('user_chef_subscription')
           .select('*')
           .eq('user_id', userId)
           .single();
 
         if (!existingSubscription) {
-          await supabase
+          await supabaseClient
             .from('user_chef_subscription')
             .insert({
               user_id: userId,
