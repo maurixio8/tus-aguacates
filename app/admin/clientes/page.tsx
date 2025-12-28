@@ -72,6 +72,7 @@ export default function CustomersPage() {
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]); // Para estadísticas
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [dataFilter, setDataFilter] = useState<string>(''); // Filtro de calidad de datos
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -410,32 +411,119 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Resumen de Datos */}
+      {/* Filtros de Calidad de Datos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="flex flex-wrap gap-6 text-sm">
-          <div className="flex items-center gap-2">
-            <Phone className="w-4 h-4 text-green-600" />
-            <span className="text-gray-600">Con teléfono:</span>
-            <span className="font-semibold text-green-600">{stats.withPhone}</span>
-            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withPhone / stats.total) * 100) : 0}%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Mail className="w-4 h-4 text-blue-600" />
-            <span className="text-gray-600">Con email:</span>
-            <span className="font-semibold text-blue-600">{stats.withEmail}</span>
-            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withEmail / stats.total) * 100) : 0}%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-orange-600" />
-            <span className="text-gray-600">Con dirección:</span>
-            <span className="font-semibold text-orange-600">{stats.withAddress}</span>
-            <span className="text-gray-400">({stats.total > 0 ? Math.round((stats.withAddress / stats.total) * 100) : 0}%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-purple-600" />
-            <span className="text-gray-600">Total pedidos:</span>
-            <span className="font-semibold text-purple-600">{stats.totalOrders}</span>
-          </div>
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-700">Filtros de Calidad de Datos</h3>
+          {dataFilter && (
+            <button
+              onClick={() => setDataFilter('')}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Limpiar filtro
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-3 text-sm">
+          {/* Con teléfono */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'withPhone' ? '' : 'withPhone')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'withPhone'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-green-50 hover:bg-green-100 border border-green-200'
+            }`}
+          >
+            <Phone className="w-4 h-4" />
+            <span className={dataFilter === 'withPhone' ? 'text-white' : 'text-gray-600'}>Con teléfono:</span>
+            <span className={`font-semibold ${dataFilter === 'withPhone' ? 'text-white' : 'text-green-600'}`}>{stats.withPhone}</span>
+            <span className={dataFilter === 'withPhone' ? 'text-green-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withPhone / stats.total) * 100) : 0}%)</span>
+          </button>
+
+          {/* Sin teléfono */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'noPhone' ? '' : 'noPhone')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'noPhone'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'bg-red-50 hover:bg-red-100 border border-red-200'
+            }`}
+          >
+            <Phone className="w-4 h-4" />
+            <span className={dataFilter === 'noPhone' ? 'text-white' : 'text-gray-600'}>Sin teléfono:</span>
+            <span className={`font-semibold ${dataFilter === 'noPhone' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withPhone}</span>
+          </button>
+
+          {/* Con email */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'withEmail' ? '' : 'withEmail')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'withEmail'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            <span className={dataFilter === 'withEmail' ? 'text-white' : 'text-gray-600'}>Con email:</span>
+            <span className={`font-semibold ${dataFilter === 'withEmail' ? 'text-white' : 'text-blue-600'}`}>{stats.withEmail}</span>
+            <span className={dataFilter === 'withEmail' ? 'text-blue-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withEmail / stats.total) * 100) : 0}%)</span>
+          </button>
+
+          {/* Sin email */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'noEmail' ? '' : 'noEmail')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'noEmail'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'bg-red-50 hover:bg-red-100 border border-red-200'
+            }`}
+          >
+            <Mail className="w-4 h-4" />
+            <span className={dataFilter === 'noEmail' ? 'text-white' : 'text-gray-600'}>Sin email:</span>
+            <span className={`font-semibold ${dataFilter === 'noEmail' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withEmail}</span>
+          </button>
+
+          {/* Con dirección */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'withAddress' ? '' : 'withAddress')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'withAddress'
+                ? 'bg-orange-600 text-white shadow-md'
+                : 'bg-orange-50 hover:bg-orange-100 border border-orange-200'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            <span className={dataFilter === 'withAddress' ? 'text-white' : 'text-gray-600'}>Con dirección:</span>
+            <span className={`font-semibold ${dataFilter === 'withAddress' ? 'text-white' : 'text-orange-600'}`}>{stats.withAddress}</span>
+            <span className={dataFilter === 'withAddress' ? 'text-orange-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withAddress / stats.total) * 100) : 0}%)</span>
+          </button>
+
+          {/* Sin dirección */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'noAddress' ? '' : 'noAddress')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'noAddress'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'bg-red-50 hover:bg-red-100 border border-red-200'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            <span className={dataFilter === 'noAddress' ? 'text-white' : 'text-gray-600'}>Sin dirección:</span>
+            <span className={`font-semibold ${dataFilter === 'noAddress' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withAddress}</span>
+          </button>
+
+          {/* Datos incompletos */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'incomplete' ? '' : 'incomplete')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'incomplete'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
+            }`}
+          >
+            <AlertCircle className="w-4 h-4" />
+            <span className={dataFilter === 'incomplete' ? 'text-white' : 'text-gray-600'}>Datos Incompletos</span>
+          </button>
         </div>
         {/* Fuentes de datos */}
         <div className="mt-3 pt-3 border-t border-gray-200 flex flex-wrap gap-4 text-xs">
@@ -519,17 +607,40 @@ export default function CustomersPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
           </div>
-        ) : customers.length === 0 ? (
-          <div className="text-center py-12">
-            <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg">No hay clientes registrados</p>
-            <p className="text-gray-400 text-sm mt-1">Crea tu primer cliente para comenzar</p>
-          </div>
-        ) : (
-          <>
-            {/* Vista móvil */}
-            <div className="lg:hidden divide-y divide-gray-200">
-              {customers.map((customer) => (
+        ) : (() => {
+          // Aplicar filtro de calidad de datos
+          const filteredCustomers = dataFilter ? customers.filter(customer => {
+            switch (dataFilter) {
+              case 'withPhone':
+                return customer.phone && customer.phone !== 'Sin teléfono';
+              case 'noPhone':
+                return !customer.phone || customer.phone === 'Sin teléfono';
+              case 'withEmail':
+                return !!customer.email;
+              case 'noEmail':
+                return !customer.email;
+              case 'withAddress':
+                return !!customer.address;
+              case 'noAddress':
+                return !customer.address;
+              case 'incomplete':
+                return !customer.email || !customer.address || !customer.phone || customer.phone === 'Sin teléfono';
+              default:
+                return true;
+            }
+          }) : customers;
+
+          return filteredCustomers.length === 0 ? (
+            <div className="text-center py-12">
+              <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-lg">No se encontraron clientes con este filtro</p>
+              <p className="text-gray-400 text-sm mt-1">Intenta con otro filtro</p>
+            </div>
+          ) : (
+            <>
+              {/* Vista móvil */}
+              <div className="lg:hidden divide-y divide-gray-200">
+                {filteredCustomers.map((customer) => (
                 <div key={customer.id} className="p-4 hover:bg-gray-50">
                   <div className="flex items-start justify-between mb-2">
                     <div>
@@ -601,7 +712,7 @@ export default function CustomersPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {customers.map((customer) => (
+                  {filteredCustomers.map((customer) => (
                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -706,7 +817,8 @@ export default function CustomersPage() {
               </div>
             )}
           </>
-        )}
+          );
+        })()}
       </div>
 
       {/* Modal de crear/editar cliente */}
