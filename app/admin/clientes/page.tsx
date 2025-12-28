@@ -146,16 +146,30 @@ export default function CustomersPage() {
         const withPhone = allCust.filter(c => c.phone && c.phone !== 'Sin teléfono').length;
         const withEmail = allCust.filter(c => c.email).length;
         const withAddress = allCust.filter(c => c.address).length;
-        const withName = allCust.filter(c => c.name && c.name !== 'Cliente' && c.name.trim() !== '').length;
-        const incompleteData = allCust.filter(c =>
-          !c.email ||
-          !c.address ||
-          !c.phone ||
-          c.phone === 'Sin teléfono' ||
-          !c.name ||
-          c.name === 'Cliente' ||
-          c.name.trim() === ''
-        ).length;
+
+        // Validación estricta de nombre completo: debe tener al menos 2 palabras (nombre + apellido)
+        const withName = allCust.filter(c => {
+          if (!c.name || c.name === 'Cliente' || c.name.trim() === '') return false;
+          const words = c.name.trim().split(/\s+/); // Dividir por espacios
+          // Debe tener al menos 2 palabras y cada palabra debe tener al menos 2 caracteres
+          return words.length >= 2 && words.every(word => word.length >= 2);
+        }).length;
+
+        const incompleteData = allCust.filter(c => {
+          // Verificar nombre completo (al menos 2 palabras)
+          let hasCompleteName = false;
+          if (c.name && c.name !== 'Cliente' && c.name.trim() !== '') {
+            const words = c.name.trim().split(/\s+/);
+            hasCompleteName = words.length >= 2 && words.every(word => word.length >= 2);
+          }
+
+          return !c.email ||
+                 !c.address ||
+                 !c.phone ||
+                 c.phone === 'Sin teléfono' ||
+                 !hasCompleteName;
+        }).length;
+
         const totalSpent = allCust.reduce((sum, c) => sum + (c.total_spent || 0), 0);
         const totalOrders = allCust.reduce((sum, c) => sum + (c.total_orders || 0), 0);
         const recurring = allCust.filter(c => c.total_orders >= 2).length;
@@ -656,6 +670,13 @@ export default function CustomersPage() {
         ) : (() => {
           // Aplicar filtro de calidad de datos
           const filteredCustomers = dataFilter ? customers.filter(customer => {
+            // Función helper para verificar nombre completo
+            const hasCompleteName = (name: string) => {
+              if (!name || name === 'Cliente' || name.trim() === '') return false;
+              const words = name.trim().split(/\s+/);
+              return words.length >= 2 && words.every(word => word.length >= 2);
+            };
+
             switch (dataFilter) {
               case 'withPhone':
                 return customer.phone && customer.phone !== 'Sin teléfono';
@@ -670,17 +691,15 @@ export default function CustomersPage() {
               case 'noAddress':
                 return !customer.address;
               case 'withName':
-                return customer.name && customer.name !== 'Cliente' && customer.name.trim() !== '';
+                return hasCompleteName(customer.name);
               case 'noName':
-                return !customer.name || customer.name === 'Cliente' || customer.name.trim() === '';
+                return !hasCompleteName(customer.name);
               case 'incomplete':
                 return !customer.email ||
                        !customer.address ||
                        !customer.phone ||
                        customer.phone === 'Sin teléfono' ||
-                       !customer.name ||
-                       customer.name === 'Cliente' ||
-                       customer.name.trim() === '';
+                       !hasCompleteName(customer.name);
               default:
                 return true;
             }
