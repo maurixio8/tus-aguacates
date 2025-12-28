@@ -138,6 +138,7 @@ export default function OrdersPage() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [quickFilter, setQuickFilter] = useState<string>('');
+  const [customerDataFilter, setCustomerDataFilter] = useState<string>('');
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -415,6 +416,27 @@ export default function OrdersPage() {
     };
   };
 
+  // Función para verificar si los datos del cliente están completos
+  const hasCustomerDataIssue = (order: Order, filterType: string) => {
+    const customerInfo = getCustomerInfo(order);
+
+    switch (filterType) {
+      case 'noName':
+        return !customerInfo.name || customerInfo.name === 'Cliente';
+      case 'noEmail':
+        return !customerInfo.email;
+      case 'noPhone':
+        return !customerInfo.phone;
+      case 'incomplete':
+        return !customerInfo.name ||
+               customerInfo.name === 'Cliente' ||
+               !customerInfo.email ||
+               !customerInfo.phone;
+      default:
+        return true;
+    }
+  };
+
   const calculateOrderSummary = (order: Order, orderItems: OrderItem[]) => {
     // Calcular subtotal desde items si no está disponible
     const itemsSubtotal = orderItems.reduce((sum, item) => {
@@ -472,6 +494,7 @@ export default function OrdersPage() {
     setDateFrom('');
     setDateTo('');
     setQuickFilter('');
+    setCustomerDataFilter('');
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -741,7 +764,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Filtros Tradicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Estado */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
@@ -760,6 +783,25 @@ export default function OrdersPage() {
               <option value="shipped">En Camino</option>
               <option value="delivered">Entregado</option>
               <option value="cancelled">Cancelado</option>
+            </select>
+          </div>
+
+          {/* Datos del Cliente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Datos del Cliente</label>
+            <select
+              value={customerDataFilter}
+              onChange={(e) => {
+                setCustomerDataFilter(e.target.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            >
+              <option value="">Todos los clientes</option>
+              <option value="incomplete">Datos Incompletos</option>
+              <option value="noName">Sin Nombre</option>
+              <option value="noEmail">Sin Correo</option>
+              <option value="noPhone">Sin Teléfono</option>
             </select>
           </div>
 
@@ -812,14 +854,20 @@ export default function OrdersPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No se encontraron pedidos</p>
-          </div>
-        ) : (
-          <>
-            {orders.map((order) => {
+        ) : (() => {
+          // Aplicar filtro de datos de cliente si está activo
+          const filteredOrders = customerDataFilter
+            ? orders.filter(order => hasCustomerDataIssue(order, customerDataFilter))
+            : orders;
+
+          return filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No se encontraron pedidos</p>
+            </div>
+          ) : (
+            <>
+              {filteredOrders.map((order) => {
               const statusInfo = statusConfig[order.status] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
 
@@ -1272,7 +1320,8 @@ export default function OrdersPage() {
               </div>
             )}
           </>
-        )}
+          );
+        })()}
       </div>
 
       {/* Edit Order Modal */}
