@@ -69,38 +69,40 @@ export async function GET(request: NextRequest) {
 
     console.log('[USER-RECIPES] Found recipes:', recipes?.length || 0);
 
-    // Parsear ingredients que están guardados como JSON string
+    // Estructurar las recetas correctamente para el componente RecipeCard
+    // RecipeCard espera: GeneratedRecipe & { id: string; is_favorited: boolean }
     const parsedRecipes = recipes?.map(recipe => {
-      let parsedIngredients = recipe.ingredients;
-      let parsedRecipeData = recipe.recipe_data;
+      const recipeData = recipe.recipe_data as any;
 
-      // Si ingredients es un string JSON, parsearlo
-      if (typeof recipe.ingredients === 'string') {
+      // Parsear ingredients si es un string JSON
+      let ingredients = recipeData?.ingredients || [];
+      if (typeof ingredients === 'string') {
         try {
-          parsedIngredients = JSON.parse(recipe.ingredients);
+          ingredients = JSON.parse(ingredients);
         } catch (e) {
           console.error('[USER-RECIPES] Error parsing ingredients:', e);
-          parsedIngredients = [];
+          ingredients = [];
         }
       }
 
-      // Si recipe_data tiene ingredients como JSON string, parsearlo también
-      if (recipe.recipe_data && typeof recipe.recipe_data === 'object') {
-        const recipeData = recipe.recipe_data as any;
-        if (recipeData.ingredients && typeof recipeData.ingredients === 'string') {
-          try {
-            recipeData.ingredients = JSON.parse(recipeData.ingredients);
-          } catch (e) {
-            console.error('[USER-RECIPES] Error parsing recipe_data.ingredients:', e);
-          }
-        }
-        parsedRecipeData = recipeData;
-      }
-
+      // Crear objeto con la estructura esperada por RecipeCard
       return {
-        ...recipe,
-        ingredients: parsedIngredients,
-        recipe_data: parsedRecipeData
+        // Campos de GeneratedRecipe (desde recipe_data)
+        title: recipeData?.title || 'Sin título',
+        description: recipeData?.description || '',
+        ingredients: ingredients,
+        steps: recipeData?.steps || [],
+        prepTime: recipeData?.prepTime || 0,
+        cookTime: recipeData?.cookTime || 0,
+        servings: recipeData?.servings || 1,
+        difficulty: recipeData?.difficulty || 'Fácil',
+        cuisine: recipeData?.cuisine || 'Variada',
+        tags: recipeData?.tags || [],
+
+        // Campos adicionales de la BD
+        id: recipe.id,
+        is_favorited: recipe.is_favorited || false,
+        created_at: recipe.created_at
       };
     }) || [];
 
