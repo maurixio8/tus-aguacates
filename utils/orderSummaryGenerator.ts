@@ -209,40 +209,31 @@ export function generateOrderSummary(order: Order): string {
 
   // Build complete message with emojis and proper structure
   const message = `Hola ${firstName}! 👋
-Hemos recibido tu pedido exitosamente y aquí está el resumen:
+Hemos recibido tu pedido exitosamente.
 
 📋 *PEDIDO #${orderNumber}*
 
-👤 *DATOS DEL CLIENTE*
-Nombre: ${order.customer_name || 'Cliente'}
-📍 Dirección: ${deliveryAddress}${order.customer_phone ? `\n📱 Teléfono: ${order.customer_phone}` : ''}
+👤 *CLIENTE*
+${order.customer_name || 'Cliente'}
+📍 ${deliveryAddress}${order.customer_phone ? `\n📱 ${order.customer_phone}` : ''}
 
 🛒 *PRODUCTOS*
-━━━━━━━━━━━━━━━━━━━━━
-
 ${items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = formatVariantName(item);
-    const variantInfo = variantName ? ` - ${variantName}` : '';
+    const variantInfo = variantName ? ` (${variantName})` : '';
 
-    return `${index + 1}. ${itemName}${variantInfo}
-   • Cantidad: ${item.quantity}
-   • Precio: ${formatCurrency(item.unit_price)}`;
-  }).join('\n\n')}
-
-━━━━━━━━━━━━━━━━━━━━━
+    return `✅ ${index + 1}. ${itemName}${variantInfo}
+   ${item.quantity} und × ${formatCurrency(item.unit_price)}`;
+  }).join('\n')}
 
 💰 *RESUMEN*
 Subtotal: ${formatCurrency(subtotal)}
 Envío: ${shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost)}
+*TOTAL: ${formatCurrency(total)}*
 
-✨ *TOTAL: ${formatCurrency(total)}*
-
-━━━━━━━━━━━━━━━━━━━━━
-${firstName}, por favor confírmame si toda la información de tu pedido está correcta. 📝
-
-Muchas gracias por tu compra! 💚
-En breve nos pondremos en contacto contigo para coordinar la entrega. 🚚`;
+${firstName}, confirma si todo está correcto. 📝
+Muchas gracias por tu compra! 💚`;
 
   return message;
 }
