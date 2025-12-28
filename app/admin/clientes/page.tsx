@@ -57,6 +57,8 @@ interface CustomerStats {
   withPhone: number;
   withEmail: number;
   withAddress: number;
+  withName: number;
+  incompleteData: number;
   totalSpent: number;
   totalOrders: number;
   avgTicket: number;
@@ -86,6 +88,8 @@ export default function CustomersPage() {
     withPhone: 0,
     withEmail: 0,
     withAddress: 0,
+    withName: 0,
+    incompleteData: 0,
     totalSpent: 0,
     totalOrders: 0,
     avgTicket: 0,
@@ -142,6 +146,16 @@ export default function CustomersPage() {
         const withPhone = allCust.filter(c => c.phone && c.phone !== 'Sin teléfono').length;
         const withEmail = allCust.filter(c => c.email).length;
         const withAddress = allCust.filter(c => c.address).length;
+        const withName = allCust.filter(c => c.name && c.name !== 'Cliente' && c.name.trim() !== '').length;
+        const incompleteData = allCust.filter(c =>
+          !c.email ||
+          !c.address ||
+          !c.phone ||
+          c.phone === 'Sin teléfono' ||
+          !c.name ||
+          c.name === 'Cliente' ||
+          c.name.trim() === ''
+        ).length;
         const totalSpent = allCust.reduce((sum, c) => sum + (c.total_spent || 0), 0);
         const totalOrders = allCust.reduce((sum, c) => sum + (c.total_orders || 0), 0);
         const recurring = allCust.filter(c => c.total_orders >= 2).length;
@@ -159,6 +173,8 @@ export default function CustomersPage() {
           withPhone,
           withEmail,
           withAddress,
+          withName,
+          incompleteData,
           totalSpent,
           totalOrders,
           avgTicket,
@@ -512,6 +528,35 @@ export default function CustomersPage() {
             <span className={`font-semibold ${dataFilter === 'noAddress' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withAddress}</span>
           </button>
 
+          {/* Con nombre */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'withName' ? '' : 'withName')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'withName'
+                ? 'bg-teal-600 text-white shadow-md'
+                : 'bg-teal-50 hover:bg-teal-100 border border-teal-200'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span className={dataFilter === 'withName' ? 'text-white' : 'text-gray-600'}>Con nombre:</span>
+            <span className={`font-semibold ${dataFilter === 'withName' ? 'text-white' : 'text-teal-600'}`}>{stats.withName}</span>
+            <span className={dataFilter === 'withName' ? 'text-teal-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withName / stats.total) * 100) : 0}%)</span>
+          </button>
+
+          {/* Sin nombre */}
+          <button
+            onClick={() => setDataFilter(dataFilter === 'noName' ? '' : 'noName')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+              dataFilter === 'noName'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'bg-red-50 hover:bg-red-100 border border-red-200'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span className={dataFilter === 'noName' ? 'text-white' : 'text-gray-600'}>Sin nombre:</span>
+            <span className={`font-semibold ${dataFilter === 'noName' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withName}</span>
+          </button>
+
           {/* Datos incompletos */}
           <button
             onClick={() => setDataFilter(dataFilter === 'incomplete' ? '' : 'incomplete')}
@@ -522,7 +567,8 @@ export default function CustomersPage() {
             }`}
           >
             <AlertCircle className="w-4 h-4" />
-            <span className={dataFilter === 'incomplete' ? 'text-white' : 'text-gray-600'}>Datos Incompletos</span>
+            <span className={dataFilter === 'incomplete' ? 'text-white' : 'text-gray-600'}>Datos Incompletos:</span>
+            <span className={`font-semibold ${dataFilter === 'incomplete' ? 'text-white' : 'text-purple-600'}`}>{stats.incompleteData}</span>
           </button>
         </div>
         {/* Fuentes de datos */}
@@ -623,8 +669,18 @@ export default function CustomersPage() {
                 return !!customer.address;
               case 'noAddress':
                 return !customer.address;
+              case 'withName':
+                return customer.name && customer.name !== 'Cliente' && customer.name.trim() !== '';
+              case 'noName':
+                return !customer.name || customer.name === 'Cliente' || customer.name.trim() === '';
               case 'incomplete':
-                return !customer.email || !customer.address || !customer.phone || customer.phone === 'Sin teléfono';
+                return !customer.email ||
+                       !customer.address ||
+                       !customer.phone ||
+                       customer.phone === 'Sin teléfono' ||
+                       !customer.name ||
+                       customer.name === 'Cliente' ||
+                       customer.name.trim() === '';
               default:
                 return true;
             }
