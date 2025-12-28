@@ -1,8 +1,9 @@
 'use client';
 
-import { Heart, Clock, Users, ChevronRight } from 'lucide-react';
+import { Heart, Clock, Users, ChevronRight, Eye } from 'lucide-react';
 import { useState } from 'react';
 import type { GeneratedRecipe } from '@/lib/gemini-recipe-service';
+import { RecipeDetailModal } from './RecipeDetailModal';
 
 interface RecipeCardProps {
   recipe: GeneratedRecipe & { id: string; is_favorited: boolean };
@@ -11,6 +12,7 @@ interface RecipeCardProps {
 
 export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
   const [isFavoriting, setIsFavoriting] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
   const totalTime = recipe.prepTime + recipe.cookTime;
 
   const handleFavorite = async () => {
@@ -86,9 +88,16 @@ export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
         {/* Acciones */}
         <div className="flex gap-2">
           <button
+            onClick={() => setShowDetailModal(true)}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm bg-verde-aguacate text-white hover:bg-verde-bosque border border-verde-aguacate"
+          >
+            <Eye className="w-4 h-4" />
+            Ver receta
+          </button>
+          <button
             onClick={handleFavorite}
             disabled={isFavoriting}
-            className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
+            className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
               recipe.is_favorited
                 ? 'bg-red-100 text-red-600 hover:bg-red-200 border border-red-200'
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200 border border-gray-200'
@@ -99,6 +108,13 @@ export function RecipeCard({ recipe, onToggleFavorite }: RecipeCardProps) {
           </button>
         </div>
       </div>
+
+      {/* Modal de detalle */}
+      <RecipeDetailModal
+        recipe={recipe}
+        isOpen={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+      />
     </div>
   );
 }

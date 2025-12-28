@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
-import { extractBearerToken } from '@/lib/supabaseRequestClient';
+import { extractBearerToken, createSupabaseRequestClient } from '@/lib/supabaseRequestClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,8 +23,11 @@ export async function PATCH(
       );
     }
 
+    // Crear cliente con el token del usuario
+    const supabaseClient = createSupabaseRequestClient(token);
+
     // Verificar token
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -35,14 +38,17 @@ export async function PATCH(
 
     const { recipeId } = await params;
 
-    // Obtener la receta actual
-    const { data: currentRecipe } = await supabase
+    console.log('[USER-RECIPES-FAVORITE] Toggling favorite for recipe:', recipeId, 'user:', user.id);
+
+    // Obtener la receta actual usando el cliente con el token
+    const { data: currentRecipe, error: fetchError } = await supabaseClient
       .from('generated_recipes')
       .select('is_favorited, user_id')
       .eq('id', recipeId)
       .single();
 
-    if (!currentRecipe) {
+    if (fetchError || !currentRecipe) {
+      console.error('[USER-RECIPES-FAVORITE] Recipe not found or error:', fetchError);
       return NextResponse.json(
         { error: 'Receta no encontrada', success: false },
         { status: 404 }
@@ -60,7 +66,7 @@ export async function PATCH(
     // Alternar estado de favorito
     const newFavoriteStatus = !currentRecipe.is_favorited;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from('generated_recipes')
       .update({ is_favorited: newFavoriteStatus })
       .eq('id', recipeId)
@@ -68,12 +74,14 @@ export async function PATCH(
       .single();
 
     if (error) {
-      console.error('[USER-RECIPES-FAVORITE] Error:', error);
+      console.error('[USER-RECIPES-FAVORITE] Error updating:', error);
       return NextResponse.json(
         { error: 'Error al actualizar favorito', success: false },
         { status: 500 }
       );
     }
+
+    console.log('[USER-RECIPES-FAVORITE] Favorite toggled successfully:', newFavoriteStatus);
 
     return NextResponse.json({
       success: true,
