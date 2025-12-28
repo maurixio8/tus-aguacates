@@ -171,6 +171,10 @@ export function ChefVirtualGenerator() {
         setRecipeSaved(data.saved ?? false);
         if (data.warning) {
           setSaveWarning(data.warning);
+          // Log detalles del error para diagnóstico
+          if (data.errorDetails) {
+            console.error('🔴 Error al guardar receta:', data.errorDetails);
+          }
         }
 
         // Update daily count

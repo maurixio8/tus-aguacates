@@ -159,7 +159,13 @@ export async function POST(request: NextRequest) {
       success: true,
       recipe: result.recipe,
       saved: !!userId && !recipeError, // true si se guardó correctamente
-      warning: recipeError ? 'La receta se generó pero hubo un error al guardarla en tu historial.' : undefined
+      warning: recipeError ? 'La receta se generó pero hubo un error al guardarla en tu historial.' : undefined,
+      errorDetails: recipeError ? {
+        message: recipeError.message,
+        code: recipeError.code,
+        details: recipeError.details,
+        hint: recipeError.hint
+      } : undefined
     });
 
   } catch (error) {
