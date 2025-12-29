@@ -24,6 +24,7 @@ interface UnifiedCategoriesProps {
   onCategoryChange?: (slug: string) => void;
   showProductCount?: boolean;
   maxItems?: number;
+  baseHref?: string; // Base path for category links (default: '/tienda')
 }
 
 // Mapeo unificado de categorías (sincronizado con productos-master.json)
@@ -126,7 +127,8 @@ export default function UnifiedCategories({
   selectedCategory,
   onCategoryChange,
   showProductCount = false,
-  maxItems = 8
+  maxItems = 8,
+  baseHref = '/tienda'
 }: UnifiedCategoriesProps) {
   const [categories, setCategories] = useState<UnifiedCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -245,7 +247,7 @@ export default function UnifiedCategories({
           {categories.map((category) => (
             <Link
               key={category.id}
-              href={`/tienda/${category.slug}`}
+              href={`${baseHref}/${category.slug}`}
               className="flex-shrink-0 flex flex-col items-center group"
               onClick={() => handleCategoryClick(category)}
             >
@@ -301,7 +303,7 @@ export default function UnifiedCategories({
         {categories.map((category) => (
           <Link
             key={category.id}
-            href={`/tienda/${category.slug}`}
+            href={`${baseHref}/${category.slug}`}
             className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 shadow-lg hover:shadow-xl"
             onClick={() => handleCategoryClick(category)}
           >
@@ -358,7 +360,7 @@ export default function UnifiedCategories({
       {categories.map((category) => (
         <Link
           key={category.id}
-          href={`/tienda/${category.slug}`}
+          href={`${baseHref}/${category.slug}`}
           className={`flex-shrink-0 px-5 py-2.5 rounded-full transition-all font-medium ${
             selectedCategory === category.slug
               ? 'bg-verde-aguacate text-white shadow-md'

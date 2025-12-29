@@ -257,15 +257,28 @@ const slugToCategoryId = async (slug: string): Promise<string | null> => {
   }
 };
 
-export const getProductsByCategory = async (categorySlugOrName: string): Promise<UnifiedProduct[]> => {
+export const getProductsByCategory = async (
+  categorySlugOrName: string,
+  availabilityFilter?: 'both' | 'business' | 'retail' | null
+): Promise<UnifiedProduct[]> => {
   try {
-    log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"`);
+    log(`\n🔍 getProductsByCategory: "${categorySlugOrName}"${availabilityFilter ? ` (filter: ${availabilityFilter})` : ''}`);
 
     // Si es "todos", cargar todos los productos
     if (categorySlugOrName === 'todos' || categorySlugOrName === 'Todos') {
       log(`📦 Modo "todos": cargando TODOS los productos`);
       const allProducts = await getProducts();
-      return allProducts.filter(p => p.is_active === true);
+      let filtered = allProducts.filter(p => p.is_active === true);
+
+      // Aplicar filtro de disponibilidad
+      if (availabilityFilter && availabilityFilter !== 'both') {
+        filtered = filtered.filter(p =>
+          !p.available_for || p.available_for === 'both' || p.available_for === availabilityFilter
+        );
+        log(`✅ Filtrados ${filtered.length} productos por disponibilidad: ${availabilityFilter}`);
+      }
+
+      return filtered;
     }
 
     // Obtener todos los productos
@@ -275,7 +288,7 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
     // 🔥 CASO ESPECIAL: Categoría "ofertas-combos" muestra combos y productos con descuento
     if (categorySlugOrName === 'ofertas-combos') {
       log(`🔥 Modo "ofertas-combos": buscando combos y productos con descuento`);
-      const ofertasProducts = allProducts.filter(p => {
+      let ofertasProducts = allProducts.filter(p => {
         if (p.is_active === false) return false;
 
         // Productos con "combo" en el nombre
@@ -286,6 +299,14 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
 
         return isCombo || hasDiscount;
       });
+
+      // Aplicar filtro de disponibilidad
+      if (availabilityFilter && availabilityFilter !== 'both') {
+        ofertasProducts = ofertasProducts.filter(p =>
+          !p.available_for || p.available_for === 'both' || p.available_for === availabilityFilter
+        );
+      }
+
       log(`✅ ${ofertasProducts.length} productos encontrados en ofertas-combos`);
       return ofertasProducts;
     }
@@ -375,9 +396,20 @@ export const getProductsByCategory = async (categorySlugOrName: string): Promise
       });
     });
 
-    log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"\n`);
+    log(`✅ ${filteredProducts.length} productos encontrados para "${targetSlug}"`);
 
-    return filteredProducts;
+    // Aplicar filtro de disponibilidad si se especificó
+    let finalProducts = filteredProducts;
+    if (availabilityFilter && availabilityFilter !== 'both') {
+      finalProducts = filteredProducts.filter(p =>
+        !p.available_for || p.available_for === 'both' || p.available_for === availabilityFilter
+      );
+      log(`✅ Filtrados ${finalProducts.length} productos por disponibilidad: ${availabilityFilter}\n`);
+    } else {
+      log(`📦 Sin filtro de disponibilidad, mostrando todos\n`);
+    }
+
+    return finalProducts;
 
   } catch (error) {
     console.error('❌ Error en getProductsByCategory:', error);

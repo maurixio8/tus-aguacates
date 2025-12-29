@@ -14,6 +14,9 @@ export interface UnifiedProductVariant {
   updated_at?: string;
 }
 
+// Tipo para disponibilidad de productos
+export type ProductAvailability = 'both' | 'business' | 'retail';
+
 // Tipo unificado de Product que combina ambos sistemas
 export interface UnifiedProduct {
   // Campos requeridos (mínimo necesario)
@@ -29,6 +32,7 @@ export interface UnifiedProduct {
   unit?: string;
   weight?: number;
   min_quantity?: number;
+  available_for?: ProductAvailability; // Indica dónde está disponible el producto
   
   // ✅ IMPORTANTE: Unificar campos de imagen
   // main_image_url es el campo estándar de Supabase
