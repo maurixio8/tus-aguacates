@@ -70,6 +70,7 @@ export default function EmpresasPage() {
           <UnifiedCategories
             variant="scroll"
             showProductCount={false}
+            baseHref="/empresas"
           />
         </div>
       </section>
