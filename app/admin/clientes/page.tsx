@@ -147,14 +147,49 @@ export default function CustomersPage() {
         const withEmail = allCust.filter(c => c.email).length;
         const withAddress = allCust.filter(c => c.address).length;
 
-        // Validación de nombre: solo verificar que exista y no esté vacío
+        // Validación de nombre: excluir nombres genéricos y vacíos
         const withName = allCust.filter(c => {
-          return c.name && c.name.trim() !== '' && c.name !== 'Cliente';
+          if (!c.name || c.name.trim() === '') return false;
+
+          const nameLower = c.name.toLowerCase().trim();
+
+          // Lista de palabras/frases que indican nombre genérico
+          const genericTerms = [
+            'cliente',
+            'whatsapp',
+            'usuario',
+            'invitado',
+            'guest',
+            'user',
+            'sin nombre',
+            'desconocido',
+            'unknown',
+            'pendiente'
+          ];
+
+          // Si el nombre contiene algún término genérico, no es válido
+          return !genericTerms.some(term => nameLower.includes(term));
         }).length;
 
         const incompleteData = allCust.filter(c => {
-          // Verificar si tiene nombre válido
-          const hasName = c.name && c.name.trim() !== '' && c.name !== 'Cliente';
+          // Verificar si tiene nombre válido (no genérico)
+          let hasName = false;
+          if (c.name && c.name.trim() !== '') {
+            const nameLower = c.name.toLowerCase().trim();
+            const genericTerms = [
+              'cliente',
+              'whatsapp',
+              'usuario',
+              'invitado',
+              'guest',
+              'user',
+              'sin nombre',
+              'desconocido',
+              'unknown',
+              'pendiente'
+            ];
+            hasName = !genericTerms.some(term => nameLower.includes(term));
+          }
 
           return !c.email ||
                  !c.address ||
@@ -666,9 +701,28 @@ export default function CustomersPage() {
           const baseCustomers = dataFilter ? allCustomers : customers;
 
           const filteredCustomers = dataFilter ? baseCustomers.filter(customer => {
-            // Función helper para verificar si tiene nombre válido
+            // Función helper para verificar si tiene nombre válido (no genérico)
             const hasName = (name: string) => {
-              return name && name.trim() !== '' && name !== 'Cliente';
+              if (!name || name.trim() === '') return false;
+
+              const nameLower = name.toLowerCase().trim();
+
+              // Lista de palabras/frases que indican nombre genérico
+              const genericTerms = [
+                'cliente',
+                'whatsapp',
+                'usuario',
+                'invitado',
+                'guest',
+                'user',
+                'sin nombre',
+                'desconocido',
+                'unknown',
+                'pendiente'
+              ];
+
+              // Si el nombre contiene algún término genérico, no es válido
+              return !genericTerms.some(term => nameLower.includes(term));
             };
 
             switch (dataFilter) {
