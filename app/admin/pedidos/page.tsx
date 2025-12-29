@@ -137,6 +137,8 @@ export default function OrdersPage() {
   const [status, setStatus] = useState(searchParams.get('status') || '');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [quickFilter, setQuickFilter] = useState<string>('');
+  const [customerDataFilter, setCustomerDataFilter] = useState<string>('');
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -155,6 +157,130 @@ export default function OrdersPage() {
     cancelled: 0,
     total: 0
   });
+
+  // Funciones helper para calcular rangos de fechas
+  const getDateRanges = () => {
+    const today = new Date();
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    // Hoy
+    const todayRange = {
+      from: formatDate(today),
+      to: formatDate(today)
+    };
+
+    // Esta semana (lunes a domingo)
+    const currentDay = today.getDay();
+    const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + mondayOffset);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const thisWeekRange = {
+      from: formatDate(monday),
+      to: formatDate(sunday)
+    };
+
+    // Semana pasada
+    const lastMonday = new Date(monday);
+    lastMonday.setDate(monday.getDate() - 7);
+    const lastSunday = new Date(lastMonday);
+    lastSunday.setDate(lastMonday.getDate() + 6);
+
+    const lastWeekRange = {
+      from: formatDate(lastMonday),
+      to: formatDate(lastSunday)
+    };
+
+    // Últimos 7 días
+    const last7Days = new Date(today);
+    last7Days.setDate(today.getDate() - 6);
+
+    const last7DaysRange = {
+      from: formatDate(last7Days),
+      to: formatDate(today)
+    };
+
+    // Últimos 30 días
+    const last30Days = new Date(today);
+    last30Days.setDate(today.getDate() - 29);
+
+    const last30DaysRange = {
+      from: formatDate(last30Days),
+      to: formatDate(today)
+    };
+
+    // Este mes
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+    const thisMonthRange = {
+      from: formatDate(firstDayOfMonth),
+      to: formatDate(lastDayOfMonth)
+    };
+
+    // Mes pasado
+    const firstDayOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+
+    const lastMonthRange = {
+      from: formatDate(firstDayOfLastMonth),
+      to: formatDate(lastDayOfLastMonth)
+    };
+
+    return {
+      today: todayRange,
+      thisWeek: thisWeekRange,
+      lastWeek: lastWeekRange,
+      last7Days: last7DaysRange,
+      last30Days: last30DaysRange,
+      thisMonth: thisMonthRange,
+      lastMonth: lastMonthRange
+    };
+  };
+
+  // Aplicar filtro rápido
+  const applyQuickFilter = (filterType: string) => {
+    const ranges = getDateRanges();
+    setQuickFilter(filterType);
+
+    switch (filterType) {
+      case 'today':
+        setDateFrom(ranges.today.from);
+        setDateTo(ranges.today.to);
+        break;
+      case 'thisWeek':
+        setDateFrom(ranges.thisWeek.from);
+        setDateTo(ranges.thisWeek.to);
+        break;
+      case 'lastWeek':
+        setDateFrom(ranges.lastWeek.from);
+        setDateTo(ranges.lastWeek.to);
+        break;
+      case 'last7Days':
+        setDateFrom(ranges.last7Days.from);
+        setDateTo(ranges.last7Days.to);
+        break;
+      case 'last30Days':
+        setDateFrom(ranges.last30Days.from);
+        setDateTo(ranges.last30Days.to);
+        break;
+      case 'thisMonth':
+        setDateFrom(ranges.thisMonth.from);
+        setDateTo(ranges.thisMonth.to);
+        break;
+      case 'lastMonth':
+        setDateFrom(ranges.lastMonth.from);
+        setDateTo(ranges.lastMonth.to);
+        break;
+      default:
+        setDateFrom('');
+        setDateTo('');
+    }
+
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
 
   useEffect(() => {
     loadOrders();
@@ -290,6 +416,27 @@ export default function OrdersPage() {
     };
   };
 
+  // Función para verificar si los datos del cliente están completos
+  const hasCustomerDataIssue = (order: Order, filterType: string) => {
+    const customerInfo = getCustomerInfo(order);
+
+    switch (filterType) {
+      case 'noName':
+        return !customerInfo.name || customerInfo.name === 'Cliente';
+      case 'noEmail':
+        return !customerInfo.email;
+      case 'noPhone':
+        return !customerInfo.phone;
+      case 'incomplete':
+        return !customerInfo.name ||
+               customerInfo.name === 'Cliente' ||
+               !customerInfo.email ||
+               !customerInfo.phone;
+      default:
+        return true;
+    }
+  };
+
   const calculateOrderSummary = (order: Order, orderItems: OrderItem[]) => {
     // Calcular subtotal desde items si no está disponible
     const itemsSubtotal = orderItems.reduce((sum, item) => {
@@ -346,6 +493,8 @@ export default function OrdersPage() {
     setStatus('');
     setDateFrom('');
     setDateTo('');
+    setQuickFilter('');
+    setCustomerDataFilter('');
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
@@ -536,8 +685,86 @@ export default function OrdersPage() {
       )}
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6 space-y-4">
+        {/* Filtros Rápidos de Fecha */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">Filtros Rápidos de Fecha</label>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => applyQuickFilter('today')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'today'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              onClick={() => applyQuickFilter('thisWeek')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'thisWeek'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Esta Semana
+            </button>
+            <button
+              onClick={() => applyQuickFilter('lastWeek')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'lastWeek'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Semana Pasada
+            </button>
+            <button
+              onClick={() => applyQuickFilter('last7Days')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'last7Days'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Últimos 7 Días
+            </button>
+            <button
+              onClick={() => applyQuickFilter('last30Days')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'last30Days'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Últimos 30 Días
+            </button>
+            <button
+              onClick={() => applyQuickFilter('thisMonth')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'thisMonth'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Este Mes
+            </button>
+            <button
+              onClick={() => applyQuickFilter('lastMonth')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                quickFilter === 'lastMonth'
+                  ? 'bg-green-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              Mes Pasado
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros Tradicionales */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* Estado */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
@@ -559,14 +786,34 @@ export default function OrdersPage() {
             </select>
           </div>
 
+          {/* Datos del Cliente */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Datos del Cliente</label>
+            <select
+              value={customerDataFilter}
+              onChange={(e) => {
+                setCustomerDataFilter(e.target.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            >
+              <option value="">Todos los clientes</option>
+              <option value="incomplete">Datos Incompletos</option>
+              <option value="noName">Sin Nombre</option>
+              <option value="noEmail">Sin Correo</option>
+              <option value="noPhone">Sin Teléfono</option>
+            </select>
+          </div>
+
           {/* Fecha Desde */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Desde</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Desde (Personalizado)</label>
             <input
               type="date"
               value={dateFrom}
               onChange={(e) => {
                 setDateFrom(e.target.value);
+                setQuickFilter(''); // Limpiar filtro rápido cuando se usa fecha manual
                 setPagination(prev => ({ ...prev, page: 1 }));
               }}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
@@ -575,12 +822,13 @@ export default function OrdersPage() {
 
           {/* Fecha Hasta */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Hasta</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Hasta (Personalizado)</label>
             <input
               type="date"
               value={dateTo}
               onChange={(e) => {
                 setDateTo(e.target.value);
+                setQuickFilter(''); // Limpiar filtro rápido cuando se usa fecha manual
                 setPagination(prev => ({ ...prev, page: 1 }));
               }}
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
@@ -606,14 +854,20 @@ export default function OrdersPage() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
-        ) : orders.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-            <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No se encontraron pedidos</p>
-          </div>
-        ) : (
-          <>
-            {orders.map((order) => {
+        ) : (() => {
+          // Aplicar filtro de datos de cliente si está activo
+          const filteredOrders = customerDataFilter
+            ? orders.filter(order => hasCustomerDataIssue(order, customerDataFilter))
+            : orders;
+
+          return filteredOrders.length === 0 ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No se encontraron pedidos</p>
+            </div>
+          ) : (
+            <>
+              {filteredOrders.map((order) => {
               const statusInfo = statusConfig[order.status] || statusConfig.pending;
               const StatusIcon = statusInfo.icon;
 
@@ -1066,7 +1320,8 @@ export default function OrdersPage() {
               </div>
             )}
           </>
-        )}
+          );
+        })()}
       </div>
 
       {/* Edit Order Modal */}
