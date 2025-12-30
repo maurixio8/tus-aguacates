@@ -32,6 +32,10 @@ export interface B2BConfigRow {
   display_order: number;
   notes: string | null;
   updated_at: string;
+  // Nuevos campos opcionales
+  image_url?: string | null;
+  display_name?: string | null;
+  description?: string | null;
 }
 
 // Mapeo de categorías para nombres bonitos
@@ -67,28 +71,32 @@ function transformToBusinessProduct(row: B2BConfigRow): BusinessProduct {
   const isAvocado = row.b2b_category === 'aguacates' && row.avocado_variety;
   const ripeness = row.ripeness_state as 'verde' | 'pinton' | 'maduro' | undefined;
 
-  // Construir nombre del producto
-  let productName = '';
-  if (isAvocado && row.avocado_variety) {
-    const varietyName = AVOCADO_VARIETY_NAMES[row.avocado_variety] || row.avocado_variety;
-    const ripenessName = ripeness ? RIPENESS_NAMES[ripeness]?.name || ripeness : '';
-    productName = `Aguacate ${varietyName} ${ripenessName}`.trim();
-  } else {
-    // Para otros productos, extraer nombre del slug
-    productName = row.product_slug
-      .replace('-b2b', '')
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+  // Usar display_name de Supabase si existe, sino construir nombre
+  let productName = row.display_name || '';
+  if (!productName) {
+    if (isAvocado && row.avocado_variety) {
+      const varietyName = AVOCADO_VARIETY_NAMES[row.avocado_variety] || row.avocado_variety;
+      const ripenessName = ripeness ? RIPENESS_NAMES[ripeness]?.name || ripeness : '';
+      productName = `Aguacate ${varietyName} ${ripenessName}`.trim();
+    } else {
+      // Para otros productos, extraer nombre del slug
+      productName = row.product_slug
+        .replace('-b2b', '')
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    }
   }
 
-  // Construir descripción
-  let description = '';
-  if (isAvocado && ripeness) {
-    const ripenessInfo = RIPENESS_NAMES[ripeness];
-    description = `Aguacate ${AVOCADO_VARIETY_NAMES[row.avocado_variety!] || row.avocado_variety} en estado ${ripenessInfo?.name.toLowerCase() || ripeness}. ${ripenessInfo?.description || ''}`;
-  } else {
-    description = `${productName} para empresas - pedido mínimo ${row.min_quantity} ${row.unit}`;
+  // Usar descripción de Supabase si existe, sino construir una
+  let description = row.description || '';
+  if (!description) {
+    if (isAvocado && ripeness) {
+      const ripenessInfo = RIPENESS_NAMES[ripeness];
+      description = `Aguacate ${AVOCADO_VARIETY_NAMES[row.avocado_variety!] || row.avocado_variety} en estado ${ripenessInfo?.name.toLowerCase() || ripeness}. ${ripenessInfo?.description || ''}`;
+    } else {
+      description = `${productName} para empresas - pedido mínimo ${row.min_quantity} ${row.unit}`;
+    }
   }
 
   // Crear variantes de precio
@@ -129,6 +137,7 @@ function transformToBusinessProduct(row: B2BConfigRow): BusinessProduct {
     category: CATEGORY_NAMES[row.b2b_category] || row.b2b_category,
     categorySlug: row.b2b_category,
     unit: row.unit,
+    image: row.image_url || undefined,
     variants,
     available_for: 'business',
     is_active: row.b2b_enabled,
