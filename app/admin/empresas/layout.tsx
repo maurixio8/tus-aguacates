@@ -12,14 +12,10 @@ import {
   LogOut,
   Menu,
   X,
-  ChevronDown,
-  Store,
+  Building2,
+  ArrowLeft,
   Users,
-  Ticket,
-  Image as ImageIcon,
-  MessageSquare,
-  Layers,
-  Building2
+  Settings
 } from 'lucide-react';
 
 interface AdminUser {
@@ -29,7 +25,7 @@ interface AdminUser {
   role: string;
 }
 
-export default function AdminLayout({
+export default function EmpresasAdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -40,40 +36,28 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // No aplicar layout en la página de login
-  const isLoginPage = pathname === '/admin/login';
-
   useEffect(() => {
-    if (isLoginPage) {
-      setLoading(false);
-      return;
-    }
-
     // Verificar autenticación
     const checkAuth = () => {
       const savedAdmin = localStorage.getItem('admin');
-      console.log('🔐 [AdminLayout] Verificando auth, savedAdmin:', savedAdmin ? 'existe' : 'no existe');
 
       if (savedAdmin) {
         try {
           const adminData = JSON.parse(savedAdmin);
-          console.log('✅ [AdminLayout] Admin data parsed:', adminData.email);
           setAdmin(adminData);
           setLoading(false);
         } catch (error) {
-          console.error('❌ [AdminLayout] Error parsing admin data:', error);
+          console.error('Error parsing admin data:', error);
           localStorage.removeItem('admin');
           window.location.href = '/admin/login';
         }
       } else {
-        console.log('⚠️ [AdminLayout] No admin en localStorage, redirigiendo a login');
         window.location.href = '/admin/login';
       }
     };
 
-    // Pequeño delay para asegurar que localStorage está listo
     setTimeout(checkAuth, 50);
-  }, [isLoginPage]);
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -86,15 +70,10 @@ export default function AdminLayout({
     router.push('/admin/login');
   };
 
-  // Si es la página de login, renderizar sin layout
-  if (isLoginPage) {
-    return <>{children}</>;
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -104,22 +83,17 @@ export default function AdminLayout({
   }
 
   const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
-    { name: 'Productos', href: '/admin/productos', icon: Package },
-    { name: 'Categorías', href: '/admin/categorias', icon: Layers },
-    { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
-    { name: 'Clientes', href: '/admin/clientes', icon: Users },
-    { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
-    { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
-    { name: 'Banner Mensajes', href: '/admin/banner-mensajes', icon: MessageSquare },
-    { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
-    { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
-    { name: 'Portal B2B', href: '/admin/empresas', icon: Building2, isB2B: true },
+    { name: 'Dashboard B2B', href: '/admin/empresas', icon: LayoutDashboard },
+    { name: 'Pedidos B2B', href: '/admin/empresas/pedidos', icon: ShoppingCart },
+    { name: 'Productos B2B', href: '/admin/empresas/productos', icon: Package },
+    { name: 'Clientes Empresariales', href: '/admin/empresas/clientes', icon: Users },
+    { name: 'Crear Pedido B2B', href: '/admin/empresas/crear-pedido', icon: PlusCircle },
+    { name: 'Reportes B2B', href: '/admin/empresas/reportes', icon: BarChart3 },
   ];
 
   const isActive = (href: string) => {
-    if (href === '/admin') {
-      return pathname === '/admin';
+    if (href === '/admin/empresas') {
+      return pathname === '/admin/empresas';
     }
     return pathname.startsWith(href);
   };
@@ -130,49 +104,37 @@ export default function AdminLayout({
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
         <div className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 bg-blue-600">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="font-bold text-gray-900">Admin Panel</span>
+              <span className="font-bold text-white">Admin B2B</span>
             </div>
-            <button onClick={() => setSidebarOpen(false)} className="p-2 text-gray-500 hover:text-gray-700">
+            <button onClick={() => setSidebarOpen(false)} className="p-2 text-white/80 hover:text-white">
               <X className="w-5 h-5" />
             </button>
           </div>
           <nav className="p-4 space-y-1">
-            {navigation.map((item: any) => {
+            {/* Volver al Admin Principal */}
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-900 mb-4 border-b border-gray-200 pb-4"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              Volver al Admin
+            </Link>
+
+            {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-
-              if (item.isB2B) {
-                return (
-                  <div key={item.name}>
-                    <div className="border-t border-gray-200 my-3"></div>
-                    <Link
-                      href={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                        }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      {item.name}
-                      <span className="ml-auto text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded">B2B</span>
-                    </Link>
-                  </div>
-                );
-              }
-
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
+                      ? 'bg-blue-100 text-blue-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
@@ -189,50 +151,40 @@ export default function AdminLayout({
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col">
         <div className="flex flex-col flex-grow bg-white border-r border-gray-200">
           {/* Logo */}
-          <div className="flex items-center h-16 px-4 border-b border-gray-200">
+          <div className="flex items-center h-16 px-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <span className="font-bold text-gray-900">Tus Aguacates</span>
-                <p className="text-xs text-gray-500">Panel de Administración</p>
+                <span className="font-bold text-white">Tus Aguacates</span>
+                <p className="text-xs text-blue-100">Portal Empresas B2B</p>
               </div>
             </div>
           </div>
 
+          {/* Volver al Admin Principal */}
+          <div className="px-4 py-3 border-b border-gray-200">
+            <Link
+              href="/admin"
+              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Volver al Admin Principal
+            </Link>
+          </div>
+
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-1">
-            {navigation.map((item: any) => {
+            {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-
-              // Estilo especial para Portal B2B
-              if (item.isB2B) {
-                return (
-                  <div key={item.name}>
-                    <div className="border-t border-gray-200 my-3"></div>
-                    <Link
-                      href={item.href}
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
-                          ? 'bg-blue-100 text-blue-700 font-medium'
-                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                        }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      {item.name}
-                      <span className="ml-auto text-[10px] bg-blue-600 text-white px-1.5 py-0.5 rounded">B2B</span>
-                    </Link>
-                  </div>
-                );
-              }
-
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
+                      ? 'bg-blue-100 text-blue-700 font-medium'
                       : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
@@ -243,11 +195,24 @@ export default function AdminLayout({
             })}
           </nav>
 
+          {/* B2B Badge */}
+          <div className="p-4 border-t border-gray-200">
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold text-blue-900">Portal B2B</span>
+              </div>
+              <p className="text-xs text-blue-700">
+                Gestiona pedidos y productos para clientes empresariales con precios mayoristas.
+              </p>
+            </div>
+          </div>
+
           {/* User info */}
           <div className="p-4 border-t border-gray-200">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-green-700 font-semibold">
+              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <span className="text-blue-700 font-semibold">
                   {admin.name?.charAt(0) || admin.email?.charAt(0) || 'A'}
                 </span>
               </div>
@@ -270,19 +235,19 @@ export default function AdminLayout({
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <div className="sticky top-0 z-40 bg-white border-b border-gray-200 lg:hidden">
+        <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-600 to-blue-700 border-b border-blue-700 lg:hidden">
           <div className="flex items-center justify-between h-16 px-4">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="p-2 text-gray-500 hover:text-gray-700"
+              className="p-2 text-white/80 hover:text-white"
             >
               <Menu className="w-6 h-6" />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-                <Store className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-blue-600" />
               </div>
-              <span className="font-bold text-gray-900">Admin</span>
+              <span className="font-bold text-white">Admin B2B</span>
             </div>
             <div className="w-10" /> {/* Spacer */}
           </div>
