@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, LogIn, LogOut, Menu, X, Home, Building2, Phone, Mail } from 'lucide-react';
+import { ShoppingCart, User, Search, LogIn, Menu, X, Building2 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
@@ -36,11 +36,11 @@ export function BusinessHeader() {
 
   return (
     <>
-      <header className="bg-gradient-to-r from-orange-600 to-amber-600 text-white sticky top-0 z-40 shadow-md">
+      <header className="bg-verde-bosque text-white sticky top-0 z-40 shadow-md">
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
-            {/* Logo */}
-            <Link href="/empresas" className="flex items-center gap-2" onClick={closeMobileMenu}>
+            {/* Logo + Badge Empresas */}
+            <Link href="/empresas" className="flex items-center gap-3" onClick={closeMobileMenu}>
               <img
                 src={branding.logo.url}
                 alt={branding.logo.alt}
@@ -48,31 +48,22 @@ export function BusinessHeader() {
                 height={branding.logo.height}
                 className="object-contain h-10 md:h-12 w-auto"
               />
-              <span className="hidden md:inline font-bold text-sm bg-white/20 px-3 py-1 rounded-full">
+              <span className="hidden sm:flex items-center gap-1.5 text-xs bg-amber-500 text-verde-bosque-900 font-bold px-3 py-1 rounded-full">
+                <Building2 className="w-3 h-3" />
                 Empresas
               </span>
             </Link>
 
-            {/* Navegación Desktop */}
+            {/* Navegación Desktop - Simple y enfocada */}
             <nav className="hidden md:flex items-center space-x-6">
-              <Link href="/empresas" className="hover:text-orange-200 transition-colors font-semibold">
-                Inicio
-              </Link>
-              <Link href="/empresas/aguacates" className="hover:text-orange-200 transition-colors">
-                Aguacates
-              </Link>
-              <Link href="/empresas/frutas-tropicales" className="hover:text-orange-200 transition-colors">
-                Frutas Tropicales
-              </Link>
-              <Link href="/empresas/frutos-rojos" className="hover:text-orange-200 transition-colors">
-                Frutos Rojos
+              <Link href="/empresas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
+                Catálogo
               </Link>
               <a
                 href="mailto:empresas@tusaguacates.com"
-                className="flex items-center gap-2 bg-white text-orange-600 hover:bg-orange-50 font-bold px-4 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg"
+                className="hover:text-verde-aguacate-200 transition-colors"
               >
-                <Mail className="w-4 h-4" />
-                <span className="hidden lg:inline">Contacto</span>
+                Contacto
               </a>
             </nav>
 
@@ -80,7 +71,7 @@ export function BusinessHeader() {
             <div className="hidden md:flex items-center space-x-4">
               <button
                 onClick={() => setSearchOpen(true)}
-                className="hover:text-orange-200 transition-colors"
+                className="hover:text-verde-aguacate-200 transition-colors"
                 aria-label="Buscar productos"
               >
                 <Search className="w-5 h-5" />
@@ -89,7 +80,7 @@ export function BusinessHeader() {
               {user ? (
                 <Link
                   href="/cuenta"
-                  className="hover:text-orange-200 transition-colors flex items-center gap-2"
+                  className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
                   title="Mi Cuenta"
                 >
                   <User className="w-5 h-5" />
@@ -97,7 +88,7 @@ export function BusinessHeader() {
               ) : (
                 <Link
                   href="/auth/login"
-                  className="hover:text-orange-200 transition-colors flex items-center gap-2"
+                  className="hover:text-verde-aguacate-200 transition-colors flex items-center gap-2"
                   title="Iniciar Sesión"
                 >
                   <LogIn className="w-5 h-5" />
@@ -107,20 +98,20 @@ export function BusinessHeader() {
 
               <button
                 onClick={toggleCart}
-                className="relative hover:text-orange-200 transition-colors"
+                className="relative hover:text-verde-aguacate-200 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5" />
                 {mounted && itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-white text-orange-600 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-naranja-frutal text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                     {itemCount}
                   </span>
                 )}
               </button>
 
-              {/* Link a tienda normal */}
+              {/* Link discreto a tienda retail */}
               <Link
                 href="/tienda"
-                className="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full transition-colors"
+                className="text-xs text-verde-aguacate-200 hover:text-white transition-colors"
               >
                 Tienda Retail
               </Link>
@@ -128,6 +119,12 @@ export function BusinessHeader() {
 
             {/* Acciones Móvil */}
             <div className="flex md:hidden items-center space-x-3">
+              {/* Badge Empresas en móvil */}
+              <span className="flex sm:hidden items-center gap-1 text-[10px] bg-amber-500 text-verde-bosque-900 font-bold px-2 py-1 rounded-full">
+                <Building2 className="w-2.5 h-2.5" />
+                B2B
+              </span>
+
               {/* Buscar */}
               <button
                 onClick={() => setSearchOpen(true)}
@@ -144,7 +141,7 @@ export function BusinessHeader() {
               >
                 <ShoppingCart className="w-5 h-5" />
                 {mounted && itemCount > 0 && (
-                  <span className="absolute top-0 right-0 bg-white text-orange-600 text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                  <span className="absolute top-0 right-0 bg-naranja-frutal text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                     {itemCount}
                   </span>
                 )}
@@ -164,81 +161,45 @@ export function BusinessHeader() {
 
         {/* Menú Móvil Desplegable */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-orange-700 border-t border-white/10">
+          <div className="md:hidden bg-verde-bosque-800 border-t border-white/10">
             <nav className="container mx-auto px-4 py-4">
               <div className="flex flex-col space-y-1">
                 <Link
                   href="/empresas"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
                 >
                   <Building2 className="w-5 h-5" />
-                  <span>Inicio Empresas</span>
-                </Link>
-
-                <Link
-                  href="/empresas/aguacates"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🥑</span>
-                  <span>Aguacates</span>
-                </Link>
-
-                <Link
-                  href="/empresas/frutas-tropicales"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🍊</span>
-                  <span>Frutas Tropicales</span>
-                </Link>
-
-                <Link
-                  href="/empresas/frutos-rojos"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🍓</span>
-                  <span>Frutos Rojos</span>
+                  <span>Catálogo Empresas</span>
                 </Link>
 
                 <a
                   href="mailto:empresas@tusaguacates.com"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white text-orange-600 font-bold transition-colors"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
                 >
-                  <Mail className="w-5 h-5" />
+                  <span>📧</span>
                   <span>empresas@tusaguacates.com</span>
                 </a>
 
                 <a
                   href="tel:+573042582777"
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition-colors font-semibold"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
                 >
-                  <Phone className="w-5 h-5" />
+                  <span>📞</span>
                   <span>+57 304 258 2777</span>
                 </a>
 
                 <div className="border-t border-white/10 my-2" />
 
                 {user ? (
-                  <>
-                    <Link
-                      href="/cuenta"
-                      onClick={closeMobileMenu}
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      <User className="w-5 h-5" />
-                      <span>Mi Cuenta</span>
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
-                    >
-                      <LogOut className="w-5 h-5" />
-                      <span>Cerrar Sesión</span>
-                    </button>
-                  </>
+                  <Link
+                    href="/cuenta"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                  >
+                    <User className="w-5 h-5" />
+                    <span>Mi Cuenta</span>
+                  </Link>
                 ) : (
                   <Link
                     href="/auth/login"
@@ -253,9 +214,9 @@ export function BusinessHeader() {
                 <Link
                   href="/tienda"
                   onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 transition-colors text-sm"
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm text-verde-aguacate-200"
                 >
-                  <Home className="w-5 h-5" />
+                  <span>🏪</span>
                   <span>Ir a Tienda Retail</span>
                 </Link>
               </div>
