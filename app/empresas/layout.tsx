@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Layout para la sección B2B (Business to Business)
  * "Tus Aguacates" - E-commerce Platform
