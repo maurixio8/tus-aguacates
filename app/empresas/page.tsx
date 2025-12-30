@@ -1,13 +1,17 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight, Package, Truck, Star, Phone, Mail, Building2, Scale } from 'lucide-react';
+import { ArrowRight, Package, Truck, Star, Phone, Mail, Building2, Scale, Database } from 'lucide-react';
 import { BusinessCategories } from '@/components/categories/BusinessCategories';
-import { BUSINESS_PRODUCTS, BUSINESS_CATEGORIES } from '@/lib/business-products';
+import { useB2BProducts, useB2BCategories } from '@/hooks/useB2BProducts';
 
 export default function EmpresasPage() {
-  const totalProducts = BUSINESS_PRODUCTS.length;
-  const totalCategories = BUSINESS_CATEGORIES.length;
+  const { products, source } = useB2BProducts();
+  const { categories } = useB2BCategories();
+
+  const totalProducts = products.length;
+  const totalCategories = categories.length;
+  const aguacateCount = products.filter(p => p.categorySlug === 'aguacates').length;
 
   return (
     <div>
@@ -36,18 +40,28 @@ export default function EmpresasPage() {
             {/* Stats */}
             <div className="flex flex-wrap justify-center gap-6 mb-8">
               <div className="bg-white/10 backdrop-blur px-6 py-3 rounded-xl">
-                <div className="text-3xl font-bold">{totalProducts}</div>
+                <div className="text-3xl font-bold">{totalProducts || '~30'}</div>
                 <div className="text-sm text-white/70">Productos B2B</div>
               </div>
               <div className="bg-white/10 backdrop-blur px-6 py-3 rounded-xl">
-                <div className="text-3xl font-bold">{totalCategories}</div>
+                <div className="text-3xl font-bold">{totalCategories || 7}</div>
                 <div className="text-sm text-white/70">Categorías</div>
               </div>
               <div className="bg-white/10 backdrop-blur px-6 py-3 rounded-xl">
-                <div className="text-3xl font-bold">12</div>
+                <div className="text-3xl font-bold">{aguacateCount || 12}</div>
                 <div className="text-sm text-white/70">Variedades Aguacate</div>
               </div>
             </div>
+
+            {/* Data source indicator */}
+            {source === 'supabase' && (
+              <div className="flex justify-center mb-6">
+                <span className="inline-flex items-center gap-2 text-sm bg-white/20 px-4 py-2 rounded-full">
+                  <Database className="w-4 h-4" />
+                  Precios actualizados desde base de datos
+                </span>
+              </div>
+            )}
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a

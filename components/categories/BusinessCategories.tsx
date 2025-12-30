@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
-import { BUSINESS_CATEGORIES, getBusinessProductsByCategory } from '@/lib/business-products';
+import { useB2BProducts, useB2BCategories } from '@/hooks/useB2BProducts';
 
 interface BusinessCategoriesProps {
   variant?: 'scroll' | 'grid';
@@ -23,6 +23,8 @@ const CATEGORY_IMAGES: Record<string, string> = {
 
 export function BusinessCategories({ variant = 'scroll', selectedCategory }: BusinessCategoriesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const { categories } = useB2BCategories();
+  const { products } = useB2BProducts();
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -35,11 +37,13 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
   };
 
   // Obtener conteo de productos por categoría
-  const categoriesWithCount = BUSINESS_CATEGORIES.map(cat => ({
-    ...cat,
-    productCount: getBusinessProductsByCategory(cat.slug).length,
-    image: CATEGORY_IMAGES[cat.slug]
-  }));
+  const categoriesWithCount = useMemo(() => {
+    return categories.map(cat => ({
+      ...cat,
+      productCount: cat.count || products.filter(p => p.categorySlug === cat.slug).length,
+      image: CATEGORY_IMAGES[cat.slug]
+    }));
+  }, [categories, products]);
 
   if (variant === 'grid') {
     return (

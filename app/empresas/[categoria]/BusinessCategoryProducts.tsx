@@ -1,29 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Building2, Package } from 'lucide-react';
+import { ChevronLeft, Building2, Package, Database, HardDrive } from 'lucide-react';
 import { BusinessProductCard } from '@/components/product/BusinessProductCard';
-import { getBusinessProductsByCategory, BUSINESS_CATEGORIES } from '@/lib/business-products';
-import type { BusinessProduct } from '@/lib/business-products';
+import { BUSINESS_CATEGORIES } from '@/lib/business-products';
+import { useB2BProductsByCategory } from '@/hooks/useB2BProducts';
 
 export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
-  const [products, setProducts] = useState<BusinessProduct[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { products, loading, source } = useB2BProductsByCategory(categoria);
 
   // Obtener info de la categoría
   const categoryInfo = BUSINESS_CATEGORIES.find(c => c.slug === categoria);
-
-  useEffect(() => {
-    setLoading(true);
-
-    // Obtener productos B2B de la categoría
-    const businessProducts = getBusinessProductsByCategory(categoria);
-    console.log(`🏢 Productos B2B en ${categoria}:`, businessProducts.length);
-
-    setProducts(businessProducts);
-    setLoading(false);
-  }, [categoria]);
 
   if (loading) {
     return (
@@ -82,10 +69,16 @@ export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
       </div>
 
       {/* Conteo de productos */}
-      <div className="mb-4">
+      <div className="mb-4 flex items-center gap-2 flex-wrap">
         <p className="text-gray-600 text-sm md:text-base">
           Mostrando <span className="font-bold text-verde-bosque">{products.length}</span> producto{products.length !== 1 ? 's' : ''} para empresas
         </p>
+        {source === 'supabase' && (
+          <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+            <Database className="w-3 h-3" />
+            Precios actualizados
+          </span>
+        )}
       </div>
 
       {/* Grid de productos */}
