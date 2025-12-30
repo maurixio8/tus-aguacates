@@ -2,26 +2,45 @@
 
 import Link from 'next/link';
 import { ArrowRight, Mail, Phone } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import type { UnifiedProduct } from '@/lib/types';
+import Image from 'next/image';
 
-// Lazy loading de componentes
-const UnifiedCategories = dynamic(
-  () => import('@/components/categories/UnifiedCategories'),
+// Solo las 5 categorías que necesita empresas
+const BUSINESS_CATEGORIES = [
   {
-    loading: () => (
-      <div className="flex gap-4 overflow-x-auto">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="w-24 h-24 bg-gray-100 animate-pulse rounded-lg flex-shrink-0" />
-        ))}
-      </div>
-    ),
-    ssr: true
+    slug: 'aguacates',
+    name: 'Aguacates',
+    image: '/categories/aguacates.jpg',
+    color: 'from-green-500 to-green-700'
+  },
+  {
+    slug: 'frutas-tropicales',
+    name: 'Frutas Tropicales',
+    image: '/categories/tropicales.jpg',
+    color: 'from-orange-500 to-red-600'
+  },
+  {
+    slug: 'frutos-rojos',
+    name: 'Frutos Rojos',
+    image: '/categories/frutos-rojos.jpg',
+    color: 'from-red-500 to-pink-600'
+  },
+  {
+    slug: 'gourmet',
+    name: 'Gourmet',
+    image: '/categories/gourmet.jpg',
+    color: 'from-red-500 to-orange-700'
+  },
+  {
+    slug: 'aromaticas',
+    name: 'Aromáticas',
+    image: '/categories/aromaticas.jpg',
+    color: 'from-emerald-500 to-teal-600'
   }
-);
+];
 
 export default function EmpresasPage() {
   const [featuredProducts, setFeaturedProducts] = useState<UnifiedProduct[]>([]);
@@ -56,7 +75,7 @@ export default function EmpresasPage() {
 
   return (
     <div>
-      {/* Hero Compacto - Enfocado en mensaje */}
+      {/* Hero Compacto */}
       <section className="bg-gradient-to-r from-verde-bosque to-verde-bosque-800 text-white py-12 md:py-16">
         <div className="container mx-auto px-4 text-center">
           <h1 className="font-display font-bold text-3xl md:text-5xl mb-4">
@@ -84,8 +103,61 @@ export default function EmpresasPage() {
         </div>
       </section>
 
-      {/* Productos Destacados - LO MÁS IMPORTANTE */}
+      {/* Categorías GRANDES - Arriba */}
       <section className="py-12 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-8">
+            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
+              Explora por Categoría
+            </h2>
+            <p className="text-gray-600">
+              Encuentra exactamente lo que necesitas
+            </p>
+          </div>
+
+          {/* Grid Grande de Categorías - Cuadradas */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-4">
+            {BUSINESS_CATEGORIES.map((category) => (
+              <Link
+                key={category.slug}
+                href={`/empresas/${category.slug}`}
+                className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
+              >
+                {/* Imagen de fondo */}
+                <div className="absolute inset-0">
+                  <Image
+                    src={category.image}
+                    alt={category.name}
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-500"
+                    unoptimized
+                  />
+                </div>
+
+                {/* Overlay oscuro para legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                {/* Contenido */}
+                <div className="relative h-full flex flex-col items-center justify-end text-white p-4">
+                  <h3 className="text-base md:text-xl font-bold text-center drop-shadow-lg">
+                    {category.name}
+                  </h3>
+                </div>
+
+                {/* Badge "Ver productos" en hover */}
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="bg-white text-verde-bosque px-4 py-2 rounded-full text-sm font-semibold shadow-xl">
+                    Ver Productos →
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Productos Destacados - Abajo */}
+      <section className="py-12 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
@@ -120,34 +192,17 @@ export default function EmpresasPage() {
             </div>
           )}
 
-          <div className="text-center mt-8">
-            <Link
-              href="/empresas/aguacates"
-              className="inline-flex items-center gap-2 text-verde-bosque hover:text-verde-aguacate font-semibold transition-colors"
-            >
-              Ver más productos
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Categorías - Exploración */}
-      <section className="py-12 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
-              Explora por Categoría
-            </h2>
-            <p className="text-gray-600">
-              Encuentra exactamente lo que necesitas
-            </p>
-          </div>
-          <UnifiedCategories
-            variant="scroll"
-            showProductCount={false}
-            baseHref="/empresas"
-          />
+          {featuredProducts.length > 0 && (
+            <div className="text-center mt-8">
+              <Link
+                href="/empresas/aguacates"
+                className="inline-flex items-center gap-2 text-verde-bosque hover:text-verde-aguacate font-semibold transition-colors"
+              >
+                Ver más productos
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          )}
         </div>
       </section>
 

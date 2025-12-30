@@ -107,14 +107,6 @@ export function BusinessHeader() {
                   </span>
                 )}
               </button>
-
-              {/* Link discreto a tienda retail */}
-              <Link
-                href="/tienda"
-                className="text-xs text-verde-aguacate-200 hover:text-white transition-colors"
-              >
-                Tienda Retail
-              </Link>
             </div>
 
             {/* Acciones Móvil */}
@@ -210,15 +202,6 @@ export function BusinessHeader() {
                     <span>Iniciar Sesión</span>
                   </Link>
                 )}
-
-                <Link
-                  href="/tienda"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-sm text-verde-aguacate-200"
-                >
-                  <span>🏪</span>
-                  <span>Ir a Tienda Retail</span>
-                </Link>
               </div>
             </nav>
           </div>
