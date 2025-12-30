@@ -4,6 +4,7 @@
  */
 
 import { ReactNode } from 'react';
+import { ToastProvider } from '@/components/ui/Toast';
 
 interface B2BLayoutProps {
   children: ReactNode;
@@ -11,7 +12,8 @@ interface B2BLayoutProps {
 
 export default function B2BLayout({ children }: B2BLayoutProps) {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FFFEF5' }}>
+    <ToastProvider>
+      <div className="min-h-screen" style={{ backgroundColor: '#FFFEF5' }}>
       {/* Header B2B */}
       <header
         className="text-white shadow-medium"
@@ -107,5 +109,6 @@ export default function B2BLayout({ children }: B2BLayoutProps) {
         </div>
       </footer>
     </div>
+    </ToastProvider>
   );
 }

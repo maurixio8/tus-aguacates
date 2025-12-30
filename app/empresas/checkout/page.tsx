@@ -10,12 +10,14 @@ import { useRouter } from 'next/navigation';
 import { useB2BCartStore, useB2BCartSummary } from '@/lib/b2b/b2b-cart-store';
 import { GuestInfoForm } from '@/components/b2b/checkout/GuestInfoForm';
 import type { GuestContactInfo, Address, B2BPaymentMethod } from '@/lib/b2b/b2b-types';
+import { useToast } from '@/components/ui/Toast';
 
 export default function B2BCheckoutPage() {
   const router = useRouter();
   const items = useB2BCartStore((state) => state.items);
   const clearCart = useB2BCartStore((state) => state.clearCart);
   const { total, totalItems, meetsMinimum } = useB2BCartSummary();
+  const { showError } = useToast();
 
   const [step, setStep] = useState<'guest' | 'payment' | 'processing' | 'success'>('guest');
   const [guestInfo, setGuestInfo] = useState<(GuestContactInfo & { shipping_address: Address }) | null>(null);
@@ -29,10 +31,10 @@ export default function B2BCheckoutPage() {
     if (items.length === 0) {
       router.push('/empresas/carrito');
     } else if (!meetsMinimum) {
-      alert('El carrito no cumple con el monto mínimo de pedido');
+      showError('El carrito no cumple con el monto mínimo de pedido');
       router.push('/empresas/carrito');
     }
-  }, [items.length, meetsMinimum, router]);
+  }, [items.length, meetsMinimum, router, showError]);
 
   const handleGuestInfoSubmit = (info: GuestContactInfo & { shipping_address: Address }) => {
     setGuestInfo(info);

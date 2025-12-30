@@ -4,7 +4,8 @@
  */
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { B2BProduct } from '@/lib/b2b/b2b-types';
@@ -14,31 +15,36 @@ import { VolumePricingCompact } from './VolumePricingDisplay';
 interface B2BProductCardProps {
   product: B2BProduct;
   onAddToCart?: (product: B2BProduct, quantity: number) => void;
+  index?: number;
 }
 
-export function B2BProductCard({ product, onAddToCart }: B2BProductCardProps) {
+export const B2BProductCard = React.memo(({ product, onAddToCart, index }: B2BProductCardProps) => {
   const [quantity, setQuantity] = useState(product.minimum_order_quantity);
 
-  const handleQuantityChange = (newQuantity: number) => {
+  const handleQuantityChange = useCallback((newQuantity: number) => {
     const validated = Math.max(
       product.minimum_order_quantity,
       Math.min(product.stock_quantity, newQuantity)
     );
     setQuantity(validated);
-  };
+  }, [product.minimum_order_quantity, product.stock_quantity]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (onAddToCart) {
       onAddToCart(product, quantity);
     }
-  };
+  }, [onAddToCart, product, quantity]);
 
   const imageUrl = product.main_image_url || product.images?.[0] || '/placeholder-product.jpg';
-  const pricingTiers = product.pricing_tiers || [];
-  const hasDiscount = pricingTiers.length > 0;
-  const bestPrice = hasDiscount
-    ? Math.min(...pricingTiers.map(t => t.price_per_unit))
-    : product.base_price;
+
+  const pricingTiers = useMemo(() => product.pricing_tiers || [], [product.pricing_tiers]);
+  const hasDiscount = useMemo(() => pricingTiers.length > 0, [pricingTiers]);
+  const bestPrice = useMemo(() =>
+    hasDiscount
+      ? Math.min(...pricingTiers.map(t => t.price_per_unit))
+      : product.base_price,
+    [hasDiscount, pricingTiers, product.base_price]
+  );
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition duration-300 flex flex-col h-full">
@@ -51,6 +57,10 @@ export function B2BProductCard({ product, onAddToCart }: B2BProductCardProps) {
             fill
             className="object-cover"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            priority={(index || 0) < 6}
+            quality={85}
+            placeholder="blur"
+            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCwAB//2Q=="
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -161,4 +171,9 @@ export function B2BProductCard({ product, onAddToCart }: B2BProductCardProps) {
       </div>
     </div>
   );
-}
+}, (prevProps, nextProps) => {
+  // Solo re-renderizar si el producto cambió
+  return prevProps.product.id === nextProps.product.id &&
+         prevProps.product.updated_at === nextProps.product.updated_at &&
+         prevProps.product.base_price === nextProps.product.base_price;
+});

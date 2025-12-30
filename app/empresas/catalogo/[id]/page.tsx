@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { VolumePricingDisplay } from '@/components/b2b/catalog/VolumePricingDisplay';
 import { useB2BCartStore } from '@/lib/b2b/b2b-cart-store';
 import { formatPrice } from '@/lib/b2b/b2b-pricing';
+import { useToast } from '@/components/ui/Toast';
 
 export default function B2BProductDetailPage() {
   const params = useParams();
@@ -23,6 +24,7 @@ export default function B2BProductDetailPage() {
   const [quantity, setQuantity] = useState(5);
 
   const addItem = useB2BCartStore((state) => state.addItem);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     if (productId) {
@@ -55,9 +57,9 @@ export default function B2BProductDetailPage() {
     if (product) {
       try {
         addItem(product, quantity);
-        alert(`${quantity} ${product.name} agregado(s) al carrito`);
+        showSuccess(`${quantity} ${product.name} agregado(s) al carrito`);
       } catch (error: any) {
-        alert(error.message);
+        showError(error.message);
       }
     }
   };

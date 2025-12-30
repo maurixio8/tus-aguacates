@@ -10,6 +10,7 @@ import { useB2BCartStore, useB2BCartSummary } from '@/lib/b2b/b2b-cart-store';
 import { formatPrice } from '@/lib/b2b/b2b-pricing';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useToast } from '@/components/ui/Toast';
 
 export default function B2BCartPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function B2BCartPage() {
   const removeItem = useB2BCartStore((state) => state.removeItem);
   const updateQuantity = useB2BCartStore((state) => state.updateQuantity);
   const clearCart = useB2BCartStore((state) => state.clearCart);
+  const { showError, showSuccess } = useToast();
 
   const {
     subtotal,
@@ -35,7 +37,7 @@ export default function B2BCartPage() {
       try {
         updateQuantity(productId, newQuantity);
       } catch (error: any) {
-        alert(error.message);
+        showError(error.message);
       }
     }
   };
@@ -49,12 +51,13 @@ export default function B2BCartPage() {
   const handleClearCart = () => {
     if (confirm('¿Vaciar el carrito?')) {
       clearCart();
+      showSuccess('Carrito vaciado correctamente');
     }
   };
 
   const handleCheckout = () => {
     if (!meetsMinimum) {
-      alert(`El monto mínimo de pedido es ${minimumOrder}. Te faltan ${remainingForMinimumFormatted}.`);
+      showError(`El monto mínimo de pedido es ${minimumOrder}. Te faltan ${remainingForMinimumFormatted}.`);
       return;
     }
     router.push('/empresas/checkout');

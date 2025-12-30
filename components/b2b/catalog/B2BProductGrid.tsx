@@ -4,9 +4,10 @@
  */
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { B2BProductCard } from './B2BProductCard';
 import { useB2BCartStore } from '@/lib/b2b/b2b-cart-store';
+import { useToast } from '@/components/ui/Toast';
 
 interface B2BProductGridProps {
   categoryId?: string;
@@ -34,6 +35,7 @@ export function B2BProductGrid({ categoryId, search, sortBy }: B2BProductGridPro
   const [loading, setLoading] = useState(true);
 
   const addItem = useB2BCartStore((state) => state.addItem);
+  const { showSuccess, showError } = useToast();
 
   useEffect(() => {
     async function fetchProducts() {
@@ -89,18 +91,17 @@ export function B2BProductGrid({ categoryId, search, sortBy }: B2BProductGridPro
     fetchProducts();
   }, [categoryId, search, sortBy]);
 
-  const handleAddToCart = async (productId: string, quantity: number) => {
+  const handleAddToCart = useCallback(async (productId: string, quantity: number) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return;
 
     try {
       addItem(product as any, quantity);
-      // TODO: Show toast notification
-      alert(`${quantity} ${product.name} agregado(s) al carrito`);
+      showSuccess(`${quantity} ${product.name} agregado(s) al carrito`);
     } catch (error: any) {
-      alert(error.message);
+      showError(error.message);
     }
-  };
+  }, [products, addItem, showSuccess, showError]);
 
   if (loading) {
     return (
@@ -156,11 +157,12 @@ export function B2BProductGrid({ categoryId, search, sortBy }: B2BProductGridPro
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products.map((product) => (
+        {products.map((product, index) => (
           <B2BProductCard
             key={product.id}
             product={product as any}
             onAddToCart={(p, q) => handleAddToCart(p.id, q)}
+            index={index}
           />
         ))}
       </div>
