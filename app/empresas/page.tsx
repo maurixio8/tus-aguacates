@@ -1,201 +1,235 @@
-'use client';
+/**
+ * Página principal de la sección B2B (Business to Business)
+ * "Tus Aguacates" - E-commerce Platform
+ */
 
 import Link from 'next/link';
-import { ArrowRight, Package, Truck, Star, Phone, Mail } from 'lucide-react';
-import dynamic from 'next/dynamic';
 
-// Usar el mismo componente de categorías que los clientes normales
-const UnifiedCategories = dynamic(
-  () => import('@/components/categories/UnifiedCategories'),
-  {
-    loading: () => (
-      <div className="flex gap-4 overflow-x-auto">
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="w-24 h-24 bg-gray-100 animate-pulse rounded-lg flex-shrink-0" />
-        ))}
-      </div>
-    ),
-    ssr: true
-  }
-);
-
-export default function EmpresasPage() {
+export default function B2BHomePage() {
   return (
-    <div>
+    <div className="container mx-auto px-4 py-12">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-white py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl mb-4">
-              Venta a Empresas
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-white/90">
-              Del Eje Cafetero a tu Mesa
-            </p>
-            <p className="text-lg md:text-xl mb-8 max-w-2xl mx-auto">
-              Productos frescos y de calidad premium para tu restaurante, hotel o negocio.
-              Cuanto más compres, mejor precio.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="mailto:empresas@tusaguacates.com"
-                className="inline-flex items-center justify-center bg-white text-orange-600 hover:bg-gray-100 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                <Mail className="w-5 h-5 mr-2" />
-                empresas@tusaguacates.com
-              </a>
-              <a
-                href="tel:+573042582777"
-                className="inline-flex items-center justify-center bg-verde-bosque-700 text-white hover:bg-verde-bosque-800 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                <Phone className="w-5 h-5 mr-2" />
-                +57 304 258 2777
-              </a>
-            </div>
-          </div>
+      <section className="text-center mb-16 animate-fade-in">
+        <h2
+          className="text-5xl font-bold mb-6 text-verde-bosque animate-slide-in-from-bottom-4"
+          style={{ animationDelay: '0s' }}
+        >
+          Venta a Empresas
+        </h2>
+        <p
+          className="text-xl mb-8 max-w-2xl mx-auto text-gray-600 animate-slide-in-from-bottom-4"
+          style={{ animationDelay: '0.2s' }}
+        >
+          Precios especiales por volumen para restaurantes, hoteles,
+          distribuidores y todo tipo de negocios.
+        </p>
+        <div
+          className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in-from-bottom-4"
+          style={{ animationDelay: '0.4s' }}
+        >
+          <Link
+            href="/empresas/catalogo"
+            className="text-white font-bold py-3 px-8 rounded-lg transition duration-300 hover:scale-105"
+            style={{
+              backgroundColor: '#E8A838',
+              boxShadow: '0 4px 14px rgba(232, 168, 56, 0.3)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#D4952C';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(232, 168, 56, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#E8A838';
+              e.currentTarget.style.boxShadow = '0 4px 14px rgba(232, 168, 56, 0.3)';
+            }}
+          >
+            Ver Catálogo de Productos
+          </Link>
         </div>
       </section>
 
-      {/* Categorías - Usando el mismo componente que clientes normales */}
-      <section className="py-12 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-8">
-            <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
-              Explora Nuestro Catálogo
-            </h2>
-            <p className="text-gray-600">
-              La misma calidad y frescura para tu negocio
-            </p>
+      {/* Beneficios */}
+      <section className="grid md:grid-cols-3 gap-8 mb-16">
+        <div
+          className="bg-white p-8 rounded-xl transition duration-300 hover:scale-105"
+          style={{
+            border: '1px solid #D4AF85',
+            boxShadow: '0 4px 12px rgba(45, 80, 22, 0.08)',
+            animation: 'slide-in-from-bottom-4 0.8s ease-out 0.6s both'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(45, 80, 22, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(45, 80, 22, 0.08)';
+          }}
+        >
+          <div className="mb-4" style={{ color: '#6B8E23' }}>
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-          <UnifiedCategories
-            variant="scroll"
-            showProductCount={false}
-            baseHref="/empresas"
-          />
-        </div>
-      </section>
-
-      {/* Proceso de Compra */}
-      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
-              Proceso de Compra
-            </h2>
-            <p className="text-gray-600 text-lg">
-              Simple y eficiente para tu negocio
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
-            {[
-              {
-                number: '1',
-                title: 'Explora el Catálogo',
-                description: 'Revisa nuestros productos frescos y de calidad premium'
-              },
-              {
-                number: '2',
-                title: 'Realiza tu Pedido',
-                description: 'Contáctanos y coordina tu orden según tus necesidades'
-              },
-              {
-                number: '3',
-                title: 'Confirmación',
-                description: 'Recibe confirmación de tu pedido y precio especial'
-              },
-              {
-                number: '4',
-                title: 'Entrega',
-                description: 'Recibe tus productos frescos en la fecha acordada'
-              }
-            ].map((step) => (
-              <div key={step.number} className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold shadow-lg">
-                  {step.number}
-                </div>
-                <h3 className="font-display font-bold text-xl mb-2">{step.title}</h3>
-                <p className="text-gray-600">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Beneficios para Empresas */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="font-display font-bold text-3xl md:text-4xl mb-4">
-              Beneficios para tu Negocio
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all border-2 border-gray-100">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Package className="w-8 h-8 text-orange-600" />
-              </div>
-              <h3 className="font-display font-bold text-xl mb-3 text-center">
-                Precios por Volumen
-              </h3>
-              <p className="text-gray-600 text-center">
-                Cuanto más compres, mejor precio. Tarifas especiales para empresas y pedidos al por mayor.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all border-2 border-gray-100">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Truck className="w-8 h-8 text-green-600" />
-              </div>
-              <h3 className="font-display font-bold text-xl mb-3 text-center">
-                Entregas Flexibles
-              </h3>
-              <p className="text-gray-600 text-center">
-                Coordinamos las entregas según las necesidades de tu establecimiento. Frecuencia personalizada.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all border-2 border-gray-100">
-              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Star className="w-8 h-8 text-amber-600" />
-              </div>
-              <h3 className="font-display font-bold text-xl mb-3 text-center">
-                Productos Premium
-              </h3>
-              <p className="text-gray-600 text-center">
-                Selección especial de productos de la más alta calidad para tu negocio gastronómico.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Final */}
-      <section className="py-16 md:py-24 gradient-verde text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="font-display font-bold text-3xl md:text-5xl mb-6">
-            ¿Listo para Empezar?
-          </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Regístrate para acceder a precios exclusivos para empresas
+          <h3 className="text-xl font-bold mb-3 text-verde-bosque">Precios por Volumen</h3>
+          <p className="text-gray-600">
+            Cuanto más compres, mejor precio. Descuentos especiales para pedidos grandes.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="mailto:empresas@tusaguacates.com"
-              className="inline-flex items-center justify-center bg-gradient-to-r from-yellow-400 to-yellow-600 text-verde-bosque-700 hover:from-yellow-500 hover:to-yellow-700 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
+        </div>
+
+        <div
+          className="bg-white p-8 rounded-xl transition duration-300 hover:scale-105"
+          style={{
+            border: '1px solid #D4AF85',
+            boxShadow: '0 4px 12px rgba(45, 80, 22, 0.08)',
+            animation: 'slide-in-from-bottom-4 0.8s ease-out 0.7s both'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(45, 80, 22, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(45, 80, 22, 0.08)';
+          }}
+        >
+          <div className="mb-4" style={{ color: '#6B8E23' }}>
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold mb-3 text-verde-bosque">Entrega Rápida</h3>
+          <p className="text-gray-600">
+            Entrega puntual para tu negocio. Coordenemos la entrega según tus necesidades.
+          </p>
+        </div>
+
+        <div
+          className="bg-white p-8 rounded-xl transition duration-300 hover:scale-105"
+          style={{
+            border: '1px solid #D4AF85',
+            boxShadow: '0 4px 12px rgba(45, 80, 22, 0.08)',
+            animation: 'slide-in-from-bottom-4 0.8s ease-out 0.8s both'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = '0 8px 24px rgba(45, 80, 22, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(45, 80, 22, 0.08)';
+          }}
+        >
+          <div className="mb-4" style={{ color: '#6B8E23' }}>
+            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-bold mb-3 text-verde-bosque">Productos Premium</h3>
+          <p className="text-gray-600">
+            Los mejores aguacates y productos frescos seleccionados para tu negocio.
+          </p>
+        </div>
+      </section>
+
+      {/* Cómo funciona */}
+      <section
+        className="bg-white rounded-2xl p-12 mb-16"
+        style={{
+          border: '1px solid #D4AF85',
+          boxShadow: '0 8px 24px rgba(45, 80, 22, 0.12)',
+          animation: 'slide-in-from-bottom-4 0.8s ease-out 0.9s both'
+        }}
+      >
+        <h2 className="text-3xl font-bold mb-8 text-center text-verde-bosque">
+          ¿Cómo Comprar?
+        </h2>
+        <div className="grid md:grid-cols-4 gap-8">
+          <div className="text-center transition duration-300 hover:scale-105">
+            <div
+              className="text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4"
+              style={{ backgroundColor: '#6B8E23' }}
             >
-              Contactar Ahora
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </a>
-            <Link
-              href="/tienda"
-              className="inline-flex items-center justify-center bg-white text-verde-bosque-700 hover:bg-gray-100 font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              1
+            </div>
+            <h3 className="font-bold mb-2 text-verde-bosque">Explora el Catálogo</h3>
+            <p className="text-gray-600 text-sm">
+              Revisa nuestros productos y precios por volumen
+            </p>
+          </div>
+          <div className="text-center transition duration-300 hover:scale-105">
+            <div
+              className="text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4"
+              style={{ backgroundColor: '#6B8E23' }}
             >
-              Ver Catálogo Completo
-            </Link>
+              2
+            </div>
+            <h3 className="font-bold mb-2 text-verde-bosque">Agrega al Carrito</h3>
+            <p className="text-gray-600 text-sm">
+              Selecciona las cantidades según tus necesidades
+            </p>
+          </div>
+          <div className="text-center transition duration-300 hover:scale-105">
+            <div
+              className="text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4"
+              style={{ backgroundColor: '#6B8E23' }}
+            >
+              3
+            </div>
+            <h3 className="font-bold mb-2 text-verde-bosque">Confirma tu Pedido</h3>
+            <p className="text-gray-600 text-sm">
+              Puedes comprar como invitado o con cuenta
+            </p>
+          </div>
+          <div className="text-center transition duration-300 hover:scale-105">
+            <div
+              className="text-white w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4"
+              style={{ backgroundColor: '#6B8E23' }}
+            >
+              4
+            </div>
+            <h3 className="font-bold mb-2 text-verde-bosque">¡Recibe tu Pedido!</h3>
+            <p className="text-gray-600 text-sm">
+              Entrega rápida en tu establecimiento
+            </p>
           </div>
         </div>
+      </section>
+
+      {/* Call to Action */}
+      <section
+        className="text-center text-white rounded-2xl p-12 transition duration-300 hover:scale-105"
+        style={{
+          background: 'linear-gradient(135deg, #E8A838 0%, #C1440E 100%)',
+          boxShadow: '0 8px 32px rgba(232, 168, 56, 0.25)',
+          animation: 'slide-in-from-bottom-4 0.8s ease-out 1s both'
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.boxShadow = '0 12px 40px rgba(232, 168, 56, 0.35)';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.boxShadow = '0 8px 32px rgba(232, 168, 56, 0.25)';
+        }}
+      >
+        <h2 className="text-3xl font-bold mb-4">
+          ¿Listo para empezar a comprar al por mayor?
+        </h2>
+        <p className="text-xl mb-8" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+          Compra como invitado o crea tu cuenta para acceder a precios exclusivos para empresas
+        </p>
+        <Link
+          href="/empresas/catalogo"
+          className="inline-block font-bold py-4 px-10 rounded-lg transition duration-300"
+          style={{
+            backgroundColor: '#FFFFFF',
+            color: '#2D5016',
+            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.1)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#FFFEF5';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.15)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#FFFFFF';
+            e.currentTarget.style.boxShadow = '0 4px 14px rgba(0, 0, 0, 0.1)';
+          }}
+        >
+          Ver Catálogo de Productos
+        </Link>
       </section>
     </div>
   );

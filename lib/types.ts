@@ -164,7 +164,6 @@ export type {
   ProductVariant,
   Category,
   CartItem,
-  Address,
   Order,
   Profile,
   Subscription,
@@ -172,3 +171,83 @@ export type {
   SubscriptionDelivery,
   SubscriptionModification
 } from './supabase';
+
+// ============================================================================
+// TIPOS B2B (Business to Business)
+// ============================================================================
+
+// Exportar todos los tipos B2B desde su propio archivo
+export type {
+  // Categorías
+  B2BCategory,
+  B2BCategoryFormData,
+
+  // Empresas
+  B2BCompany,
+  B2BCompanyFormData,
+  B2BCompanyWithUsers,
+  BusinessType,
+  CompanyStatus,
+  Address,
+
+  // Usuarios de empresa
+  B2BCompanyUser,
+  B2BUserRole,
+  B2BUserStatus,
+
+  // Productos B2B
+  B2BProduct,
+  B2BProductFormData,
+  B2BProductUnit,
+
+  // Pricing tiers (precios por volumen)
+  B2BPricingTier,
+  B2BPricingTierFormData,
+  B2BPricingResult,
+
+  // Precios especiales por empresa
+  B2BCompanyPricing,
+
+  // Pedidos B2B
+  B2BOrder,
+  B2BOrderFormData,
+  B2BOrderStatus,
+  B2BPaymentMethod,
+  B2BPaymentStatus,
+  GuestContactInfo,
+
+  // Items de pedido B2B
+  B2BOrderItem,
+
+  // Pedidos recurrentes
+  B2BRecurringOrder,
+  B2BRecurringOrderFormData,
+  RecurringFrequencyType,
+  RecurringStatus,
+  DeliveryDayOfWeek,
+  RecurringOrderItem,
+
+  // Carrito B2B
+  B2BCartItem,
+  B2BCartState,
+
+  // Filtros y paginación
+  B2BProductFilters,
+  B2BProductPaginatedResponse,
+  B2BOrderFilters,
+  B2BOrderPaginatedResponse,
+
+  // Reportes
+  B2BSalesSummary,
+  B2BCompanyStats,
+
+  // Errores
+  B2BValidationError,
+  B2BMinimumOrderError,
+  B2BInsufficientStockError,
+
+  // API
+  B2BApiResponse,
+  B2BCheckoutRequest,
+  B2BCheckoutResponse,
+} from './b2b/b2b-types';

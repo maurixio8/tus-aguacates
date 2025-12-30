@@ -1,0 +1,246 @@
+/**
+ * API Routes para Productos B2B
+ * "Tus Aguacates" - E-commerce Platform
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import { NextRequest, NextResponse } from 'next/server';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+/**
+ * GET /api/b2b/products
+ * Obtiene lista de productos B2B con filtros y paginación
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Obtener parámetros de query
+    const searchParams = request.nextUrl.searchParams;
+    const id = searchParams.get('id');
+    const category_id = searchParams.get('category_id');
+    const search = searchParams.get('search');
+    const is_active = searchParams.get('is_active');
+    const is_featured = searchParams.get('is_featured');
+    const min_price = searchParams.get('min_price');
+    const max_price = searchParams.get('max_price');
+    const unit = searchParams.get('unit');
+    const sort_by = searchParams.get('sort_by') || 'name';
+    const sort_order = searchParams.get('sort_order') || 'asc';
+    const page = parseInt(searchParams.get('page') || '1');
+    const page_size = parseInt(searchParams.get('page_size') || '20');
+
+    // Si se pide un producto por ID, retornarlo directamente
+    if (id) {
+      const { data: product, error } = await supabase
+        .from('b2b_products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error || !product) {
+        return NextResponse.json(
+          { success: false, error: { message: 'Producto no encontrado', code: 'NOT_FOUND' } },
+          { status: 404 }
+        );
+      }
+
+      // Obtener pricing tiers por separado
+      const { data: pricingTiers } = await supabase
+        .from('b2b_pricing_tiers')
+        .select('*')
+        .eq('product_id', id)
+        .order('priority', { ascending: true });
+
+      // Obtener categoría
+      let category = null;
+      if (product.category_id) {
+        const { data: cat } = await supabase
+          .from('b2b_categories')
+          .select('*')
+          .eq('id', product.category_id)
+          .single();
+        category = cat;
+      }
+
+      return NextResponse.json({
+        success: true,
+        data: [{ ...product, pricing_tiers: pricingTiers || [], category }],
+      });
+    }
+
+    // Construir query
+    let query = supabase
+      .from('b2b_products')
+      .select('*', { count: 'exact' });
+
+    // Aplicar filtros
+    if (category_id) {
+      query = query.eq('category_id', category_id);
+    }
+
+    if (is_active !== null) {
+      query = query.eq('is_active', is_active === 'true');
+    }
+
+    if (is_featured !== null) {
+      query = query.eq('is_featured', is_featured === 'true');
+    }
+
+    if (search) {
+      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+    }
+
+    if (min_price) {
+      query = query.gte('base_price', parseFloat(min_price));
+    }
+
+    if (max_price) {
+      query = query.lte('base_price', parseFloat(max_price));
+    }
+
+    if (unit) {
+      query = query.eq('unit', unit);
+    }
+
+    // Excluir productos borrados (soft delete)
+    query = query.is('deleted_at', null);
+
+    // Aplicar ordenamiento
+    const column = sort_by as string;
+    const order = sort_order === 'desc' ? false : true;
+
+    if (column === 'name' || column === 'created_at' || column === 'base_price' || column === 'stock_quantity') {
+      query = query.order(column, { ascending: order });
+    }
+
+    // Aplicar paginación
+    const from = (page - 1) * page_size;
+    const to = from + page_size - 1;
+    query = query.range(from, to);
+
+    // Ejecutar query
+    const { data: products, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching B2B products:', error);
+      return NextResponse.json(
+        { success: false, error: { message: 'Error al obtener productos', code: 'DB_ERROR' } },
+        { status: 500 }
+      );
+    }
+
+    // Obtener pricing tiers y categorías para todos los productos
+    const productIds = products?.map((p: any) => p.id) || [];
+    let productsWithRelations = products || [];
+
+    if (productIds.length > 0) {
+      const { data: pricingTiers } = await supabase
+        .from('b2b_pricing_tiers')
+        .select('*')
+        .in('product_id', productIds);
+
+      const { data: categories } = await supabase
+        .from('b2b_categories')
+        .select('*')
+        .in('id', products?.map((p: any) => p.category_id).filter(Boolean) || []);
+
+      // Agregar pricing_tiers y category a cada producto
+      productsWithRelations = productsWithRelations.map((p: any) => ({
+        ...p,
+        pricing_tiers: pricingTiers?.filter((pt: any) => pt.product_id === p.id) || [],
+        category: categories?.find((c: any) => c.id === p.category_id) || null,
+      }));
+    }
+
+    // Calcular totalPages
+    const total_pages = count ? Math.ceil(count / page_size) : 0;
+
+    return NextResponse.json({
+      success: true,
+      data: productsWithRelations,
+      meta: {
+        pagination: {
+          total: count || 0,
+          page,
+          page_size,
+          total_pages,
+          has_next: page < total_pages,
+          has_previous: page > 1,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('Error in B2B products API:', error);
+    return NextResponse.json(
+      { success: false, error: { message: 'Error interno del servidor', code: 'INTERNAL_ERROR' } },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/b2b/products
+ * Crea un nuevo producto B2B (Solo admin)
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Obtener datos del producto
+    const body = await request.json();
+
+    // Validar campos requeridos
+    if (!body.sku || !body.name || body.base_price === undefined) {
+      return NextResponse.json(
+        { success: false, error: { message: 'Faltan campos requeridos', code: 'VALIDATION_ERROR' } },
+        { status: 400 }
+      );
+    }
+
+    // Crear producto
+    const { data: product, error } = await supabase
+      .from('b2b_products')
+      .insert({
+        sku: body.sku,
+        name: body.name,
+        description: body.description || null,
+        category_id: body.category_id || null,
+        base_price: body.base_price,
+        cost_price: body.cost_price || null,
+        stock_quantity: body.stock_quantity || 0,
+        minimum_order_quantity: body.minimum_order_quantity || 1,
+        unit: body.unit || 'unit',
+        is_active: body.is_active !== undefined ? body.is_active : true,
+        is_featured: body.is_featured || false,
+        main_image_url: body.main_image_url || null,
+        images: body.images || [],
+        specifications: body.specifications || {},
+        benefits: body.benefits || [],
+        b2c_product_id: body.b2c_product_id || null,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating B2B product:', error);
+      return NextResponse.json(
+        { success: false, error: { message: error.message, code: 'DB_ERROR' } },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: product,
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Error in B2B products POST API:', error);
+    return NextResponse.json(
+      { success: false, error: { message: 'Error interno del servidor', code: 'INTERNAL_ERROR' } },
+      { status: 500 }
+    );
+  }
+}
