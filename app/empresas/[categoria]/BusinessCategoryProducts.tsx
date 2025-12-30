@@ -2,53 +2,33 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, Building2 } from 'lucide-react';
-import { ProductCard } from '@/components/product/ProductCard';
-import { getProductsByCategory } from '@/lib/productStorage';
-import type { Product } from '@/lib/productStorage';
+import { ChevronLeft, Building2, Package } from 'lucide-react';
+import { BusinessProductCard } from '@/components/product/BusinessProductCard';
+import { getBusinessProductsByCategory, BUSINESS_CATEGORIES } from '@/lib/business-products';
+import type { BusinessProduct } from '@/lib/business-products';
 
 export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<BusinessProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Obtener info de la categoría
+  const categoryInfo = BUSINESS_CATEGORIES.find(c => c.slug === categoria);
+
   useEffect(() => {
-    fetchProducts();
+    setLoading(true);
 
-    // 👂 Escuchar actualizaciones de fondo (cuando termine el sync)
-    const handleUpdate = () => {
-      console.log('⚡ Actualización recibida en BusinessCategoryProducts');
-      fetchProducts();
-    };
+    // Obtener productos B2B de la categoría
+    const businessProducts = getBusinessProductsByCategory(categoria);
+    console.log(`🏢 Productos B2B en ${categoria}:`, businessProducts.length);
 
-    window.addEventListener('products-updated', handleUpdate);
-    return () => window.removeEventListener('products-updated', handleUpdate);
+    setProducts(businessProducts);
+    setLoading(false);
   }, [categoria]);
-
-  async function fetchProducts() {
-    try {
-      setLoading(true);
-
-      // ✅ Obtener productos con filtro de disponibilidad para empresas
-      console.log(`🏢 Buscando productos para empresas en categoría: ${categoria}`);
-
-      // Obtener productos filtrando por disponibilidad 'business' o 'both'
-      const productsData = await getProductsByCategory(categoria, 'business');
-
-      console.log(`✅ Encontrados ${productsData.length} productos para empresas en ${categoria}`);
-      setProducts(productsData);
-
-    } catch (error) {
-      console.error('❌ Error in fetchProducts:', error);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (loading) {
     return (
       <div className="text-center py-16">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-verde-bosque mx-auto mb-4"></div>
         <p className="text-gray-500">Cargando productos para empresas...</p>
       </div>
     );
@@ -58,8 +38,15 @@ export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
     return (
       <div className="text-center py-16">
         <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 text-lg mb-2">No hay productos disponibles para empresas en esta categoría</p>
-        <p className="text-gray-400 text-sm">Los productos específicos para empresas aparecerán aquí</p>
+        <p className="text-gray-500 text-lg mb-2">No hay productos B2B en esta categoría</p>
+        <p className="text-gray-400 text-sm mb-4">Pronto agregaremos más productos para tu empresa</p>
+        <Link
+          href="/empresas"
+          className="inline-flex items-center gap-2 text-verde-bosque hover:text-verde-bosque-600 font-semibold"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Ver otras categorías
+        </Link>
       </div>
     );
   }
@@ -67,49 +54,64 @@ export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
   return (
     <>
       {/* Banner informativo para empresas */}
-      <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-l-4 border-orange-500 p-4 mb-6 rounded-lg">
+      <div className="bg-gradient-to-r from-verde-bosque/10 to-verde-aguacate/10 border-l-4 border-verde-bosque p-4 mb-6 rounded-lg">
         <div className="flex items-start gap-3">
-          <Building2 className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+          <Package className="w-5 h-5 text-verde-bosque mt-0.5 flex-shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-orange-900">Catálogo para Empresas</p>
-            <p className="text-sm text-orange-700">
-              Estos productos están disponibles para tu negocio. Contacta con nosotros para precios especiales por volumen.
+            <p className="text-sm font-semibold text-verde-bosque-900">
+              Catálogo B2B - {categoryInfo?.name || categoria}
+            </p>
+            <p className="text-sm text-gray-700">
+              Productos con precios escalonados por volumen. Cuanto más compres, mejor precio por kg.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Grid de todos los productos */}
-      <div>
-        <div className="mb-4">
-          <p className="text-gray-600 text-sm md:text-base">
-            Mostrando <span className="font-bold text-orange-600">{products.length}</span> producto{products.length !== 1 ? 's' : ''} para empresas
-          </p>
-        </div>
+      {/* Leyenda de precios */}
+      <div className="flex flex-wrap gap-2 mb-6">
+        <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+          🟢 Tier 1: Volumen bajo
+        </span>
+        <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+          🟡 Tier 2: Volumen medio
+        </span>
+        <span className="text-xs bg-gray-100 px-3 py-1 rounded-full text-gray-600">
+          🔵 Tier 3: Volumen alto (mejor precio)
+        </span>
+      </div>
 
-        {/* Grid con todos los productos */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+      {/* Conteo de productos */}
+      <div className="mb-4">
+        <p className="text-gray-600 text-sm md:text-base">
+          Mostrando <span className="font-bold text-verde-bosque">{products.length}</span> producto{products.length !== 1 ? 's' : ''} para empresas
+        </p>
+      </div>
 
-        {/* Botón Volver al final */}
-        <div className="mt-12 flex justify-center gap-4 flex-col sm:flex-row">
-          <Link
-            href="/empresas"
-            className="inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-          >
-            <ChevronLeft className="w-5 h-5" />
-            Volver a Categorías
-          </Link>
-          <a
-            href="mailto:empresas@tusaguacates.com"
-            className="inline-flex items-center justify-center gap-2 bg-verde-bosque-700 hover:bg-verde-bosque-800 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-          >
-            Solicitar Cotización
-          </a>
-        </div>
+      {/* Grid de productos */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {products.map((product) => (
+          <BusinessProductCard key={product.id} product={product} />
+        ))}
+      </div>
+
+      {/* Botones de navegación */}
+      <div className="mt-12 flex justify-center gap-4 flex-col sm:flex-row">
+        <Link
+          href="/empresas"
+          className="inline-flex items-center justify-center gap-2 bg-verde-bosque hover:bg-verde-bosque/90 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+        >
+          <ChevronLeft className="w-5 h-5" />
+          Volver a Categorías
+        </Link>
+        <a
+          href="https://wa.me/573042582777?text=Hola,%20quiero%20hacer%20un%20pedido%20mayorista"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-6 py-3 rounded-lg transition-all shadow-md hover:shadow-lg"
+        >
+          💬 Contactar por WhatsApp
+        </a>
       </div>
     </>
   );

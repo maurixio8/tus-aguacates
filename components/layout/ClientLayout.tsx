@@ -6,8 +6,10 @@ import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { useWishlistStore } from "@/lib/wishlist-store";
 import { initializeProducts } from "@/lib/productStorage";
 import { Header } from "@/components/layout/Header";
+import { BusinessHeader } from "@/components/layout/BusinessHeader";
 import { Footer } from "@/components/layout/Footer";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { BusinessCartDrawer } from "@/components/cart/BusinessCartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import { InstallPrompt, ServiceWorkerRegistration, PushNotificationPrompt } from "@/components/pwa";
@@ -19,6 +21,8 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
+  // Detectar si estamos en la sección de empresas
+  const isBusinessRoute = pathname?.startsWith('/empresas');
 
   // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
   useEffect(() => {
@@ -47,14 +51,17 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ServiceWorkerRegistration />
-      <Header />
+      {/* Header diferente para empresas vs tienda normal */}
+      {isBusinessRoute ? <BusinessHeader /> : <Header />}
       <main className="min-h-screen">
         {children}
       </main>
       <Footer />
-      <CartDrawer />
+      {/* Carrito diferente para empresas vs tienda normal */}
+      {isBusinessRoute ? <BusinessCartDrawer /> : <CartDrawer />}
       <ChatBot />
-      <BottomNavigation />
+      {/* Bottom Navigation solo para tienda normal */}
+      {!isBusinessRoute && <BottomNavigation />}
       <InstallPrompt />
       <PushNotificationPrompt />
     </>
