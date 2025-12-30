@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronLeft, Building2, Package, Database, HardDrive } from 'lucide-react';
+import { ChevronLeft, Building2, Package } from 'lucide-react';
 import { BusinessProductCard } from '@/components/product/BusinessProductCard';
 import { BUSINESS_CATEGORIES } from '@/lib/business-products';
 import { useB2BProductsByCategory } from '@/hooks/useB2BProducts';
 
 export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
-  const { products, loading, source } = useB2BProductsByCategory(categoria);
+  const { products, loading } = useB2BProductsByCategory(categoria);
 
   // Obtener info de la categoría
   const categoryInfo = BUSINESS_CATEGORIES.find(c => c.slug === categoria);
@@ -69,16 +69,10 @@ export function BusinessCategoryProducts({ categoria }: { categoria: string }) {
       </div>
 
       {/* Conteo de productos */}
-      <div className="mb-4 flex items-center gap-2 flex-wrap">
+      <div className="mb-4">
         <p className="text-gray-600 text-sm md:text-base">
           Mostrando <span className="font-bold text-verde-bosque">{products.length}</span> producto{products.length !== 1 ? 's' : ''} para empresas
         </p>
-        {source === 'supabase' && (
-          <span className="inline-flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
-            <Database className="w-3 h-3" />
-            Precios actualizados
-          </span>
-        )}
       </div>
 
       {/* Grid de productos */}
