@@ -7,66 +7,80 @@ import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import type { UnifiedProduct } from '@/lib/types';
 
-// Solo las 5 categorías que necesita empresas
-const BUSINESS_CATEGORIES = [
-  {
-    slug: 'aguacates',
-    name: 'Aguacates',
-    image: '/categories/aguacates.jpg',
-    color: 'from-green-500 to-green-700'
-  },
-  {
-    slug: 'frutas-tropicales',
-    name: 'Frutas Tropicales',
-    image: '/categories/tropicales.jpg',
-    color: 'from-orange-500 to-red-600'
-  },
-  {
-    slug: 'frutos-rojos',
-    name: 'Frutos Rojos',
-    image: '/categories/frutos-rojos.jpg',
-    color: 'from-red-500 to-pink-600'
-  },
-  {
-    slug: 'gourmet',
-    name: 'Gourmet',
-    image: '/categories/gourmet.jpg',
-    color: 'from-red-500 to-orange-700'
-  },
-  {
-    slug: 'aromaticas',
-    name: 'Aromáticas',
-    image: '/categories/aromaticas.jpg',
-    color: 'from-emerald-500 to-teal-600'
-  }
+// Interface para categorías
+interface Category {
+  slug: string;
+  name: string;
+  image: string;
+  color: string;
+}
+
+// Solo las 5 categorías que necesita empresas (slugs de referencia)
+const BUSINESS_CATEGORY_SLUGS = [
+  'aguacates',
+  'frutas-tropicales',
+  'frutos-rojos',
+  'gourmet',
+  'aromaticas'
 ];
 
 export default function EmpresasPage() {
   const [featuredProducts, setFeaturedProducts] = useState<UnifiedProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadFeaturedProducts();
+    loadData();
   }, []);
 
-  async function loadFeaturedProducts() {
+  async function loadData() {
     try {
       setLoading(true);
 
+      // Cargar categorías desde Supabase
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('categories')
+        .select('slug, name, image_url')
+        .in('slug', BUSINESS_CATEGORY_SLUGS);
+
+      if (!categoriesError && categoriesData) {
+        // Mapear las categorías con sus imágenes desde la BD
+        const colorMap: Record<string, string> = {
+          'aguacates': 'from-green-500 to-green-700',
+          'frutas-tropicales': 'from-orange-500 to-red-600',
+          'frutos-rojos': 'from-red-500 to-pink-600',
+          'gourmet': 'from-red-500 to-orange-700',
+          'aromaticas': 'from-emerald-500 to-teal-600'
+        };
+
+        const formattedCategories = categoriesData.map(cat => ({
+          slug: cat.slug,
+          name: cat.name,
+          image: cat.image_url || '/categories/aguacates.jpg', // Fallback
+          color: colorMap[cat.slug] || 'from-gray-500 to-gray-700'
+        }));
+
+        // Ordenar según el orden de BUSINESS_CATEGORY_SLUGS
+        const orderedCategories = BUSINESS_CATEGORY_SLUGS
+          .map(slug => formattedCategories.find(cat => cat.slug === slug))
+          .filter((cat): cat is Category => cat !== undefined);
+
+        setCategories(orderedCategories);
+      }
+
       // Obtener productos destacados
-      // TODO: En el futuro, filtrar por available_for='business' o 'both'
-      const { data, error } = await supabase
+      const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select('*')
         .eq('is_active', true)
         .eq('is_featured', true)
         .limit(8);
 
-      if (!error && data) {
-        setFeaturedProducts(data as UnifiedProduct[]);
+      if (!productsError && productsData) {
+        setFeaturedProducts(productsData as UnifiedProduct[]);
       }
     } catch (error) {
-      console.error('Error loading featured products:', error);
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
@@ -116,39 +130,46 @@ export default function EmpresasPage() {
 
           {/* Grid Grande de Categorías - Cuadradas */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-4">
-            {BUSINESS_CATEGORIES.map((category) => (
-              <Link
-                key={category.slug}
-                href={`/empresas/${category.slug}`}
-                className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
-              >
-                {/* Imagen de fondo */}
-                <div className="absolute inset-0">
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-
-                {/* Overlay oscuro para legibilidad */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-
-                {/* Contenido */}
-                <div className="relative h-full flex flex-col items-center justify-end text-white p-4">
-                  <h3 className="text-base md:text-xl font-bold text-center drop-shadow-lg">
-                    {category.name}
-                  </h3>
-                </div>
-
-                {/* Badge "Ver productos" en hover */}
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <div className="bg-white text-verde-bosque px-4 py-2 rounded-full text-sm font-semibold shadow-xl">
-                    Ver Productos →
+            {loading ? (
+              // Skeleton mientras carga
+              [...Array(5)].map((_, i) => (
+                <div key={i} className="aspect-square rounded-2xl bg-gray-200 animate-pulse" />
+              ))
+            ) : (
+              categories.map((category) => (
+                <Link
+                  key={category.slug}
+                  href={`/empresas/${category.slug}`}
+                  className="group relative aspect-square rounded-2xl overflow-hidden hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-2xl"
+                >
+                  {/* Imagen de fondo */}
+                  <div className="absolute inset-0">
+                    <img
+                      src={category.image}
+                      alt={category.name}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    />
                   </div>
-                </div>
-              </Link>
-            ))}
+
+                  {/* Overlay oscuro para legibilidad */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+
+                  {/* Contenido */}
+                  <div className="relative h-full flex flex-col items-center justify-end text-white p-4">
+                    <h3 className="text-base md:text-xl font-bold text-center drop-shadow-lg">
+                      {category.name}
+                    </h3>
+                  </div>
+
+                  {/* Badge "Ver productos" en hover */}
+                  <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <div className="bg-white text-verde-bosque px-4 py-2 rounded-full text-sm font-semibold shadow-xl">
+                      Ver Productos →
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
           </div>
         </div>
       </section>
