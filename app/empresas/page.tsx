@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import type { UnifiedProduct } from '@/lib/types';
-import Image from 'next/image';
 
 // Solo las 5 categorías que necesita empresas
 const BUSINESS_CATEGORIES = [
@@ -125,12 +124,10 @@ export default function EmpresasPage() {
               >
                 {/* Imagen de fondo */}
                 <div className="absolute inset-0">
-                  <Image
+                  <img
                     src={category.image}
                     alt={category.name}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                    unoptimized
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                   />
                 </div>
 
