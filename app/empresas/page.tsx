@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Página principal de la sección B2B (Business to Business)
  * "Tus Aguacates" - E-commerce Platform
