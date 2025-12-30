@@ -17,8 +17,9 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();
   const { loadWishlist } = useWishlistStore();
 
-  // No mostrar componentes de cliente en rutas de admin
+  // No mostrar componentes de cliente en rutas de admin o empresas
   const isAdminRoute = pathname?.startsWith('/admin');
+  const isEmpresasRoute = pathname?.startsWith('/empresas');
 
   // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
   useEffect(() => {
@@ -35,8 +36,9 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, loadWishlist]);
 
-  // Si es ruta de admin, solo renderizar el contenido sin header/footer/nav de cliente
-  if (isAdminRoute) {
+  // Si es ruta de admin o empresas, solo renderizar el contenido sin header/footer/nav de cliente
+  // (empresas tiene su propio layout con BusinessHeader)
+  if (isAdminRoute || isEmpresasRoute) {
     return (
       <main className="min-h-screen">
         {children}
