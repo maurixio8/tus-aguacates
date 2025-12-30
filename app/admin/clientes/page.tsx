@@ -192,10 +192,10 @@ export default function CustomersPage() {
           }
 
           return !c.email ||
-                 !c.address ||
-                 !c.phone ||
-                 c.phone === 'Sin teléfono' ||
-                 !hasName;
+            !c.address ||
+            !c.phone ||
+            c.phone === 'Sin teléfono' ||
+            !hasName;
         }).length;
 
         const totalSpent = allCust.reduce((sum, c) => sum + (c.total_spent || 0), 0);
@@ -372,9 +372,8 @@ export default function CustomersPage() {
     <div className="space-y-6">
       {/* Notificación */}
       {notification && (
-        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
-          notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${notification.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'
+          }`}>
           {notification.type === 'success' ? (
             <CheckCircle className="w-5 h-5" />
           ) : (
@@ -483,43 +482,13 @@ export default function CustomersPage() {
           )}
         </div>
         <div className="flex flex-wrap gap-3 text-sm">
-          {/* Con teléfono */}
-          <button
-            onClick={() => setDataFilter(dataFilter === 'withPhone' ? '' : 'withPhone')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'withPhone'
-                ? 'bg-green-600 text-white shadow-md'
-                : 'bg-green-50 hover:bg-green-100 border border-green-200'
-            }`}
-          >
-            <Phone className="w-4 h-4" />
-            <span className={dataFilter === 'withPhone' ? 'text-white' : 'text-gray-600'}>Con teléfono:</span>
-            <span className={`font-semibold ${dataFilter === 'withPhone' ? 'text-white' : 'text-green-600'}`}>{stats.withPhone}</span>
-            <span className={dataFilter === 'withPhone' ? 'text-green-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withPhone / stats.total) * 100) : 0}%)</span>
-          </button>
-
-          {/* Sin teléfono */}
-          <button
-            onClick={() => setDataFilter(dataFilter === 'noPhone' ? '' : 'noPhone')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'noPhone'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'bg-red-50 hover:bg-red-100 border border-red-200'
-            }`}
-          >
-            <Phone className="w-4 h-4" />
-            <span className={dataFilter === 'noPhone' ? 'text-white' : 'text-gray-600'}>Sin teléfono:</span>
-            <span className={`font-semibold ${dataFilter === 'noPhone' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withPhone}</span>
-          </button>
-
           {/* Con email */}
           <button
             onClick={() => setDataFilter(dataFilter === 'withEmail' ? '' : 'withEmail')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'withEmail'
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'withEmail'
+              ? 'bg-blue-600 text-white shadow-md'
+              : 'bg-blue-50 hover:bg-blue-100 border border-blue-200'
+              }`}
           >
             <Mail className="w-4 h-4" />
             <span className={dataFilter === 'withEmail' ? 'text-white' : 'text-gray-600'}>Con email:</span>
@@ -530,11 +499,10 @@ export default function CustomersPage() {
           {/* Sin email */}
           <button
             onClick={() => setDataFilter(dataFilter === 'noEmail' ? '' : 'noEmail')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'noEmail'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'bg-red-50 hover:bg-red-100 border border-red-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'noEmail'
+              ? 'bg-red-600 text-white shadow-md'
+              : 'bg-red-50 hover:bg-red-100 border border-red-200'
+              }`}
           >
             <Mail className="w-4 h-4" />
             <span className={dataFilter === 'noEmail' ? 'text-white' : 'text-gray-600'}>Sin email:</span>
@@ -544,11 +512,10 @@ export default function CustomersPage() {
           {/* Con dirección */}
           <button
             onClick={() => setDataFilter(dataFilter === 'withAddress' ? '' : 'withAddress')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'withAddress'
-                ? 'bg-orange-600 text-white shadow-md'
-                : 'bg-orange-50 hover:bg-orange-100 border border-orange-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'withAddress'
+              ? 'bg-orange-600 text-white shadow-md'
+              : 'bg-orange-50 hover:bg-orange-100 border border-orange-200'
+              }`}
           >
             <MapPin className="w-4 h-4" />
             <span className={dataFilter === 'withAddress' ? 'text-white' : 'text-gray-600'}>Con dirección:</span>
@@ -559,11 +526,10 @@ export default function CustomersPage() {
           {/* Sin dirección */}
           <button
             onClick={() => setDataFilter(dataFilter === 'noAddress' ? '' : 'noAddress')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'noAddress'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'bg-red-50 hover:bg-red-100 border border-red-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'noAddress'
+              ? 'bg-red-600 text-white shadow-md'
+              : 'bg-red-50 hover:bg-red-100 border border-red-200'
+              }`}
           >
             <MapPin className="w-4 h-4" />
             <span className={dataFilter === 'noAddress' ? 'text-white' : 'text-gray-600'}>Sin dirección:</span>
@@ -573,11 +539,10 @@ export default function CustomersPage() {
           {/* Con nombre */}
           <button
             onClick={() => setDataFilter(dataFilter === 'withName' ? '' : 'withName')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'withName'
-                ? 'bg-teal-600 text-white shadow-md'
-                : 'bg-teal-50 hover:bg-teal-100 border border-teal-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'withName'
+              ? 'bg-teal-600 text-white shadow-md'
+              : 'bg-teal-50 hover:bg-teal-100 border border-teal-200'
+              }`}
           >
             <User className="w-4 h-4" />
             <span className={dataFilter === 'withName' ? 'text-white' : 'text-gray-600'}>Con nombre:</span>
@@ -585,28 +550,31 @@ export default function CustomersPage() {
             <span className={dataFilter === 'withName' ? 'text-teal-100' : 'text-gray-400'}>({stats.total > 0 ? Math.round((stats.withName / stats.total) * 100) : 0}%)</span>
           </button>
 
-          {/* Sin nombre */}
+          {/* Sin nombre - PRIORIDAD para completar datos */}
           <button
             onClick={() => setDataFilter(dataFilter === 'noName' ? '' : 'noName')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'noName'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'bg-red-50 hover:bg-red-100 border border-red-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all border-2 ${dataFilter === 'noName'
+              ? 'bg-amber-600 text-white shadow-lg border-amber-700 ring-2 ring-amber-300'
+              : 'bg-amber-50 hover:bg-amber-100 border-amber-400 hover:border-amber-500'
+              }`}
           >
-            <User className="w-4 h-4" />
-            <span className={dataFilter === 'noName' ? 'text-white' : 'text-gray-600'}>Sin nombre:</span>
-            <span className={`font-semibold ${dataFilter === 'noName' ? 'text-white' : 'text-red-600'}`}>{stats.total - stats.withName}</span>
+            <AlertCircle className="w-4 h-4" />
+            <span className={dataFilter === 'noName' ? 'text-white font-semibold' : 'text-amber-800 font-medium'}>⚠️ Sin nombre:</span>
+            <span className={`font-bold ${dataFilter === 'noName' ? 'text-white' : 'text-amber-700'}`}>{stats.total - stats.withName}</span>
+            {(stats.total - stats.withName) > 0 && (
+              <span className={`text-xs px-1.5 py-0.5 rounded ${dataFilter === 'noName' ? 'bg-amber-500 text-white' : 'bg-amber-200 text-amber-800'}`}>
+                Prioridad
+              </span>
+            )}
           </button>
 
           {/* Datos incompletos */}
           <button
             onClick={() => setDataFilter(dataFilter === 'incomplete' ? '' : 'incomplete')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
-              dataFilter === 'incomplete'
-                ? 'bg-purple-600 text-white shadow-md'
-                : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${dataFilter === 'incomplete'
+              ? 'bg-purple-600 text-white shadow-md'
+              : 'bg-purple-50 hover:bg-purple-100 border border-purple-200'
+              }`}
           >
             <AlertCircle className="w-4 h-4" />
             <span className={dataFilter === 'incomplete' ? 'text-white' : 'text-gray-600'}>Datos Incompletos:</span>
@@ -744,10 +712,10 @@ export default function CustomersPage() {
                 return !hasName(customer.name);
               case 'incomplete':
                 return !customer.email ||
-                       !customer.address ||
-                       !customer.phone ||
-                       customer.phone === 'Sin teléfono' ||
-                       !hasName(customer.name);
+                  !customer.address ||
+                  !customer.phone ||
+                  customer.phone === 'Sin teléfono' ||
+                  !hasName(customer.name);
               default:
                 return true;
             }
@@ -764,98 +732,15 @@ export default function CustomersPage() {
               {/* Vista móvil */}
               <div className="lg:hidden divide-y divide-gray-200">
                 {filteredCustomers.map((customer) => (
-                <div key={customer.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-semibold text-gray-900">{customer.name}</p>
-                        {customer.total_orders >= 2 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            <Star className="w-3 h-3" />
-                            Cliente recurrente
-                          </span>
-                        )}
-                        {customer.is_guest && customer.total_orders >= 3 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                            <UserPlus className="w-3 h-3" />
-                            ¡Convertir!
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <Phone className="w-3 h-3" />
-                        {customer.phone}
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      {/* Botón de WhatsApp */}
-                      {customer.phone && customer.phone !== 'Sin teléfono' && (
-                        <a
-                          href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 bg-green-100 hover:bg-green-200 rounded-lg"
-                          title="Abrir WhatsApp"
-                        >
-                          <Phone className="w-4 h-4 text-green-600" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => openEditModal(customer)}
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                      >
-                        <Edit className="w-4 h-4 text-gray-600" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(customer)}
-                        className="p-2 hover:bg-red-50 rounded-lg"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    </div>
-                  </div>
-                  {customer.address && (
-                    <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-                      <MapPin className="w-3 h-3" />
-                      {customer.address}
-                    </p>
-                  )}
-                  <div className="flex gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <ShoppingBag className="w-3 h-3" />
-                      {customer.total_orders} pedidos
-                    </span>
-                    <span className="font-medium text-green-600">
-                      {formatCurrency(customer.total_spent || 0)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Vista desktop */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contacto</th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Dirección</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Pedidos</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total Gastado</th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredCustomers.map((customer) => (
-                    <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                  <div key={customer.id} className="p-4 hover:bg-gray-50">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-gray-900">{customer.name}</p>
                           {customer.total_orders >= 2 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               <Star className="w-3 h-3" />
-                              Recurrente
+                              Cliente recurrente
                             </span>
                           )}
                           {customer.is_guest && customer.total_orders >= 3 && (
@@ -865,106 +750,189 @@ export default function CustomersPage() {
                             </span>
                           )}
                         </div>
-                        {customer.last_order_date && (
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            Último pedido: {formatDate(customer.last_order_date)}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="text-sm text-gray-900 flex items-center gap-1">
-                          <Phone className="w-3 h-3 text-gray-400" />
+                        <p className="text-sm text-gray-600 flex items-center gap-1">
+                          <Phone className="w-3 h-3" />
                           {customer.phone}
                         </p>
-                        {customer.email && (
-                          <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                            <Mail className="w-3 h-3 text-gray-400" />
-                            {customer.email}
-                          </p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4">
-                        {customer.address ? (
-                          <p className="text-sm text-gray-600 max-w-xs truncate">{customer.address}</p>
-                        ) : (
-                          <span className="text-sm text-gray-400">Sin dirección</span>
-                        )}
-                        {customer.neighborhood && (
-                          <p className="text-xs text-gray-500">{customer.neighborhood}</p>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                          <ShoppingBag className="w-3 h-3" />
-                          {customer.total_orders}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <span className="font-semibold text-green-600">
-                          {formatCurrency(customer.total_spent || 0)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center justify-end gap-2">
-                          {/* Botón de WhatsApp */}
-                          {customer.phone && customer.phone !== 'Sin teléfono' && (
-                            <a
-                              href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
-                              title="Abrir WhatsApp"
-                            >
-                              <Phone className="w-4 h-4" />
-                              WhatsApp
-                            </a>
-                          )}
-                          <button
-                            onClick={() => openEditModal(customer)}
-                            className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      </div>
+                      <div className="flex gap-2">
+                        {/* Botón de WhatsApp */}
+                        {customer.phone && customer.phone !== 'Sin teléfono' && (
+                          <a
+                            href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-green-100 hover:bg-green-200 rounded-lg"
+                            title="Abrir WhatsApp"
                           >
-                            Editar
-                          </button>
-                          <button
-                            onClick={() => handleDelete(customer)}
-                            className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
-                          >
-                            Eliminar
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Paginación */}
-            {pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600">
-                  Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}
-                </p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                    disabled={pagination.page === 1}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                    disabled={pagination.page >= pagination.totalPages}
-                    className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
+                            <Phone className="w-4 h-4 text-green-600" />
+                          </a>
+                        )}
+                        <button
+                          onClick={() => openEditModal(customer)}
+                          className="p-2 hover:bg-gray-100 rounded-lg"
+                        >
+                          <Edit className="w-4 h-4 text-gray-600" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(customer)}
+                          className="p-2 hover:bg-red-50 rounded-lg"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                        </button>
+                      </div>
+                    </div>
+                    {customer.address && (
+                      <p className="text-sm text-gray-500 flex items-center gap-1 mb-2">
+                        <MapPin className="w-3 h-3" />
+                        {customer.address}
+                      </p>
+                    )}
+                    <div className="flex gap-4 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <ShoppingBag className="w-3 h-3" />
+                        {customer.total_orders} pedidos
+                      </span>
+                      <span className="font-medium text-green-600">
+                        {formatCurrency(customer.total_spent || 0)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
-          </>
+
+              {/* Vista desktop */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Cliente</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Contacto</th>
+                      <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Dirección</th>
+                      <th className="px-6 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Pedidos</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Total Gastado</th>
+                      <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {filteredCustomers.map((customer) => (
+                      <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <p className="font-semibold text-gray-900">{customer.name}</p>
+                            {customer.total_orders >= 2 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                <Star className="w-3 h-3" />
+                                Recurrente
+                              </span>
+                            )}
+                            {customer.is_guest && customer.total_orders >= 3 && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                <UserPlus className="w-3 h-3" />
+                                ¡Convertir!
+                              </span>
+                            )}
+                          </div>
+                          {customer.last_order_date && (
+                            <p className="text-xs text-gray-500 flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Último pedido: {formatDate(customer.last_order_date)}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="text-sm text-gray-900 flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-gray-400" />
+                            {customer.phone}
+                          </p>
+                          {customer.email && (
+                            <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
+                              <Mail className="w-3 h-3 text-gray-400" />
+                              {customer.email}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4">
+                          {customer.address ? (
+                            <p className="text-sm text-gray-600 max-w-xs truncate">{customer.address}</p>
+                          ) : (
+                            <span className="text-sm text-gray-400">Sin dirección</span>
+                          )}
+                          {customer.neighborhood && (
+                            <p className="text-xs text-gray-500">{customer.neighborhood}</p>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            <ShoppingBag className="w-3 h-3" />
+                            {customer.total_orders}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <span className="font-semibold text-green-600">
+                            {formatCurrency(customer.total_spent || 0)}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center justify-end gap-2">
+                            {/* Botón de WhatsApp */}
+                            {customer.phone && customer.phone !== 'Sin teléfono' && (
+                              <a
+                                href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                                title="Abrir WhatsApp"
+                              >
+                                <Phone className="w-4 h-4" />
+                                WhatsApp
+                              </a>
+                            )}
+                            <button
+                              onClick={() => openEditModal(customer)}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => handleDelete(customer)}
+                              className="px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Eliminar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Paginación */}
+              {pagination.totalPages > 1 && (
+                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                  <p className="text-sm text-gray-600">
+                    Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total}
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                      disabled={pagination.page === 1}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </button>
+                    <button
+                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                      disabled={pagination.page >= pagination.totalPages}
+                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           );
         })()}
       </div>
