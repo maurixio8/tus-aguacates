@@ -80,7 +80,7 @@ export function BusinessProductCard({ product }: BusinessProductCardProps) {
             productName={product.name}
             price={selectedVariant.pricePerKg}
             category={product.categorySlug}
-            imageUrl={product.image || ''}
+            imageUrl={product.image}
             showPrice={false}
             className="w-full h-full"
           />
