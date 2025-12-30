@@ -16,10 +16,10 @@ import type { UnifiedProduct } from './types';
  * Los pedidos B2B tienen condiciones diferentes
  */
 const getBusinessShippingInfo = (subtotal: number = 0): BusinessShippingInfo => {
-  // Envío gratis para pedidos mayores a $500,000
-  const freeShippingMin = 500000;
-  const shippingCost = 25000; // Costo de envío B2B más alto por volumen
-  const freeShipping = subtotal > freeShippingMin;
+  // Envío gratis para pedidos mayores a $100,000
+  const freeShippingMin = 100000;
+  const shippingCost = 15000; // Costo de envío B2B
+  const freeShipping = subtotal >= freeShippingMin;
 
   console.log('🏢 getBusinessShippingInfo:', {
     subtotal,

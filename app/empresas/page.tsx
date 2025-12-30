@@ -247,7 +247,7 @@ export default function EmpresasPage() {
                 Entregas Flexibles
               </h3>
               <p className="text-gray-600 text-center">
-                Coordinamos entregas según tu operación. Envío gratis en pedidos mayores a $500.000.
+                Coordinamos entregas según tu operación. Envío gratis en pedidos mayores a $100.000.
               </p>
             </div>
 
