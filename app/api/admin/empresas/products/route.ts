@@ -71,29 +71,21 @@ export async function GET(request: NextRequest) {
           .join(' ');
       }
 
-      // Calcular precio promedio de los tiers
-      const avgPrice = Math.round((item.tier1_price + item.tier2_price + item.tier3_price) / 3);
-
       return {
         id: item.id,
         product_slug: item.product_slug,
         name: productName,
+        display_name: item.display_name,
         description: item.description || item.notes,
-        original_price: item.base_price || item.tier1_price,
-        b2b_price: avgPrice,
-        tier1_price: item.tier1_price,
-        tier2_price: item.tier2_price,
-        tier3_price: item.tier3_price,
-        discount_percentage: item.base_price > 0
-          ? Math.round((1 - avgPrice / item.base_price) * 100)
-          : 0,
+        tier1_price: item.tier1_price || 0,
+        tier2_price: item.tier2_price || 0,
+        tier3_price: item.tier3_price || 0,
         min_quantity: item.min_quantity || 10,
         max_quantity: item.max_quantity || 1000,
         unit: item.unit || 'kg',
         is_active: item.b2b_enabled,
         main_image_url: item.image_url,
-        category_name: item.b2b_category,
-        category_slug: item.b2b_category,
+        b2b_category: item.b2b_category,
         avocado_variety: item.avocado_variety,
         ripeness_state: item.ripeness_state
       };

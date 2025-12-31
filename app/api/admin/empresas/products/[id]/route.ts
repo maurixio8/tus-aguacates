@@ -56,6 +56,10 @@ export async function PATCH(
       updateData.description = body.description;
     }
 
+    if (body.b2b_category !== undefined) {
+      updateData.b2b_category = body.b2b_category;
+    }
+
     const { data, error } = await supabase
       .from('product_b2b_config')
       .update(updateData)
