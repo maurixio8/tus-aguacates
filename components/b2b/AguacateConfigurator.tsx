@@ -77,7 +77,7 @@ export function AguacateConfigurator({ onAddToCart }: AguacateConfiguratorProps)
       unit: 'kg',
     };
 
-    addItem(producto as any, cantidad, precioCalculado.precioKgConDescuento);
+    addItem(producto as any, cantidad, 'kg');
 
     setAgregado(true);
     setTimeout(() => setAgregado(false), 2000);
