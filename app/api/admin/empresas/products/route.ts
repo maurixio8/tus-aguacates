@@ -18,33 +18,23 @@ export async function GET(request: NextRequest) {
 
     const offset = (page - 1) * limit;
 
-    // Query productos B2B con join a productos base
+    // Query productos B2B directamente de product_b2b_config
     let query = supabase
       .from('product_b2b_config')
-      .select(`
-        *,
-        products!inner (
-          id,
-          name,
-          description,
-          price,
-          main_image_url,
-          stock,
-          is_active,
-          categories (
-            id,
-            name,
-            slug
-          )
-        )
-      `, { count: 'exact' })
-      .order('created_at', { ascending: false });
+      .select('*', { count: 'exact' })
+      .order('b2b_category')
+      .order('display_order');
 
     // Filtro por estado B2B
     if (status === 'active') {
-      query = query.eq('is_b2b_active', true);
+      query = query.eq('b2b_enabled', true);
     } else if (status === 'inactive') {
-      query = query.eq('is_b2b_active', false);
+      query = query.eq('b2b_enabled', false);
+    }
+
+    // Filtro por categoría
+    if (category) {
+      query = query.eq('b2b_category', category);
     }
 
     // Paginación
@@ -57,38 +47,57 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Filtrar por búsqueda y categoría
+    // Filtrar por búsqueda
     let filteredProducts = b2bProducts || [];
 
     if (search) {
       const searchLower = search.toLowerCase();
       filteredProducts = filteredProducts.filter(item =>
-        item.products?.name?.toLowerCase().includes(searchLower)
+        item.product_slug?.toLowerCase().includes(searchLower) ||
+        item.display_name?.toLowerCase().includes(searchLower) ||
+        item.b2b_category?.toLowerCase().includes(searchLower)
       );
     }
 
-    if (category) {
-      filteredProducts = filteredProducts.filter(item =>
-        item.products?.categories?.slug === category
-      );
-    }
+    // Transformar datos para el admin
+    const transformedProducts = filteredProducts.map(item => {
+      // Construir nombre si no existe display_name
+      let productName = item.display_name || '';
+      if (!productName) {
+        productName = item.product_slug
+          .replace('-b2b', '')
+          .split('-')
+          .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
 
-    // Transformar datos
-    const transformedProducts = filteredProducts.map(item => ({
-      id: item.id,
-      product_id: item.product_id,
-      name: item.products?.name || 'Producto',
-      description: item.products?.description,
-      original_price: item.products?.price || 0,
-      b2b_price: item.b2b_price || Math.round((item.products?.price || 0) * 0.8),
-      discount_percentage: item.discount_percentage || 20,
-      min_quantity: item.min_quantity || 10,
-      stock: item.products?.stock || 0,
-      is_active: item.is_b2b_active !== false,
-      main_image_url: item.image_url || item.products?.main_image_url,
-      category_name: item.products?.categories?.name,
-      category_slug: item.products?.categories?.slug
-    }));
+      // Calcular precio promedio de los tiers
+      const avgPrice = Math.round((item.tier1_price + item.tier2_price + item.tier3_price) / 3);
+
+      return {
+        id: item.id,
+        product_slug: item.product_slug,
+        name: productName,
+        description: item.description || item.notes,
+        original_price: item.base_price || item.tier1_price,
+        b2b_price: avgPrice,
+        tier1_price: item.tier1_price,
+        tier2_price: item.tier2_price,
+        tier3_price: item.tier3_price,
+        discount_percentage: item.base_price > 0
+          ? Math.round((1 - avgPrice / item.base_price) * 100)
+          : 0,
+        min_quantity: item.min_quantity || 10,
+        max_quantity: item.max_quantity || 1000,
+        unit: item.unit || 'kg',
+        is_active: item.b2b_enabled,
+        main_image_url: item.image_url,
+        category_name: item.b2b_category,
+        category_slug: item.b2b_category,
+        avocado_variety: item.avocado_variety,
+        ripeness_state: item.ripeness_state
+      };
+    });
 
     return NextResponse.json({
       success: true,

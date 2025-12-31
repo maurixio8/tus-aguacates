@@ -15,24 +15,45 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       updated_at: new Date().toISOString()
     };
 
-    if (body.b2b_price !== undefined) {
-      updateData.b2b_price = body.b2b_price;
+    // Mapear campos del frontend a la estructura de la tabla
+    if (body.tier1_price !== undefined) {
+      updateData.tier1_price = body.tier1_price;
     }
 
-    if (body.discount_percentage !== undefined) {
-      updateData.discount_percentage = body.discount_percentage;
+    if (body.tier2_price !== undefined) {
+      updateData.tier2_price = body.tier2_price;
+    }
+
+    if (body.tier3_price !== undefined) {
+      updateData.tier3_price = body.tier3_price;
     }
 
     if (body.min_quantity !== undefined) {
       updateData.min_quantity = body.min_quantity;
     }
 
+    if (body.max_quantity !== undefined) {
+      updateData.max_quantity = body.max_quantity;
+    }
+
     if (body.is_active !== undefined) {
-      updateData.is_b2b_active = body.is_active;
+      updateData.b2b_enabled = body.is_active;
+    }
+
+    if (body.image_url !== undefined) {
+      updateData.image_url = body.image_url;
+    }
+
+    if (body.display_name !== undefined) {
+      updateData.display_name = body.display_name;
+    }
+
+    if (body.description !== undefined) {
+      updateData.description = body.description;
     }
 
     const { data, error } = await supabase
