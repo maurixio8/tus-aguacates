@@ -152,7 +152,9 @@ export default function PremiumCategoryGrid() {
                   fill
                   className="object-cover group-hover:scale-110 transition-transform duration-500"
                   onError={() => handleImageError(category.id)}
-                  unoptimized
+                  quality={75}
+                  placeholder="blur"
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 />
               </div>
 

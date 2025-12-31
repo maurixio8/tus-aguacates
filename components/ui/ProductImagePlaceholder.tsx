@@ -16,6 +16,32 @@ interface ProductImagePlaceholderProps {
 }
 
 /**
+ * Genera un blur placeholder data URL para imágenes
+ * Crea un gradiente sutil basado en el nombre del producto
+ */
+function generateBlurDataURL(productName: string): string {
+  const normalizedName = productName.toLowerCase();
+
+  // Determinar color base según el tipo de producto
+  let baseColor = '22c55e'; // green-500 por defecto
+  if (normalizedName.includes('hass') || normalizedName.includes('dark')) {
+    baseColor = '15803d'; // green-700
+  } else if (normalizedName.includes('fuerte') || normalizedName.includes('medio')) {
+    baseColor = '16a34a'; // green-600
+  }
+
+  // Crear un SVG simple con gradiente (URL-encoded para compatibilidad)
+  const svg = `<svg width="10" height="10" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23${baseColor}" stop-opacity="0.3"/><stop offset="100%" stop-color="%23${baseColor}" stop-opacity="0.5"/></linearGradient></defs><rect width="10" height="10" fill="url(%23g)"/></svg>`;
+
+  // Usar btoa para compatibilidad con navegador
+  const base64 = typeof btoa !== 'undefined'
+    ? btoa(svg)
+    : Buffer.from(svg).toString('base64');
+
+  return `data:image/svg+xml;base64,${base64}`;
+}
+
+/**
  * Componente Placeholder para Imágenes de Productos
  *
  * Características:
@@ -129,6 +155,10 @@ export function ProductImagePlaceholder({
             fill
             className="object-cover object-center"
             priority={priority}
+            quality={75}
+            placeholder="blur"
+            blurDataURL={generateBlurDataURL(productName)}
+            loading={priority ? 'eager' : 'lazy'}
             onError={handleImageError}
             onLoad={handleImageLoad}
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"

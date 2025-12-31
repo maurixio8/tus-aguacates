@@ -190,7 +190,7 @@ export async function uploadProductImage(
       .upload(storagePath, compressedBlob, {
         contentType: 'image/jpeg',
         upsert: false,
-        cacheControl: '3600' // 1 hora de caché en navegador
+        cacheControl: '31536000' // 1 año de caché en CDN y navegador (contenido estático)
       });
 
     if (error) {
