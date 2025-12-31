@@ -23,7 +23,8 @@
     "deploy:all": "npm run build && npm run deploy:functions",
     "test:wishlist": "node scripts/test-wishlist-api.mjs",
     "analyze:bundle": "ANALYZE=true npm run build",
-    "analyze:deps": "node scripts/analyze-bundle.js"
+    "analyze:deps": "node scripts/analyze-bundle.js",
+    "update:image-cache": "node scripts/update-image-cache.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
@@ -75,6 +76,7 @@
     "msw": "^2.0.11",
     "puppeteer": "^24.32.1",
     "tailwindcss": "^3.4.18",
+    "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^1.0.4",
     "web-vitals": "^5.1.0"
