@@ -20,6 +20,9 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
 
+  // Zona empresarial B2B tiene su propio layout independiente
+  const isB2BRoute = pathname?.startsWith('/empresas');
+
   // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
   useEffect(() => {
     if (!isAdminRoute) {
@@ -41,6 +44,19 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
       <main className="min-h-screen">
         {children}
       </main>
+    );
+  }
+
+  // Zona empresarial B2B: layout independiente sin header/footer de tienda regular
+  if (isB2BRoute) {
+    return (
+      <>
+        <ServiceWorkerRegistration />
+        <main className="min-h-screen">
+          {children}
+        </main>
+        <InstallPrompt />
+      </>
     );
   }
 
