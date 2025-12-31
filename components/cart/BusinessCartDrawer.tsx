@@ -23,10 +23,14 @@ export function BusinessCartDrawer() {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
-
+  // Always call hooks in the same order, don't return early
   const totals = getTotals();
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+
+  // Only render content after mounted (prevents hydration mismatch)
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <>
