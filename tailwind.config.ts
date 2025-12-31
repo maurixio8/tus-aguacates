@@ -124,8 +124,8 @@ const config: Config = {
           '100%': { transform: 'rotate(360deg)' },
         },
         'fade-in': {
-          '0%': { opacity: '0' },
-          '100%': { opacity: '1' },
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'slide-in-from-bottom-4': {
           '0%': { transform: 'translateY(1rem)', opacity: '0' },
@@ -139,13 +139,18 @@ const config: Config = {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-20px)' },
         },
+        'shine': {
+          '0%': { transform: 'translateX(-100%) translateY(-100%)' },
+          '100%': { transform: 'translateX(200%) translateY(200%)' },
+        },
       },
       animation: {
         'spin-slow': 'spin-slow 3s linear infinite',
-        'fade-in': 'fade-in 0.5s ease-out',
+        'fade-in': 'fade-in 0.6s ease-out',
         'slide-in-from-bottom-4': 'slide-in-from-bottom-4 0.5s ease-out',
         'shimmer': 'shimmer 2s ease-in-out infinite',
         'float': 'float 6s ease-in-out infinite',
+        'shine': 'shine 0.6s ease-in-out',
       },
     },
   },
