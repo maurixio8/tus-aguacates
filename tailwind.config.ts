@@ -98,11 +98,45 @@ const config: Config = {
           800: '#554616',
           900: '#2A230B',
         },
+        // Luxury Agrícola B2B palette
+        'champagne': {
+          DEFAULT: '#F7E7CE',
+          100: '#FDF6ED',
+          200: '#FAECD6',
+          300: '#F7E7CE',
+          400: '#F0D9B5',
+          500: '#E8C99A',
+        },
+        'esmeralda': {
+          DEFAULT: '#1B4D3E',
+          100: '#E8F3F0',
+          200: '#D1E7E1',
+          300: '#A9DBD1',
+          400: '#82CFC1',
+          500: '#1B4D3E',
+          600: '#163E31',
+          700: '#112F25',
+          800: '#0C2019',
+        },
+        'antiguo': {
+          DEFAULT: '#8B7355',
+          100: '#F5F2ED',
+          200: '#EBE5DB',
+          300: '#D1C7B5',
+          400: '#B8A993',
+          500: '#8B7355',
+          600: '#6F5C44',
+          700: '#534533',
+          800: '#372E22',
+        },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
         display: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+        // Luxury Agrícola B2B fonts
+        elegant: ['var(--font-elegant)', 'serif'],
+        modern: ['var(--font-modern)', 'sans-serif'],
       },
       spacing: {
         '18': '4.5rem',
@@ -117,6 +151,11 @@ const config: Config = {
         'soft': '0 2px 8px rgba(0, 0, 0, 0.08)',
         'medium': '0 4px 16px rgba(0, 0, 0, 0.12)',
         'strong': '0 12px 32px rgba(0, 0, 0, 0.16)',
+        // Luxury Agrícola shadows
+        'elegant': '0 4px 24px rgba(27, 77, 62, 0.12), 0 2px 8px rgba(27, 77, 62, 0.08)',
+        'elegant-lg': '0 8px 40px rgba(27, 77, 62, 0.15), 0 4px 16px rgba(27, 77, 62, 0.1)',
+        'gold-glow': '0 0 30px rgba(212, 175, 55, 0.3), 0 4px 16px rgba(212, 175, 55, 0.2)',
+        'layered': '0 1px 2px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)',
       },
       keyframes: {
         'spin-slow': {
@@ -135,12 +174,33 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        // Luxury Agrícola animations
+        'float': {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        'reveal': {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'shine': {
+          '0%': { backgroundPosition: '-200% center' },
+          '100%': { backgroundPosition: '200% center' },
+        },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+          '50%': { opacity: '0.95', transform: 'scale(1.02)' },
+        },
       },
       animation: {
         'spin-slow': 'spin-slow 3s linear infinite',
         'fade-in': 'fade-in 0.5s ease-out',
         'slide-in-from-bottom-4': 'slide-in-from-bottom-4 0.5s ease-out',
         'shimmer': 'shimmer 2s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'reveal': 'reveal 0.8s ease-out forwards',
+        'shine': 'shine 3s ease-in-out infinite',
+        'pulse-soft': 'pulse-soft 4s ease-in-out infinite',
       },
     },
   },
