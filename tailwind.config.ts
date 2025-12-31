@@ -135,12 +135,17 @@ const config: Config = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        'float': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
       },
       animation: {
         'spin-slow': 'spin-slow 3s linear infinite',
         'fade-in': 'fade-in 0.5s ease-out',
         'slide-in-from-bottom-4': 'slide-in-from-bottom-4 0.5s ease-out',
         'shimmer': 'shimmer 2s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
       },
     },
   },

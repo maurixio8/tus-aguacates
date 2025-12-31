@@ -1,0 +1,262 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Tus Aguacates - Logo" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Tus Aguacates - Logo" [ref=e6]
+      - generic [ref=e7]:
+        - button "Buscar" [ref=e8] [cursor=pointer]:
+          - img [ref=e9]
+        - button [ref=e12] [cursor=pointer]:
+          - img [ref=e13]
+        - button "Abrir menú" [ref=e17] [cursor=pointer]:
+          - img [ref=e18]
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e24]: Cargando...
+      - generic [ref=e25]:
+        - img "Sabores auténticos de Colombia" [ref=e27]
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - link "🔥 Ver Ofertas" [ref=e31] [cursor=pointer]:
+              - /url: /tienda?categoria=ofertas
+            - link "Recetas" [ref=e32] [cursor=pointer]:
+              - /url: /recetas
+              - img [ref=e33]
+              - text: Recetas
+          - heading "Sabores Auténticos de Colombia" [level=1] [ref=e35]:
+            - text: Sabores Auténticos
+            - text: de Colombia
+          - paragraph [ref=e36]:
+            - text: Aguacates, frutas exóticas, aromáticas, especias y más.
+            - strong [ref=e37]: Del campo a tu cocina
+            - text: .
+          - generic [ref=e38]:
+            - generic [ref=e39]:
+              - img [ref=e40]
+              - img [ref=e42]
+              - img [ref=e44]
+              - img [ref=e46]
+              - img [ref=e48]
+            - generic [ref=e50]: 4.8/5 • 500+ clientes
+          - link "🛒 Ver Productos" [ref=e52] [cursor=pointer]:
+            - /url: /tienda
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - img [ref=e55]
+              - generic [ref=e58]: Cosechado hoy
+            - generic [ref=e59]:
+              - img [ref=e60]
+              - generic [ref=e65]: Entrega 48h
+            - generic [ref=e66]:
+              - img [ref=e67]
+              - generic [ref=e69]: Garantizado
+      - generic [ref=e72]:
+        - heading "Explora por Categoría" [level=2] [ref=e73]
+        - paragraph [ref=e74]: Desliza para descubrir productos frescos de nuestra tierra
+      - generic [ref=e102]:
+        - heading "Productos Más Populares" [level=2] [ref=e103]
+        - paragraph [ref=e104]: Los favoritos de nuestros clientes
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]:
+            - generic [ref=e117] [cursor=pointer]:
+              - img "Aguacates Frescos" [ref=e120]
+              - generic [ref=e122]:
+                - heading "Aguacates Frescos" [level=2] [ref=e123]
+                - paragraph [ref=e124]: Directamente del campo a tu mesa
+                - button "Ver Más" [ref=e125]
+            - generic [ref=e127] [cursor=pointer]:
+              - img "Frutas Tropicales" [ref=e130]
+              - generic [ref=e132]:
+                - heading "Frutas Tropicales" [level=2] [ref=e133]
+                - paragraph [ref=e134]: El sabor exótico que buscas
+                - button "Ver Más" [ref=e135]
+            - generic [ref=e137] [cursor=pointer]:
+              - img "Verduras" [ref=e140]
+              - generic [ref=e142]:
+                - heading "Verduras" [level=2] [ref=e143]
+                - paragraph [ref=e144]: Gourmet
+                - button "Ver Más" [ref=e145]
+            - generic [ref=e147] [cursor=pointer]:
+              - img "Envío Gratis" [ref=e150]
+              - generic [ref=e152]:
+                - heading "Envío Gratis" [level=2] [ref=e153]
+                - paragraph [ref=e154]: En pedidos mayores a $68.900
+                - button "Ver Más" [ref=e155]
+          - button "Previous slide" [ref=e157] [cursor=pointer]:
+            - img [ref=e158]
+          - button "Next slide" [ref=e160] [cursor=pointer]:
+            - img [ref=e161]
+        - generic [ref=e163]:
+          - button "Go to slide 1" [ref=e164] [cursor=pointer]
+          - button "Go to slide 2" [ref=e165] [cursor=pointer]
+          - button "Go to slide 3" [ref=e166] [cursor=pointer]
+          - button "Go to slide 4" [ref=e167] [cursor=pointer]
+      - generic [ref=e170]:
+        - heading "Sabores Auténticos de Colombia" [level=1] [ref=e171]
+        - paragraph [ref=e172]: Aguacates, frutas exóticas, hierbas aromáticas, especias y más
+        - generic [ref=e173]:
+          - link "Explorar Productos" [ref=e174] [cursor=pointer]:
+            - /url: /tienda
+          - link "Descubre Recetas" [ref=e175] [cursor=pointer]:
+            - /url: /recetas
+            - img [ref=e176]
+            - text: Descubre Recetas
+          - link "Crear Cuenta" [ref=e178] [cursor=pointer]:
+            - /url: /auth/register
+      - generic [ref=e180]:
+        - generic [ref=e181]:
+          - generic [ref=e182]:
+            - img [ref=e183]
+            - generic [ref=e188]: Lo que dicen nuestros clientes
+          - heading "Más de 500 Familias Satisfechas" [level=2] [ref=e189]
+          - generic [ref=e190]:
+            - img [ref=e191]
+            - img [ref=e193]
+            - img [ref=e195]
+            - img [ref=e197]
+            - img [ref=e199]
+            - generic [ref=e201]: 4.8/5
+          - paragraph [ref=e202]: Basado en 234 reseñas verificadas
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - img [ref=e206]
+            - generic [ref=e209]:
+              - img [ref=e210]
+              - img [ref=e212]
+              - img [ref=e214]
+              - img [ref=e216]
+              - img [ref=e218]
+            - paragraph [ref=e220]: “Los aguacates más cremosos que he probado. Llegaron perfectos y súper frescos! Ya no compro en supermercado.”
+            - generic [ref=e221]:
+              - img "María González" [ref=e223]
+              - generic [ref=e224]:
+                - paragraph [ref=e225]: María González
+                - paragraph [ref=e226]: Chapinero, Bogotá
+          - generic [ref=e227]:
+            - img [ref=e229]
+            - generic [ref=e232]:
+              - img [ref=e233]
+              - img [ref=e235]
+              - img [ref=e237]
+              - img [ref=e239]
+              - img [ref=e241]
+            - paragraph [ref=e243]: “Compro cada semana desde hace 3 meses. La calidad es constante y el servicio excelente. 100% recomendados.”
+            - generic [ref=e244]:
+              - img "Carlos Ramírez" [ref=e246]
+              - generic [ref=e247]:
+                - paragraph [ref=e248]: Carlos Ramírez
+                - paragraph [ref=e249]: Usaquén, Bogotá
+          - generic [ref=e250]:
+            - img [ref=e252]
+            - generic [ref=e255]:
+              - img [ref=e256]
+              - img [ref=e258]
+              - img [ref=e260]
+              - img [ref=e262]
+              - img [ref=e264]
+            - paragraph [ref=e266]: “Apoyo local y recibo productos frescos del campo. Win-win! Los aguacates duran toda la semana perfectos.”
+            - generic [ref=e267]:
+              - img "Ana Sofía Torres" [ref=e269]
+              - generic [ref=e270]:
+                - paragraph [ref=e271]: Ana Sofía Torres
+                - paragraph [ref=e272]: Suba, Bogotá
+        - generic [ref=e273]:
+          - paragraph [ref=e274]: ¿Ya probaste nuestros aguacates?
+          - link "💬 Cuéntanos tu experiencia" [ref=e275] [cursor=pointer]:
+            - /url: https://wa.me/573042582777?text=Hola!%20Quiero%20dejar%20mi%20reseña%20🥑
+      - generic [ref=e278]:
+        - generic [ref=e279]:
+          - img [ref=e281]
+          - heading "100% Fresco" [level=3] [ref=e284]
+          - paragraph [ref=e285]: Productos cosechados el mismo día de tu pedido
+        - generic [ref=e286]:
+          - img [ref=e288]
+          - heading "Entrega Rápida" [level=3] [ref=e293]
+          - paragraph [ref=e294]: Entregas martes y viernes en Bogotá
+        - generic [ref=e295]:
+          - img [ref=e297]
+          - heading "Calidad Garantizada" [level=3] [ref=e299]
+          - paragraph [ref=e300]: Productos seleccionados con los más altos estándares de calidad
+      - generic [ref=e302]:
+        - heading "Únete a Miles de Familias que Disfrutan del Verdadero Sabor" [level=2] [ref=e303]:
+          - text: Únete a Miles de Familias
+          - text: que Disfrutan del Verdadero Sabor
+        - paragraph [ref=e304]: Apoya a los agricultores locales y recibe los productos más frescos en tu puerta
+        - generic [ref=e305]:
+          - link "Crear Cuenta" [ref=e306] [cursor=pointer]:
+            - /url: /auth/registro
+          - link "Ver Productos" [ref=e307] [cursor=pointer]:
+            - /url: /tienda
+  - contentinfo [ref=e308]:
+    - generic [ref=e309]:
+      - generic [ref=e310]:
+        - generic [ref=e311]:
+          - heading "Tus Aguacates" [level=3] [ref=e312]
+          - paragraph [ref=e313]: Frutas y verduras frescas del Eje Cafetero directo a tu mesa. Apoyamos a los agricultores locales y garantizamos la mejor calidad.
+          - link "Instagram" [ref=e315] [cursor=pointer]:
+            - /url: https://www.instagram.com/tusaguacates/
+            - img [ref=e316]
+        - generic [ref=e319]:
+          - heading "Enlaces Rápidos" [level=3] [ref=e320]
+          - list [ref=e321]:
+            - listitem [ref=e322]:
+              - link "Todos los Productos" [ref=e323] [cursor=pointer]:
+                - /url: /tienda
+            - listitem [ref=e324]:
+              - link "Sobre Nosotros" [ref=e325] [cursor=pointer]:
+                - /url: /sobre-nosotros
+            - listitem [ref=e326]:
+              - link "Contacto" [ref=e327] [cursor=pointer]:
+                - /url: /contacto
+        - generic [ref=e328]:
+          - heading "Atención al Cliente" [level=3] [ref=e329]
+          - list [ref=e330]:
+            - listitem [ref=e331]:
+              - link "Mis Pedidos" [ref=e332] [cursor=pointer]:
+                - /url: /cuenta
+            - listitem [ref=e333]:
+              - link "Políticas de Envío" [ref=e334] [cursor=pointer]:
+                - /url: /politicas
+            - listitem [ref=e335]:
+              - link "Devoluciones" [ref=e336] [cursor=pointer]:
+                - /url: /devoluciones
+            - listitem [ref=e337]:
+              - link "Preguntas Frecuentes" [ref=e338] [cursor=pointer]:
+                - /url: /faq
+        - generic [ref=e339]:
+          - heading "Contacto" [level=3] [ref=e340]
+          - list [ref=e341]:
+            - listitem [ref=e342]:
+              - img [ref=e343]
+              - generic [ref=e346]: Eje Cafetero, Colombia
+            - listitem [ref=e347]:
+              - img [ref=e348]
+              - generic [ref=e350]: "3042582777"
+            - listitem [ref=e351]:
+              - img [ref=e352]
+              - generic [ref=e355]: info@tusaguacates.com
+      - generic [ref=e356]:
+        - paragraph [ref=e357]: 2025 Tus Aguacates. Todos los derechos reservados.
+        - paragraph [ref=e358]:
+          - link "Términos y Condiciones" [ref=e359] [cursor=pointer]:
+            - /url: /terminos
+          - link "Política de Privacidad" [ref=e360] [cursor=pointer]:
+            - /url: /privacidad
+  - generic [ref=e362]:
+    - generic [ref=e363]:
+      - heading "Mi Carrito (0)" [level=2] [ref=e364]
+      - button [ref=e365] [cursor=pointer]:
+        - img [ref=e366]
+    - generic [ref=e370]:
+      - img [ref=e371]
+      - paragraph [ref=e374]: Tu carrito está vacío
+      - button "Comenzar a comprar" [ref=e375] [cursor=pointer]
+  - button [ref=e376] [cursor=pointer]:
+    - img [ref=e377]
+  - alert [ref=e382]
+```

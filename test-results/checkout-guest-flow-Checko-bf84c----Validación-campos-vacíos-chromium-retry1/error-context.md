@@ -1,0 +1,112 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Tus Aguacates - Logo" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Tus Aguacates - Logo" [ref=e6]
+      - navigation [ref=e7]:
+        - link "🔥 Ofertas" [ref=e8] [cursor=pointer]:
+          - /url: /tienda/ofertas-combos
+          - generic [ref=e9]: 🔥
+          - generic [ref=e10]: Ofertas
+        - link "Aguacates" [ref=e11] [cursor=pointer]:
+          - /url: /tienda/aguacates
+        - link "Frutas Tropicales" [ref=e12] [cursor=pointer]:
+          - /url: /tienda/frutas-tropicales
+        - link "Recetas" [ref=e13] [cursor=pointer]:
+          - /url: /recetas
+        - link "Más Categorías" [ref=e14] [cursor=pointer]:
+          - /url: /categorias
+      - generic [ref=e15]:
+        - button "Buscar productos" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+        - link [ref=e20] [cursor=pointer]:
+          - /url: /cuenta#favoritos
+          - img [ref=e21]
+        - link "Iniciar Sesión" [ref=e23] [cursor=pointer]:
+          - /url: /auth/login
+          - img [ref=e24]
+          - generic [ref=e27]: Iniciar Sesión
+        - button [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+  - main [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e45]:
+        - heading "Productos Destacados" [level=2] [ref=e46]
+        - paragraph [ref=e47]: Los productos más frescos y populares seleccionados especialmente para ti
+      - generic [ref=e81]:
+        - heading "¿Listo para disfrutar de productos frescos?" [level=2] [ref=e82]
+        - paragraph [ref=e83]: Explora nuestro catálogo completo y descubre la calidad que nos caracteriza
+        - link "Ver Todos los Productos" [ref=e84] [cursor=pointer]:
+          - /url: /tienda
+  - contentinfo [ref=e85]:
+    - generic [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - heading "Tus Aguacates" [level=3] [ref=e89]
+          - paragraph [ref=e90]: Frutas y verduras frescas del Eje Cafetero directo a tu mesa. Apoyamos a los agricultores locales y garantizamos la mejor calidad.
+          - link "Instagram" [ref=e92] [cursor=pointer]:
+            - /url: https://www.instagram.com/tusaguacates/
+            - img [ref=e93]
+        - generic [ref=e96]:
+          - heading "Enlaces Rápidos" [level=3] [ref=e97]
+          - list [ref=e98]:
+            - listitem [ref=e99]:
+              - link "Todos los Productos" [ref=e100] [cursor=pointer]:
+                - /url: /tienda
+            - listitem [ref=e101]:
+              - link "Sobre Nosotros" [ref=e102] [cursor=pointer]:
+                - /url: /sobre-nosotros
+            - listitem [ref=e103]:
+              - link "Contacto" [ref=e104] [cursor=pointer]:
+                - /url: /contacto
+        - generic [ref=e105]:
+          - heading "Atención al Cliente" [level=3] [ref=e106]
+          - list [ref=e107]:
+            - listitem [ref=e108]:
+              - link "Mis Pedidos" [ref=e109] [cursor=pointer]:
+                - /url: /cuenta
+            - listitem [ref=e110]:
+              - link "Políticas de Envío" [ref=e111] [cursor=pointer]:
+                - /url: /politicas
+            - listitem [ref=e112]:
+              - link "Devoluciones" [ref=e113] [cursor=pointer]:
+                - /url: /devoluciones
+            - listitem [ref=e114]:
+              - link "Preguntas Frecuentes" [ref=e115] [cursor=pointer]:
+                - /url: /faq
+        - generic [ref=e116]:
+          - heading "Contacto" [level=3] [ref=e117]
+          - list [ref=e118]:
+            - listitem [ref=e119]:
+              - img [ref=e120]
+              - generic [ref=e123]: Eje Cafetero, Colombia
+            - listitem [ref=e124]:
+              - img [ref=e125]
+              - generic [ref=e127]: "3042582777"
+            - listitem [ref=e128]:
+              - img [ref=e129]
+              - generic [ref=e132]: info@tusaguacates.com
+      - generic [ref=e133]:
+        - paragraph [ref=e134]: 2025 Tus Aguacates. Todos los derechos reservados.
+        - paragraph [ref=e135]:
+          - link "Términos y Condiciones" [ref=e136] [cursor=pointer]:
+            - /url: /terminos
+          - link "Política de Privacidad" [ref=e137] [cursor=pointer]:
+            - /url: /privacidad
+  - generic [ref=e139]:
+    - generic [ref=e140]:
+      - heading "Mi Carrito (0)" [level=2] [ref=e141]
+      - button [ref=e142] [cursor=pointer]:
+        - img [ref=e143]
+    - generic [ref=e147]:
+      - img [ref=e148]
+      - paragraph [ref=e151]: Tu carrito está vacío
+      - button "Comenzar a comprar" [ref=e152] [cursor=pointer]
+  - button [ref=e153] [cursor=pointer]:
+    - img [ref=e154]
+  - alert [ref=e159]
+```

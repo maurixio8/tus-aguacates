@@ -17,10 +17,49 @@ export default function EmpresasPage() {
     <div>
       {/* Hero Section - Tus Aguacates brand identity */}
       <section className="bg-gradient-to-r from-verde-bosque via-verde-aguacate to-verde-bosque text-white py-20 md:py-28 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-64 h-64 border-4 border-white/30 rounded-full animate-pulse" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 border-4 border-white/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+        {/* Animated background elements - Enhanced */}
+        <div className="absolute inset-0">
+          {/* Large gradient orbs */}
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-naranja-frutal/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-yellow-400/15 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s', animationDelay: '1s' }} />
+
+          {/* Floating circles with gradient */}
+          <div className="absolute top-20 left-10 w-64 h-64 rounded-full animate-float" style={{
+            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+            animationDuration: '8s'
+          }} />
+          <div className="absolute bottom-20 right-10 w-80 h-80 rounded-full animate-float" style={{
+            background: 'radial-gradient(circle, rgba(232,168,56,0.15) 0%, transparent 70%)',
+            animationDuration: '10s',
+            animationDelay: '2s'
+          }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full animate-float" style={{
+            background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 60%)',
+            animationDuration: '12s',
+            animationDelay: '4s'
+          }} />
+
+          {/* Decorative border circles */}
+          <div className="absolute top-10 left-10 w-64 h-64 border-2 border-white/20 rounded-full animate-pulse" style={{ animationDuration: '3s' }} />
+          <div className="absolute bottom-10 right-10 w-96 h-96 border-2 border-white/15 rounded-full animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
+          <div className="absolute top-1/2 left-20 w-48 h-48 border border-dorado/30 rounded-full animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
+
+          {/* Small floating particles */}
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDuration: `${6 + Math.random() * 4}s`,
+                animationDelay: `${Math.random() * 3}s`,
+              }}
+            />
+          ))}
+
+          {/* Gradient overlay for depth */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10" />
         </div>
 
         <div className="container mx-auto px-4 relative">

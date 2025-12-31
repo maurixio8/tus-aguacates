@@ -1,0 +1,198 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e4]:
+      - link "Tus Aguacates - Logo" [ref=e5] [cursor=pointer]:
+        - /url: /
+        - img "Tus Aguacates - Logo" [ref=e6]
+      - navigation [ref=e7]:
+        - link "🔥 Ofertas" [ref=e8] [cursor=pointer]:
+          - /url: /tienda/ofertas-combos
+          - generic [ref=e9]: 🔥
+          - generic [ref=e10]: Ofertas
+        - link "Aguacates" [ref=e11] [cursor=pointer]:
+          - /url: /tienda/aguacates
+        - link "Frutas Tropicales" [ref=e12] [cursor=pointer]:
+          - /url: /tienda/frutas-tropicales
+        - link "Recetas" [ref=e13] [cursor=pointer]:
+          - /url: /recetas
+        - link "Más Categorías" [ref=e14] [cursor=pointer]:
+          - /url: /categorias
+      - generic [ref=e15]:
+        - button "Buscar productos" [ref=e16] [cursor=pointer]:
+          - img [ref=e17]
+        - link [ref=e20] [cursor=pointer]:
+          - /url: /cuenta#favoritos
+          - img [ref=e21]
+        - link "Iniciar Sesión" [ref=e23] [cursor=pointer]:
+          - /url: /auth/login
+          - img [ref=e24]
+          - generic [ref=e27]: Iniciar Sesión
+        - button [ref=e28] [cursor=pointer]:
+          - img [ref=e29]
+  - main [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e37]:
+          - heading "Explora Nuestras Categorías" [level=2] [ref=e38]:
+            - img [ref=e39]
+            - text: Explora Nuestras Categorías
+          - paragraph [ref=e42]: Productos frescos y de calidad premium
+        - generic [ref=e43]:
+          - link "Aguacates Aguacates Aguacates frescos de la mejor calidad Ver productos →" [ref=e44] [cursor=pointer]:
+            - /url: /tienda/aguacates
+            - img "Aguacates" [ref=e46]
+            - generic [ref=e48]:
+              - heading "Aguacates" [level=3] [ref=e49]
+              - paragraph [ref=e50]: Aguacates frescos de la mejor calidad
+            - generic [ref=e52]: Ver productos →
+          - link "Frutas Tropicales Frutas Tropicales Frutas exóticas y tropicales Ver productos →" [ref=e53] [cursor=pointer]:
+            - /url: /tienda/frutas-tropicales
+            - img "Frutas Tropicales" [ref=e55]
+            - generic [ref=e57]:
+              - heading "Frutas Tropicales" [level=3] [ref=e58]
+              - paragraph [ref=e59]: Frutas exóticas y tropicales
+            - generic [ref=e61]: Ver productos →
+          - link "Gourmet Gourmet Productos gourmet premium Ver productos →" [ref=e62] [cursor=pointer]:
+            - /url: /tienda/gourmet
+            - img "Gourmet" [ref=e64]
+            - generic [ref=e66]:
+              - heading "Gourmet" [level=3] [ref=e67]
+              - paragraph [ref=e68]: Productos gourmet premium
+            - generic [ref=e70]: Ver productos →
+          - link "Ofertas y Combos Ofertas y Combos Combos especiales y ofertas del día Ver productos →" [ref=e71] [cursor=pointer]:
+            - /url: /tienda/ofertas-combos
+            - img "Ofertas y Combos" [ref=e73]
+            - generic [ref=e75]:
+              - heading "Ofertas y Combos" [level=3] [ref=e76]
+              - paragraph [ref=e77]: Combos especiales y ofertas del día
+            - generic [ref=e79]: Ver productos →
+          - link "Frutas Rojas Frutas Rojas Deliciosas frutas rojas y bayas Ver productos →" [ref=e80] [cursor=pointer]:
+            - /url: /tienda/frutos-rojos
+            - img "Frutas Rojas" [ref=e82]
+            - generic [ref=e84]:
+              - heading "Frutas Rojas" [level=3] [ref=e85]
+              - paragraph [ref=e86]: Deliciosas frutas rojas y bayas
+            - generic [ref=e88]: Ver productos →
+          - link "Aromáticas Aromáticas Hierbas aromáticas frescas Ver productos →" [ref=e89] [cursor=pointer]:
+            - /url: /tienda/aromaticas
+            - img "Aromáticas" [ref=e91]
+            - generic [ref=e93]:
+              - heading "Aromáticas" [level=3] [ref=e94]
+              - paragraph [ref=e95]: Hierbas aromáticas frescas
+            - generic [ref=e97]: Ver productos →
+          - link "Saludables Saludables Productos naturales y saludables Ver productos →" [ref=e98] [cursor=pointer]:
+            - /url: /tienda/saludables
+            - img "Saludables" [ref=e100]
+            - generic [ref=e102]:
+              - heading "Saludables" [level=3] [ref=e103]
+              - paragraph [ref=e104]: Productos naturales y saludables
+            - generic [ref=e106]: Ver productos →
+          - link "Especias Especias Especias y condimentos naturales Ver productos →" [ref=e107] [cursor=pointer]:
+            - /url: /tienda/especias
+            - img "Especias" [ref=e109]
+            - generic [ref=e111]:
+              - heading "Especias" [level=3] [ref=e112]
+              - paragraph [ref=e113]: Especias y condimentos naturales
+            - generic [ref=e115]: Ver productos →
+          - link "Desgranados Desgranados Productos desgranados frescos Ver productos →" [ref=e116] [cursor=pointer]:
+            - /url: /tienda/desgranados
+            - img "Desgranados" [ref=e118]
+            - generic [ref=e120]:
+              - heading "Desgranados" [level=3] [ref=e121]
+              - paragraph [ref=e122]: Productos desgranados frescos
+            - generic [ref=e124]: Ver productos →
+        - paragraph [ref=e126]: Todos nuestros productos son cuidadosamente seleccionados para garantizar la mejor calidad
+      - generic [ref=e127]:
+        - generic [ref=e128]:
+          - heading "Productos Destacados" [level=2] [ref=e129]
+          - paragraph [ref=e130]: Los productos más frescos y populares seleccionados especialmente para ti
+        - generic [ref=e132]:
+          - generic [ref=e133] [cursor=pointer]:
+            - img "Caja de 24 unidades hass mediano" [ref=e138]
+            - button [ref=e141]:
+              - img [ref=e142]
+            - generic [ref=e145]: Ver detalles
+          - generic [ref=e146]:
+            - heading "Caja de 24 unidades hass mediano" [level=3] [ref=e147]
+            - generic [ref=e149]:
+              - generic [ref=e150]: $ 16.600
+              - generic [ref=e151]: Por unit
+            - button "Agregar" [ref=e152] [cursor=pointer]:
+              - img [ref=e153]
+              - text: Agregar
+      - generic [ref=e157]:
+        - heading "¿Listo para disfrutar de productos frescos?" [level=2] [ref=e158]
+        - paragraph [ref=e159]: Explora nuestro catálogo completo y descubre la calidad que nos caracteriza
+        - link "Ver Todos los Productos" [ref=e160] [cursor=pointer]:
+          - /url: /tienda
+  - contentinfo [ref=e161]:
+    - generic [ref=e162]:
+      - generic [ref=e163]:
+        - generic [ref=e164]:
+          - heading "Tus Aguacates" [level=3] [ref=e165]
+          - paragraph [ref=e166]: Frutas y verduras frescas del Eje Cafetero directo a tu mesa. Apoyamos a los agricultores locales y garantizamos la mejor calidad.
+          - link "Instagram" [ref=e168] [cursor=pointer]:
+            - /url: https://www.instagram.com/tusaguacates/
+            - img [ref=e169]
+        - generic [ref=e172]:
+          - heading "Enlaces Rápidos" [level=3] [ref=e173]
+          - list [ref=e174]:
+            - listitem [ref=e175]:
+              - link "Todos los Productos" [ref=e176] [cursor=pointer]:
+                - /url: /tienda
+            - listitem [ref=e177]:
+              - link "Sobre Nosotros" [ref=e178] [cursor=pointer]:
+                - /url: /sobre-nosotros
+            - listitem [ref=e179]:
+              - link "Contacto" [ref=e180] [cursor=pointer]:
+                - /url: /contacto
+        - generic [ref=e181]:
+          - heading "Atención al Cliente" [level=3] [ref=e182]
+          - list [ref=e183]:
+            - listitem [ref=e184]:
+              - link "Mis Pedidos" [ref=e185] [cursor=pointer]:
+                - /url: /cuenta
+            - listitem [ref=e186]:
+              - link "Políticas de Envío" [ref=e187] [cursor=pointer]:
+                - /url: /politicas
+            - listitem [ref=e188]:
+              - link "Devoluciones" [ref=e189] [cursor=pointer]:
+                - /url: /devoluciones
+            - listitem [ref=e190]:
+              - link "Preguntas Frecuentes" [ref=e191] [cursor=pointer]:
+                - /url: /faq
+        - generic [ref=e192]:
+          - heading "Contacto" [level=3] [ref=e193]
+          - list [ref=e194]:
+            - listitem [ref=e195]:
+              - img [ref=e196]
+              - generic [ref=e199]: Eje Cafetero, Colombia
+            - listitem [ref=e200]:
+              - img [ref=e201]
+              - generic [ref=e203]: "3042582777"
+            - listitem [ref=e204]:
+              - img [ref=e205]
+              - generic [ref=e208]: info@tusaguacates.com
+      - generic [ref=e209]:
+        - paragraph [ref=e210]: 2025 Tus Aguacates. Todos los derechos reservados.
+        - paragraph [ref=e211]:
+          - link "Términos y Condiciones" [ref=e212] [cursor=pointer]:
+            - /url: /terminos
+          - link "Política de Privacidad" [ref=e213] [cursor=pointer]:
+            - /url: /privacidad
+  - generic [ref=e215]:
+    - generic [ref=e216]:
+      - heading "Mi Carrito (0)" [level=2] [ref=e217]
+      - button [ref=e218] [cursor=pointer]:
+        - img [ref=e219]
+    - generic [ref=e223]:
+      - img [ref=e224]
+      - paragraph [ref=e227]: Tu carrito está vacío
+      - button "Comenzar a comprar" [ref=e228] [cursor=pointer]
+  - button [ref=e229] [cursor=pointer]:
+    - img [ref=e230]
+  - alert [ref=e235]
+```
