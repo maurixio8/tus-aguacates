@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans, Playfair_Display, DM_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { ClientLayout } from "@/components/layout/ClientLayout";
 import { WebVitals } from "@/components/analytics/WebVitals";
@@ -17,23 +17,6 @@ const plusJakarta = Plus_Jakarta_Sans({
   variable: '--font-display',
   display: 'swap',
   preload: true,
-});
-
-// Luxury Agrícola B2B fonts
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: '--font-elegant',
-  display: 'swap',
-  preload: false,
-  weight: ['400', '500', '600', '700'],
-});
-
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  variable: '--font-modern',
-  display: 'swap',
-  preload: false,
-  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
@@ -116,7 +99,7 @@ export default function RootLayout({
         {/* Preload imágenes críticas - removido temporalmente para solucionar errores */}
         {/* <link rel="preload" as="image" href="/images/hero-optimized.png" imageSizes="(max-width: 768px) 100vw, 50vw" /> */}
       </head>
-      <body className={`${inter.variable} ${plusJakarta.variable} ${playfair.variable} ${dmSans.variable} antialiased`}>
+      <body className={`${inter.variable} ${plusJakarta.variable} antialiased`}>
         {/* Componente de Web Vitals para monitoreo */}
         <WebVitals />
         <ClientLayout>

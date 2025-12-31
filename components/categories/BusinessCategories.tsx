@@ -43,70 +43,69 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
 
   if (variant === 'grid') {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {categoriesWithCount.map((category, index) => (
           <Link
             key={category.slug}
             href={`/empresas/${category.slug}`}
-            className="group relative aspect-square rounded-3xl overflow-hidden shadow-elegant hover:shadow-elegant-lg transition-all duration-500 hover:scale-105 animate-reveal"
-            style={{ animationDelay: `${index * 0.1}s` }}
+            className="group relative aspect-square rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1"
           >
             {/* Imagen de fondo */}
             {category.image ? (
               <img
                 src={category.image}
                 alt={category.name}
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
               />
             ) : (
-              <div className="absolute inset-0 bg-gradient-to-br from-esmeralda to-esmeralda/80" />
+              <div className="absolute inset-0 bg-gradient-to-br from-verde-bosque to-verde-aguacate" />
             )}
 
             {/* Overlay gradient */}
-            <div className="absolute inset-0 bg-gradient-to-t from-esmeralda/90 via-esmeralda/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-verde-bosque/90 via-verde-bosque/50 to-transparent" />
 
             {/* Contenido */}
-            <div className="absolute inset-0 flex flex-col items-center justify-end p-5 text-white">
-              <span className="text-4xl mb-3 drop-shadow-lg">{category.icon}</span>
-              <h3 className="font-elegant font-bold text-lg text-center mb-1">{category.name}</h3>
-              <span className="font-modern text-xs text-champagne/90">
+            <div className="absolute inset-0 flex flex-col items-center justify-end p-4 text-white">
+              <span className="text-3xl mb-2 drop-shadow-lg">{category.icon}</span>
+              <h3 className="font-display font-bold text-base text-center">{category.name}</h3>
+              <span className="text-xs text-white/80">
                 {category.productCount} productos
               </span>
             </div>
 
-            {/* Badge B2B elegante */}
-            <div className="absolute top-4 right-4 bg-gradient-to-br from-dorado to-champagne text-esmeralda px-3 py-1.5 text-xs font-elegant font-semibold rounded-full shadow-lg flex items-center gap-1.5">
+            {/* Badge B2B */}
+            <div className="absolute top-3 right-3 bg-naranja-frutal text-white px-2.5 py-1 text-xs font-bold rounded-full flex items-center gap-1 shadow-lg">
               <Building2 className="w-3 h-3" />
               B2B
             </div>
 
             {/* Bottom accent on hover */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-champagne via-dorado to-champagne scale-x-0 group-hover:scale-x-100 transition-transform duration-500" />
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-naranja-frutal to-yellow-500 scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
           </Link>
         ))}
       </div>
     );
   }
 
-  // Variante scroll con estilo luxury
+  // Variante scroll
   return (
     <div className="relative">
-      {/* Botones de navegación elegantes */}
+      {/* Botones de navegación */}
       {categoriesWithCount.length > 4 && (
         <>
           <button
             onClick={() => scroll('left')}
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm shadow-elegant rounded-full p-3 hover:bg-white border border-champagne/20 transition-all hover:scale-110"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-medium rounded-full p-2 hover:bg-gray-50 transition-all hover:scale-105"
             aria-label="Anterior"
           >
-            <ChevronLeft className="w-6 h-6 text-esmeralda" />
+            <ChevronLeft className="w-6 h-6 text-verde-bosque" />
           </button>
           <button
             onClick={() => scroll('right')}
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm shadow-elegant rounded-full p-3 hover:bg-white border border-champagne/20 transition-all hover:scale-110"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-medium rounded-full p-2 hover:bg-gray-50 transition-all hover:scale-105"
             aria-label="Siguiente"
           >
-            <ChevronRight className="w-6 h-6 text-esmeralda" />
+            <ChevronRight className="w-6 h-6 text-verde-bosque" />
           </button>
         </>
       )}
@@ -114,7 +113,7 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
       {/* Scroll Container */}
       <div
         ref={scrollRef}
-        className="flex gap-6 overflow-x-auto scrollbar-hide pb-6 px-2 md:px-12"
+        className="flex gap-5 overflow-x-auto scrollbar-hide pb-4 px-2 md:px-12"
       >
         {categoriesWithCount.map((category) => (
           <Link
@@ -122,35 +121,35 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
             href={`/empresas/${category.slug}`}
             className="flex-shrink-0 flex flex-col items-center group"
           >
-            {/* Imagen circular elegante */}
+            {/* Imagen circular */}
             <div className={`
-              relative w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden mb-3
-              shadow-elegant hover:shadow-elegant-lg transition-all duration-500
-              group-hover:scale-105 border-4 border-transparent group-hover:border-champagne/30
-              ${selectedCategory === category.slug ? 'ring-4 ring-dorado ring-offset-4' : ''}
+              relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden mb-2
+              shadow-soft hover:shadow-medium transition-all duration-200
+              group-hover:scale-105 border-4 border-transparent group-hover:border-verde-aguacate
+              ${selectedCategory === category.slug ? 'ring-4 ring-naranja-frutal ring-offset-2' : ''}
             `}>
               {category.image ? (
                 <img
                   src={category.image}
                   alt={category.name}
-                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                 />
               ) : (
-                <div className="absolute inset-0 bg-gradient-to-br from-esmeralda/50 to-esmeralda/30 flex items-center justify-center">
-                  <span className="text-5xl">{category.icon}</span>
+                <div className="absolute inset-0 bg-gradient-to-br from-verde-bosque/50 to-verde-aguacate/50 flex items-center justify-center">
+                  <span className="text-4xl">{category.icon}</span>
                 </div>
               )}
 
-              {/* Badge de conteo elegante */}
-              <div className="absolute top-0 right-0 bg-gradient-to-br from-dorado to-champagne text-esmeralda text-xs rounded-full w-7 h-7 flex items-center justify-center font-elegant font-bold shadow-lg border-2 border-white">
+              {/* Badge de conteo */}
+              <div className="absolute top-0 right-0 bg-naranja-frutal text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold shadow-lg border-2 border-white">
                 {category.productCount}
               </div>
             </div>
 
-            {/* Nombre con tipografía elegante */}
+            {/* Nombre */}
             <span className={`
-              font-elegant text-sm md:text-base font-semibold text-center w-28 md:w-36
-              ${selectedCategory === category.slug ? 'text-esmeralda' : 'text-gray-700 group-hover:text-esmeralda'}
+              text-sm md:text-base font-semibold text-center w-24 md:w-32
+              ${selectedCategory === category.slug ? 'text-verde-bosque' : 'text-gray-700 group-hover:text-verde-bosque'}
               transition-colors
             `}>
               {category.name}
