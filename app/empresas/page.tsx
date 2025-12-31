@@ -44,18 +44,20 @@ export default function EmpresasPage() {
           <div className="absolute bottom-10 right-10 w-96 h-96 border-2 border-white/15 rounded-full animate-pulse" style={{ animationDuration: '4s', animationDelay: '1s' }} />
           <div className="absolute top-1/2 left-20 w-48 h-48 border border-dorado/30 rounded-full animate-pulse" style={{ animationDuration: '5s', animationDelay: '2s' }} />
 
-          {/* Small floating particles */}
-          {Array.from({ length: 12 }).map((_, i) => (
+          {/* Small floating particles - Frutas y verduras */}
+          {['🥑', '🍋', '🍊', '🍓', '🥝', '🍅', '🥕', '🥦', '🍆', '🌶️', '🍌', '🍏', '🍐', '🥬'].map((emoji, i) => (
             <div
               key={i}
-              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
+              className="absolute text-2xl md:text-3xl animate-float drop-shadow-lg"
               style={{
-                top: `${Math.random() * 100}%`,
-                left: `${Math.random() * 100}%`,
-                animationDuration: `${6 + Math.random() * 4}s`,
-                animationDelay: `${Math.random() * 3}s`,
+                top: `${Math.random() * 90 + 5}%`,
+                left: `${Math.random() * 90 + 5}%`,
+                animationDuration: `${6 + Math.random() * 6}s`,
+                animationDelay: `${Math.random() * 4}s`,
               }}
-            />
+            >
+              {emoji}
+            </div>
           ))}
 
           {/* Gradient overlay for depth */}
