@@ -55,7 +55,7 @@ export const AGUACATES_CONFIG: Record<AguacateVariedad, AguacateVariedadConfig> 
     nombre: 'Hass',
     nombreCompleto: 'Aguacate Hass',
     descripcion: 'El clasico aguacate de piel rugosa, cremoso y versatil. El mas popular en restaurantes.',
-    imagen: '/images/products/aguacate-hass.jpg',
+    imagen: '/categories/aguacates.jpg',
     calibres: {
       jumbo: {
         nombre: 'Jumbo',
@@ -98,7 +98,7 @@ export const AGUACATES_CONFIG: Record<AguacateVariedad, AguacateVariedadConfig> 
     nombre: 'Papelillo',
     nombreCompleto: 'Aguacate Papelillo (Lorena)',
     descripcion: 'Piel delgada y suave, sabor mantequilloso. Muy apreciado en la costa.',
-    imagen: '/images/products/aguacate-papelillo.jpg',
+    imagen: '/categories/aguacates.jpg',
     calibres: {
       primera: {
         nombre: 'Primera',
@@ -130,7 +130,7 @@ export const AGUACATES_CONFIG: Record<AguacateVariedad, AguacateVariedadConfig> 
     nombre: 'Semil',
     nombreCompleto: 'Aguacate Semil',
     descripcion: 'Textura unica y semilla pequena. Popular en el Eje Cafetero.',
-    imagen: '/images/products/aguacate-semil.jpg',
+    imagen: '/categories/aguacates.jpg',
     calibres: {
       primera: {
         nombre: 'Primera',
@@ -162,7 +162,7 @@ export const AGUACATES_CONFIG: Record<AguacateVariedad, AguacateVariedadConfig> 
     nombre: 'Choquette',
     nombreCompleto: 'Aguacate Choquette',
     descripcion: 'El mas grande de todos, textura cremosa excepcional. Impresiona en cualquier mesa.',
-    imagen: '/images/products/aguacate-choquette.jpg',
+    imagen: '/categories/aguacates.jpg',
     calibres: {
       primera: {
         nombre: 'Primera',

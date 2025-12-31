@@ -72,7 +72,7 @@ export function AguacateConfigurator({ onAddToCart }: AguacateConfiguratorProps)
       slug: `aguacate-${variedad}-${calibre}-${madurez}`,
       price: precioCalculado.precioKgConDescuento,
       category: 'Aguacates B2B',
-      image: config.imagen || '/images/products/aguacate-default.jpg',
+      image: config.imagen || '/categories/aguacates.jpg',
       description: `${config.descripcion} - Calibre ${calibreConfig?.nombre}`,
       unit: 'kg',
     };
