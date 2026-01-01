@@ -94,7 +94,6 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
 
               {/* Contenido */}
               <div className="absolute inset-0 flex flex-col items-center justify-end p-4 text-white">
-                <span className="text-4xl mb-2 drop-shadow-lg transition-transform duration-300 group-hover:scale-110">{category.icon}</span>
                 <h3 className="font-display font-bold text-base text-center mb-1 drop-shadow-md">{category.name}</h3>
                 <span className="text-xs text-white/90 font-medium">
                   {category.productCount} productos
@@ -177,9 +176,7 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
                   className={`absolute inset-0 w-full h-full object-cover transition-transform duration-500 ${hoveredIndex === index ? 'scale-125' : 'group-hover:scale-115'}`}
                 />
               ) : (
-                <div className={`absolute inset-0 bg-gradient-to-br ${category.colors.from} ${category.colors.to} flex items-center justify-center`}>
-                  <span className="text-5xl">{category.icon}</span>
-                </div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${category.colors.from} ${category.colors.to}`} />
               )}
 
               {/* Animated shine overlay on hover */}
