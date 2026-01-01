@@ -1,25 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft, ChevronRight, Building2, ArrowRight } from 'lucide-react';
 import { BUSINESS_CATEGORIES, getBusinessProductsByCategory } from '@/lib/business-products';
+import { fetchCategoriesFromSupabase, CategoryWithImage } from '@/lib/category-utils';
 
 interface BusinessCategoriesProps {
   variant?: 'scroll' | 'grid';
   selectedCategory?: string;
 }
-
-// Mapeo de imágenes por categoría
-const CATEGORY_IMAGES: Record<string, string> = {
-  'aguacates': '/categories/aguacates.jpg',
-  'frutas-tropicales': '/categories/tropicales.jpg',
-  'frutos-rojos': '/categories/frutos-rojos.jpg',
-  'gourmet': '/categories/gourmet.jpg',
-  'aromaticas': '/categories/aromaticas.jpg',
-  'saludables': '/categories/saludables.jpg',
-  'desgranados': '/categories/desgranados.jpg',
-};
 
 // Colores únicos por categoría para variación visual
 const CATEGORY_COLORS: Record<string, { from: string; to: string; accent: string }> = {
@@ -35,6 +25,37 @@ const CATEGORY_COLORS: Record<string, { from: string; to: string; accent: string
 export function BusinessCategories({ variant = 'scroll', selectedCategory }: BusinessCategoriesProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [categoryImages, setCategoryImages] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Cargar imágenes de categorías desde Supabase al montar
+  useEffect(() => {
+    const loadCategoryImages = async () => {
+      try {
+        setLoading(true);
+
+        // Slugs de categorías B2B
+        const b2bSlugs = BUSINESS_CATEGORIES.map(cat => cat.slug);
+
+        // Fetch desde Supabase
+        const categories = await fetchCategoriesFromSupabase({ slugs: b2bSlugs });
+
+        // Crear mapeo de slug -> imagen
+        const imageMap: Record<string, string> = {};
+        categories.forEach(cat => {
+          imageMap[cat.slug] = cat.image;
+        });
+
+        setCategoryImages(imageMap);
+      } catch (error) {
+        console.error('Error loading category images:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCategoryImages();
+  }, []);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -50,9 +71,15 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
   const categoriesWithCount = BUSINESS_CATEGORIES.map(cat => ({
     ...cat,
     productCount: getBusinessProductsByCategory(cat.slug).length,
-    image: CATEGORY_IMAGES[cat.slug],
+    // Usar imagen de Supabase si está disponible
+    image: categoryImages[cat.slug],
     colors: CATEGORY_COLORS[cat.slug] || CATEGORY_COLORS['aguacates'],
   }));
+
+  // Mostrar skeleton mientras carga
+  if (loading) {
+    return <CategorySkeleton variant={variant} />;
+  }
 
   if (variant === 'grid') {
     return (
@@ -231,6 +258,34 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
           100% { transform: translateX(200%) translateY(200%) rotate(45deg); }
         }
       `}</style>
+    </div>
+  );
+}
+
+// Skeleton para loading state
+function CategorySkeleton({ variant }: { variant: 'scroll' | 'grid' }) {
+  if (variant === 'grid') {
+    return (
+      <div className="relative">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+          {[...Array(7)].map((_, i) => (
+            <div key={i} className="aspect-square rounded-2xl bg-gray-200 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <div className="flex gap-6 overflow-x-auto scrollbar-hide pb-6 px-2 md:px-12">
+        {[...Array(7)].map((_, i) => (
+          <div key={i} className="flex-shrink-0 flex flex-col items-center">
+            <div className="w-28 h-28 md:w-36 md:h-36 rounded-full bg-gray-200 animate-pulse mb-3" />
+            <div className="w-20 h-4 bg-gray-200 rounded animate-pulse" />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
