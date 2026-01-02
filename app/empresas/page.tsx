@@ -613,52 +613,144 @@ export default function EmpresasPage() {
         `}</style>
       </section>
 
-      {/* Beneficios */}
-      <section className="py-16 gradient-suave">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <span className="inline-block text-naranja-frutal font-bold text-sm tracking-widest uppercase mb-2">
-              Ventajas Exclusivas
-            </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl mb-3">
-              Beneficios para tu Negocio
+      {/* Beneficios - Modern 3D Cards Design */}
+      <section className="py-20 bg-white relative overflow-hidden">
+        {/* Animated background pattern */}
+        <div className="absolute inset-0">
+          <div
+            className="absolute inset-0 opacity-40"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 3px 3px, rgba(107, 142, 35, 0.15) 1px, transparent 0)',
+              backgroundSize: '60px 60px',
+            }}
+          />
+          {/* Floating gradient orbs */}
+          <div className="absolute top-20 right-20 w-96 h-96 bg-verde-aguacate/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
+          <div className="absolute bottom-20 left-20 w-80 h-80 bg-naranja-frutal/5 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s', animationDelay: '2s' }} />
+        </div>
+
+        <div className="container mx-auto px-4 relative">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-naranja-frutal/10 px-4 py-2 rounded-full mb-6 border border-naranja-frutal/20">
+              <span className="w-2 h-2 bg-naranja-frutal rounded-full animate-pulse" />
+              <span className="text-naranja-frutal font-bold text-sm tracking-widest uppercase">Ventajas Exclusivas</span>
+            </div>
+            <h2 className="font-display font-bold text-4xl md:text-5xl mb-4">
+              Beneficios para tu
+              <span className="block bg-gradient-to-r from-verde-bosque via-verde-aguacate to-naranja-frutal bg-clip-text text-transparent">
+                Negocio
+              </span>
             </h2>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              Razones por las que los mejores restaurantes y hoteles nos eligen
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          {/* Benefit Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
             {[
               {
                 icon: Scale,
+                emoji: '💰',
                 title: 'Precios por Volumen',
                 description: '3 niveles: 5-20kg, 20-100kg, 100-300kg. Mayor cantidad, mejor precio por kilo.',
-                color: 'verde-bosque',
+                highlight: 'Hasta -40%',
+                color: 'from-verde-bosque',
+                toColor: 'to-verde-aguacate',
+                bgColor: 'bg-verde-bosque',
+                features: ['Precios escalonados', 'Sin contratos', 'Flexibilidad total'],
               },
               {
                 icon: Truck,
+                emoji: '🚚',
                 title: 'Entregas Flexibles',
                 description: 'Coordinamos según tu operación. Envío gratis en pedidos mayores a $100.000.',
-                color: 'verde-aguacate',
+                highlight: 'Gratis >$100k',
+                color: 'from-verde-aguacate',
+                toColor: 'to-naranja-frutal',
+                bgColor: 'bg-verde-aguacate',
+                features: ['Programación ideal', 'Tracking en vivo', 'Garantía frescura'],
               },
               {
                 icon: Star,
+                emoji: '⭐',
                 title: 'Calidad Premium',
                 description: 'Frescos directos del Eje Cafetero. Control de maduración garantizado.',
-                color: 'naranja-frutal',
+                highlight: '100% Fresco',
+                color: 'from-naranja-frutal',
+                toColor: 'to-dorado',
+                bgColor: 'bg-naranja-frutal',
+                features: ['Eje Cafetero', 'Maduración controlada', 'Selección manual'],
               }
             ].map((benefit, index) => (
-              <div
-                key={index}
-                className="group bg-white rounded-2xl p-8 shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1"
-              >
-                <div className={`w-14 h-14 bg-${benefit.color} rounded-xl flex items-center justify-center mx-auto mb-5 shadow-lg group-hover:scale-110 transition-transform`}>
-                  <benefit.icon className="w-7 h-7 text-white" />
+              <div key={index} className="group relative">
+                {/* Animated gradient border glow */}
+                <div className={`absolute -inset-1 bg-gradient-to-br ${benefit.color} ${benefit.toColor} rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-500`} />
+                <div className={`absolute -inset-0.5 bg-gradient-to-br ${benefit.color} ${benefit.toColor} rounded-3xl blur-lg opacity-0 group-hover:opacity-30 transition duration-500 animate-pulse`} style={{ animationDuration: '3s' }} />
+
+                {/* Main card */}
+                <div className="relative bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-3 border border-gray-100 h-full flex flex-col">
+                  {/* Icon container with 3D effect */}
+                  <div className="relative mb-6">
+                    {/* Background glow */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${benefit.color} ${benefit.toColor} rounded-2xl blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-300`} />
+
+                    {/* Icon */}
+                    <div className={`relative w-20 h-20 mx-auto bg-gradient-to-br ${benefit.color} ${benefit.toColor} rounded-2xl flex items-center justify-center shadow-xl transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${benefit.color} ${benefit.toColor} rounded-2xl blur opacity-50 animate-pulse`} style={{ animationDuration: '2s' }} />
+                      <benefit.icon className="relative w-10 h-10 text-white" />
+                    </div>
+
+                    {/* Floating emoji */}
+                    <div className="absolute -top-2 -right-2 w-10 h-10 bg-white rounded-xl shadow-lg flex items-center justify-center text-xl transform group-hover:scale-125 group-hover:rotate-12 transition-all duration-300 animate-float" style={{ animationDuration: '4s' }}>
+                      {benefit.emoji}
+                    </div>
+                  </div>
+
+                  {/* Highlight badge */}
+                  <div className="text-center mb-4">
+                    <span className={`inline-block px-4 py-1.5 bg-gradient-to-r ${benefit.color} ${benefit.toColor} text-white text-sm font-bold rounded-full shadow-md`}>
+                      {benefit.highlight}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <h3 className="font-display font-bold text-2xl text-center mb-3 text-verde-bosque group-hover:bg-gradient-to-r group-hover:from-verde-bosque group-hover:to-naranja-frutal group-hover:bg-clip-text group-hover:text-transparent transition-all duration-300">
+                    {benefit.title}
+                  </h3>
+                  <p className="text-gray-600 text-center text-sm leading-relaxed mb-6 flex-1">
+                    {benefit.description}
+                  </p>
+
+                  {/* Features list */}
+                  <div className="space-y-2 mb-6">
+                    {benefit.features.map((feature, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                        <div className={`w-1.5 h-1.5 rounded-full ${benefit.bgColor}`} />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Bottom accent */}
+                  <div className={`h-1.5 rounded-full bg-gradient-to-r ${benefit.color} ${benefit.toColor} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left`} />
                 </div>
-                <h3 className="font-display font-bold text-xl mb-3 text-center text-verde-bosque">
-                  {benefit.title}
-                </h3>
-                <p className="text-gray-600 text-center text-sm leading-relaxed">
-                  {benefit.description}
-                </p>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust badges */}
+          <div className="mt-16 flex flex-wrap justify-center gap-6">
+            {[
+              { text: '+100 Empresas', icon: '🏢' },
+              { text: '48h Entrega', icon: '⚡' },
+              { text: 'SAT 100%', icon: '✅' },
+              { text: 'Eje Cafetero', icon: '🌿' },
+            ].map((badge, i) => (
+              <div key={i} className="flex items-center gap-2 px-5 py-3 bg-white rounded-full shadow-md border border-gray-100 hover:shadow-lg hover:border-naranja-frutal/30 transition-all duration-300">
+                <span className="text-xl">{badge.icon}</span>
+                <span className="font-semibold text-gray-700">{badge.text}</span>
               </div>
             ))}
           </div>
