@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AuthProvider, useAuth } from "@/lib/auth-context";
 import { useWishlistStore } from "@/lib/wishlist-store";
@@ -12,17 +12,32 @@ import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import { InstallPrompt, ServiceWorkerRegistration, PushNotificationPrompt } from "@/components/pwa";
+import { SplashScreen } from "@/components/splash/SplashScreen";
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading: authLoading } = useAuth();
   const { loadWishlist } = useWishlistStore();
 
+  // Splash screen state
+  const [showSplash, setShowSplash] = useState(true);
+
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
 
   // Detectar ruta de empresas para ocultar componentes
   const isEmpresasRoute = pathname?.startsWith('/empresas');
+
+  // Determinar variante del splash
+  const splashVariant = isEmpresasRoute ? 'empresas' : 'tienda';
+
+  // No mostrar splash en admin o si ya se mostró (usando sessionStorage)
+  useEffect(() => {
+    const hasShownSplash = sessionStorage.getItem('splashShown');
+    if (hasShownSplash || isAdminRoute) {
+      setShowSplash(false);
+    }
+  }, [isAdminRoute]);
 
   // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
   useEffect(() => {
@@ -39,12 +54,26 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, loadWishlist]);
 
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    sessionStorage.setItem('splashShown', 'true');
+  };
+
   // Si es ruta de admin, solo renderizar el contenido sin header/footer/nav de cliente
   if (isAdminRoute) {
     return (
       <main className="min-h-screen">
         {children}
       </main>
+    );
+  }
+
+  // Mostrar splash screen si está activo
+  if (showSplash) {
+    return (
+      <>
+        <SplashScreen onComplete={handleSplashComplete} variant={splashVariant} />
+      </>
     );
   }
 
