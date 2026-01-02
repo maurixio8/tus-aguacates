@@ -7,6 +7,7 @@ import { useWishlistStore } from "@/lib/wishlist-store";
 import { initializeProducts } from "@/lib/productStorage";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { EmpresasFooter } from "@/components/layout/EmpresasFooter";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
 import BottomNavigation from "@/components/layout/BottomNavigation";
@@ -19,6 +20,9 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
   // No mostrar componentes de cliente en rutas de admin
   const isAdminRoute = pathname?.startsWith('/admin');
+
+  // Detectar ruta de empresas para ocultar componentes
+  const isEmpresasRoute = pathname?.startsWith('/empresas');
 
   // Sincronizar productos al iniciar la app (SOLO SI NO ES ADMIN)
   useEffect(() => {
@@ -51,10 +55,10 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
       <main className="min-h-screen">
         {children}
       </main>
-      <Footer />
+      {isEmpresasRoute ? <EmpresasFooter /> : <Footer />}
       <CartDrawer />
-      <ChatBot />
-      <BottomNavigation />
+      {!isEmpresasRoute && <ChatBot />}
+      {!isEmpresasRoute && <BottomNavigation />}
       <InstallPrompt />
       <PushNotificationPrompt />
     </>
