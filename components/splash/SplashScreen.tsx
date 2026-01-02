@@ -66,10 +66,9 @@ export function SplashScreen({ onComplete, variant }: SplashScreenProps) {
             {/* Logo container */}
             <div className="relative w-32 h-32 md:w-48 md:h-48">
               <img
-                src="/favicon.png"
+                src="https://i.ibb.co/WWj50Qdy/logo.png"
                 alt="Tus Aguacates"
                 className="w-full h-full object-contain drop-shadow-2xl"
-                style={{ filter: 'brightness(0) invert(1)' }}
               />
             </div>
 
