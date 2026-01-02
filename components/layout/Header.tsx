@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCart, User, Search, Heart, LogIn, LogOut, Menu, X, Home, BookOpen, MessageCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { ShoppingCart, User, Search, Heart, LogIn, LogOut, Menu, X, Home, BookOpen, MessageCircle, Building2 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import { useAuth } from '@/lib/auth-context';
 import { useState, useEffect } from 'react';
@@ -15,12 +16,16 @@ export function Header() {
   const { getItemCount, toggleCart } = useCartStore();
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const itemCount = getItemCount();
+
+  // Detectar si estamos en la sección de empresas
+  const isEmpresasPage = pathname?.startsWith('/empresas') || false;
 
   useEffect(() => {
     setMounted(true);
@@ -72,7 +77,7 @@ export function Header() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
+            <Link href={isEmpresasPage ? "/empresas" : "/"} className="flex items-center" onClick={closeMobileMenu}>
               <img
                 src={branding.logo.url}
                 alt={branding.logo.alt}
@@ -84,25 +89,47 @@ export function Header() {
 
             {/* Navegación Desktop */}
             <nav className="hidden md:flex items-center space-x-6">
-              <Link
-                href="/tienda/ofertas-combos"
-                className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-4 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg animate-pulse hover:animate-none"
-              >
-                <span>🔥</span>
-                <span>Ofertas</span>
-              </Link>
-              <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
-                Aguacates
-              </Link>
-              <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
-                Frutas Tropicales
-              </Link>
-              <Link href="/recetas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
-                Recetas
-              </Link>
-              <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
-                Más Categorías
-              </Link>
+              {isEmpresasPage ? (
+                <>
+                  {/* Navegación Empresas */}
+                  <Link
+                    href="/empresas/aguacates"
+                    className="flex items-center gap-1 bg-gradient-to-r from-naranja-frutal to-dorado hover:from-dorado hover:to-naranja-frutal text-white font-bold px-4 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    <span>🥑</span>
+                    <span>Aguacates</span>
+                  </Link>
+                  <Link href="/empresas#contacto" className="hover:text-verde-aguacate-200 transition-colors">
+                    Contacto
+                  </Link>
+                  <Link href="/empresas#beneficios" className="hover:text-verde-aguacate-200 transition-colors">
+                    Beneficios
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* Navegación Tienda */}
+                  <Link
+                    href="/tienda/ofertas-combos"
+                    className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-orange-500 hover:from-red-600 hover:to-orange-600 text-white font-bold px-4 py-2 rounded-full transition-all transform hover:scale-105 shadow-lg animate-pulse hover:animate-none"
+                  >
+                    <span>🔥</span>
+                    <span>Ofertas</span>
+                  </Link>
+                  <Link href="/tienda/aguacates" className="hover:text-verde-aguacate-200 transition-colors">
+                    Aguacates
+                  </Link>
+                  <Link href="/tienda/frutas-tropicales" className="hover:text-verde-aguacate-200 transition-colors">
+                    Frutas Tropicales
+                  </Link>
+                  <Link href="/recetas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
+                    Recetas
+                  </Link>
+                  <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
+                    Más Categorías
+                  </Link>
+                </>
+              )}
             </nav>
 
             {/* Acciones Desktop */}
@@ -197,109 +224,195 @@ export function Header() {
           <div className="md:hidden bg-verde-bosque-800 border-t border-white/10">
             <nav className="container mx-auto px-4 py-4">
               <div className="flex flex-col space-y-1">
-                <Link
-                  href="/"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <Home className="w-5 h-5" />
-                  <span>Inicio</span>
-                </Link>
-
-                <Link
-                  href="/categorias"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                  <span>Categorías</span>
-                </Link>
-
-                <Link
-                  href="/tienda/aguacates"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🥑</span>
-                  <span>Aguacates</span>
-                </Link>
-
-                <Link
-                  href="/tienda/frutas-tropicales"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🍊</span>
-                  <span>Frutas Tropicales</span>
-                </Link>
-
-                <Link
-                  href="/recetas"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
-                >
-                  <BookOpen className="w-5 h-5" />
-                  <span>Recetas</span>
-                </Link>
-
-                <Link
-                  href="/tienda/ofertas-combos"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold transition-colors"
-                >
-                  <span className="w-5 h-5 flex items-center justify-center">🔥</span>
-                  <span>Ofertas y Combos</span>
-                </Link>
-
-                <Link
-                  href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition-colors font-semibold"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  <span>WhatsApp</span>
-                </Link>
-
-                <div className="border-t border-white/10 my-2" />
-
-                <Link
-                  href="/cuenta#favoritos"
-                  onClick={closeMobileMenu}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  <Heart className="w-5 h-5" />
-                  <span>Favoritos</span>
-                </Link>
-
-                {user ? (
+                {isEmpresasPage ? (
                   <>
+                    {/* Menú Empresas */}
                     <Link
-                      href="/cuenta"
+                      href="/empresas"
                       onClick={closeMobileMenu}
                       className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
                     >
-                      <User className="w-5 h-5" />
-                      <span>Mi Cuenta</span>
+                      <Building2 className="w-5 h-5" />
+                      <span>Inicio Empresas</span>
                     </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
+
+                    <Link
+                      href="/empresas/aguacates"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
                     >
-                      <LogOut className="w-5 h-5" />
-                      <span>Cerrar Sesión</span>
-                    </button>
+                      <span className="w-5 h-5 flex items-center justify-center">🥑</span>
+                      <span>Aguacates</span>
+                    </Link>
+
+                    <Link
+                      href="/empresas#contacto"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>Contacto</span>
+                    </Link>
+
+                    <Link
+                      href="/empresas#beneficios"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">⭐</span>
+                      <span>Beneficios</span>
+                    </Link>
+
+                    <Link
+                      href="https://wa.me/573042582777?text=Hola!%20Quiero%20información%20sobre%20pedidos%20mayoristas"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-naranja-frutal to-dorado text-white font-bold transition-colors"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>WhatsApp Mayorista</span>
+                    </Link>
+
+                    <div className="border-t border-white/10 my-2" />
+
+                    {user ? (
+                      <>
+                        <Link
+                          href="/cuenta"
+                          onClick={closeMobileMenu}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                          <User className="w-5 h-5" />
+                          <span>Mi Cuenta</span>
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span>Cerrar Sesión</span>
+                        </button>
+                      </>
+                    ) : (
+                      <Link
+                        href="/auth/login"
+                        onClick={closeMobileMenu}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <LogIn className="w-5 h-5" />
+                        <span>Iniciar Sesión</span>
+                      </Link>
+                    )}
                   </>
                 ) : (
-                  <Link
-                    href="/auth/login"
-                    onClick={closeMobileMenu}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    <span>Iniciar Sesión</span>
-                  </Link>
+                  <>
+                    {/* Menú Tienda */}
+                    <Link
+                      href="/"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <Home className="w-5 h-5" />
+                      <span>Inicio</span>
+                    </Link>
+
+                    <Link
+                      href="/categorias"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <Search className="w-5 h-5" />
+                      <span>Categorías</span>
+                    </Link>
+
+                    <Link
+                      href="/tienda/aguacates"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">🥑</span>
+                      <span>Aguacates</span>
+                    </Link>
+
+                    <Link
+                      href="/tienda/frutas-tropicales"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">🍊</span>
+                      <span>Frutas Tropicales</span>
+                    </Link>
+
+                    <Link
+                      href="/recetas"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      <span>Recetas</span>
+                    </Link>
+
+                    <Link
+                      href="/tienda/ofertas-combos"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-red-500 to-orange-500 text-white font-bold transition-colors"
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">🔥</span>
+                      <span>Ofertas y Combos</span>
+                    </Link>
+
+                    <Link
+                      href="https://wa.me/573042582777?text=Hola!%20Quiero%20hacer%20un%20pedido%20🥑"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg bg-green-600 hover:bg-green-700 transition-colors font-semibold"
+                    >
+                      <MessageCircle className="w-5 h-5" />
+                      <span>WhatsApp</span>
+                    </Link>
+
+                    <div className="border-t border-white/10 my-2" />
+
+                    <Link
+                      href="/cuenta#favoritos"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                    >
+                      <Heart className="w-5 h-5" />
+                      <span>Favoritos</span>
+                    </Link>
+
+                    {user ? (
+                      <>
+                        <Link
+                          href="/cuenta"
+                          onClick={closeMobileMenu}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                        >
+                          <User className="w-5 h-5" />
+                          <span>Mi Cuenta</span>
+                        </Link>
+                        <button
+                          onClick={handleSignOut}
+                          className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-600/20 text-red-200 transition-colors w-full text-left"
+                        >
+                          <LogOut className="w-5 h-5" />
+                          <span>Cerrar Sesión</span>
+                        </button>
+                      </>
+                    ) : (
+                      <Link
+                        href="/auth/login"
+                        onClick={closeMobileMenu}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <LogIn className="w-5 h-5" />
+                        <span>Iniciar Sesión</span>
+                      </Link>
+                    )}
+                  </>
                 )}
               </div>
             </nav>

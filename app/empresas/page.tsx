@@ -67,10 +67,10 @@ export default function EmpresasPage() {
 
         <div className="container mx-auto px-4 relative">
           <div className="max-w-4xl mx-auto text-center">
-            {/* B2B Badge */}
+            {/* Empresas Badge */}
             <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-full mb-8">
               <Building2 className="w-5 h-5" />
-              <span className="font-display font-semibold">Canal Empresarial B2B</span>
+              <span className="font-display font-semibold">Canal Empresarial</span>
             </div>
 
             <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl mb-4">
@@ -90,7 +90,7 @@ export default function EmpresasPage() {
             {/* Stats con estilo de marca */}
             <div className="flex flex-wrap justify-center gap-5 mb-10">
               {[
-                { value: totalProducts || '~30', label: 'Productos B2B', icon: Package },
+                { value: totalProducts || '~30', label: 'Productos Mayoristas', icon: Package },
                 { value: totalCategories || 7, label: 'Categorías', icon: Leaf },
                 { value: aguacateCount || 12, label: 'Variedades Aguacate', icon: Star },
               ].map((stat, index) => (
@@ -136,7 +136,7 @@ export default function EmpresasPage() {
         </div>
       </section>
 
-      {/* Categorías B2B */}
+      {/* Categorías */}
       <section className="py-16 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-10">
@@ -425,7 +425,7 @@ export default function EmpresasPage() {
               <span className="text-naranja-frutal font-bold text-sm tracking-widest uppercase">Experiencia Simplificada</span>
             </div>
             <h2 className="font-display font-bold text-4xl md:text-5xl mb-4 bg-gradient-to-r from-verde-bosque via-verde-aguacate to-naranja-frutal bg-clip-text text-transparent">
-              Proceso de Compra B2B
+              Proceso de Compra
             </h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
               4 simples pasos para recibir tu pedido mayorista
@@ -614,7 +614,7 @@ export default function EmpresasPage() {
       </section>
 
       {/* Beneficios - Modern 3D Cards Design */}
-      <section className="py-20 bg-white relative overflow-hidden">
+      <section id="beneficios" className="py-20 bg-white relative overflow-hidden">
         {/* Animated background pattern */}
         <div className="absolute inset-0">
           <div
@@ -758,7 +758,7 @@ export default function EmpresasPage() {
       </section>
 
       {/* CTA Final - Epic Animated Design */}
-      <section className="py-24 md:py-32 bg-gradient-to-br from-verde-bosque via-verde-aguacate to-naranja-frutal text-white relative overflow-hidden">
+      <section id="contacto" className="py-24 md:py-32 bg-gradient-to-br from-verde-bosque via-verde-aguacate to-naranja-frutal text-white relative overflow-hidden">
         {/* Animated background layers */}
         <div className="absolute inset-0">
           {/* Large gradient orbs */}
@@ -819,7 +819,7 @@ export default function EmpresasPage() {
 
             {/* Description */}
             <p className="text-xl md:text-2xl mb-12 max-w-2xl mx-auto text-white/90 leading-relaxed">
-              Explora nuestro catálogo B2B exclusivo y arma tu
+              Explora nuestro catálogo exclusivo y arma tu
               <span className="font-bold text-naranja-frutal"> primer pedido mayorista</span>
             </p>
 
