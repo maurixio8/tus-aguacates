@@ -757,41 +757,132 @@ export default function EmpresasPage() {
         </div>
       </section>
 
-      {/* CTA Final */}
-      <section className="py-20 bg-gradient-to-r from-verde-bosque via-verde-aguacate to-verde-bosque text-white relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-10 left-10 w-64 h-64 border-4 border-white/30 rounded-full animate-pulse" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 border-4 border-white/20 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
+      {/* CTA Final - Epic Animated Design */}
+      <section className="py-24 md:py-32 bg-gradient-to-br from-verde-bosque via-verde-aguacate to-naranja-frutal text-white relative overflow-hidden">
+        {/* Animated background layers */}
+        <div className="absolute inset-0">
+          {/* Large gradient orbs */}
+          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-dorado/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }} />
+          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-naranja-frutal/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '8s', animationDelay: '2s' }} />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '10s', animationDelay: '4s' }} />
+
+          {/* Animated grid pattern */}
+          <div
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+
+          {/* Floating particles/confetti */}
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
+              style={{
+                top: `${Math.random() * 100}%`,
+                left: `${Math.random() * 100}%`,
+                animationDuration: `${5 + Math.random() * 5}s`,
+                animationDelay: `${Math.random() * 3}s`,
+                transform: `scale(${0.5 + Math.random()})`,
+              }}
+            />
+          ))}
+
+          {/* Decorative circles */}
+          <div className="absolute top-20 left-20 w-32 h-32 border-2 border-white/10 rounded-full animate-spin" style={{ animationDuration: '20s' }} />
+          <div className="absolute bottom-20 right-20 w-40 h-40 border-2 border-white/10 rounded-full animate-spin" style={{ animationDuration: '25s', animationDirection: 'reverse' }} />
+          <div className="absolute top-1/2 right-10 w-24 h-24 border border-dorado/20 rounded-full animate-ping" style={{ animationDuration: '3s' }} />
         </div>
 
         <div className="container mx-auto px-4 text-center relative">
           <div className="max-w-4xl mx-auto">
-            <h2 className="font-display font-bold text-3xl md:text-5xl mb-5">
-              ¿Listo para Empezar?
+            {/* Animated badge */}
+            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-6 py-3 rounded-full mb-8 border border-white/20 shadow-lg animate-bounce" style={{ animationDuration: '3s' }}>
+              <span className="text-2xl">🚀</span>
+              <span className="font-bold text-sm uppercase tracking-widest">Comienza Hoy</span>
+            </div>
+
+            {/* Main heading with gradient text */}
+            <h2 className="font-display font-bold text-5xl md:text-7xl mb-6 leading-tight">
+              ¿Listo para
+              <span className="block relative">
+                <span className="relative z-10 bg-gradient-to-r from-white via-dorado to-white bg-clip-text text-transparent animate-gradient bg-[length:200%_auto]">
+                  Empezar?
+                </span>
+                <span className="absolute inset-0 text-white/20 blur-xl animate-pulse" style={{ animationDuration: '2s' }}>
+                  Empezar?
+                </span>
+              </span>
             </h2>
-            <p className="text-lg md:text-xl mb-10 max-w-2xl mx-auto text-white/90">
-              Explora nuestro catálogo B2B exclusivo y arma tu primer pedido mayorista
+
+            {/* Description */}
+            <p className="text-xl md:text-2xl mb-12 max-w-2xl mx-auto text-white/90 leading-relaxed">
+              Explora nuestro catálogo B2B exclusivo y arma tu
+              <span className="font-bold text-naranja-frutal"> primer pedido mayorista</span>
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-5 justify-center items-center">
+              {/* Primary CTA - Catalog */}
               <Link
                 href="/empresas/aguacates"
-                className="group inline-flex items-center justify-center bg-gradient-to-r from-naranja-frutal to-yellow-500 hover:from-naranja-frutal/90 hover:to-yellow-500/90 text-verde-bosque font-bold px-10 py-5 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 border-2 border-verde-aguacate"
+                className="group relative inline-flex items-center justify-center gap-3 bg-gradient-to-r from-naranja-frutal via-dorado to-naranja-frutal bg-[length:200%_auto] hover:bg-[position:100%_0] text-verde-bosque font-bold px-12 py-6 rounded-2xl transition-all duration-500 shadow-2xl hover:shadow-naranja-frutal/50 transform hover:scale-110 border-2 border-white/30 hover:border-white/50 overflow-hidden"
               >
-                Ver Catálogo Completo
-                <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                {/* Shine effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
+
+                {/* Glow effect */}
+                <div className="absolute inset-0 bg-naranja-frutal/20 blur-xl group-hover:bg-naranja-frutal/30 transition-colors duration-300" />
+
+                <span className="relative z-10 text-lg">Ver Catálogo Completo</span>
+                <ArrowRight className="relative z-10 w-6 h-6 group-hover:translate-x-2 transition-transform" />
               </Link>
+
+              {/* Secondary CTA - WhatsApp */}
               <a
                 href="https://wa.me/573042582777?text=Hola,%20quiero%20información%20sobre%20pedidos%20mayoristas"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center bg-white/20 backdrop-blur-sm border-2 border-white/30 hover:border-white/50 text-white font-bold px-10 py-5 rounded-xl transition-all duration-200 hover:scale-105"
+                className="group relative inline-flex items-center justify-center gap-3 bg-white/10 backdrop-blur-md border-2 border-white/30 hover:border-white/50 text-white font-bold px-12 py-6 rounded-2xl transition-all duration-300 hover:bg-white/20 hover:scale-105 shadow-xl overflow-hidden"
               >
-                💬 WhatsApp Directo
+                {/* WhatsApp pulse effect */}
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500/20 to-green-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                <span className="relative z-10 text-2xl group-hover:scale-125 transition-transform duration-300">💬</span>
+                <span className="relative z-10 text-lg">WhatsApp Directo</span>
               </a>
+            </div>
+
+            {/* Trust indicators */}
+            <div className="mt-16 flex flex-wrap justify-center gap-8 text-white/80">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">✨</span>
+                <span className="font-medium">Sin compromisos</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">🛡️</span>
+                <span className="font-medium">Garantía de frescura</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">⚡</span>
+                <span className="font-medium">Respuesta 24h</span>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Custom animations */}
+        <style jsx>{`
+          @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+          .animate-gradient {
+            animation: gradient 3s ease infinite;
+          }
+        `}</style>
       </section>
     </div>
   );
