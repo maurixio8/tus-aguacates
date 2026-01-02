@@ -404,64 +404,213 @@ export default function EmpresasPage() {
         `}</style>
       </section>
 
-      {/* Proceso de Compra */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <span className="inline-block text-naranja-frutal font-bold text-sm tracking-widest uppercase mb-2">
-              Experiencia Simplificada
-            </span>
-            <h2 className="font-display font-bold text-3xl md:text-4xl mb-3">
+      {/* Proceso de Compra - Modern Timeline Design */}
+      <section className="py-20 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-30">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(45, 80, 22, 0.1) 1px, transparent 0)',
+              backgroundSize: '40px 40px',
+            }}
+          />
+        </div>
+
+        <div className="container mx-auto px-4 relative">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 bg-verde-bosque/10 px-4 py-2 rounded-full mb-6 border border-verde-bosque/20">
+              <span className="w-2 h-2 bg-naranja-frutal rounded-full animate-pulse" />
+              <span className="text-naranja-frutal font-bold text-sm tracking-widest uppercase">Experiencia Simplificada</span>
+            </div>
+            <h2 className="font-display font-bold text-4xl md:text-5xl mb-4 bg-gradient-to-r from-verde-bosque via-verde-aguacate to-naranja-frutal bg-clip-text text-transparent">
               Proceso de Compra B2B
             </h2>
-            <p className="text-gray-600 text-lg">
-              Simple y eficiente para tu negocio
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              4 simples pasos para recibir tu pedido mayorista
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-            {[
-              {
-                number: '1',
-                icon: '🛒',
-                title: 'Selecciona',
-                description: 'Variedad, maduración y cantidad en kg'
-              },
-              {
-                number: '2',
-                icon: '📦',
-                title: 'Arma Pedido',
-                description: 'Carrito con precios por volumen'
-              },
-              {
-                number: '3',
-                icon: '✅',
-                title: 'Confirma',
-                description: 'Checkout o WhatsApp directo'
-              },
-              {
-                number: '4',
-                icon: '🚚',
-                title: 'Recibe',
-                description: 'Entrega coordinada a tu negocio'
-              }
-            ].map((step, index) => (
-              <div key={step.number} className="relative">
-                {/* Number badge */}
-                <div className="absolute -top-2 -right-2 w-7 h-7 bg-naranja-frutal text-white rounded-full flex items-center justify-center font-display text-sm font-bold shadow-lg z-10">
-                  {step.number}
-                </div>
-                <div className="bg-gradient-to-br from-verde-bosque/5 to-verde-aguacate/10 rounded-xl p-6 hover:shadow-medium transition-all duration-200 border border-verde-bosque/10 hover:border-verde-bosque/20 text-center h-full">
-                  <div className="w-14 h-14 bg-white rounded-xl flex items-center justify-center mx-auto mb-4 shadow-soft text-2xl">
-                    {step.icon}
-                  </div>
-                  <h3 className="font-display font-bold text-lg mb-2 text-verde-bosque">{step.title}</h3>
-                  <p className="text-gray-600 text-sm">{step.description}</p>
-                </div>
+          {/* Timeline Steps */}
+          <div className="max-w-6xl mx-auto">
+            {/* Desktop: Horizontal timeline */}
+            <div className="hidden lg:block relative">
+              {/* Connection line */}
+              <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-verde-bosque via-verde-aguacate to-naranja-frutal transform -translate-y-1/2 rounded-full" style={{ backgroundSize: '200% 100%', animation: 'gradient-flow 3s ease infinite' }}>
+                <div className="absolute inset-0 bg-white/30 animate-pulse" />
               </div>
-            ))}
+
+              <div className="grid grid-cols-4 gap-8 relative">
+                {[
+                  {
+                    number: '1',
+                    icon: '🛒',
+                    iconBg: 'from-verde-bosque',
+                    iconTo: 'to-verde-aguacate',
+                    title: 'Selecciona',
+                    description: 'Variedad, maduración y cantidad en kg',
+                    detail: 'Elige entre 4 variedades y 3 estados de maduración'
+                  },
+                  {
+                    number: '2',
+                    icon: '📦',
+                    iconBg: 'from-verde-aguacate',
+                    iconTo: 'to-naranja-frutal',
+                    title: 'Arma Pedido',
+                    description: 'Carrito con precios por volumen',
+                    detail: 'Precios escalonados: 5-20kg, 20-100kg, 100-300kg'
+                  },
+                  {
+                    number: '3',
+                    icon: '✅',
+                    iconBg: 'from-naranja-frutal',
+                    iconTo: 'to-dorado',
+                    title: 'Confirma',
+                    description: 'Checkout o WhatsApp directo',
+                    detail: 'Múltiples métodos de pago disponibles'
+                  },
+                  {
+                    number: '4',
+                    icon: '🚚',
+                    iconBg: 'from-dorado',
+                    iconTo: 'to-verde-bosque',
+                    title: 'Recibe',
+                    description: 'Entrega coordinada a tu negocio',
+                    detail: 'Envío gratis en pedidos mayores a $100.000'
+                  }
+                ].map((step, index) => (
+                  <div key={step.number} className="relative">
+                    {/* Step card */}
+                    <div className="group relative">
+                      {/* Glow effect on hover */}
+                      <div className={`absolute -inset-4 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-3xl blur-2xl opacity-0 group-hover:opacity-20 transition-opacity duration-500`} />
+
+                      {/* Card content */}
+                      <div className="relative bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-500 transform group-hover:-translate-y-2 border border-gray-100 hover:border-white">
+                        {/* Number badge with glow */}
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                          <div className={`relative w-12 h-12 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
+                            <div className={`absolute inset-0 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-xl blur-lg opacity-60 animate-pulse`} style={{ animationDuration: '2s' }} />
+                            <span className="relative font-display font-bold text-lg text-white">{step.number}</span>
+                          </div>
+                        </div>
+
+                        {/* Icon */}
+                        <div className="pt-6 pb-4">
+                          <div className={`w-20 h-20 mx-auto bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-2xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-12 transition-all duration-500 relative`}>
+                            <div className={`absolute inset-0 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-2xl blur-xl opacity-40 group-hover:opacity-60 transition-opacity`} />
+                            <span className="relative text-4xl">{step.icon}</span>
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="text-center">
+                          <h3 className="font-display font-bold text-xl text-verde-bosque mb-2 group-hover:text-naranja-frutal transition-colors">
+                            {step.title}
+                          </h3>
+                          <p className="text-gray-600 text-sm mb-3">{step.description}</p>
+                          <p className="text-xs text-gray-400 italic">{step.detail}</p>
+                        </div>
+
+                        {/* Hover arrow indicator */}
+                        <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ArrowRight className="w-5 h-5 text-naranja-frutal" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile/Tablet: Vertical timeline */}
+            <div className="lg:hidden relative max-w-md mx-auto">
+              {/* Vertical connection line */}
+              <div className="absolute left-8 top-0 bottom-0 w-1 bg-gradient-to-b from-verde-bosque via-verde-aguacate to-naranja-frutal rounded-full">
+                <div className="absolute inset-0 bg-white/30 animate-pulse" />
+              </div>
+
+              <div className="space-y-8">
+                {[
+                  {
+                    number: '1',
+                    icon: '🛒',
+                    iconBg: 'from-verde-bosque',
+                    iconTo: 'to-verde-aguacate',
+                    title: 'Selecciona',
+                    description: 'Variedad, maduración y cantidad en kg',
+                    detail: 'Elige entre 4 variedades y 3 estados de maduración'
+                  },
+                  {
+                    number: '2',
+                    icon: '📦',
+                    iconBg: 'from-verde-aguacate',
+                    iconTo: 'to-naranja-frutal',
+                    title: 'Arma Pedido',
+                    description: 'Carrito con precios por volumen',
+                    detail: 'Precios escalonados: 5-20kg, 20-100kg, 100-300kg'
+                  },
+                  {
+                    number: '3',
+                    icon: '✅',
+                    iconBg: 'from-naranja-frutal',
+                    iconTo: 'to-dorado',
+                    title: 'Confirma',
+                    description: 'Checkout o WhatsApp directo',
+                    detail: 'Múltiples métodos de pago disponibles'
+                  },
+                  {
+                    number: '4',
+                    icon: '🚚',
+                    iconBg: 'from-dorado',
+                    iconTo: 'to-verde-bosque',
+                    title: 'Recibe',
+                    description: 'Entrega coordinada a tu negocio',
+                    detail: 'Envío gratis en pedidos mayores a $100.000'
+                  }
+                ].map((step, index) => (
+                  <div key={step.number} className="relative pl-20">
+                    {/* Number on timeline */}
+                    <div className="absolute left-4 top-6">
+                      <div className={`relative w-10 h-10 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-full flex items-center justify-center shadow-lg transform hover:scale-110 transition-transform`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-full blur-md opacity-60 animate-pulse`} style={{ animationDuration: '2s' }} />
+                        <span className="relative font-display font-bold text-base text-white">{step.number}</span>
+                      </div>
+                    </div>
+
+                    {/* Card */}
+                    <div className="group relative bg-white rounded-xl p-5 shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-x-2 border border-gray-100">
+                      {/* Icon and title row */}
+                      <div className="flex items-center gap-4 mb-3">
+                        <div className={`w-14 h-14 bg-gradient-to-br ${step.iconBg} ${step.iconTo} rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0`}>
+                          <span className="text-2xl">{step.icon}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-display font-bold text-lg text-verde-bosque group-hover:text-naranja-frutal transition-colors">
+                            {step.title}
+                          </h3>
+                        </div>
+                      </div>
+
+                      <p className="text-gray-600 text-sm mb-2">{step.description}</p>
+                      <p className="text-xs text-gray-400 italic">{step.detail}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Custom animations */}
+        <style jsx>{`
+          @keyframes gradient-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
+        `}</style>
       </section>
 
       {/* Beneficios */}
