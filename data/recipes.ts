@@ -589,6 +589,746 @@ export const recipes: Recipe[] = [
       fiber: '4g'
     },
     createdAt: '2024-01-24'
+  },
+  {
+    id: '11',
+    slug: 'aguacate-relleno-atun',
+    title: 'Aguacates Rellenos de Atún',
+    description: 'Una entrada elegante y nutritiva. Los aguacates se convierten en el recipiente perfecto para una mezcla cremosa de atún con mayonesa ligera y vegetales crujientes.',
+    shortDescription: 'Entrada fresca con atún y aguacate cremoso',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 0,
+    servings: 4,
+    difficulty: 'Fácil',
+    category: 'con-aguacate',
+    tags: ['entrada', 'proteína', 'sin cocción', 'omega-3', 'rápido'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Aguacate Hass', quantity: '2', unit: 'grandes', productSlug: 'aguacate-hass' },
+      { name: 'Atún en agua', quantity: '2', unit: 'latas (140g c/u)' },
+      { name: 'Mayonesa ligera', quantity: '3', unit: 'cucharadas' },
+      { name: 'Apio', quantity: '2', unit: 'tallos' },
+      { name: 'Cebolla morada', quantity: '1/4', unit: 'pequeña', productSlug: 'cebolla-morada' },
+      { name: 'Limón', quantity: '1', unit: 'unidad', productSlug: 'limon-tahiti' },
+      { name: 'Sal y pimienta', quantity: 'al gusto', unit: '' },
+      { name: 'Perejil', quantity: '2', unit: 'cucharadas', isOptional: true }
+    ],
+    steps: [
+      'Escurre bien el atún y colócalo en un bowl.',
+      'Pica finamente el apio y la cebolla morada.',
+      'Mezcla el atún con la mayonesa, el apio y la cebolla.',
+      'Añade el jugo de medio limón, sal y pimienta al gusto.',
+      'Corta los aguacates por la mitad y retira el hueso.',
+      'Con una cuchara, amplía ligeramente el hueco del aguacate.',
+      'Rocía las mitades de aguacate con el jugo de limón restante para evitar oxidación.',
+      'Rellena cada mitad de aguacate con la mezcla de atún.',
+      'Decora con perejil picado y sirve inmediatamente.'
+    ],
+    tips: [
+      'Usa atún en agua para una versión más ligera.',
+      'Puedes añadir un poco de mostaza Dijon para más sabor.',
+      'También funciona con pollo desmenuzado o camarones.'
+    ],
+    nutrition: {
+      calories: 320,
+      protein: '22g',
+      carbs: '8g',
+      fat: '24g',
+      fiber: '7g'
+    },
+    createdAt: '2024-01-25'
+  },
+  {
+    id: '12',
+    slug: 'ceviche-mango-aguacate',
+    title: 'Ceviche Tropical de Mango y Aguacate',
+    description: 'Una versión fresca y tropical del clásico ceviche. La combinación de pescado marinado en limón, mango dulce y aguacate cremoso crea una explosión de sabores.',
+    shortDescription: 'Ceviche fresco con frutas tropicales',
+    image: 'https://images.unsplash.com/photo-1535399831218-d5bd36d1a6b3?w=800&h=600&fit=crop',
+    prepTime: 25,
+    cookTime: 0,
+    servings: 6,
+    difficulty: 'Media',
+    category: 'platos-principales',
+    tags: ['mariscos', 'peruano', 'tropical', 'sin cocción', 'fresco'],
+    isFeatured: true,
+    ingredients: [
+      { name: 'Pescado blanco fresco', quantity: '500', unit: 'gramos' },
+      { name: 'Limón', quantity: '8', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Mango maduro', quantity: '1', unit: 'grande', productSlug: 'mango' },
+      { name: 'Aguacate Hass', quantity: '2', unit: 'medianos', productSlug: 'aguacate-hass' },
+      { name: 'Cebolla morada', quantity: '1', unit: 'mediana', productSlug: 'cebolla-morada' },
+      { name: 'Cilantro', quantity: '1/2', unit: 'taza', productSlug: 'cilantro' },
+      { name: 'Ají limo o chile', quantity: '1', unit: 'pequeño' },
+      { name: 'Sal', quantity: '1', unit: 'cucharadita' }
+    ],
+    steps: [
+      'Corta el pescado en cubos pequeños de 2cm. Asegúrate de que esté muy fresco.',
+      'Exprime los limones y cuela el jugo para eliminar semillas.',
+      'Coloca el pescado en un bowl de vidrio y cubre con el jugo de limón.',
+      'Añade sal y deja marinar en refrigeración por 20-30 minutos.',
+      'Mientras tanto, corta la cebolla en julianas finas y remójala en agua fría.',
+      'Pela y corta el mango y el aguacate en cubos del mismo tamaño que el pescado.',
+      'Escurre la cebolla y pica finamente el cilantro y el ají.',
+      'Una vez marinado el pescado, escurre el exceso de limón.',
+      'Mezcla con el mango, aguacate, cebolla, cilantro y ají.',
+      'Ajusta la sal y sirve inmediatamente en copas o platos hondos.'
+    ],
+    tips: [
+      'El pescado debe estar muy fresco - pide en la pescadería que sea para ceviche.',
+      'No dejes marinar demasiado tiempo o el pescado quedará "cocido" en exceso.',
+      'Puedes usar camarones o pulpo en lugar de pescado.'
+    ],
+    nutrition: {
+      calories: 220,
+      protein: '25g',
+      carbs: '18g',
+      fat: '8g',
+      fiber: '5g'
+    },
+    createdAt: '2024-01-26'
+  },
+  {
+    id: '13',
+    slug: 'ensalada-cesar-aguacate',
+    title: 'Ensalada César con Aguacate',
+    description: 'La clásica ensalada César reinventada con cremoso aguacate. Crujiente lechuga romana, crutones caseros y un aderezo César ligero hacen de esta ensalada un plato completo.',
+    shortDescription: 'Ensalada César clásica con toque de aguacate',
+    image: 'https://images.unsplash.com/photo-1550304943-4f24f54ddde9?w=800&h=600&fit=crop',
+    prepTime: 20,
+    cookTime: 10,
+    servings: 4,
+    difficulty: 'Fácil',
+    category: 'ensaladas',
+    tags: ['clásica', 'lechuga', 'crutones', 'queso parmesano'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Lechuga romana', quantity: '2', unit: 'cogollos', productSlug: 'lechuga' },
+      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass' },
+      { name: 'Pan francés', quantity: '2', unit: 'rebanadas' },
+      { name: 'Queso parmesano', quantity: '1/2', unit: 'taza rallado' },
+      { name: 'Limón', quantity: '1', unit: 'unidad', productSlug: 'limon-tahiti' },
+      { name: 'Ajo', quantity: '2', unit: 'dientes' },
+      { name: 'Aceite de oliva', quantity: '4', unit: 'cucharadas' },
+      { name: 'Yogurt griego', quantity: '3', unit: 'cucharadas' },
+      { name: 'Mostaza Dijon', quantity: '1', unit: 'cucharadita' }
+    ],
+    steps: [
+      'Precalienta el horno a 180°C. Corta el pan en cubos pequeños.',
+      'Mezcla los cubos de pan con 1 cucharada de aceite y ajo picado.',
+      'Hornea los crutones por 10 minutos hasta que estén dorados y crujientes.',
+      'Para el aderezo: mezcla yogurt, mostaza, jugo de limón, 2 cucharadas de aceite y la mitad del parmesano.',
+      'Añade sal y pimienta al aderezo y mezcla bien.',
+      'Lava y seca la lechuga. Córtala en trozos grandes.',
+      'Corta el aguacate en rodajas o cubos.',
+      'En un bowl grande, mezcla la lechuga con suficiente aderezo.',
+      'Añade el aguacate, los crutones y el resto del parmesano.',
+      'Sirve inmediatamente con más parmesano rallado encima.'
+    ],
+    tips: [
+      'Para crutones extra crujientes, usa pan del día anterior.',
+      'Puedes añadir pollo a la plancha para una comida más completa.',
+      'El aderezo se conserva en la nevera hasta 5 días.'
+    ],
+    nutrition: {
+      calories: 290,
+      protein: '10g',
+      carbs: '18g',
+      fat: '22g',
+      fiber: '6g'
+    },
+    createdAt: '2024-01-27'
+  },
+  {
+    id: '14',
+    slug: 'tacos-carnitas-aguacate',
+    title: 'Tacos de Carnitas con Guacamole',
+    description: 'Auténticos tacos mexicanos con carnitas jugosas y guacamole fresco. La carne de cerdo se cocina lentamente hasta quedar tierna y se sirve con todos los complementos tradicionales.',
+    shortDescription: 'Tacos mexicanos con carne jugosa y guacamole',
+    image: 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=800&h=600&fit=crop',
+    prepTime: 20,
+    cookTime: 180,
+    servings: 8,
+    difficulty: 'Difícil',
+    category: 'platos-principales',
+    tags: ['mexicano', 'cerdo', 'tacos', 'fiesta', 'tradicional'],
+    isFeatured: true,
+    ingredients: [
+      { name: 'Carne de cerdo', quantity: '1', unit: 'kg (paleta)' },
+      { name: 'Aguacate Hass', quantity: '3', unit: 'maduros', productSlug: 'aguacate-hass' },
+      { name: 'Tortillas de maíz', quantity: '16', unit: 'pequeñas' },
+      { name: 'Cebolla blanca', quantity: '1', unit: 'grande' },
+      { name: 'Cilantro', quantity: '1', unit: 'manojo', productSlug: 'cilantro' },
+      { name: 'Limón', quantity: '4', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Naranja', quantity: '1', unit: 'grande' },
+      { name: 'Ajo', quantity: '6', unit: 'dientes' },
+      { name: 'Comino', quantity: '1', unit: 'cucharadita' },
+      { name: 'Sal', quantity: '2', unit: 'cucharaditas' }
+    ],
+    steps: [
+      'Corta la carne en cubos grandes de 5cm. Sazona con sal y comino.',
+      'Coloca la carne en una olla con el jugo de naranja, media cebolla y los ajos.',
+      'Añade agua hasta cubrir y cocina a fuego bajo por 2-3 horas.',
+      'Cuando la carne esté tierna, sube el fuego para evaporar el líquido.',
+      'Deja que la carne se dore en su propia grasa, desmenuzando con dos tenedores.',
+      'Prepara el guacamole: machaca los aguacates con limón, sal y cilantro.',
+      'Pica finamente la cebolla restante y el cilantro para acompañar.',
+      'Calienta las tortillas en un comal o sartén.',
+      'Sirve las carnitas en las tortillas con guacamole, cebolla, cilantro y limón.'
+    ],
+    tips: [
+      'La clave está en la cocción lenta - no tengas prisa.',
+      'Guarda la grasa del cerdo para cocinar frijoles.',
+      'Puedes hacer las carnitas el día anterior y recalentar.'
+    ],
+    nutrition: {
+      calories: 420,
+      protein: '28g',
+      carbs: '25g',
+      fat: '26g',
+      fiber: '6g'
+    },
+    createdAt: '2024-01-28'
+  },
+  {
+    id: '15',
+    slug: 'mousse-aguacate-chocolate',
+    title: 'Mousse de Aguacate y Chocolate',
+    description: 'Un postre sorprendente y saludable donde el aguacate crea una textura increíblemente cremosa. Rico en grasas buenas y con todo el sabor del chocolate negro.',
+    shortDescription: 'Postre cremoso y saludable con chocolate',
+    image: 'https://images.unsplash.com/photo-1541783245831-57d6fb0926d3?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 0,
+    servings: 4,
+    difficulty: 'Fácil',
+    category: 'postres',
+    tags: ['chocolate', 'saludable', 'vegano', 'sin cocción', 'cremoso'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Aguacate Hass', quantity: '2', unit: 'maduros', productSlug: 'aguacate-hass' },
+      { name: 'Cacao en polvo', quantity: '1/4', unit: 'taza' },
+      { name: 'Miel o jarabe de maple', quantity: '3', unit: 'cucharadas' },
+      { name: 'Leche de almendras', quantity: '2', unit: 'cucharadas' },
+      { name: 'Extracto de vainilla', quantity: '1', unit: 'cucharadita' },
+      { name: 'Sal', quantity: '1', unit: 'pizca' },
+      { name: 'Fresas', quantity: '1/2', unit: 'taza', productSlug: 'fresas', isOptional: true }
+    ],
+    steps: [
+      'Corta los aguacates por la mitad y retira el hueso.',
+      'Saca la pulpa con una cuchara y colócala en un procesador de alimentos.',
+      'Añade el cacao en polvo, la miel, la leche de almendras, la vainilla y la sal.',
+      'Procesa durante 2-3 minutos, raspando los lados, hasta obtener una textura muy suave.',
+      'Prueba y ajusta el dulzor según tu preferencia.',
+      'Divide el mousse en 4 recipientes pequeños.',
+      'Refrigera por al menos 30 minutos para que tome consistencia.',
+      'Decora con fresas frescas o virutas de chocolate antes de servir.'
+    ],
+    tips: [
+      'Usa aguacates muy maduros para la mejor textura.',
+      'No detectarás el sabor del aguacate, solo la cremosidad.',
+      'Puedes añadir una cucharada de mantequilla de maní para más sabor.'
+    ],
+    nutrition: {
+      calories: 220,
+      protein: '3g',
+      carbs: '22g',
+      fat: '16g',
+      fiber: '8g'
+    },
+    createdAt: '2024-01-29'
+  },
+  {
+    id: '16',
+    slug: 'bowl-buddha-quinoa',
+    title: 'Buddha Bowl de Quinoa con Aguacate',
+    description: 'Un bowl nutritivo y colorido con quinoa, vegetales asados, garbanzos crujientes y aguacate cremoso. Perfecto para meal prep y comidas saludables.',
+    shortDescription: 'Bowl nutritivo con granos y vegetales',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 25,
+    servings: 2,
+    difficulty: 'Media',
+    category: 'platos-principales',
+    tags: ['bowl', 'vegetariano', 'quinoa', 'meal prep', 'nutritivo'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Quinoa', quantity: '1', unit: 'taza' },
+      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass' },
+      { name: 'Garbanzos cocidos', quantity: '1', unit: 'taza' },
+      { name: 'Zanahoria', quantity: '2', unit: 'medianas' },
+      { name: 'Brócoli', quantity: '2', unit: 'tazas' },
+      { name: 'Espinaca', quantity: '2', unit: 'tazas', productSlug: 'espinaca' },
+      { name: 'Limón', quantity: '1', unit: 'unidad', productSlug: 'limon-tahiti' },
+      { name: 'Tahini', quantity: '2', unit: 'cucharadas' },
+      { name: 'Aceite de oliva', quantity: '2', unit: 'cucharadas' },
+      { name: 'Sal y especias', quantity: 'al gusto', unit: '' }
+    ],
+    steps: [
+      'Cocina la quinoa según las instrucciones del paquete. Reserva.',
+      'Precalienta el horno a 200°C.',
+      'Corta las zanahorias en rodajas y separa el brócoli en floretes.',
+      'Escurre los garbanzos y mézclalos con 1 cucharada de aceite y especias.',
+      'Coloca zanahorias, brócoli y garbanzos en una bandeja de horno.',
+      'Hornea por 20-25 minutos hasta que los vegetales estén tiernos y los garbanzos crujientes.',
+      'Prepara el aderezo: mezcla tahini, jugo de limón, aceite y un poco de agua.',
+      'Arma los bowls: coloca quinoa, espinaca, vegetales asados y aguacate en rodajas.',
+      'Rocía con el aderezo de tahini y sirve.'
+    ],
+    tips: [
+      'Prepara la quinoa y vegetales el domingo para tener almuerzo toda la semana.',
+      'Varía los vegetales según la temporada.',
+      'Añade tofu o pollo para más proteína.'
+    ],
+    nutrition: {
+      calories: 480,
+      protein: '16g',
+      carbs: '52g',
+      fat: '24g',
+      fiber: '14g'
+    },
+    createdAt: '2024-01-30'
+  },
+  {
+    id: '17',
+    slug: 'nachos-guacamole-pico-gallo',
+    title: 'Nachos Supremos con Guacamole',
+    description: 'Nachos cargados con queso fundido, guacamole fresco, pico de gallo y crema. Perfectos para compartir en reuniones o para una noche de películas.',
+    shortDescription: 'Nachos cargados perfectos para compartir',
+    image: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=800&h=600&fit=crop',
+    prepTime: 20,
+    cookTime: 10,
+    servings: 6,
+    difficulty: 'Fácil',
+    category: 'snacks',
+    tags: ['mexicano', 'para compartir', 'fiesta', 'queso', 'antojo'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Totopos o nachos', quantity: '300', unit: 'gramos' },
+      { name: 'Aguacate Hass', quantity: '3', unit: 'maduros', productSlug: 'aguacate-hass' },
+      { name: 'Queso cheddar', quantity: '2', unit: 'tazas rallado' },
+      { name: 'Tomate', quantity: '2', unit: 'medianos', productSlug: 'tomate' },
+      { name: 'Cebolla morada', quantity: '1/2', unit: 'pequeña', productSlug: 'cebolla-morada' },
+      { name: 'Cilantro', quantity: '1/2', unit: 'taza', productSlug: 'cilantro' },
+      { name: 'Limón', quantity: '3', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Crema ácida', quantity: '1/2', unit: 'taza' },
+      { name: 'Jalapeños en rodajas', quantity: '1/4', unit: 'taza', isOptional: true }
+    ],
+    steps: [
+      'Precalienta el horno a 180°C.',
+      'Prepara el pico de gallo: pica tomate, cebolla y cilantro. Mezcla con jugo de 1 limón y sal.',
+      'Prepara el guacamole: machaca los aguacates, añade limón, cilantro, sal y un poco de cebolla picada.',
+      'Extiende los nachos en una bandeja para horno.',
+      'Cubre con el queso cheddar rallado.',
+      'Hornea por 8-10 minutos hasta que el queso esté fundido y burbujeante.',
+      'Retira del horno y coloca cucharadas de guacamole por encima.',
+      'Añade el pico de gallo, la crema ácida y los jalapeños.',
+      '¡Sirve inmediatamente mientras el queso está caliente!'
+    ],
+    tips: [
+      'Puedes añadir carne molida sazonada o pollo desmenuzado.',
+      'Los nachos de bolsa funcionan, pero los caseros son mejores.',
+      'Sirve salsas adicionales como salsa verde o roja.'
+    ],
+    nutrition: {
+      calories: 380,
+      protein: '12g',
+      carbs: '32g',
+      fat: '24g',
+      fiber: '7g'
+    },
+    createdAt: '2024-01-31'
+  },
+  {
+    id: '18',
+    slug: 'ensalada-quinoa-mediterranea',
+    title: 'Ensalada Mediterránea de Quinoa',
+    description: 'Una ensalada fresca inspirada en los sabores del Mediterráneo. Quinoa nutritiva con pepino, tomate cherry, aceitunas, queso feta y un aderezo de limón y hierbas.',
+    shortDescription: 'Ensalada fresca con sabores mediterráneos',
+    image: 'https://images.unsplash.com/photo-1505253716362-afaea1d3d1af?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 15,
+    servings: 4,
+    difficulty: 'Fácil',
+    category: 'ensaladas',
+    tags: ['mediterránea', 'quinoa', 'vegetariano', 'fresca', 'nutritiva'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Quinoa', quantity: '1', unit: 'taza' },
+      { name: 'Pepino', quantity: '1', unit: 'grande' },
+      { name: 'Tomates cherry', quantity: '1', unit: 'taza' },
+      { name: 'Aceitunas kalamata', quantity: '1/2', unit: 'taza' },
+      { name: 'Queso feta', quantity: '100', unit: 'gramos' },
+      { name: 'Cebolla morada', quantity: '1/4', unit: 'pequeña', productSlug: 'cebolla-morada' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Aceite de oliva', quantity: '4', unit: 'cucharadas' },
+      { name: 'Orégano seco', quantity: '1', unit: 'cucharadita' },
+      { name: 'Menta fresca', quantity: '2', unit: 'cucharadas', isOptional: true }
+    ],
+    steps: [
+      'Cocina la quinoa en 2 tazas de agua con sal. Cocina por 15 minutos y deja enfriar.',
+      'Corta el pepino en cubos pequeños.',
+      'Corta los tomates cherry por la mitad.',
+      'Pica la cebolla morada finamente.',
+      'Corta el queso feta en cubos.',
+      'Para el aderezo: mezcla aceite de oliva, jugo de limón, orégano, sal y pimienta.',
+      'En un bowl grande, combina la quinoa fría con todos los vegetales.',
+      'Añade las aceitunas y el queso feta.',
+      'Vierte el aderezo y mezcla suavemente.',
+      'Decora con menta fresca picada si deseas.'
+    ],
+    tips: [
+      'Esta ensalada mejora después de reposar en la nevera por unas horas.',
+      'Puedes añadir aguacate justo antes de servir.',
+      'Funciona como acompañamiento o como plato principal ligero.'
+    ],
+    nutrition: {
+      calories: 320,
+      protein: '10g',
+      carbs: '28g',
+      fat: '20g',
+      fiber: '5g'
+    },
+    createdAt: '2024-02-01'
+  },
+  {
+    id: '19',
+    slug: 'paletas-mango-chile',
+    title: 'Paletas de Mango con Chile',
+    description: 'Refrescantes paletas caseras de mango con un toque picante de chile. El contraste dulce-picante es irresistible en días calurosos. ¡Sabor mexicano en cada mordida!',
+    shortDescription: 'Paletas refrescantes dulces y picantes',
+    image: 'https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 0,
+    servings: 8,
+    difficulty: 'Fácil',
+    category: 'postres',
+    tags: ['helado', 'mango', 'picante', 'mexicano', 'refrescante'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Mango maduro', quantity: '3', unit: 'grandes', productSlug: 'mango' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Miel', quantity: '2', unit: 'cucharadas' },
+      { name: 'Chile en polvo', quantity: '1', unit: 'cucharadita' },
+      { name: 'Sal', quantity: '1/4', unit: 'cucharadita' },
+      { name: 'Chamoy', quantity: '2', unit: 'cucharadas', isOptional: true }
+    ],
+    steps: [
+      'Pela los mangos y corta la pulpa en trozos.',
+      'Coloca el mango en la licuadora con el jugo de limón y la miel.',
+      'Licúa hasta obtener un puré suave.',
+      'Vierte la mezcla en moldes para paletas, llenando 3/4 partes.',
+      'Mezcla el chile en polvo con la sal.',
+      'Espolvorea un poco de la mezcla de chile-sal en cada molde.',
+      'Si usas chamoy, añade unas gotas.',
+      'Inserta los palitos y congela por al menos 4 horas o toda la noche.',
+      'Para desmoldar, pasa el molde brevemente bajo agua tibia.'
+    ],
+    tips: [
+      'Usa mangos muy maduros para más dulzor natural.',
+      'Ajusta la cantidad de chile según tu tolerancia al picante.',
+      'Puedes hacer versión sin chile para los niños.'
+    ],
+    nutrition: {
+      calories: 80,
+      protein: '1g',
+      carbs: '20g',
+      fat: '0g',
+      fiber: '2g'
+    },
+    createdAt: '2024-02-02'
+  },
+  {
+    id: '20',
+    slug: 'hummus-aguacate-verde',
+    title: 'Hummus Verde de Aguacate',
+    description: 'Una fusión deliciosa entre el hummus tradicional y el guacamole. Cremoso, nutritivo y lleno de sabor. Perfecto para dipear con vegetales o pita.',
+    shortDescription: 'Dip cremoso fusión de hummus y aguacate',
+    image: 'https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800&h=600&fit=crop',
+    prepTime: 10,
+    cookTime: 0,
+    servings: 6,
+    difficulty: 'Fácil',
+    category: 'snacks',
+    tags: ['dip', 'vegetariano', 'proteína', 'sin cocción', 'saludable'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Garbanzos cocidos', quantity: '1', unit: 'lata (400g)' },
+      { name: 'Aguacate Hass', quantity: '1', unit: 'grande', productSlug: 'aguacate-hass' },
+      { name: 'Tahini', quantity: '2', unit: 'cucharadas' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Ajo', quantity: '1', unit: 'diente' },
+      { name: 'Cilantro', quantity: '1/4', unit: 'taza', productSlug: 'cilantro' },
+      { name: 'Aceite de oliva', quantity: '3', unit: 'cucharadas' },
+      { name: 'Comino', quantity: '1/2', unit: 'cucharadita' },
+      { name: 'Sal', quantity: '1/2', unit: 'cucharadita' }
+    ],
+    steps: [
+      'Escurre y enjuaga los garbanzos.',
+      'Coloca los garbanzos en el procesador de alimentos y procesa hasta formar una pasta.',
+      'Añade la pulpa del aguacate, el tahini, el jugo de limón, el ajo y el comino.',
+      'Procesa hasta obtener una mezcla suave y cremosa.',
+      'Con el procesador funcionando, añade el aceite de oliva en un hilo.',
+      'Añade el cilantro y procesa brevemente para incorporar.',
+      'Prueba y ajusta la sal y el limón.',
+      'Sirve en un bowl con un chorrito de aceite de oliva y semillas de sésamo.',
+      'Acompaña con pan pita, vegetales crudos o nachos.'
+    ],
+    tips: [
+      'Para un hummus más suave, pela los garbanzos antes de procesar.',
+      'Se conserva bien en la nevera por 3-4 días.',
+      'El limón ayuda a que no se oxide el aguacate.'
+    ],
+    nutrition: {
+      calories: 180,
+      protein: '6g',
+      carbs: '18g',
+      fat: '10g',
+      fiber: '6g'
+    },
+    createdAt: '2024-02-03'
+  },
+  {
+    id: '21',
+    slug: 'salmon-costra-aguacate',
+    title: 'Salmón con Costra de Aguacate',
+    description: 'Filetes de salmón horneados con una deliciosa costra de aguacate y hierbas. Un plato elegante, saludable y lleno de omega-3.',
+    shortDescription: 'Salmón elegante con costra cremosa',
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 20,
+    servings: 4,
+    difficulty: 'Media',
+    category: 'platos-principales',
+    tags: ['pescado', 'omega-3', 'horneado', 'elegante', 'proteína'],
+    isFeatured: true,
+    ingredients: [
+      { name: 'Filetes de salmón', quantity: '4', unit: 'porciones (150g c/u)' },
+      { name: 'Aguacate Hass', quantity: '2', unit: 'maduros', productSlug: 'aguacate-hass' },
+      { name: 'Limón', quantity: '2', unit: 'unidades', productSlug: 'limon-tahiti' },
+      { name: 'Ajo', quantity: '2', unit: 'dientes' },
+      { name: 'Pan rallado', quantity: '1/2', unit: 'taza' },
+      { name: 'Perejil', quantity: '2', unit: 'cucharadas' },
+      { name: 'Aceite de oliva', quantity: '2', unit: 'cucharadas' },
+      { name: 'Sal y pimienta', quantity: 'al gusto', unit: '' }
+    ],
+    steps: [
+      'Precalienta el horno a 200°C.',
+      'Coloca los filetes de salmón en una bandeja con papel de hornear.',
+      'Sazona con sal, pimienta y jugo de medio limón.',
+      'Machaca los aguacates con el ajo picado, el perejil y el jugo del limón restante.',
+      'Mezcla el pan rallado con una cucharada de aceite de oliva.',
+      'Unta generosamente la mezcla de aguacate sobre cada filete de salmón.',
+      'Espolvorea el pan rallado sobre la costra de aguacate.',
+      'Rocía con el resto del aceite de oliva.',
+      'Hornea por 18-20 minutos hasta que el salmón esté cocido y la costra dorada.',
+      'Sirve con limón extra y vegetales al vapor.'
+    ],
+    tips: [
+      'No hornees demasiado o el salmón quedará seco.',
+      'Puedes usar este método con otros pescados como trucha o corvina.',
+      'Acompaña con arroz o puré de papas.'
+    ],
+    nutrition: {
+      calories: 380,
+      protein: '35g',
+      carbs: '12g',
+      fat: '24g',
+      fiber: '5g'
+    },
+    createdAt: '2024-02-04'
+  },
+  {
+    id: '22',
+    slug: 'smoothie-bowl-pitaya',
+    title: 'Smoothie Bowl de Pitaya y Banano',
+    description: 'Un bowl vibrante de color rosa intenso hecho con pitaya (fruta del dragón). Cremoso, refrescante y perfecto para un desayuno fotogénico y nutritivo.',
+    shortDescription: 'Bowl rosa vibrante con superfoods',
+    image: 'https://images.unsplash.com/photo-1494597564530-871f2b93ac55?w=800&h=600&fit=crop',
+    prepTime: 10,
+    cookTime: 0,
+    servings: 1,
+    difficulty: 'Fácil',
+    category: 'desayunos',
+    tags: ['smoothie bowl', 'pitaya', 'superfoods', 'vegano', 'fotogénico'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Pitaya congelada', quantity: '100', unit: 'gramos' },
+      { name: 'Banano congelado', quantity: '1', unit: 'unidad', productSlug: 'banano' },
+      { name: 'Leche de coco', quantity: '1/4', unit: 'taza' },
+      { name: 'Fresas', quantity: '1/4', unit: 'taza', productSlug: 'fresas' },
+      { name: 'Granola', quantity: '3', unit: 'cucharadas' },
+      { name: 'Coco rallado', quantity: '1', unit: 'cucharada' },
+      { name: 'Semillas de chía', quantity: '1', unit: 'cucharadita' },
+      { name: 'Miel', quantity: '1', unit: 'cucharadita', isOptional: true }
+    ],
+    steps: [
+      'Coloca la pitaya congelada y el banano en la licuadora.',
+      'Añade la leche de coco (solo lo necesario para licuar).',
+      'Licúa hasta obtener una consistencia espesa como helado suave.',
+      'Vierte en un bowl.',
+      'Corta las fresas en rodajas.',
+      'Decora la superficie con las fresas, granola, coco rallado y semillas de chía.',
+      'Rocía con miel si deseas más dulzor.',
+      '¡Disfruta inmediatamente con una cuchara!'
+    ],
+    tips: [
+      'La pitaya debe estar bien congelada para la textura correcta.',
+      'Puedes encontrar pitaya congelada en tiendas de productos saludables.',
+      'No añadas mucho líquido o quedará muy aguado.'
+    ],
+    nutrition: {
+      calories: 310,
+      protein: '5g',
+      carbs: '55g',
+      fat: '10g',
+      fiber: '9g'
+    },
+    createdAt: '2024-02-05'
+  },
+  {
+    id: '23',
+    slug: 'ensalada-espinaca-fresa',
+    title: 'Ensalada de Espinaca con Fresas',
+    description: 'Una ensalada elegante que combina espinaca baby con fresas dulces, queso de cabra cremoso y nueces caramelizadas. El aderezo balsámico completa el balance perfecto.',
+    shortDescription: 'Ensalada dulce-salada con fresas frescas',
+    image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 5,
+    servings: 4,
+    difficulty: 'Fácil',
+    category: 'ensaladas',
+    tags: ['espinaca', 'fresas', 'elegante', 'nueces', 'queso de cabra'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Espinaca baby', quantity: '4', unit: 'tazas', productSlug: 'espinaca' },
+      { name: 'Fresas', quantity: '2', unit: 'tazas', productSlug: 'fresas' },
+      { name: 'Queso de cabra', quantity: '100', unit: 'gramos' },
+      { name: 'Nueces', quantity: '1/2', unit: 'taza' },
+      { name: 'Vinagre balsámico', quantity: '3', unit: 'cucharadas' },
+      { name: 'Aceite de oliva', quantity: '4', unit: 'cucharadas' },
+      { name: 'Miel', quantity: '1', unit: 'cucharada' },
+      { name: 'Sal y pimienta', quantity: 'al gusto', unit: '' }
+    ],
+    steps: [
+      'Lava y seca bien la espinaca. Colócala en un bowl grande.',
+      'Lava las fresas y córtalas en rodajas.',
+      'En una sartén pequeña, tuesta las nueces a fuego medio por 3-4 minutos.',
+      'Para el aderezo: mezcla el vinagre balsámico, aceite de oliva, miel, sal y pimienta.',
+      'Desmenuza el queso de cabra en trozos pequeños.',
+      'Añade las fresas a la espinaca.',
+      'Vierte el aderezo y mezcla suavemente.',
+      'Reparte en platos y decora con el queso de cabra y las nueces tostadas.',
+      'Sirve inmediatamente.'
+    ],
+    tips: [
+      'Puedes sustituir el queso de cabra por feta o gorgonzola.',
+      'Añade pollo a la plancha para una comida más completa.',
+      'Las almendras laminadas también funcionan muy bien.'
+    ],
+    nutrition: {
+      calories: 280,
+      protein: '8g',
+      carbs: '16g',
+      fat: '22g',
+      fiber: '4g'
+    },
+    createdAt: '2024-02-06'
+  },
+  {
+    id: '24',
+    slug: 'bolitas-energia-datiles',
+    title: 'Bolitas de Energía de Dátiles y Cacao',
+    description: 'Snacks energéticos sin cocción hechos con dátiles, nueces y cacao. Perfectos para un boost de energía antes del ejercicio o como merienda saludable.',
+    shortDescription: 'Snack energético sin azúcar añadida',
+    image: 'https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?w=800&h=600&fit=crop',
+    prepTime: 15,
+    cookTime: 0,
+    servings: 12,
+    difficulty: 'Fácil',
+    category: 'snacks',
+    tags: ['energía', 'dátiles', 'sin cocción', 'vegano', 'fitness'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Dátiles Medjool', quantity: '200', unit: 'gramos (sin hueso)' },
+      { name: 'Almendras', quantity: '1', unit: 'taza' },
+      { name: 'Cacao en polvo', quantity: '2', unit: 'cucharadas' },
+      { name: 'Coco rallado', quantity: '3', unit: 'cucharadas' },
+      { name: 'Mantequilla de maní', quantity: '1', unit: 'cucharada' },
+      { name: 'Sal', quantity: '1', unit: 'pizca' },
+      { name: 'Extracto de vainilla', quantity: '1/2', unit: 'cucharadita', isOptional: true }
+    ],
+    steps: [
+      'Si los dátiles están muy secos, remójalos en agua tibia por 10 minutos y escúrrelos.',
+      'Coloca las almendras en el procesador y procesa hasta obtener un polvo grueso.',
+      'Añade los dátiles, cacao, 1 cucharada de coco, mantequilla de maní, sal y vainilla.',
+      'Procesa hasta que la mezcla se una y forme una masa pegajosa.',
+      'Con las manos ligeramente húmedas, forma bolitas del tamaño de una nuez.',
+      'Rueda las bolitas en el coco rallado restante.',
+      'Coloca en una bandeja y refrigera por al menos 30 minutos.',
+      'Guarda en un contenedor hermético en la nevera hasta por 2 semanas.',
+      '¡Listas para comer cuando necesites energía!'
+    ],
+    tips: [
+      'Puedes usar otras nueces como nueces de Brasil o avellanas.',
+      'Añade una cucharada de proteína en polvo para más poder.',
+      'Perfectas para llevar al gimnasio o la oficina.'
+    ],
+    nutrition: {
+      calories: 95,
+      protein: '2g',
+      carbs: '14g',
+      fat: '5g',
+      fiber: '2g'
+    },
+    createdAt: '2024-02-07'
+  },
+  {
+    id: '25',
+    slug: 'arroz-coco-mango',
+    title: 'Arroz con Coco y Mango',
+    description: 'Un postre asiático inspirado en el famoso sticky rice tailandés. Arroz cremoso cocido en leche de coco, servido con mango fresco y dulce.',
+    shortDescription: 'Postre cremoso tailandés con mango',
+    image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=800&h=600&fit=crop',
+    prepTime: 10,
+    cookTime: 25,
+    servings: 4,
+    difficulty: 'Media',
+    category: 'postres',
+    tags: ['tailandés', 'arroz', 'coco', 'mango', 'asiático'],
+    isFeatured: false,
+    ingredients: [
+      { name: 'Arroz para sushi o glutinoso', quantity: '1', unit: 'taza' },
+      { name: 'Leche de coco', quantity: '400', unit: 'ml' },
+      { name: 'Mango maduro', quantity: '2', unit: 'grandes', productSlug: 'mango' },
+      { name: 'Azúcar', quantity: '4', unit: 'cucharadas' },
+      { name: 'Sal', quantity: '1/4', unit: 'cucharadita' },
+      { name: 'Semillas de sésamo', quantity: '1', unit: 'cucharada', isOptional: true }
+    ],
+    steps: [
+      'Lava el arroz hasta que el agua salga clara.',
+      'Cocina el arroz con 1 taza de agua según las instrucciones.',
+      'Una vez cocido, añade 3/4 de la leche de coco, el azúcar y la sal.',
+      'Cocina a fuego bajo, revolviendo, hasta que el arroz absorba la leche (10-15 min).',
+      'El arroz debe quedar cremoso y ligeramente pegajoso.',
+      'Deja reposar tapado por 5 minutos.',
+      'Pela los mangos y córtalos en rodajas.',
+      'Sirve el arroz tibio con las rodajas de mango al lado.',
+      'Rocía con la leche de coco restante y las semillas de sésamo.'
+    ],
+    tips: [
+      'El arroz glutinoso da la textura más auténtica.',
+      'Puedes servir frío también - refrigera el arroz y sírvelo como postre.',
+      'El mango debe estar muy maduro y dulce.'
+    ],
+    nutrition: {
+      calories: 380,
+      protein: '5g',
+      carbs: '58g',
+      fat: '16g',
+      fiber: '3g'
+    },
+    createdAt: '2024-02-08'
   }
 ];
 
