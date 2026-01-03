@@ -33,7 +33,6 @@ export function SplashScreen({ onComplete, variant }: SplashScreenProps) {
   const isTienda = variant === 'tienda';
   const gradientFrom = isTienda ? 'from-verde-bosque' : 'from-verde-bosque';
   const gradientTo = isTienda ? 'to-verde-aguacate' : 'to-naranja-frutal';
-  const subtitle = isTienda ? 'Del Eje Cafetero a tu mesa' : 'Venta Mayorista para Empresas';
 
   // Elementos flotantes según variante
   const floatingElements = isTienda
@@ -58,13 +57,13 @@ export function SplashScreen({ onComplete, variant }: SplashScreenProps) {
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-4">
         {/* Logo animado */}
-        <div className={`mb-8 ${mounted ? 'animate-logo-appear' : 'opacity-0'}`}>
+        <div className={`mb-16 ${mounted ? 'animate-logo-appear' : 'opacity-0'}`}>
           <div className="relative">
             {/* Glow effect */}
-            <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl animate-pulse" style={{ animationDuration: '2s' }} />
+            <div className="absolute inset-0 bg-white/20 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '2s' }} />
 
-            {/* Logo container */}
-            <div className="relative w-32 h-32 md:w-48 md:h-48">
+            {/* Logo container - Logo más grande */}
+            <div className="relative w-64 h-64 md:w-80 md:h-80">
               <img
                 src="https://i.ibb.co/WWj50Qdy/logo.png"
                 alt="Tus Aguacates"
@@ -74,25 +73,11 @@ export function SplashScreen({ onComplete, variant }: SplashScreenProps) {
 
             {/* Icono de variantes */}
             {mounted && (
-              <div className="absolute -bottom-2 -right-2 md:-bottom-4 md:-right-4 text-3xl md:text-5xl animate-float-in">
+              <div className="absolute -bottom-4 -right-4 md:-bottom-6 md:-right-6 text-4xl md:text-6xl animate-float-in">
                 {isTienda ? '🍃' : '🏢'}
               </div>
             )}
           </div>
-        </div>
-
-        {/* Title */}
-        <div className={`mb-4 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`} style={{ animationDelay: '0.3s' }}>
-          <h1 className="font-display font-bold text-4xl md:text-6xl text-white drop-shadow-2xl">
-            Tus Aguacates
-          </h1>
-        </div>
-
-        {/* Subtitle */}
-        <div className={`mb-8 ${mounted ? 'animate-fade-in-up' : 'opacity-0'}`} style={{ animationDelay: '0.5s' }}>
-          <p className="text-lg md:text-xl text-white/90 font-medium">
-            {subtitle}
-          </p>
         </div>
 
         {/* Progress bar */}
