@@ -7,17 +7,24 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useB2BCartStore, useB2BCartSummary } from '@/lib/b2b/b2b-cart-store';
+import { useBusinessCartStore } from '@/lib/business-cart-store';
 import { GuestInfoForm } from '@/components/b2b/checkout/GuestInfoForm';
 import type { GuestContactInfo, Address, B2BPaymentMethod } from '@/lib/b2b/b2b-types';
 import { useToast } from '@/components/ui/Toast';
 
 export default function B2BCheckoutPage() {
   const router = useRouter();
-  const items = useB2BCartStore((state) => state.items);
-  const clearCart = useB2BCartStore((state) => state.clearCart);
-  const { total, totalItems, meetsMinimum } = useB2BCartSummary();
+  const items = useBusinessCartStore((state) => state.items);
+  const clearCart = useBusinessCartStore((state) => state.clearCart);
+  const { getTotals } = useBusinessCartStore();
+  const { shipping } = useBusinessCartStore();
   const { showError } = useToast();
+
+  // Calcular totales
+  const totals = getTotals();
+  const total = totals.total;
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const meetsMinimum = !shipping.freeShipping ? total >= shipping.freeShippingMin : true;
 
   const [step, setStep] = useState<'guest' | 'payment' | 'processing' | 'success'>('guest');
   const [guestInfo, setGuestInfo] = useState<(GuestContactInfo & { shipping_address: Address }) | null>(null);
@@ -53,8 +60,9 @@ export default function B2BCheckoutPage() {
         },
         body: JSON.stringify({
           items: items.map(item => ({
-            product_id: item.product_id,
+            product_id: item.product.id,
             quantity: item.quantity,
+            variant_id: item.variant?.id,
           })),
           guest_contact_info: guestInfo,
           shipping_address: guestInfo?.shipping_address,
@@ -260,16 +268,23 @@ export default function B2BCheckoutPage() {
               </div>
 
               <div className="border-t pt-3 space-y-2">
-                {items.map((item) => (
-                  <div key={item.product_id} className="flex justify-between text-sm">
-                    <span className="text-gray-700">
-                      {item.quantity}x {item.product.name}
-                    </span>
-                    <span className="text-gray-900 font-medium">
-                      ${item.subtotal.toLocaleString()}
-                    </span>
-                  </div>
-                ))}
+                {items.map((item) => {
+                  const itemKey = item.variant ? `${item.product.id}-${item.variant.id}` : item.product.id;
+                  const subtotal = item.price * item.quantity;
+                  return (
+                    <div key={itemKey} className="flex justify-between text-sm">
+                      <span className="text-gray-700">
+                        {item.quantity}x {item.product.name}
+                        {item.variant && (
+                          <span className="text-xs text-amber-600 ml-1">({item.variant.variant_name})</span>
+                        )}
+                      </span>
+                      <span className="text-gray-900 font-medium">
+                        ${subtotal.toLocaleString('es-CO')}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
 
               <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-800">
