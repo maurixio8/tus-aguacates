@@ -95,8 +95,8 @@ export function InstallPrompt() {
         <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:max-w-sm z-50 animate-slide-up">
             <div className="bg-gradient-to-r from-verde-bosque to-verde-aguacate text-white rounded-2xl shadow-2xl p-4 relative overflow-hidden">
                 {/* Decoración de fondo */}
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl" />
-                <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-xl" />
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
 
                 {/* Botón de cerrar */}
                 <button
