@@ -44,7 +44,7 @@ const categoryStyles: Record<string, {
   },
 };
 
-const accentGradients = {
+const accentGradients: Record<string, string> = {
   emerald: 'from-emerald-500 to-green-600',
   amber: 'from-amber-500 to-orange-600',
   pink: 'from-pink-500 to-rose-600',
