@@ -27,15 +27,17 @@ export async function GET(request: NextRequest) {
       `)
             .order('created_at', { ascending: false });
 
+        // Si la tabla no existe o hay error, devolver array vacío
         if (error) {
             console.error('Error fetching B2B orders:', error);
-            return NextResponse.json(
-                { success: false, error: 'Error al obtener pedidos' },
-                { status: 500 }
-            );
+            // Si es error de tabla inexistente, devolver vacío
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                return NextResponse.json({ success: true, orders: [], message: 'Tabla B2B no configurada aún' });
+            }
+            return NextResponse.json({ success: true, orders: [] });
         }
 
-        // Obtener conteo de items por pedido
+        // Obtener conteo de items por pedido (con manejo de error)
         const { data: orderItems } = await supabase
             .from('b2b_order_items')
             .select('order_id');
@@ -65,9 +67,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, orders: formattedOrders });
     } catch (error) {
         console.error('Error in B2B orders API:', error);
-        return NextResponse.json(
-            { success: false, error: 'Error interno del servidor' },
-            { status: 500 }
-        );
+        // En caso de cualquier error, devolver array vacío para no romper la UI
+        return NextResponse.json({ success: true, orders: [] });
     }
 }

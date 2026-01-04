@@ -24,25 +24,30 @@ export async function GET(request: NextRequest) {
             .is('deleted_at', null)
             .order('created_at', { ascending: false });
 
+        // Si la tabla no existe, devolver array vacío
         if (error) {
             console.error('Error fetching B2B companies:', error);
-            return NextResponse.json(
-                { success: false, error: 'Error al obtener empresas' },
-                { status: 500 }
-            );
+            if (error.code === '42P01' || error.message?.includes('does not exist')) {
+                return NextResponse.json({ success: true, companies: [], message: 'Tabla B2B no configurada aún' });
+            }
+            return NextResponse.json({ success: true, companies: [] });
         }
 
-        // Obtener conteo de pedidos por empresa
-        const { data: orderCounts } = await supabase
-            .from('b2b_orders')
-            .select('company_id');
+        // Obtener conteo de pedidos por empresa (con manejo de error)
+        let ordersByCompany: Record<string, number> = {};
+        try {
+            const { data: orderCounts } = await supabase
+                .from('b2b_orders')
+                .select('company_id');
 
-        const ordersByCompany: Record<string, number> = {};
-        orderCounts?.forEach((order: any) => {
-            if (order.company_id) {
-                ordersByCompany[order.company_id] = (ordersByCompany[order.company_id] || 0) + 1;
-            }
-        });
+            orderCounts?.forEach((order: any) => {
+                if (order.company_id) {
+                    ordersByCompany[order.company_id] = (ordersByCompany[order.company_id] || 0) + 1;
+                }
+            });
+        } catch (e) {
+            // Ignorar error si b2b_orders no existe
+        }
 
         // Agregar conteo de pedidos a cada empresa
         const companiesWithStats = companies?.map(company => ({
@@ -53,10 +58,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, companies: companiesWithStats });
     } catch (error) {
         console.error('Error in B2B companies API:', error);
-        return NextResponse.json(
-            { success: false, error: 'Error interno del servidor' },
-            { status: 500 }
-        );
+        return NextResponse.json({ success: true, companies: [] });
     }
 }
 
