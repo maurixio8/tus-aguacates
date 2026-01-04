@@ -330,7 +330,7 @@ CREATE POLICY "Admins pueden ver todos los pedidos B2B" ON b2b_orders FOR SELECT
 CREATE POLICY "Usuarios pueden crear pedidos B2B" ON b2b_orders FOR INSERT WITH CHECK (user_id = auth.uid());
 CREATE POLICY "Admins pueden gestionar pedidos B2B" ON b2b_orders FOR ALL USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 
-CREATE POLICY "Todos pueden ver items de pedidos B2B" ON b2b_order_items FOR SELECT USING (EXISTS (SELECT 1 FROM b2b_orders WHERE b2b_orders.id = b2b_order_items.order_id AND (b2b_orders.user_id = auth.uid() OR b2b_orders.company_id IN (SELECT company_id FROM b2b_company_users WHERE user_id = auth.uid())));
+CREATE POLICY "Todos pueden ver items de pedidos B2B" ON b2b_order_items FOR SELECT USING (EXISTS (SELECT 1 FROM b2b_orders WHERE b2b_orders.id = b2b_order_items.order_id AND (b2b_orders.user_id = auth.uid() OR b2b_orders.company_id IN (SELECT company_id FROM b2b_company_users WHERE user_id = auth.uid()))));
 CREATE POLICY "Admins pueden ver todos los items B2B" ON b2b_order_items FOR SELECT USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin'));
 
 CREATE POLICY "Todos pueden ver pricing tiers B2B" ON b2b_pricing_tiers FOR SELECT USING (true);
