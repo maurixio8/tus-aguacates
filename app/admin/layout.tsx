@@ -18,7 +18,8 @@ import {
   Ticket,
   Image as ImageIcon,
   MessageSquare,
-  Layers
+  Layers,
+  Building2
 } from 'lucide-react';
 
 interface AdminUser {
@@ -113,6 +114,7 @@ export default function AdminLayout({
     { name: 'Banner Mensajes', href: '/admin/banner-mensajes', icon: MessageSquare },
     { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
+    { name: 'Empresas', href: '/empresas', icon: Building2 },
   ];
 
   const isActive = (href: string) => {
@@ -149,8 +151,8 @@ export default function AdminLayout({
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-green-100 text-green-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -188,8 +190,8 @@ export default function AdminLayout({
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-green-100 text-green-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <Icon className="w-5 h-5" />

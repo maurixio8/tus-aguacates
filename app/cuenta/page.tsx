@@ -36,8 +36,7 @@ import {
   Copy,
   Gift,
   ShoppingCart,
-  ChefHat,
-  Building2
+  ChefHat
 } from 'lucide-react';
 
 interface OrderItem {
@@ -513,15 +512,6 @@ export default function CuentaPage() {
 
                 {/* Separador */}
                 <div className="border-t border-gray-200" />
-
-                {/* Enlace a Empresas B2B */}
-                <Link
-                  href="/empresas"
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg"
-                >
-                  <Building2 className="w-4 h-4" />
-                  Portal Empresas
-                </Link>
 
                 {/* Botón Cerrar Sesión */}
                 <button
