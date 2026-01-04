@@ -8,10 +8,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const { id } = await params;
         const body = await request.json();
 
         const updateData: any = {};
@@ -48,10 +48,10 @@ export async function PATCH(
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const { id } = params;
+        const { id } = await params;
 
         const { data: order, error } = await supabase
             .from('b2b_orders')
