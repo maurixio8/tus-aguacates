@@ -32,17 +32,28 @@ export default function AdminB2BProductsPage() {
 
     const loadProducts = async () => {
         try {
-            // Por ahora usar productos del catálogo principal como proxy para B2B
-            const response = await fetch('/api/admin/products?limit=50');
+            // Usar la API de productos del catálogo principal
+            const response = await fetch('/api/products?limit=100');
             const data = await response.json();
+
+            // Manejar diferentes formatos de respuesta
+            let productsData = [];
             if (data.success && data.products) {
-                setProducts(data.products.map((p: any) => ({
+                productsData = data.products;
+            } else if (Array.isArray(data)) {
+                productsData = data;
+            } else if (data.data && Array.isArray(data.data)) {
+                productsData = data.data;
+            }
+
+            if (productsData.length > 0) {
+                setProducts(productsData.map((p: any) => ({
                     id: p.id,
                     name: p.name,
-                    base_price: p.price,
+                    base_price: p.price || p.base_price || 0,
                     min_quantity: 1,
-                    is_active: p.is_active,
-                    category_name: p.category_name || p.categories?.name || 'Sin categoría',
+                    is_active: p.is_active !== false,
+                    category_name: p.category_name || p.categories?.name || p.category || 'Sin categoría',
                 })));
             }
         } catch (error) {
