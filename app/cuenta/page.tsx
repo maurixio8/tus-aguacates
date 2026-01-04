@@ -36,7 +36,8 @@ import {
   Copy,
   Gift,
   ShoppingCart,
-  ChefHat
+  ChefHat,
+  Building2
 } from 'lucide-react';
 
 interface OrderItem {
@@ -513,6 +514,15 @@ export default function CuentaPage() {
                 {/* Separador */}
                 <div className="border-t border-gray-200" />
 
+                {/* Enlace a Empresas B2B */}
+                <Link
+                  href="/empresas"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 transition-all shadow-md hover:shadow-lg"
+                >
+                  <Building2 className="w-4 h-4" />
+                  Portal Empresas
+                </Link>
+
                 {/* Botón Cerrar Sesión */}
                 <button
                   onClick={handleSignOut}
@@ -535,8 +545,8 @@ export default function CuentaPage() {
               <button
                 onClick={() => setActiveTab('pedidos')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'pedidos'
-                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
-                    : 'text-gray-600 hover:bg-verde-aguacate/10'
+                  ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                  : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -545,8 +555,8 @@ export default function CuentaPage() {
               <button
                 onClick={() => setActiveTab('favoritos')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'favoritos'
-                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
-                    : 'text-gray-600 hover:bg-verde-aguacate/10'
+                  ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                  : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <Heart className="w-5 h-5" />
@@ -560,8 +570,8 @@ export default function CuentaPage() {
               <button
                 onClick={() => setActiveTab('mis-recetas')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'mis-recetas'
-                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
-                    : 'text-gray-600 hover:bg-verde-aguacate/10'
+                  ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                  : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <ChefHat className="w-5 h-5" />
@@ -570,8 +580,8 @@ export default function CuentaPage() {
               <button
                 onClick={() => setActiveTab('cupones')}
                 className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all ${activeTab === 'cupones'
-                    ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
-                    : 'text-gray-600 hover:bg-verde-aguacate/10'
+                  ? 'bg-gradient-to-r from-verde-aguacate to-verde-bosque text-white shadow-md'
+                  : 'text-gray-600 hover:bg-verde-aguacate/10'
                   }`}
               >
                 <Ticket className="w-5 h-5" />
@@ -755,8 +765,8 @@ export default function CuentaPage() {
                           <button
                             onClick={() => copyCouponCode(coupon.code)}
                             className={`w-full md:w-auto flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-colors flex-shrink-0 ${copiedCoupon === coupon.code
-                                ? 'bg-green-500 text-white'
-                                : 'bg-purple-600 text-white hover:bg-purple-700'
+                              ? 'bg-green-500 text-white'
+                              : 'bg-purple-600 text-white hover:bg-purple-700'
                               }`}
                           >
                             {copiedCoupon === coupon.code ? (
