@@ -1,0 +1,2268 @@
+{
+  "name": "unico 316",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "178fa7dd-31bb-489d-9516-4946ea1706ee",
+      "name": "WAHA Trigger",
+      "type": "@devlikeapro/n8n-nodes-waha.wahaTrigger",
+      "typeVersion": 202502,
+      "position": [
+        -4336,
+        -1184
+      ],
+      "webhookId": "89fea8b7-20c7-4501-9c82-81ea2756f627"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo: 1. Pre-procesamiento completo y Mapeo de Palabras Clave\n\nconst item = $input.item.json;\n\n// --- FILTRADO INICIAL ---\nif (item.event !== 'message') return null;\nconst payload = item.payload || {};\nif ((!payload.body || payload.body.trim() === '') && !payload.hasMedia) return null;\nif (payload.type && payload.type !== 'chat') return null;\nconst remitente = (payload.from || '').toString().trim();\nif (!remitente.endsWith('@c.us') && !remitente.endsWith('@lid')) return null;\n\n// --- EXTRACCIÓN DE CAMPOS ---\nconst clienteTelefonoLimpio = remitente.replace(/@c\\.us|@lid/g, '').replace(/\\D/g, '');\nconst chatIdWAHA = remitente;\nconst mensajeClienteActual = (payload.body || '').trim();\n\n// Saludo según hora\nconst hora = new Date().getHours();\nlet saludo;\nif (hora < 12) saludo = 'Buenos días';\nelse if (hora < 19) saludo = 'Buenas tardes';\nelse saludo = 'Buenas noches';\n\n// --- LÓGICA DE MAPEO DE PALABRAS CLAVE ---\nlet texto = mensajeClienteActual.toLowerCase().trim();\n\n// Diccionario de sinónimos y términos comunes\nconst mapeoPalabrasClave = {\n    'aguacate': '🥑',\n    'aguacates': '🥑',\n    'fresa': '🍓',\n    'fresas': '🍓',\n    'limon': '🍋',\n    'limones': '🍋',\n    'arandano': '🫐',\n    'arandanos': '🫐',\n    'mazorca': '🌽',\n    'flor de jamaica': '🌺',\n    'cebolla': '🧅',\n    'zanahoria': '🥕',\n    'habichuela': '🫛',\n    'mango': '🥭',\n    'coco': '🥥',\n    'naranja': '🍊',\n    'manzana': '🍎',\n    'uva': '🍇',\n    'pera': '🍐',\n    'tomate': '🍅',\n    'banano': '🍌',\n    'caja': 'caja',\n    'malla': 'malla',\n    'paquete': 'paquete',\n    'combo': 'combo'\n};\n\n// Aplicar el mapeo\nfor (const palabra in mapeoPalabrasClave) {\n    if (texto.includes(palabra)) {\n        // Reemplazamos la palabra por su valor mapeado para mejorar la búsqueda\n        // Damos prioridad a los emojis para productos clave\n        texto = texto.replace(new RegExp(palabra, 'g'), mapeoPalabrasClave[palabra]);\n    }\n}\n\n// Devolver objeto con todos los datos útiles\nreturn [{\n  json: {\n    clienteTelefonoLimpio,\n    chatIdWAHA,\n    mensajeClienteActual,\n    saludo,\n    textoBusqueda: texto,\n    datosOriginalesWAHA: item,\n    nombre: null\n  }\n}];\n"
+      },
+      "id": "2bf5e04a-719e-4c94-a685-60e623cbaee3",
+      "name": "1. Pre-procesamiento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3520,
+        -1264
+      ],
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH nuevo_cliente AS (\n  INSERT INTO clientes (telefono, nombre, estado_conversacion)\n  SELECT\n    $1::text,   -- teléfono desde Query Parameter 1\n    NULL,       -- dejamos nombre en NULL hasta confirmación\n    'NUEVO'\n  WHERE NOT EXISTS (\n    SELECT 1 FROM clientes WHERE telefono = $1::text\n  )\n  RETURNING id, telefono, nombre, direccion, estado_conversacion\n)\nSELECT id, telefono, nombre, direccion, estado_conversacion\nFROM nuevo_cliente\nUNION ALL\nSELECT id, telefono, nombre, direccion, estado_conversacion\nFROM clientes\nWHERE telefono = $1::text\nLIMIT 1;\n",
+        "options": {
+          "queryReplacement": "={{$json.clienteTelefonoLimpio}}"
+        }
+      },
+      "id": "4b816412-4845-477e-9866-e7051ca43afd",
+      "name": "2. Obtener Cliente",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2976,
+        -704
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('WAHA Trigger').item.json.payload.from }}",
+        "contextWindowLength": 15
+      },
+      "id": "a6944770-5306-474a-8e96-37ce208865d3",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        -2928,
+        -192
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Nombre Cliente: {{ $('2. Obtener Cliente').item.json.nombre }}\nEstado Conversacion: {{ $('2. Obtener Cliente').item.json.estado_conversacion }}\nMensaje Cliente: {{ $('1. Pre-procesamiento').item.json.mensajeClienteActual }}",
+        "options": {
+          "systemMessage": "## 🎯 MISIÓN PRINCIPAL Y REGLA DE ORO INQUEBRANTABLE\nEres \"Luz 2.2\" 🥑, un agente de IA experto de \"Tus Aguacates\". Tu misión es seguir tu \"Manual de Operaciones\" para analizar la petición del cliente y su contexto, y luego ejecutar la herramienta más adecuada. **TE ESTÁ TERMINANTEMENTE PROHIBIDO RESPONDER AL CLIENTE DIRECTAMENTE SIN HABER USADO UNA HERRAMIENTA.** La alucinación es un FALLO CRÍTICO.\n\n## 📚 MANUAL DE OPERACIONES\n\n### PROTOCOLO DE BÚSQUEDA Y VENTA (SE APLICA EN `ATENCION_LUZ` Y `EN_PEDIDO`)\n1.  **BÚSQUEDA INICIAL:** Tu primera acción SIEMPRE es usar `TOOL_BuscarProductos`.\n2.  **ANÁLISIS DEL RESULTADO:**\n    * **MÚLTIPLES RESULTADOS:** Si encuentras VARIOS productos, preséntalos en una lista **SIN PRECIOS** y pregunta al cliente cuál le interesa para darle más detalles.\n    * **UN SOLO RESULTADO:** Si encuentras UN producto, informa su nombre y **PRECIO**, y pregunta si desea añadirlo.\n    * **SIN RESULTADOS:** Informa que no encontraste coincidencias.\n3.  **AÑADIR AL CARRITO:**\n    * Una vez que el producto esté claro, usa `TOOL_AnadirAlCarrito`.\n    * **CONFIRMACIÓN OBLIGATORIA CON PRECIO:** Tu mensaje de confirmación SIEMPRE debe incluir el nombre y el **PRECIO** del producto añadido. Ejemplo: *\"¡Listo! He añadido Fresas Premium x500gr por $8.500 a tu pedido.\"*\n\n### PROTOCOLO DE FINALIZACIÓN DE PEDIDO (Cuando el cliente pregunta por el total o dice \"eso es todo\")\n1.  **ACCIÓN OBLIGATORIA:** Usa la herramienta `TOOL_CalcularTotalPrePedido` para obtener la suma del carrito.\n2.  **INFORMAR AL CLIENTE:** Responde con un resumen claro. Ejemplo: *\"¡Claro! El total de tu pre-pedido es de $XX.XXX. He notificado a nuestro equipo para que te contacten y confirmen todos los detalles contigo.\"*\n3.  **ESCALAR:** Inmediatamente después de informar, usa `TOOL_EscalarServicioCliente` para que un humano finalice la venta.\n\n### PROTOCOLO POR ESTADO DEL CLIENTE\n\n* **`NUEVO`:** Preséntate, pide el nombre y cambia el estado a `NOMBRE_SOLICITADO`.\n* **`NOMBRE_SOLICITADO`:** Guarda el nombre con `TOOL_GuardarNombreCliente`.\n* **`ATENCION_LUZ` y `EN_PEDIDO`:** Sigue el **PROTOCOLO DE BÚSQUEDA Y VENTA**. Si la intención es comprar, asegúrate de estar en estado `EN_PEDIDO`.\n* **`ESCALADO` (Protocolo de Silencio):** NO uses herramientas. Si el cliente escribe, solo informa cortésmente que un humano ya está notificado.\n\n---\n\n## 💡 EJEMPLO DE FINALIZACIÓN PERFECTA\n- **Cliente:** \"eso es todo, gracias. cuánto sería el total?\"\n- **Tu Proceso Interno:** (El cliente quiere finalizar. Uso `TOOL_CalcularTotalPrePedido`. La herramienta devuelve: `{\"total_pre_pedido\": 33200}`).\n- **Tu RESPUESTA (Paso 1 - Informar):**\n  \"¡Perfecto, Mauricio! El total de tu pre-pedido es de *$33.200*. Ya he notificado a nuestro equipo para que se pongan en contacto contigo en breve para confirmar la entrega y el pago. ¡Gracias por tu compra! 🥑\"\n- **Tu Siguiente Acción Interna (Paso 2 - Escalar):** (Uso `TOOL_EscalarServicioCliente`)."
+        }
+      },
+      "id": "c0875d62-5c0f-4d25-8757-16b77ab20fa3",
+      "name": "4a. Agente Luz Principal",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -2384,
+        -544
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta CRÍTICA para buscar productos en la base de datos. Úsala cuando el cliente pregunte por un producto, su precio o disponibilidad. El input debe ser el nombre del producto que se desea buscar o uno similar.",
+        "operation": "executeQuery",
+        "query": "SELECT\n  id AS producto_id,\n  product_name,\n  price,\n  description\nFROM productos\nWHERE\n  product_name ILIKE '%' || $1 || '%'\n  AND is_available = true\nLIMIT 10;\n",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $('1. Pre-procesamiento').item.json.textoBusqueda }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "df018279-3246-4254-9595-59432748538c",
+      "name": "TOOL_BuscarProductos",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -2528,
+        -64
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para consultar el estado de pedidos existentes. Úsala cuando el cliente pregunte sobre el estado de su pedido, cuándo llegará, si ya salió, etc.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    CASE \n        WHEN estado_conversacion = 'PEDIDO_FINALIZADO' THEN 'Tu pedido ya fue procesado y está en camino. Te llegará pronto. 📦'\n        WHEN estado_conversacion = 'EN_PEDIDO' THEN 'Tu pedido está siendo preparado. Te notificaremos cuando salga. 🛒'\n        WHEN pre_pedido IS NOT NULL AND jsonb_array_length(pre_pedido) > 0 THEN 'Tienes productos en tu carrito. ¿Quieres que procese tu pedido? 🛒'\n        ELSE 'No encontramos pedidos activos a tu nombre. ¿Te gustaría hacer un nuevo pedido? 🥑'\n    END as estado_pedido,\n    nombre,\n    pre_pedido\nFROM clientes \nWHERE telefono = $1\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "aa06393b-49a9-4ebf-ac42-92fded67e950",
+      "name": "TOOL_ConsultarEstadoPedido",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -1712,
+        -160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('1. Pre-procesamiento').item.json.datosOriginalesWAHA.session }}",
+        "chatId": "={{ $('1. Pre-procesamiento').item.json.chatIdWAHA }}",
+        "text": "={{ $json.text }}",
+        "requestOptions": {}
+      },
+      "id": "eecb9af4-f8c0-4f5b-a883-1ba729991ddd",
+      "name": "4c. Enviar Respuesta IA",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -1456,
+        -512
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para guardar el nombre del cliente en la base de datos.\nInput requerido: {\"nombre_cliente\": \"Nombre Apellido\"}\nEjemplo: {\"nombre_cliente\": \"Juan Pérez\"}\nUsa el nombre exacto que proporcionó el cliente.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes \nSET \n  nombre = $1, \n  estado_conversacion = 'ATENCION_LUZ' \nWHERE \n  telefono = '{{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}';",
+        "options": {
+          "queryReplacement": "={{ $fromAI('nombre_cliente','Nombre completo del cliente','string','') || 'Cliente Sin Nombre' }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -2080,
+        -16
+      ],
+      "id": "7c9e5e2d-f901-4b99-a28a-88c2389eff77",
+      "name": "TOOL_GuardarNombreCliente",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta CRÍTICA para buscar información oficial de la empresa. \nInput requerido: {\"termino_busqueda\": \"palabra_clave\"}\nEjemplos válidos: \n- {\"termino_busqueda\": \"horarios\"}\n- {\"termino_busqueda\": \"pagos\"}\n- {\"termino_busqueda\": \"entrega\"}\nUsa palabras clave relacionadas con la pregunta del cliente.",
+        "operation": "executeQuery",
+        "query": "SELECT respuesta_o_dato FROM conocimiento_granular \nWHERE palabras_clave @> ARRAY[COALESCE(NULLIF($1, ''), 'general')]\nORDER BY prioridad LIMIT 1",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"={{ $fromAI('termino_busqueda','Palabra clave para buscar información','string','') || $('1. Pre-procesamiento').item.json.textoBusqueda || 'general' }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "b8c7b97a-f1a9-4f70-b20e-db8962e6719a",
+      "name": "TOOL_BuscarConocimiento",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -2368,
+        0
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para cambiar el estado de conversación del cliente.\nInput requerido: {\"nuevo_estado\": \"ESTADO_VALIDO\"}\nEstados válidos: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, PEDIDO_LISTO, PEDIDO_FINALIZADO, ESCALADO\nEjemplo: {\"nuevo_estado\": \"EN_PEDIDO\"}",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes \nSET estado_conversacion = CASE \n  WHEN $1 IN ('NUEVO', 'NOMBRE_SOLICITADO', 'ATENCION_LUZ', 'EN_PEDIDO', 'PEDIDO_LISTO', 'PEDIDO_FINALIZADO', 'ESCALADO') \n  THEN $1 \n  ELSE 'ATENCION_LUZ' \nEND\nWHERE telefono = '{{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}'",
+        "options": {
+          "queryReplacement": "={{ $fromAI('nuevo_estado','Estado de conversación válido','string','ATENCION_LUZ') }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -1904,
+        -96
+      ],
+      "id": "ecb49833-6c26-41a9-9a0a-f0894a67b73f",
+      "name": "TOOL_CambiarEstadoCliente",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para añadir productos al carrito del cliente.\nInput requerido: {\n  \"producto_id\": numero_entero,\n  \"producto_nombre\": \"texto_del_producto\", \n  \"precio\": numero_sin_formato\n}\nEjemplo: {\n  \"producto_id\": 123,\n  \"producto_nombre\": \"Caja 12 aguacates premium\",\n  \"precio\": 24700\n}\nIMPORTANTE: El precio debe ser número puro sin puntos ni comas.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes \nSET pre_pedido = COALESCE(pre_pedido, '[]'::jsonb) || \n    jsonb_build_object(\n      'producto_id', COALESCE($1::int, 0),\n      'producto_nombre', COALESCE(NULLIF($2, ''), 'Producto sin nombre'),\n      'precio', COALESCE($3::numeric, 0),\n      'cantidad', 1\n    )\nWHERE telefono = '{{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}'\nAND $1::int > 0",
+        "options": {
+          "queryReplacement": "={{ $fromAI('producto_id','ID numérico del producto','number',0) || 0 }}\n{{ $fromAI('producto_nombre','Nombre exacto del producto','string','') || 'Producto sin nombre' }}\n{{ $fromAI('precio','Precio unitario sin formato','number',0) || 0 }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -1552,
+        -240
+      ],
+      "id": "9b108eeb-4698-40eb-80a9-34ffe9eb1424",
+      "name": "TOOL_AnadirAlCarrito",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const inputItem = $input.item.json;\n// Para pedidos OlaClick, el mensaje puede estar en diferentes lugares\nlet mensaje = inputItem.payload?.body || inputItem.mensajeClienteActual || inputItem.datosOriginalesWAHA?.payload?.body;\n\n// Si no encontramos el mensaje en ningún lugar, devolvemos el item original\nif (!mensaje) {\n  return $input.all();\n}\n\nconst regexProductos = /X\\d+\\s+(.*?)\\s+\\$\\s*([\\d.,]+)/g;\nlet match;\nconst itemsDeSalida = [];\n\nif (!mensaje.includes('Productos')) {\n  return $input.all();\n}\n\nwhile ((match = regexProductos.exec(mensaje)) !== null) {\n  const nuevoItem = JSON.parse(JSON.stringify(inputItem));\n  let nombreProductoOriginal = match[1].trim();\n  nombreProductoOriginal = nombreProductoOriginal.replace('🔼', '');\n  nombreProductoOriginal = nombreProductoOriginal.replace(/-\\\\s*\\\\./, '').trim();\n  let nombreParaBuscar = nombreProductoOriginal.toLowerCase().trim();\n  nombreParaBuscar = nombreParaBuscar.replace(/^[^\\\\p{L}\\\\p{N}]+/u, '').trim();\n\n  nuevoItem.producto_extraido = {\n    nombre_en_mensaje: nombreProductoOriginal,\n    precio_cliente: match[2].replace(/[.,]/g, ''),\n    nombre_para_buscar: nombreParaBuscar\n  };\n  itemsDeSalida.push({ json: nuevoItem });\n}\n\nreturn itemsDeSalida;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3216,
+        -1104
+      ],
+      "id": "b8114bcd-674d-487b-8710-108f549ccc93",
+      "name": "Procesar Pedido OlaClick"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "clientes",
+          "mode": "list",
+          "cachedResultName": "clientes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "direccion": "={{ $json.direccion_cliente_pedido }}",
+            "telefono": "={{ $json.telefono_pedido_limpio }}",
+            "nombre": "={{ $json.nombre_cliente_pedido }}"
+          },
+          "matchingColumns": [
+            "telefono"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "telefono",
+              "displayName": "telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "direccion",
+              "displayName": "direccion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "origen",
+              "displayName": "origen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "puntos_fidelidad",
+              "displayName": "puntos_fidelidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "puntos_canjeados",
+              "displayName": "puntos_canjeados",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "pedidos_domicilio",
+              "displayName": "pedidos_domicilio",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "pedidos_llevar",
+              "displayName": "pedidos_llevar",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "pedidos_local",
+              "displayName": "pedidos_local",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "total_pedidos",
+              "displayName": "total_pedidos",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "tipo_cliente",
+              "displayName": "tipo_cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "estado_cliente",
+              "displayName": "estado_cliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "estado_conversacion",
+              "displayName": "estado_conversacion",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "fecha_ultima_campana",
+              "displayName": "fecha_ultima_campana",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false,
+              "removed": true
+            },
+            {
+              "id": "pre_pedido",
+              "displayName": "pre_pedido",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": false,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -2400,
+        -784
+      ],
+      "id": "843f8933-e22d-421a-a75d-69d1e7cacf86",
+      "name": "Guardar Datos y Pedido OlaClick",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst firstItem = items[0].json;\n// Usamos el cuerpo del mensaje original que tiene toda la información\nconst mensajeCompleto = firstItem.datosOriginalesWAHA.payload.body;\n\n// --- PASO 1: Extraer los valores monetarios directamente del texto ---\n// Usamos expresiones regulares para encontrar los números después de cada etiqueta\nconst subtotalMatch = mensajeCompleto.match(/Subtotal: \\$\\s*([\\d.,]+)/);\nconst descuentoMatch = mensajeCompleto.match(/Descuento.*?-\\$\\s*([\\d.,]+)/);\nconst entregaMatch = mensajeCompleto.match(/Entrega: \\$\\s*([\\d.,]+)/);\nconst totalMatch = mensajeCompleto.match(/\\*Total: \\$\\s*([\\d.,]+)/);\n\n// --- PASO 2: Limpiar y convertir los valores a números ---\n// Esta función quita los puntos y comas para tener un número puro\nconst limpiarNumero = (texto) => texto ? parseFloat(texto.replace(/[.,]/g, '')) : 0;\n\nconst subtotalFinal = limpiarNumero(subtotalMatch ? subtotalMatch[1] : null);\nconst descuentoFinal = limpiarNumero(descuentoMatch ? descuentoMatch[1] : null);\nconst costoEnvioFinal = limpiarNumero(entregaMatch ? entregaMatch[1] : null);\nconst totalFinal = limpiarNumero(totalMatch ? totalMatch[1] : null);\n\n// --- PASO 3: Construir el carrito de productos (esto no cambia) ---\nconst carrito = [];\nfor (const item of items) {\n  const prod = item.json.producto_extraido || {};\n  const precioNum = Number(prod.precio_cliente);\n  if (!isNaN(precioNum)) {\n    carrito.push({\n      nombre: prod.nombre_en_mensaje,\n      precio: precioNum,\n      cantidad: 1,\n    });\n  }\n}\n\n// --- PASO 4: Devolver los datos correctos y extraídos ---\nreturn [{\n  json: {\n    // Usamos los valores reales y finales del mensaje de OlaClick\n    subtotal: subtotalFinal,\n    descuento: descuentoFinal, // Guardamos el descuento por si lo necesitas\n    costo_envio: costoEnvioFinal,\n    total: totalFinal,\n    \n    validacion_exitosa: true,\n    carrito_validado: carrito,\n    \n    // Pasamos los datos del cliente para los siguientes nodos\n    datosOriginalesWAHA: firstItem.datosOriginalesWAHA,\n    clienteTelefonoLimpio: firstItem.clienteTelefonoLimpio,\n    chatIdWAHA: firstItem.chatIdWAHA\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3104,
+        -768
+      ],
+      "id": "6e152c9c-b724-4dd7-8a0d-923b26fd5b7d",
+      "name": "Reagrupar Productos Verificados"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.payload.vote.selectedOptions[0] }}",
+                    "rightValue": "=Combos con Domicilio GRATIS",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "5faeef29-2d3a-45a5-bd0f-9a96685912d0"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "47b075d7-bc0b-40e7-8ba6-332c9f1d0954",
+                    "leftValue": "={{ $json.payload.vote.selectedOptions[0] }}",
+                    "rightValue": "=pedido a mi medida",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6702d98a-0a16-481c-adca-c0100b47b095",
+                    "leftValue": "={{ $json.payload.vote.selectedOptions[0] }}",
+                    "rightValue": "descuento para una compra",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -3872,
+        -288
+      ],
+      "id": "3b7d658b-0c92-4ae3-a82b-5f9671703371",
+      "name": "Revisar Voto del Cliente"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3296,
+        -304
+      ],
+      "id": "760ad595-1f6e-48c8-8fe7-6803b743887b",
+      "name": "Wait3",
+      "webhookId": "5792db6d-e837-4cc3-9158-b1abcb699465"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "chatId": "={{ $json.payload.vote.from }}",
+        "text": "¡Claro que sí! 🥑\n\nAquí puedes ver nuestros Combos Premium con domicilio gratis. ¡Haz clic en el enlace para descubrirlos! 👇\n\nhttps://dep-n8n.n8ntusaguacates.space/webhook/combos-premium\n\n🍉🍌🍋‍🟩🍇🥑🥥🫑🍋🍊🍐🍎",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -3232,
+        -48
+      ],
+      "id": "bf29cf9b-c060-45b1-b98f-4e612a573644",
+      "name": "Send a text message1",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "chatId": "={{ $json.payload.vote.from }}",
+        "text": "¡Por supuesto! 😊\n\nUno de nuestros expertos se pondrá en contacto contigo en breve para ayudarte a armar un pedido con los productos más frescos y justo a tu medida. \n\n¡Gracias por tu paciencia!\n\n🍉🍌🍋‍🟩🍇🥑🥥🫑🍋🍊🍐🍎\n",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -3232,
+        288
+      ],
+      "id": "c5fb88c0-d959-4b14-b37f-2ef4f77de85b",
+      "name": "Send a text message2",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.mensajeClienteActual }}",
+                    "rightValue": "👋 Vengo de https://tusaguacatescom.ola.click",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    },
+                    "id": "e8f95ad2-5f5d-4bc3-b265-b24758404214"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Pedido OlaClick"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "f32d514e-92de-41c7-95a1-cf653e7ee15f",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -3424,
+        -656
+      ],
+      "id": "67cb3d44-3ebb-4a97-9b6a-c59d326e5f3f",
+      "name": "1b. Detectar Pedido OlaClick"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- LÓGICA DE FECHA DE ENTREGA INTELIGENTE ---\n\nfunction getProximaFechaEntrega() {\n    const hoy = new Date();\n    const diaActual = hoy.getDay();     // Domingo=0, Lunes=1, Martes=2, etc.\n    const horaActual = hoy.getHours();  // Formato 24h (0-23)\n\n    // Definimos tus reglas de negocio como constantes\n    const MARTES = 2;\n    const VIERNES = 5;\n    const HORA_CORTE = 10; // 10:00 AM\n\n    let proximaFecha = new Date(hoy);\n    let diasParaSumar = 0;\n\n    // --- Aplicamos tu lógica de negocio ---\n\n    // CASO 1: Si es martes ANTES de las 10 AM, la entrega es HOY.\n    if (diaActual === MARTES && horaActual < HORA_CORTE) {\n        diasParaSumar = 0; // Se entrega el mismo día\n    }\n    // CASO 2: Si es martes DESPUÉS de las 10 AM, o es miércoles o jueves.\n    else if (diaActual === MARTES || diaActual === 3 || diaActual === 4) {\n        // Calculamos los días que faltan para el viernes\n        diasParaSumar = (VIERNES - diaActual + 7) % 7;\n    }\n    // CASO 3: Si es viernes, sábado, domingo o lunes.\n    else {\n        // Calculamos los días que faltan para el próximo martes\n        diasParaSumar = (MARTES - diaActual + 7) % 7;\n    }\n    \n    // Si el resultado es 0 y ya pasó la hora de corte, debemos saltar a la siguiente entrega\n    if (diasParaSumar === 0 && (diaActual === MARTES && horaActual >= HORA_CORTE)) {\n         diasParaSumar = (VIERNES - diaActual + 7) % 7; // Salta al viernes\n    }\n\n\n    proximaFecha.setDate(hoy.getDate() + diasParaSumar);\n\n    // Formateamos la fecha para que sea legible\n    const opcionesFecha = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };\n    return proximaFecha.toLocaleDateString('es-ES', opcionesFecha);\n}\n\n// Asignamos el resultado al flujo de n8n\n$input.item.json.fechaEntregaEstimada = `La próxima fecha de entrega estimada es el ${getProximaFechaEntrega()}`;\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2128,
+        -768
+      ],
+      "id": "b80c7a1f-32da-4cab-b69d-5591f4dce332",
+      "name": "Calcular Proxima Entrega"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $json.datosOriginalesWAHA.session }}",
+        "chatId": "={{ $json.chatIdWAHA }}",
+        "text": "={{ $json.saludo }} 😊 Veo que me enviaste una imagen o un audio. \n\nSi es una imagen será verificada por nuestro equipo no te preocupes... Por el momento, solo puedo procesar mensajes de texto. \n\n💚 Hay algo en lo que pueda ayudarte?",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -2704,
+        -944
+      ],
+      "id": "9053eee7-d393-4d6d-8f98-e736fbf30498",
+      "name": "Send a text message",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "description": "Herramienta de último recurso para escalar a atención humana.\nInput requerido: {\"razon\": \"motivo_especifico\"}\nEjemplos:\n- {\"razon\": \"Cliente solicita hablar con humano\"}\n- {\"razon\": \"Consulta compleja sobre reclamo\"}\n- {\"razon\": \"Cliente expresa frustración\"}",
+        "workflowId": {
+          "__rl": true,
+          "value": "yxt7d5bDwWzu87oK",
+          "mode": "list",
+          "cachedResultName": "Subflujo - Escalar a Humano"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "nombreCliente": "={{ $('2. Obtener Cliente').item.json.nombre }}",
+            "razon": "={{ $json.query.razon || 'Cliente requiere atención humana' }}",
+            "telefonoCliente": "={{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}",
+            "session": "={{ $('1. Pre-procesamiento').item.json.datosOriginalesWAHA.session }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "nombreCliente",
+              "displayName": "nombreCliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "telefonoCliente",
+              "displayName": "telefonoCliente",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "razon",
+              "displayName": "razon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "session",
+              "displayName": "session",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolWorkflow",
+      "typeVersion": 2.2,
+      "position": [
+        -2224,
+        112
+      ],
+      "id": "17e1275c-794f-4b03-8748-002a92765683",
+      "name": "TOOL_EscalarServicioCliente"
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -2784,
+        128
+      ],
+      "id": "29be8c33-8a34-46a1-8eab-42fcd3c2d709",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "8BVSsLxHakKs5L6l",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst mensajeCompleto = item.datosOriginalesWAHA.payload.body;\n\n// --- EXTRACCIÓN DE DATOS DEL PEDIDO ---\nconst nombreMatch = mensajeCompleto.match(/Nombre: (.*?)\\n/);\nconst direccionMatch = mensajeCompleto.match(/Dirección: (.*?)\\n/);\nconst telefonoMatch = mensajeCompleto.match(/Teléfono: (.*)\\n/);\n\nitem.nombre_cliente_pedido = nombreMatch ? nombreMatch[1].trim() : 'Cliente Web';\nitem.direccion_cliente_pedido = direccionMatch ? direccionMatch[1].trim() : 'Dirección no especificada';\n\n// --- LÓGICA DE DESTINATARIO Y TELÉFONO DEL PEDIDO ---\nlet chatIdDestinoFinal = item.chatIdWAHA; // Por defecto, respondemos al remitente\nlet telefonoPedidoLimpio = item.clienteTelefonoLimpio; // Por defecto, el del remitente\n\nif (telefonoMatch && telefonoMatch[1]) {\n    const telefonoCrudo = telefonoMatch[1]; \n    const telefonoLimpio = telefonoCrudo.replace(/\\D/g, ''); \n    \n    if (telefonoLimpio.length > 5) { // Una simple validación de que parece un número\n      telefonoPedidoLimpio = telefonoLimpio;\n      chatIdDestinoFinal = `${telefonoLimpio}@c.us`;\n    }\n}\n\n// Añadimos los datos finales al objeto para los nodos siguientes\nitem.chatIdDestinoFinal = chatIdDestinoFinal;\nitem.telefono_pedido_limpio = telefonoPedidoLimpio;\n\nreturn item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2848,
+        -768
+      ],
+      "id": "cd20f9b6-3ce6-4703-b67c-0cd541322f3e",
+      "name": "2b. Extraer Datos Cliente",
+      "notes": "Este nodo extrae el nombre, la dirección y el teléfono del cuerpo del mensaje de OlaClick. \n\n**Lógica Clave:**\n1.  Usa expresiones regulares para encontrar los datos.\n2.  **Teléfono del Pedido:** Prioriza el número de teléfono escrito en el pedido sobre el número del remitente de WhatsApp. Esto es crucial si alguien hace un pedido para otra persona.\n3.  **Salidas:** Genera `telefono_pedido_limpio` que será usado para crear o actualizar al cliente en la base de datos."
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('Guardar Datos y Pedido OlaClick').item.json.telefono }}",
+        "text": "=Hola *{{ $('Guardar Datos y Pedido OlaClick').item.json.nombre }}* recibido,🥑\n\n¡Wow, qué selección tan increíble! \n\nPermíteme organizar todo y te envío el resumen final en un instante...⭐\n\n",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -1728,
+        -944
+      ],
+      "id": "4b237411-ec3c-437a-a11c-67cfe7168f49",
+      "name": "3a. Enviar Acuse de Recibo",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 25
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1744,
+        -752
+      ],
+      "id": "e2a7fc36-99bf-4986-93d0-73d86100ee96",
+      "name": "3b. Pausa Dramática",
+      "webhookId": "148eab1d-3b21-4812-9e5e-b8628f8fa7cb"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $json.datosOriginalesWAHA.session }}",
+        "chatId": "={{ $json.chatIdDestinoFinal }}",
+        "text": "={{ $json.mensajeFinalParaEnviar }}",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -1344,
+        -752
+      ],
+      "id": "36bd58be-2fb5-4d02-9abe-9b15f872b90d",
+      "name": "Confirmacion OlaClick",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE clientes\nSET estado_conversacion = 'PEDIDO_FINALIZADO'\nWHERE telefono = '{{ $json.clienteTelefonoLimpio }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -1104,
+        -752
+      ],
+      "id": "c348d957-bba8-41b5-beaa-79821edf08c7",
+      "name": "4. Finalizar Estado del Pedido",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener el objeto JSON del item de entrada.\nconst item = $input.item.json;\n\n// --- LÓGICA DEL NOMBRE ---\n// Para evitar errores, comprobamos si 'item.nombre' existe. Si no, usamos un texto vacío.\n// Luego, se divide por espacios y se toma solo el primer elemento ().\nconst primerNombre = (item.nombre |\n\n| '').split(' ');\n\n// --- LÓGICA DEL CARRITO ---\n// Se busca 'carrito_validado'. Si no existe o es nulo, se usa una lista vacía.\n// Esta es la forma segura y correcta de inicializar la variable.\nconst carrito = item.carrito_validado ||;\n\n// --- PROCESAMIENTO DEL RESUMEN ---\nlet resumenProductos = '';\nlet itemsRestantes = 0;\n\n// Este bloque solo se ejecuta si el carrito tiene uno o más productos.\nif (carrito.length > 0) {\n  // Se toma un máximo de 4 productos para mostrar en el resumen.\n  const itemsAMostrar = carrito.slice(0, 4);\n  \n  // Se crea el texto del resumen, uniendo cada nombre de producto con un salto de línea.\n  resumenProductos = itemsAMostrar.map(p => `*${p.nombre}*`).join('\\n');\n  \n  // Se calcula cuántos productos no se mostraron.\n  itemsRestantes = carrito.length - itemsAMostrar.length;\n}\n\n// Si quedaron productos sin mostrar, se añade una nota al final.\nif (itemsRestantes > 0) {\n  resumenProductos += `\\ny ${itemsRestantes} producto(s) más...`;\n}\n\n// --- SALIDA DEL NODO ---\n// El nodo de código debe devolver un objeto JSON con los resultados.\nreturn {\n  nombreCliente: primerNombre,\n  resumenDelPedido: resumenProductos,\n  totalItems: carrito.length\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1552,
+        -752
+      ],
+      "id": "8a1d624e-2f45-4e91-b98f-d3091b77f584",
+      "name": "3d. Generar Mensaje Final"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.output }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "## MISIÓN Eres un asistente de formato experto para \"Luz\", la IA de \"Tus Aguacates\". Tu ÚNICA tarea es reescribir el texto que recibes para que sea más conciso, amigable y visualmente atractivo para el cliente, siguiendo reglas estrictas.  ## REGLAS DE FORMATO (OBLIGATORIAS) 1.  **CONCISIÓN:** Resume la información. Si hay una lista larga de productos, muestra solo los 3 o 4 más importantes y luego menciona que hay más.  incluye siempre los precios  que el texto original  muestre explícitamente. 2.  **TONO:** Mantén un tono cálido, cercano y profesional. Usa el nombre del cliente. 3.  **NEGRITA:** Usa negritas con *un solo asterisco a cada lado*. Ejemplo: *Aguacates Hass*. PROHIBIDO usar `**`. 4.  **SALTOS DE LÍNEA:** Usa saltos de línea dobles (una línea vacía) entre párrafos. 5.  **EMOJIS:** Usa emojis relevantes (🥑, 🍓, 😊) para hacer el texto más visual, especialmente al principio de las listas.  ## EJEMPLO PERFECTO - **SI RECIBES ESTE TEXTO:** \"Claro que sí, Mauricio! Tenemos varias presentaciones de aguacates premium:**\\n**PRESENTACIONES DISPONIBLES:**\\n* **Caja de 12 unidades Premium** - $24,700\\n* **Aguacates premium en 3 estados de maduración**\\n* **Caja de 24 unidades hass mediano** - $16,600...\"  - **TU RESPUESTA DEBE SER ASÍ:** \"¡Claro que sí, Mauricio! 🥑 Tenemos una increíble variedad de aguacates. Algunas de nuestras presentaciones más populares son:  • *🥑 Caja de 12 unidades Premium* • *Aguacates en 3 estados de maduración* • *🥑 Caja de 24 unidades hass mediano* ¿Te interesa alguna de estas en particular, o prefieres explorar nuestro catálogo completo en la tienda en línea? 😊 👉 https://tusaguacatescom.ola.click/products\" no utilize mucho el hola unicamente hablale por su nombre"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -1840,
+        -544
+      ],
+      "id": "6eab4393-ff59-43f7-94ef-0ff252fb78b5",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -1632,
+        -384
+      ],
+      "id": "cf8cd269-953d-4396-bc49-6b4724c2b159",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "8BVSsLxHakKs5L6l",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 8
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3520,
+        -224
+      ],
+      "id": "82192a65-8c33-4018-adde-6ddd31ef87fb",
+      "name": "Wait",
+      "webhookId": "1677cdce-0ac9-41b2-9128-5f54ca71907538"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Nodo: Procesar Reacciones\n// Input: item.json (salida del Trigger)\n// Output: sólo reacciones a estados\n\nconst item = $input.item.json;\n\n// --- FILTRO DE REACCIONES A ESTADOS ---\nif (item.event === 'message.reaction' && item.payload?.from === 'status@broadcast') {\n  // Limpiar teléfono\n  const clienteTelefono = item.payload.participant\n    .replace(/@c\\.us|@lid/g, '')\n    .replace(/\\D/g, '');\n\n  // Depuración: asegúrate de que salen correctos\n  console.log('participant raw:', item.payload.participant);\n  console.log('clienteTelefono limpio:', clienteTelefono);\n\n  return [{\n    json: {\n      tipoEvento: 'reaccion_estado',\n      emoji: item.payload.reaction.text,\n      estado_id: item.payload.reaction.messageId,\n      clienteTelefono: clienteTelefono,\n      chatId: item.payload.participant,\n      session: item.session,\n      timestamp: item.timestamp,\n      datosOriginales: item\n    }\n  }];\n}\n\n// Cualquier otro evento: ignorar\nreturn null;\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3760,
+        -1088
+      ],
+      "id": "58a6bb26-2afb-4cda-a6f8-463d09b3bca5",
+      "name": "Procesar Reacciones"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Nodo: 2. Obtener Cliente1\nWITH cliente_existente AS (\n  SELECT id, telefono, nombre, direccion, estado_conversacion\n    FROM clientes\n   WHERE telefono = '{{ $json.clienteTelefono }}'\n   LIMIT 1\n),\nnuevo_cliente AS (\n  INSERT INTO clientes (telefono, nombre, estado_conversacion)\n  SELECT '{{ $json.clienteTelefono }}', 'Cliente Provisional', 'NUEVO'\n   WHERE NOT EXISTS (SELECT 1 FROM cliente_existente)\n  RETURNING id, telefono, nombre, direccion, estado_conversacion\n)\nSELECT * FROM cliente_existente\nUNION ALL\nSELECT * FROM nuevo_cliente;\n",
+        "options": {}
+      },
+      "id": "124851b3-8716-40c6-9ccb-b69a48cc0d19",
+      "name": "2. Obtener Cliente1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -3248,
+        -784
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.nombre }}",
+                    "rightValue": "=Cliente Provisional",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    },
+                    "id": "ac3d760a-1b52-43f4-b38d-0178c8274afb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Real"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "dcf122a5-2593-4d42-a079-c7f90f6bd484",
+                    "leftValue": "={{ $json.nombre }}",
+                    "rightValue": "Cliente Provisional",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2800,
+        -1120
+      ],
+      "id": "90a9dc4d-7cfa-47ce-90b7-a10a3fb0b4fd",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{$node[\"Procesar Reacciones\"].json[\"session\"]}}",
+        "chatId": "={{$node[\"Procesar Reacciones\"].json[\"chatId\"]}}",
+        "text": "=Hola, *{{$json.nombre}}* como estas 🥑✨ \n\nGracias por tu 💚!\n\nEstamos aquí para servirte 😊",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -2032,
+        -1296
+      ],
+      "id": "ac9e36ef-b9e2-4cef-9fa8-0b9d194fa0ab",
+      "name": "Send a text message3",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 25
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2512,
+        -1296
+      ],
+      "id": "4a7a842f-b94c-40a8-a62d-ef3f73cfa71a",
+      "name": "Wait1",
+      "webhookId": "f0132613-4d4b-40c3-b541-77d8458f9e54"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{$node[\"Procesar Reacciones\"].json[\"session\"]}}",
+        "chatId": "={{$node[\"Procesar Reacciones\"].json[\"chatId\"]}}",
+        "text": "=¡Hola! 🥑✨\n\nGracias por tu 💚 en nuestro estado! \n\n",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -2032,
+        -1120
+      ],
+      "id": "38839a1f-cb6a-449a-af47-1777fddbabd9",
+      "name": "Send a text message4",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 25
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -2400,
+        -1120
+      ],
+      "id": "954f622d-82b4-4e10-9f7d-e2768ac506a4",
+      "name": "Wait2",
+      "webhookId": "f0132613-4d4b-40c3-b541-77d8458f9e54"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "704a9842-1003-4c53-aca6-1b4aa8d9d861",
+              "leftValue": "={{ ($json.datosOriginalesWAHA.payload.hasMedia === true && ($json.datosOriginalesWAHA.payload.from.endsWith('@c.us') || $json.datosOriginalesWAHA.payload.from.endsWith('@lid'))) ? 1 : 0 }}\n",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -3632,
+        -848
+      ],
+      "id": "2d008529-6474-444a-9c94-5d57cc9ea233",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "amount": 15
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3072,
+        -896
+      ],
+      "id": "dfe671ff-5f5b-45e2-92c8-d1bac5126ff4",
+      "name": "Wait4",
+      "webhookId": "db0eef89-653c-4f0a-8bb5-84219591c768"
+    },
+    {
+      "parameters": {
+        "jsCode": "const item = $input.item.json;\nconst estado = item.estado_conversacion;\nlet ruta;\n\nswitch (estado) {\n  case 'NUEVO':\n  case 'ATENCION_LUZ':\n  case 'NOMBRE_SOLICITADO':\n  case 'EN_PEDIDO':\n  case 'PEDIDO_LISTO':\n  case 'PEDIDO_FINALIZADO':\n  case 'ESCALADO':\n  case 'Pedido OlaClick':\n    ruta = estado;\n    break;\n  default:\n    ruta = 'FALLBACK'; // Ruta por defecto para estados no manejados\n}\n\nreturn [{ json: { ...item, ruta } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2976,
+        -544
+      ],
+      "id": "3209f18f-c73d-40da-936c-9b316201c4d0",
+      "name": "Code in JavaScript",
+      "notes": "Este nodo es el **ENRUTADOR** principal del flujo conversacional.\n\n**Lógica:**\n1.  Lee el `estado_conversacion` del cliente que viene de la base de datos.\n2.  Usa una estructura `switch` para asignar una `ruta` que coincida con el nombre del estado.\n3.  Si un estado no está explícitamente listado (lo cual sería un error), lo envía a la ruta de `FALLBACK` para detener el flujo de forma segura.\n4.  La `ruta` de salida es utilizada por el nodo `Switch1` para dirigir al cliente al flujo de trabajo correcto."
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "NUEVO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ec0605be-09ab-4bec-87e9-390e4c894ccf"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NUEVO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "50bb82b1-5947-4271-a027-3b254dcb0679",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "ATENCION_LUZ",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ATENCION_LUZ"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "190cbad5-fdcf-4d55-b9bf-4dbb70857480",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "NOMBRE_SOLICITADO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "NOMBRE SOLICITADO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "a1a78d1e-ee06-439d-b7c8-1916ab8792ce",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "EN_PEDIDO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "EN_PEDIDO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "86db44ee-a79b-4f18-a34e-a023e7a4cb52",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "PEDIDO_LISTO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "description": ""
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PEDIDO_LISTO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "82ca0d0e-fde2-4801-a90d-e1b50c2d8069",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "PEDIDO_FINALIZADO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PEDIDO_FINALIZADO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "e7063241-8fe3-474f-94f8-1df14963f60c",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "ESCALADO",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "ESCALADO"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "6c3cba61-243b-4e85-bc6d-2ed004eb688b",
+                    "leftValue": "={{ $json.ruta }}",
+                    "rightValue": "Pedido OlaClick",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Pedido OlaClick"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -2704,
+        -624
+      ],
+      "id": "64dc0576-1ced-4cd5-a756-b7805c38a881",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta ESENCIAL para calcular y mostrar el total del pre-pedido del cliente. Úsala SOLAMENTE cuando el cliente pregunte por el 'total', 'cuánto es todo', 'la cuenta', o indique que ha terminado de añadir productos.",
+        "operation": "executeQuery",
+        "query": "SELECT\n  COALESCE(\n    SUM((item ->> 'precio')::numeric),\n    0\n  ) as total_pre_pedido\nFROM\n  clientes,\n  jsonb_array_elements(pre_pedido) as item\nWHERE\n  telefono = $1;",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $('1. Pre-procesamiento').item.json.clienteTelefonoLimpio }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "91dc4e87-be84-435f-83ee-bb686504a376",
+      "name": "TOOL_CalcularTotalPrePedido",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -1376,
+        -160
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -3728,
+        -64
+      ],
+      "id": "0275d3d4-9d5a-4264-8e25-fa36d9a99ae7",
+      "name": "Wait5",
+      "webhookId": "5792db6d-e837-4cc3-9158-b1abcb699465"
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "chatId": "={{ $json.payload.vote.from }}",
+        "text": "¡Excelente! 💸\n\nUsa el código FRESCURA10 al finalizar tu compra para obtener\nAquí puedes ver toda nuestra tienda:\n👉 https://tusaguacatescom.ola.click/products\n\n🍉🍌🍋‍🟩🍇🥑🥥🫑🍋🍊🍐🍎",
+        "requestOptions": {}
+      },
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        -3664,
+        192
+      ],
+      "id": "a031d9f1-351c-4a4d-bd64-7cffce490040",
+      "name": "Send a text message5",
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "WAHA Trigger": [
+      {
+        "json": {
+          "id": "evt_01k6bj4jd5j90hw8emsmhrgzmv",
+          "timestamp": 1759177230758,
+          "event": "message",
+          "session": "default",
+          "metadata": {},
+          "me": {
+            "id": "573042582777@c.us",
+            "pushName": "Tus Aguacates"
+          },
+          "payload": {
+            "id": "false_573016771740@c.us_3AE3EB6D1183BF634990",
+            "timestamp": 1759177230,
+            "from": "573016771740@c.us",
+            "fromMe": false,
+            "source": "app",
+            "body": "👋 Vengo de https://tusaguacatescom.ola.click\nCO-8719696519\n🗓️ 29/09/2025 ⏰ 03:20 pm\n\n*Tipo de servicio: Domicilio*\n\nNombre: Andrea coral\nTeléfono: 57 3016771740\nDirección: Calle 138 #57-38  #Torre 3 apto 501 - Bosque de casigua - Andrea coral\n\n*📝 Productos*\n*X1 🥑Nueva ⭐Maya paquete x 7 premium  $ 12.000*\n\nSubtotal: $ 12.000\nEntrega: $ 7.400\n*Total: $ 19.400*\n\n*💲 Pago*\nEstado del pago: No pagado\n*Total a pagar: $ 19.400*\nNequi 19400\n3203062007\n\n👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.",
+            "hasMedia": false,
+            "media": null,
+            "ack": 2,
+            "ackName": "DEVICE",
+            "replyTo": null,
+            "_data": {
+              "key": {
+                "remoteJid": "573016771740@s.whatsapp.net",
+                "fromMe": false,
+                "id": "3AE3EB6D1183BF634990",
+                "senderLid": "199965221601396@lid"
+              },
+              "messageTimestamp": 1759177230,
+              "pushName": "Andrea Coral",
+              "broadcast": false,
+              "message": {
+                "extendedTextMessage": {
+                  "text": "👋 Vengo de https://tusaguacatescom.ola.click\nCO-8719696519\n🗓️ 29/09/2025 ⏰ 03:20 pm\n\n*Tipo de servicio: Domicilio*\n\nNombre: Andrea coral\nTeléfono: 57 3016771740\nDirección: Calle 138 #57-38  #Torre 3 apto 501 - Bosque de casigua - Andrea coral\n\n*📝 Productos*\n*X1 🥑Nueva ⭐Maya paquete x 7 premium  $ 12.000*\n\nSubtotal: $ 12.000\nEntrega: $ 7.400\n*Total: $ 19.400*\n\n*💲 Pago*\nEstado del pago: No pagado\n*Total a pagar: $ 19.400*\nNequi 19400\n3203062007\n\n👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.",
+                  "matchedText": "https://tusaguacatescom.ola.click",
+                  "description": "Pide en nuestro Menú Digital. Obtén toda la información aquí: información de contacto, menú, precios, horarios, teléfonos de ⭐Tus Aguacates⭐ Productos Saludables. Empresa ubicada en Bogotá - Colombia",
+                  "title": "⭐Tus Aguacates⭐ Productos Saludables - Información, Pedir en línea. Menú, Precios y Teléfonos.",
+                  "font": "SYSTEM",
+                  "previewType": "NONE",
+                  "jpegThumbnail": "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",
+                  "contextInfo": {
+                    "entryPointConversionSource": "click_to_chat_link",
+                    "entryPointConversionApp": ""
+                  },
+                  "thumbnailDirectPath": "/v/t62.36144-24/557431602_1690800654963722_8609492271163043431_n.enc?ccb=11-4&oh=01_Q5Aa2gEUTb0PpS_PiYczNflJeYwBI7eJCgvkhrUqBqZd4VIPcA&oe=6902493D&_nc_sid=5e03e0",
+                  "thumbnailSha256": "rh3LUACCmkdy/2akgRIDIv0OylzJ0+54wqGCNHreYOY=",
+                  "thumbnailEncSha256": "m3kkM70q+jppMuwqo44u5M3F8JwTpdYfHxT6ht7fAI0=",
+                  "mediaKey": "9b52Xm6m3VXr+Un8pqVYFlmPD8b34Z5voRMX0toRIuk=",
+                  "mediaKeyTimestamp": "1759177229",
+                  "thumbnailHeight": 475,
+                  "thumbnailWidth": 475,
+                  "inviteLinkGroupTypeV2": "DEFAULT",
+                  "faviconMMSMetadata": {
+                    "thumbnailDirectPath": "/v/t62.36144-24/555303739_1342832720560375_1017439281953041633_n.enc?ccb=11-4&oh=01_Q5Aa2gF5yAzziJAQAQCfxvIszvKE7pBjA-bu4jEgp3qpi8QWSg&oe=69024809&_nc_sid=5e03e0",
+                    "thumbnailSha256": "5Uj8n0z9LGHf0VDyvU+nwRonRr1t4BVkf8V/tok6GN8=",
+                    "thumbnailEncSha256": "T2edq1s43D7wkXXuvHYB5JKJsf5VcjBavniy1h8tYWg=",
+                    "mediaKey": "BnKlZyIWXL/0QqtrpkJUETzmtOlHOx/Ix9llrT7QETw="
+                  },
+                  "linkPreviewMetadata": {
+                    "fbExperimentId": 0
+                  }
+                },
+                "messageContextInfo": {
+                  "deviceListMetadata": {
+                    "senderKeyHash": "Yk8YPvqh1mV6vQ==",
+                    "senderTimestamp": "1759149984",
+                    "recipientKeyHash": "268AriZc68+W6Q==",
+                    "recipientTimestamp": "1759022944"
+                  },
+                  "deviceListMetadataVersion": 2,
+                  "messageSecret": "iq0E11JR3OCmVV1SpYILyhFz804D5QCQ8h6knq5osJE="
+                }
+              },
+              "status": 3
+            }
+          },
+          "engine": "NOWEB",
+          "environment": {
+            "version": "2025.7.8",
+            "engine": "NOWEB",
+            "tier": "PLUS",
+            "browser": null
+          }
+        }
+      }
+    ],
+    "2b. Extraer Datos Cliente": [
+      {
+        "json": {
+          "subtotal": 12000,
+          "descuento": 0,
+          "costo_envio": 7400,
+          "total": 19400,
+          "validacion_exitosa": true,
+          "carrito_validado": [
+            {
+              "nombre": "🥑Nueva ⭐Maya paquete x 7 premium",
+              "precio": 12000,
+              "cantidad": 1
+            }
+          ],
+          "datosOriginalesWAHA": {
+            "id": "evt_01k6bj4jd5j90hw8emsmhrgzmv",
+            "timestamp": 1759177230758,
+            "event": "message",
+            "session": "default",
+            "metadata": {},
+            "me": {
+              "id": "573042582777@c.us",
+              "pushName": "Tus Aguacates"
+            },
+            "payload": {
+              "id": "false_573016771740@c.us_3AE3EB6D1183BF634990",
+              "timestamp": 1759177230,
+              "from": "573016771740@c.us",
+              "fromMe": false,
+              "source": "app",
+              "body": "👋 Vengo de https://tusaguacatescom.ola.click\nCO-8719696519\n🗓️ 29/09/2025 ⏰ 03:20 pm\n\n*Tipo de servicio: Domicilio*\n\nNombre: Andrea coral\nTeléfono: 57 3016771740\nDirección: Calle 138 #57-38  #Torre 3 apto 501 - Bosque de casigua - Andrea coral\n\n*📝 Productos*\n*X1 🥑Nueva ⭐Maya paquete x 7 premium  $ 12.000*\n\nSubtotal: $ 12.000\nEntrega: $ 7.400\n*Total: $ 19.400*\n\n*💲 Pago*\nEstado del pago: No pagado\n*Total a pagar: $ 19.400*\nNequi 19400\n3203062007\n\n👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.",
+              "hasMedia": false,
+              "media": null,
+              "ack": 2,
+              "ackName": "DEVICE",
+              "replyTo": null,
+              "_data": {
+                "key": {
+                  "remoteJid": "573016771740@s.whatsapp.net",
+                  "fromMe": false,
+                  "id": "3AE3EB6D1183BF634990",
+                  "senderLid": "199965221601396@lid"
+                },
+                "messageTimestamp": 1759177230,
+                "pushName": "Andrea Coral",
+                "broadcast": false,
+                "message": {
+                  "extendedTextMessage": {
+                    "text": "👋 Vengo de https://tusaguacatescom.ola.click\nCO-8719696519\n🗓️ 29/09/2025 ⏰ 03:20 pm\n\n*Tipo de servicio: Domicilio*\n\nNombre: Andrea coral\nTeléfono: 57 3016771740\nDirección: Calle 138 #57-38  #Torre 3 apto 501 - Bosque de casigua - Andrea coral\n\n*📝 Productos*\n*X1 🥑Nueva ⭐Maya paquete x 7 premium  $ 12.000*\n\nSubtotal: $ 12.000\nEntrega: $ 7.400\n*Total: $ 19.400*\n\n*💲 Pago*\nEstado del pago: No pagado\n*Total a pagar: $ 19.400*\nNequi 19400\n3203062007\n\n👆 Envíanos este mensaje ahora. En cuanto lo recibamos estaremos atendiéndole.",
+                    "matchedText": "https://tusaguacatescom.ola.click",
+                    "description": "Pide en nuestro Menú Digital. Obtén toda la información aquí: información de contacto, menú, precios, horarios, teléfonos de ⭐Tus Aguacates⭐ Productos Saludables. Empresa ubicada en Bogotá - Colombia",
+                    "title": "⭐Tus Aguacates⭐ Productos Saludables - Información, Pedir en línea. Menú, Precios y Teléfonos.",
+                    "font": "SYSTEM",
+                    "previewType": "NONE",
+                    "jpegThumbnail": "/9j/4AAQSkZJRgABAQAASABIAAD/4QCMRXhpZgAATU0AKgAAAAgABQESAAMAAAABAAEAAAEaAAUAAAABAAAASgEbAAUAAAABAAAAUgEoAAMAAAABAAIAAIdpAAQAAAABAAAAWgAAAAAAAABIAAAAAQAAAEgAAAABAAOgAQADAAAAAQABAACgAgAEAAAAAQAAAIygAwAEAAAAAQAAAIwAAAAA/+0AOFBob3Rvc2hvcCAzLjAAOEJJTQQEAAAAAAAAOEJJTQQlAAAAAAAQ1B2M2Y8AsgTpgAmY7PhCfv/AABEIAIwAjAMBIgACEQEDEQH/xAAfAAABBQEBAQEBAQAAAAAAAAAAAQIDBAUGBwgJCgv/xAC1EAACAQMDAgQDBQUEBAAAAX0BAgMABBEFEiExQQYTUWEHInEUMoGRoQgjQrHBFVLR8CQzYnKCCQoWFxgZGiUmJygpKjQ1Njc4OTpDREVGR0hJSlNUVVZXWFlaY2RlZmdoaWpzdHV2d3h5eoOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4eLj5OXm5+jp6vHy8/T19vf4+fr/xAAfAQADAQEBAQEBAQEBAAAAAAAAAQIDBAUGBwgJCgv/xAC1EQACAQIEBAMEBwUEBAABAncAAQIDEQQFITEGEkFRB2FxEyIygQgUQpGhscEJIzNS8BVictEKFiQ04SXxFxgZGiYnKCkqNTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqCg4SFhoeIiYqSk5SVlpeYmZqio6Slpqeoqaqys7S1tre4ubrCw8TFxsfIycrS09TV1tfY2dri4+Tl5ufo6ery8/T19vf4+fr/2wBDAAYGBgYGBgoGBgoOCgoKDhIODg4OEhcSEhISEhccFxcXFxcXHBwcHBwcHBwiIiIiIiInJycnJywsLCwsLCwsLCz/2wBDAQcHBwsKCxMKChMuHxofLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi7/3QAEAAn/2gAMAwEAAhEDEQA/APqmiiigAoopCQOtAC0hIHWuc1vxNpmiRbruT5j91F5Y/QV5Nq3xC1a+Jj01fs0f977z/wCAq403LY5pYlc/sqScpdlq/wDgHuc95bW6F5nVFHdiAP1rAuPGXh624kvIyfRTuP8A47mvnW5nvLx/MvZnlb/aYn+dQCNPSt44buy6lHFQ1ruFP/FLX7kfQX/CwPDf/Pz/AOOP/hU8Hjrw5O21btVP+0Cv8wK+d9i+lIY19K0+qx/mOfnb0jiqT+9H1Rb6tY3QzbzJIP8AZYH+VX1kRuhr5HClDujYqR3HFdNp3jDX9Mwom8+Mfwy/N+vWs54SaV0aSliaceerSvHvF8yPpWivPNA8eafqm2C4PkTn+FjwT/snv/Ou/jlSQZU1zNNaM1o14VY81N3RJRRRSNQooooA/9D6pooprMFGTQAO6oMmvLfFvjj7EzafpRD3HRn6hP8AE/yqHxx4ue1zpemv++b/AFjDqgPYe5/SvIlXbyxyx6mtYR7mEIPE88nPkpQ+Kf6R7sdK89zM1xeO0kjnJLHJpKKK6oqx87juJXGLw2Vx9nT7/al5thRWjpumXGpzGOHCqgy8jfdUe/v6DvXTDQNHjADyTSsOpBVAfoME/rXJicxoYd8tSWp4lDAV8T+8X3szrHQor2GNQzxyNH5hkbmMZPC4xnJXnrWl/wAIrYqMPeOT7IAP1NRzwMttNPcXKhg5ZUxtUR4AAU5PI9KxVupUP7uU/nmvhcbneZKbdOdo300T/E9/6hh4WU6fzNK58KTBC9hOs+P4GGxj9OSD+dctLDJBI0MylHU4KsMEfhXUW2rzxEeaNw9Rwa3ZobLxDbbWIEyjCSdwfRvUfy7V25VxZVhNU8ds/tL9UCw06L9rl83GXa+55kyA89K7Xw340u9JcW2oM0tv2PVk/wARXKTwS20z2867XQlWB7EVWZQa+/ahWVnubYPH08fPlnanX6P7MvJrufVNhqNvfwJNA4ZWGQR3rRr5r8MeJZtDuBDMS1s55H90+o/qK+hrG8iu4VkjYMGGQRXm1Kbg+Vnr0KzneE1aUd12/wCAXqKKKzOg/9H6prj/ABbr6aLp7SjmRvljX1Y/0HU11cziNCxr548Wai2sa4YFOYrfK/j/ABH+lNW3Zz1/aS5aFH45uy/z+RzS75C11cEs8hLEnqSf8aiJyanuG+bYOgqCuqjHTme7PnuJcwjzRyzCv91S0/xS6t/MKvW9l5kRu7hxDbKcGRu59FH8R/QdzSWlvHIslzdNst4AC7DqSeir7n9BzXQJFHbW1vrGsIPNuCE06y/hRP8Anqw9B1Gep5NcmOx3sU1Hf8jgyvK/bL21b4fzLtjLElittZoyJI2/5jlmJ4BbGB07dqfdyBXPybCowQDnJp9hGzSeY/O3kn1Y1XvzmZj7/wAhXxtWcpt1JvVn1MYKEeWKsHh/RH8U30sl27CwtW2FVODLJ1IyOijvXotx4P8ADk9utstqsO37rRfIw/Hv+OayfhyuPDfmY5eeZvr82P6V3GK7Jqy9n0PU9nFx5GtDxXxJ4cm8OGGWJ2ubeZ/LzgBlc/dB7Hd0B45rP0eaKWWSSKXyZLc/vI5AVcAdcrjoO/pXs+uaXFrekz6bIceYvyt3VhyrD6HBrzaPTX8TaeblMW3iDTG8mYjje6dN3s45Df0riq4PCtKVSOmzsziqYCDT9nozn/Es1ndXMN1ayI7PHiTYc8qcA/l/Kucq/Ov2lHukj8qSJtlxFjGx84zjsCfyPtiqFfdYGMI0IQpu6StrufAY6NSFeXtFZ/1qROtek+A/ELRONLuG6f6sn07j8K86IyMUkU0lrPHcxHDRsCPwrurR9rTv1R9Xhsc8VhljP+XlOyl/ei9n6o+tI3EiBh3qSuY8N6ml/ZRyqc7lBrp68o9tNNXR/9L6I8R34sNOmnP8CE/lXzvZ7mjlvJeWYkk/qf1r1r4iXRj0towfvlV/DNeVsvlaYg/vY/XmlPVRh3ZjRreyr1sV/wA+qba/xPRGYSSST3oorR0lFfUYS4ysZMjD2jBb+lehOSjFy7H5tSg6tRQ6tmtDbWz3i2N5/wAeWlxm6vMfxycfJ+Jwg9gaq2cGu+LdSl13yWlWJhnbjEaDkIgPoPT61HMzx+D571j+81O/2sfVIQT/AOhV2HgDxNpmi2M+m6k/kkv5kbYJ3ZABXgHnjj1r4yrONasqdaVk9fmffxhGLjSWiSLA2x24nAAjyQPqOv8AOuZvpfLgknY4wrOfyrdvLrSr7TEubUPFdPcSGSJsghdx6jtjj8a5HWt88KWMf3ruVLcf8COD+lcso81RQTN4x5pKJ694Ftmg8KWCsMM8XmH6uS39abqfiN4bg2emRrI6naztyN3oAOvvWrO40jQ38ngRRYj+oG0V5/HEUjXB+Yc57565/OsMZiWrKPXc+jy3CxqJ1Ki/4c7mDV7u1uUsdchWB5fuSIcoT6H0NYniTSr3Tb4eK9CTfPGu25gHS4hHb/fXqp/Cq93qTao0KaqmYos58vhiSMZ5rqfD9419pwWY5eEmNiepx90n8K2o14TnKCd4+e9tN/0M8XhJU4qqlZ9ex5b4kNk72ni/Tfns79fKuAOM5GMkdm4IPuBXHXUBtrh4M7gp4PqOoP4jmu+udOEEviHwwgxFJD/aNsvZW6uB7bl/WuEmk8+0tLnu0ewn1KHA/QivfyWbg5UG9On9fM+G4lw0XGNeP9XKtRsuc1JTTX01F+9Z9Tg4YqJY1UJfDUTi/mv8z0/4eagQhtWP3G4+h5r2hTkA182eD7gwattzww/ka+ioH3RKfavMqK0mj6XL2/YqMt1dfdof/9P0T4kSHyI09XH8jXD367bKED2/lXb/ABGQmFWHZxXG3o8zS4ZR/s/yxWc3apS9WefVu6OOit+WL+SZg1o6Znzpcdfs83/oBrOrb0nTtSkvYxHbSkPuQnY2MOpXrjpzXfiFenJeR8PgE/bwaV9UW7y2M3w3sblBn7PdSM3sGdl/mRXPQkSRJIvDDHI6givVfC2iahD4YuNE8R2zQpJI4UEg5SQA5GCcENmvJb+0vPDd69jfqdoPyyYO117MD0+or87xsZSqyj1VvyPvMRBxtU6M6TS52mMqTMWkLGTceSd3U/nUN3JHBqmmzyfdjvY856DJxTdE0rWdUvrf7DbyJHJyZXUrGE7nJHPHT1rp5LHwTqV9F4e33d7NeSMiTRDaiGEZZ1bgEKRgkZ54rtwGFrTtJq3qVQ3Uuh3/AIkgkuvD91HDkuIw64/2CG/pXCafdpe2quPvAfMP613mi3dzLE9pcRyF7eR4SzoVD7DjcMjBDDn05rktT8I6lZXTX/h8Bo2O4wNwRnqFzwR7dq4MTh6l9IvQ+qyvFU1B0qjt1X+RGfeum8Iqxju5f4GkVR9VHP8AOufttH17UMLND9kB+8XI4+gBOa7lPsGgaYQ7iOGBSzOx9OWY1eDoSjLnkh5lioez9nF3ZyF2Fl8dy4+7FpEvmfRnOM/ka8ft8/2PbZ6bnx+S16bprX91ouu+LlgkefUozFaQqpZ/JA2R8Dn5idxrzyezvNPsrO0vYXgcIz7ZFKnlsd/YCvqcsV6ilHbX9EfDcRO2G5fQp0hpaSvo6fxI+c4ei5ZjQS/mRpaA2zV46+kbNs26H2r5r0ME6tHj1r6Ssx/oyfSuGv8AGz6/Bu6qNfzS/M//1PWvH9qZbF2A6DP5c151Zj7XobRjlo8j8jkfpXtviS0FzZuMdjXh2iObW/m06XgN0+o/xFc+LuqXPHeLuc8FFYpQn8NSLg/V7G58PrO2u9ad7hBJ5ERkRT/eyADitG+8U+MG0RNTYjTLi51FLGG2eDJVWbG9mf73GTwMVxjS3mham0tlIYnXJVh/dbtzwa9AvodT8a+F9OuLF45b6xvYp5FYhAfLY5HtlTkV1VvfiqsHozxsnqKk5YGatOLd/PU0G1rSfDFrPpeo3dzqN1YyxGbcBuke8f5MdBgZ6A8CpLTW4tR8U6t4Z8QrE0cLQvZwMm7enUuMA5w2M56fSsfxH4N0i61m/wBU1PWTax3TQP5abQ6SwjCnJzkYzgY757UzSW8FaN4k86K7uZ9QnVxFLdEmP96QzbWwAd57nPoMVw1WqN6s1Zfi7fme5GopS5FJfecl4q1nxbDqVxpjatsubu6Nta2FqEYCBuA7sMlSQcY65yelSxTSeDtS1mWJxcyaDpkFtbbkChTMwJOF7bjknqe9etHT9Jh1NtaXToBqDDBuNo35xjOfXHfrWT4g0zVLuNtX8JrbQ6s5WO488ArPCoICtnI4JyOO2M1w0Mxw9afLTlr/AF36m0qM4q7PO5/GOvQafqlxb6nJPHG1rZQzMqgCeX5pZeFHA5Cj0xWl/wALKvo7PVr1ZlaVryOys4ZE2rAMbTLL0I3HJwT2x610GiWGoeDfDl4L+P8AtDVbmX7XMscbPGN7qmchedg+Ygc8cCo7zxH4jS1upF0FLh1nVRF5LANtTeZSSOd2DtwCRwDya9JKVrtmZlWXxGvbbT9Surm4ivzHdJZWSMojZ5OjSS7fuoSeOBwMdavar4tj8uTSNf0+2vJ4A81xuOyFbePGHZTvIZ24ROSeCcZre0qC21vRJv8AhINFt4HubhxPB5ZXeUPyuSQCx77h69a5/wAS2Pw5tpFsNRs3S4uIVg2Wm4skancpKg4Bz0JBJrkljKftXQcveXkU4yUea+g/XfFGuXVjo2neFU+wajqys4t3VWMcJU4dmH3cDkcfyrSYaNq+jxWnim+gN7pq/wCkPDJuYbcAgsVGScgsAOCQKp22heHbnVo9W0zWJLedrQ2ex2VpOnUs2WDDjOPTAxXI33gXxXBokeiW1vBfBkaNbiKT7pMqyZZXKhQxGWIDE4ArsXPT1SOdunWi07SX3k/ijQdP0uG01DSZWltbxSU39RgAg9BwQe9cf0r1rx7LaJpFtYTvE17Cy4WLjam3njJwOleRSHamO5r1qEny8zPPyzC08NjK+OivcpRuv8TVkvzN3wrCZtUVvSvo+1j2wKPavFfAWnl5DcMOp4r3RFwoFcUnd3O/BUnToxjLfr6s/9X6guohLEynuK+ffFdhLpupLewjBDZz7ivos8iuG8V6Mt9bNgZOKa8znxNH2tNwTs+nk+h5jexJrGnJfWwzIozjv/tL+HauVhuLi3JMEjxk9drFf5Vo6deS6JetbXOfKY4b29GH9a0dZ0oYN/ZjcjfMwX+Y9q5cLV+q1Pq1T4X8L/Q8bNsJLHU3jqS/ex0mv/bkc07vI5kkYsx6knJP41YSeJ4DaXkYmhJyOzIfVT/MHg/rVWivXnCM48slofI0q06UueDsztNJ8Q6zpMaxREarZr0RjieMenc8e+R711tr408NXeBNM1pJ3WZSuD/vDI/WvHgSDkcEdDV06jdMAJyswHH71Q/6kZ/WvAxfDtGq+aJ9NheJpwXLVj9x7YmvaIFymqQbev8ArV/xqnc+M/DtoMtqAlYfww7pD+nH614wZYic/Z4f++P/AK9Si8kTHkpHFjuiAH8zk1xw4Ys9Z/j/AMA7JcVU7aR/r7zuNR8Z6vqCFdKi+xQnj7TcEb8f7K9AfzNcSZobYubVmlmkz5lzJ99ieu3PIz69fpVWSWWZt8zl29WOT+tMr3MHldHD6xV2eDjs6rYn3VohK07XWdWsYvIs7qWKPOdqtx+VZtKqljXotrqceAwlfE1o0MKm5Pt/WxIzyTSNLMxdmOSzHJJ9yaqhGubhYY+dxwPpTriVUXaPxrtPBmhSXM4u5l69AewrGrUsrI+7nh6dOMMsw7vGDvN/zT7eiPT/AAnpgtLROMcV21VrWFYYgg7VZrlOw//W+qaimiWVCp71LRQB474u8MeaDcQDDDmuB0vWJtMkNneAmIHp3X3Ht7V9L3Fuk6FWGc15T4n8HrNmaAYYcgioqU4VIunUV0c1SjNTVehLlmuvfyfkcle6RBdp9s01lO7naPun6eh9q5iSOSJzHIpVh2NSrLqWhzlWyozzn7rfUVuprGm6igjvkCN6nkfgw5FZU6lfD6P34/iv8zysXgMJjJXl+5q+fwS9H0OaoropdFhkHmWkuV9+R+YrNfS7xP4Q30NdtPH0Z/at66HkYjhnMaWqpcy7x1X4GfRVk2d0OsZoFncn+DH1rf29P+ZHLDJMfN2jQl9zK1FXRYv/ABsB9KY720HAO5vzqPrEXpDU9ihwliIr2mYTjRh5vX5JECxk8ngVHNcLGpVTjHU1XnvWkby4wWY/wr1/Gul0Hwpd6jKs12MLnIXsKmU31Peo1KVGk8NlMXGL+Ko/il6dkVfD+hT6tcrLIpEYOQD39zX0Po+lx2MCqoxgVDo+iw2EShV6CuiAAGBWLd9Wa0qUaUVCC0QtFFFI0P/X+qaKKKACo5IkkXawqSigDjdX8L2t8p+QZNeT6p4GubZme0JX27V9FVXmhjcfMuaEROnGa5Zq6PlGS01fT2/1bDHdCR+lA1q/i4kZx/vLmvo+702zfO6MGuXutE01icxCh2l8SucsMFGnrQlKHo2jxg+IJ+5H/fBqNtbuH6E/glernQtMz/qhU8OhaYD/AKoUlGC2ijZ0670eIn/4EzxsSajdnCRO2f7xwPyrYsvC2rX7DzSUU9l4/WvbLLSLBcYjFdRbWdugG1AKvmdrGcMDRjLnau+71f4nm2heBILXDyKM16XZ6dDaqFRQMVoKoA4FOqTrADFFFFABRRRQB//Z",
+                    "contextInfo": {
+                      "entryPointConversionSource": "click_to_chat_link",
+                      "entryPointConversionApp": ""
+                    },
+                    "thumbnailDirectPath": "/v/t62.36144-24/557431602_1690800654963722_8609492271163043431_n.enc?ccb=11-4&oh=01_Q5Aa2gEUTb0PpS_PiYczNflJeYwBI7eJCgvkhrUqBqZd4VIPcA&oe=6902493D&_nc_sid=5e03e0",
+                    "thumbnailSha256": "rh3LUACCmkdy/2akgRIDIv0OylzJ0+54wqGCNHreYOY=",
+                    "thumbnailEncSha256": "m3kkM70q+jppMuwqo44u5M3F8JwTpdYfHxT6ht7fAI0=",
+                    "mediaKey": "9b52Xm6m3VXr+Un8pqVYFlmPD8b34Z5voRMX0toRIuk=",
+                    "mediaKeyTimestamp": "1759177229",
+                    "thumbnailHeight": 475,
+                    "thumbnailWidth": 475,
+                    "inviteLinkGroupTypeV2": "DEFAULT",
+                    "faviconMMSMetadata": {
+                      "thumbnailDirectPath": "/v/t62.36144-24/555303739_1342832720560375_1017439281953041633_n.enc?ccb=11-4&oh=01_Q5Aa2gF5yAzziJAQAQCfxvIszvKE7pBjA-bu4jEgp3qpi8QWSg&oe=69024809&_nc_sid=5e03e0",
+                      "thumbnailSha256": "5Uj8n0z9LGHf0VDyvU+nwRonRr1t4BVkf8V/tok6GN8=",
+                      "thumbnailEncSha256": "T2edq1s43D7wkXXuvHYB5JKJsf5VcjBavniy1h8tYWg=",
+                      "mediaKey": "BnKlZyIWXL/0QqtrpkJUETzmtOlHOx/Ix9llrT7QETw="
+                    },
+                    "linkPreviewMetadata": {
+                      "fbExperimentId": 0
+                    }
+                  },
+                  "messageContextInfo": {
+                    "deviceListMetadata": {
+                      "senderKeyHash": "Yk8YPvqh1mV6vQ==",
+                      "senderTimestamp": "1759149984",
+                      "recipientKeyHash": "268AriZc68+W6Q==",
+                      "recipientTimestamp": "1759022944"
+                    },
+                    "deviceListMetadataVersion": 2,
+                    "messageSecret": "iq0E11JR3OCmVV1SpYILyhFz804D5QCQ8h6knq5osJE="
+                  }
+                },
+                "status": 3
+              }
+            },
+            "engine": "NOWEB",
+            "environment": {
+              "version": "2025.7.8",
+              "engine": "NOWEB",
+              "tier": "PLUS",
+              "browser": null
+            }
+          },
+          "clienteTelefonoLimpio": "573016771740",
+          "chatIdWAHA": "573016771740@c.us",
+          "nombre_cliente_pedido": "Andrea coral",
+          "direccion_cliente_pedido": "Calle 138 #57-38  #Torre 3 apto 501 - Bosque de casigua - Andrea coral",
+          "chatIdDestinoFinal": "573016771740@c.us",
+          "telefono_pedido_limpio": "573016771740"
+        }
+      }
+    ]
+  },
+  "connections": {
+    "WAHA Trigger": {
+      "main": [
+        [],
+        [
+          {
+            "node": "1. Pre-procesamiento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Procesar Reacciones",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [],
+        [
+          {
+            "node": "Revisar Voto del Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Pre-procesamiento": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Obtener Cliente": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4a. Agente Luz Principal": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarProductos": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ConsultarEstadoPedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_GuardarNombreCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarConocimiento": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_CambiarEstadoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_AnadirAlCarrito": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Pedido OlaClick": {
+      "main": [
+        [
+          {
+            "node": "Reagrupar Productos Verificados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Guardar Datos y Pedido OlaClick": {
+      "main": [
+        [
+          {
+            "node": "Calcular Proxima Entrega",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reagrupar Productos Verificados": {
+      "main": [
+        [
+          {
+            "node": "2b. Extraer Datos Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Revisar Voto del Cliente": {
+      "main": [
+        [
+          {
+            "node": "Wait3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait3": {
+      "main": [
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1b. Detectar Pedido OlaClick": {
+      "main": [
+        [
+          {
+            "node": "Procesar Pedido OlaClick",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "2. Obtener Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Proxima Entrega": {
+      "main": [
+        [
+          {
+            "node": "3a. Enviar Acuse de Recibo",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "3b. Pausa Dramática",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_EscalarServicioCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2b. Extraer Datos Cliente": {
+      "main": [
+        [
+          {
+            "node": "Guardar Datos y Pedido OlaClick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3b. Pausa Dramática": {
+      "main": [
+        [
+          {
+            "node": "3d. Generar Mensaje Final",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirmacion OlaClick": {
+      "main": [
+        [
+          {
+            "node": "4. Finalizar Estado del Pedido",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3d. Generar Mensaje Final": {
+      "main": [
+        [
+          {
+            "node": "Confirmacion OlaClick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "4c. Enviar Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Send a text message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Procesar Reacciones": {
+      "main": [
+        [
+          {
+            "node": "2. Obtener Cliente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Obtener Cliente1": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "Send a text message4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Wait4",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "1b. Detectar Pedido OlaClick",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait4": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_CalcularTotalPrePedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "4a. Agente Luz Principal",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait5": {
+      "main": [
+        [
+          {
+            "node": "Send a text message5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "d2560cc7-b069-4cd0-9dd9-5f7fbfcd729e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+  },
+  "id": "Rq9IugkwZZfDJ2LQ",
+  "tags": []
+}

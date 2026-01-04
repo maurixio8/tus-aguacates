@@ -1,0 +1,220 @@
+{
+    "name": "🔄 Sync Productos Supabase → Local (FIXED)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours"
+                        }
+                    ]
+                }
+            },
+            "id": "11cd3cfd-6e1a-48fd-a1cf-2866de082ab6",
+            "name": "⏰ Cada Hora",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "products",
+                "limit": 500
+            },
+            "id": "066c8aae-7edc-41d7-bfe2-ff19f9561733",
+            "name": "📥 Obtener Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                224,
+                0
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar Y guardar en memoria para después del DELETE\nconst staticData = $getWorkflowStaticData('global');\nconst productos = [];\n\nfor (const item of $input.all()) {\n  const p = item.json;\n  \n  productos.push({\n    supabase_id: p.id,\n    name: p.name || 'Sin nombre',\n    slug: p.slug || null,\n    description: p.description || null,\n    price: parseFloat(p.price) || 0,\n    discount_price: p.discount_price ? parseFloat(p.discount_price) : null,\n    category_name: p.category?.name || p.category_name || null,\n    category_id: p.category_id || null,\n    main_image_url: p.main_image_url || p.image_url || null,\n    stock: parseInt(p.stock) || 100,\n    is_active: p.is_active !== false,\n    is_featured: p.is_featured === true,\n    synced_from_supabase_at: new Date().toISOString()\n  });\n}\n\n// Guardar en memoria estática\nstaticData.productosParaInsertar = productos;\nstaticData.totalProductos = productos.length;\n\n// Retornar un item dummy para continuar el flujo\nreturn [{ json: { mensaje: `${productos.length} productos listos para insertar`, continuar: true } }];"
+            },
+            "id": "65e4218f-d8c8-495c-a836-04c554514af7",
+            "name": "🔄 Transformar y Guardar",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                448,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM productos_tienda;",
+                "options": {}
+            },
+            "id": "9d4167e1-aa4d-44a1-ae1a-29cb87681855",
+            "name": "🗑️ Limpiar Tabla",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                672,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Recuperar productos guardados en memoria\nconst staticData = $getWorkflowStaticData('global');\nconst productos = staticData.productosParaInsertar || [];\n\nif (productos.length === 0) {\n  throw new Error('No hay productos para insertar. El flujo falló.');\n}\n\n// Limpiar memoria después de recuperar\ndelete staticData.productosParaInsertar;\n\n// Retornar los productos como items para insertar\nreturn productos.map(p => ({ json: p }));"
+            },
+            "id": "recover-products",
+            "name": "📤 Recuperar Productos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                896,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "productos_tienda"
+                },
+                "columns": {
+                    "mappingMode": "autoMapInputData",
+                    "value": {}
+                },
+                "options": {}
+            },
+            "id": "942abbbc-c6c7-4fc1-9016-c5d974f26cd8",
+            "name": "💾 Insertar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.3,
+            "position": [
+                1120,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) as total_productos FROM productos_tienda;",
+                "options": {}
+            },
+            "id": "fe55504d-62b4-4083-a904-393759e48fb8",
+            "name": "✅ Verificar Total",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1344,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada Hora": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar y Guardar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar y Guardar": {
+            "main": [
+                [
+                    {
+                        "node": "🗑️ Limpiar Tabla",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Tabla": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Recuperar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Recuperar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Total",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+    }
+}

@@ -1,0 +1,213 @@
+{
+    "name": "🔄 Sync Clientes Local → Supabase",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours"
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada Hora",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  id,\n  telefono,\n  nombre,\n  email,\n  direccion,\n  ciudad,\n  total_pedidos,\n  total_gastado,\n  activo,\n  supabase_id\nFROM clientes\nWHERE supabase_id IS NULL\n  AND telefono IS NOT NULL\n  AND telefono != ''\nORDER BY created_at DESC\nLIMIT 100;",
+                "options": {}
+            },
+            "id": "get-local-only",
+            "name": "📥 Clientes Solo en Local",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                220,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Preparar clientes para crear en Supabase\nconst clientes = $input.all();\n\nif (clientes.length === 0 || !clientes[0].json.telefono) {\n  return [{ json: { mensaje: 'No hay clientes nuevos para sincronizar a Supabase', total: 0 } }];\n}\n\nconst resultado = [];\n\nfor (const item of clientes) {\n  const c = item.json;\n  \n  // Normalizar teléfono (agregar + si no tiene)\n  let phone = c.telefono;\n  if (!phone.startsWith('+')) {\n    phone = '+' + phone;\n  }\n  \n  resultado.push({\n    json: {\n      local_id: c.id,\n      phone: phone,\n      name: c.nombre || 'Cliente WhatsApp',\n      email: c.email || null,\n      address: c.direccion || null,\n      city: c.ciudad || 'Bogotá',\n      total_orders: parseInt(c.total_pedidos) || 0,\n      total_spent: parseFloat(c.total_gastado) || 0,\n      is_active: c.activo !== false\n    }\n  });\n}\n\nreturn resultado;"
+            },
+            "id": "transform-for-supabase",
+            "name": "🔄 Preparar para Supabase",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "upsert",
+                "tableId": "customers",
+                "conflictColumns": [
+                    "phone"
+                ],
+                "columns": "phone, name, email, address, city, total_orders, total_spent, is_active"
+            },
+            "id": "upsert-supabase",
+            "name": "💾 UPSERT en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                660,
+                0
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Actualizar supabase_id en local después de crear en Supabase\nconst resultados = $input.all();\nconst updates = [];\n\nfor (const item of resultados) {\n  const data = item.json;\n  \n  // Si Supabase devolvió un ID, actualizar local\n  if (data.id && data.phone) {\n    const telefonoLimpio = data.phone.replace(/[^0-9]/g, '');\n    updates.push({\n      json: {\n        supabase_id: data.id,\n        telefono: telefonoLimpio\n      }\n    });\n  }\n}\n\nif (updates.length === 0) {\n  return [{ json: { mensaje: 'No hay IDs para actualizar', total: 0 } }];\n}\n\nreturn updates;"
+            },
+            "id": "prepare-update-ids",
+            "name": "📝 Preparar Updates",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE clientes\nSET supabase_id = '{{ $json.supabase_id }}'::uuid,\n    updated_at = NOW()\nWHERE telefono = '{{ $json.telefono }}';",
+                "options": {}
+            },
+            "id": "update-local-ids",
+            "name": "🔗 Vincular IDs",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  COUNT(*) as total_clientes,\n  COUNT(CASE WHEN supabase_id IS NOT NULL THEN 1 END) as vinculados_supabase,\n  COUNT(CASE WHEN supabase_id IS NULL THEN 1 END) as pendientes\nFROM clientes;",
+                "options": {}
+            },
+            "id": "verify-sync",
+            "name": "✅ Verificar",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1320,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada Hora": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Clientes Solo en Local",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Clientes Solo en Local": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Preparar para Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Preparar para Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "💾 UPSERT en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 UPSERT en Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "📝 Preparar Updates",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📝 Preparar Updates": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Vincular IDs",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Vincular IDs": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

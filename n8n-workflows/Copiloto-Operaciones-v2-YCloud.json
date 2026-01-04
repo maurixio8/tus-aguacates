@@ -1,0 +1,439 @@
+{
+    "name": "🧠 Copiloto de Operaciones v2 (YCloud)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "copiloto-operaciones",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-ycloud",
+            "name": "📥 Webhook YCloud Copiloto",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                -1200,
+                400
+            ],
+            "webhookId": "copiloto-operaciones-v2"
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "OK",
+                "options": {}
+            },
+            "id": "respond-ok",
+            "name": "✅ Responder OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                -960,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// =====================================================\r\n// 🛡️ FILTRO DE SEGURIDAD - SOLO GRUPO DE COMANDO\r\n// =====================================================\r\n// ID del grupo privado de comando\r\nconst ID_GRUPO_COMANDO = '120363041361026474@g.us';\r\n\r\n// Extraer datos del webhook de YCloud\r\nconst body = $input.item.json.body;\r\nconst whatsappMsg = body.whatsappInboundMessage;\r\n\r\n// Si no es un mensaje de WhatsApp válido, ignorar\r\nif (!whatsappMsg || !whatsappMsg.from) {\r\n    return null;\r\n}\r\n\r\n// Obtener el ID del chat (grupo o individual)\r\nconst from = whatsappMsg.from || '';\r\nconst to = whatsappMsg.to || '';\r\nconst messageType = whatsappMsg.type || 'unknown';\r\n\r\n// Solo aceptar mensajes de texto\r\nif (messageType !== 'text') {\r\n    console.log('Mensaje no es texto, ignorando');\r\n    return null;\r\n}\r\n\r\n// Verificar si el mensaje viene del grupo de comando\r\n// YCloud envía el from como número de teléfono, no como ID de grupo\r\n// Para grupos, necesitamos verificar si hay un context.from que sea el grupo\r\nconst context = whatsappMsg.context || {};\r\nconst groupId = context.from || '';\r\n\r\n// Log para debug\r\nconsole.log('From:', from);\r\nconsole.log('Context:', JSON.stringify(context));\r\nconsole.log('GroupId:', groupId);\r\n\r\n// Extraer el texto del comando\r\nconst messageText = whatsappMsg.text?.body || '';\r\n\r\n// Saludo según hora (COLOMBIA UTC-5)\r\nconst now = new Date();\r\nconst horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();\r\nlet saludo;\r\nif (horaCol < 12) saludo = 'Buenos días';\r\nelse if (horaCol < 19) saludo = 'Buenas tardes';\r\nelse saludo = 'Buenas noches';\r\n\r\n// Pasar el mensaje para procesamiento\r\nreturn {\r\n    json: {\r\n        mensajeClienteActual: messageText,\r\n        prompt: messageText,\r\n        from: from.replace('+', ''),\r\n        to: to.replace('+', ''),\r\n        saludo: saludo,\r\n        timestamp: whatsappMsg.sendTime,\r\n        customerName: whatsappMsg.customerProfile?.name || 'Director'\r\n    }\r\n};"
+            },
+            "id": "filtrar-comando",
+            "name": "🛡️ Filtrar y Preparar Comando",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -960,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// ============================================\r\n// EXTRACTOR INTELIGENTE v2.0\r\n// Extrae teléfono y nombre del comando\r\n// ============================================\r\nconst prompt = $input.item.json.prompt ||\r\n               $input.item.json.mensajeClienteActual || '';\r\n\r\nconsole.log('Prompt recibido:', prompt);\r\n\r\n// ============================================\r\n// 1. EXTRACCIÓN DE TELÉFONO (Formato Colombiano)\r\n// ============================================\r\nconst normalizedPrompt = prompt.replace(/[^\\d]/g, '');\r\nconst phoneRegex = /(?:57)?(3\\d{9})/g;\r\nconst phoneMatches = normalizedPrompt.match(phoneRegex);\r\nlet telefono_objetivo = null;\r\n\r\nif (phoneMatches && phoneMatches.length > 0) {\r\n    telefono_objetivo = phoneMatches[0].replace(/^57/, '');\r\n    console.log('Teléfono extraído:', telefono_objetivo);\r\n} else {\r\n    console.log('No se encontró teléfono válido');\r\n}\r\n\r\n// ============================================\r\n// 2. EXTRACCIÓN DE NOMBRE\r\n// ============================================\r\nlet nombre_extraido = null;\r\nconst patrones = [\r\n    /(?:a|al nombre)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s|$)/i,\r\n    /(?:nombre es|llama)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+y|\\s*$)/i,\r\n    /registra(?:\\s+el)?\\s+nombre\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+para|$)/i,\r\n];\r\n\r\nfor (const patron of patrones) {\r\n    const match = prompt.match(patron);\r\n    if (match && match[1]) {\r\n        nombre_extraido = match[1].trim();\r\n        const palabrasExcluir = ['del', 'cliente', 'el', 'la', 'un', 'una', 'para', 'de'];\r\n        let palabrasNombre = nombre_extraido.split(/\\s+/).filter(palabra => \r\n            !palabrasExcluir.includes(palabra.toLowerCase())\r\n        );\r\n        nombre_extraido = palabrasNombre.join(' ').trim();\r\n        if (nombre_extraido.length >= 2 && !/^\\d+$/.test(nombre_extraido)) {\r\n            console.log('Nombre extraído:', nombre_extraido);\r\n            break;\r\n        } else {\r\n            nombre_extraido = null;\r\n        }\r\n    }\r\n}\r\n\r\n// ============================================\r\n// 3. SALIDA ESTRUCTURADA\r\n// ============================================\r\n$input.item.json.telefono_objetivo = telefono_objetivo;\r\n$input.item.json.nombre_extraido = nombre_extraido;\r\n\r\nreturn [$input.item];"
+            },
+            "id": "extractor-inteligente",
+            "name": "2. Extractor Inteligente",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                -720,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $json.mensajeClienteActual || $json.prompt }}",
+                "hasOutputParser": true,
+                "options": {
+                    "systemMessage": "## 🎯 MISIÓN PRINCIPAL\nEres un Copiloto de Operaciones y Estratega de Datos para \"Tus Aguacates\". Tu único interlocutor es Mauricio (el Director). Tu misión es transformar datos en inteligencia estratégica, ejecutar análisis predictivos, y proporcionar insights accionables.\n\n---\n\n## ⛓️ CADENA DE PENSAMIENTO\nPara CADA comando:\n1. **Analizar Intención**: ¿Qué operación necesita?\n2. **Identificar Parámetros**: Revisa datos extraídos (`telefono_objetivo`, `nombre_extraido`)\n3. **Seleccionar Herramienta**: Elige la más adecuada\n4. **Ejecutar con Parámetros Limpios**\n\n---\n\n## 📚 HERRAMIENTAS DISPONIBLES\n\n### GESTIÓN DE CLIENTES:\n- `TOOL_ADMIN_ActualizarDatosCliente`: Actualiza nombre/dirección\n- `TOOL_ADMIN_CambiarEstadoCliente`: Cambia estado de UN cliente\n- `TOOL_ADMIN_ConsultarCliente`: Consulta datos de UN cliente\n- `TOOL_ADMIN_ListarClientesPorEstado`: Lista clientes por estado\n- `TOOL_ADMIN_ContarClientes`: Cuenta total de clientes\n- `TOOL_CambiarEstadoMasivoClientes`: Cambio masivo (requiere confirmación)\n- `TOOL_ListarClientesSinNombre`: Lista clientes sin nombre\n\n### BUSINESS INTELLIGENCE:\n- `TOOL_AnalisisVentasPorPeriodo`: Ventas por día/semana/mes\n- `TOOL_ProductosMasVendidos`: Ranking de productos\n- `TOOL_GenerarReporteEjecutivo`: Dashboard con KPIs\n- `TOOL_ReporteEstadoClientes`: Distribución de estados\n\n### ANÁLISIS PREDICTIVO:\n- `TOOL_PredeccionChurn`: Clientes en riesgo de abandono\n- `TOOL_ListarVIPsEnRiesgo`: Clientes VIP en riesgo\n- `TOOL_AnalisisSatisfaccionCliente`: Métricas NPS\n- `TOOL_ContarClientesPorSegmento`: Conteo por segmento\n- `TOOL_GetPerfilCompletoCliente`: Perfil 360°\n\n### CONSULTAS:\n- `TOOL_BuscarProductos`: Búsqueda en catálogo\n- `TOOL_BuscarConocimiento`: Base de conocimiento\n\n---\n\n## 🔒 PROTOCOLO DE SEGURIDAD\nPara `TOOL_CambiarEstadoMasivoClientes`:\n1. NO ejecutes inmediatamente\n2. Responde: \"⚠️ ATENCIÓN: Esta operación masiva afectará a X clientes. Para confirmar: 'confirmar cambio masivo'\"\n3. Solo ejecuta si recibe confirmación exacta\n\n---\n\n## 💬 EJEMPLOS\n\n**Actualizar nombre:**\nComando: \"Actualiza el nombre del cliente 3161932558 a Consuelo\"\nAcción: `TOOL_ADMIN_ActualizarDatosCliente(nombre='Consuelo', telefono='3161932558')`\n\n**Lista clientes sin nombre:**\nComando: \"Dame los clientes sin nombre\"\nAcción: `TOOL_ListarClientesSinNombre()`\n\n**Reporte de ventas:**\nComando: \"Dame el reporte de ventas de diciembre\"\nAcción: `TOOL_AnalisisVentasPorPeriodo(periodo='month', fecha_inicio='2025-12-01', fecha_fin='2025-12-31')`\n\n---\n\n## 🎯 PRINCIPIOS\n1. Precisión sobre velocidad\n2. Usa datos pre-extraídos (telefono_objetivo, nombre_extraido)\n3. Respuestas concisas\n4. Nunca inventes información"
+                }
+            },
+            "id": "agente-copiloto",
+            "name": "🤖 Agente Copiloto",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 2,
+            "position": [
+                -240,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"from\": \"{{ $('🛡️ Filtrar y Preparar Comando').item.json.to }}\",\n  \"to\": \"{{ $('🛡️ Filtrar y Preparar Comando').item.json.from }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.output.replace(/\\\"/g, '\\\\\"').replace(/\\n/g, '\\\\n') }}\"\n  }\n}",
+                "options": {}
+            },
+            "id": "enviar-respuesta-ycloud",
+            "name": "📱 Enviar Respuesta YCloud",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                240,
+                400
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "options": {
+                    "temperature": 0.1
+                }
+            },
+            "id": "deepseek-model",
+            "name": "DeepSeek Chat Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+            "typeVersion": 1,
+            "position": [
+                -480,
+                640
+            ],
+            "credentials": {
+                "deepSeekApi": {
+                    "id": "8BVSsLxHakKs5L6l",
+                    "name": "DeepSeek account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionIdType": "customKey",
+                "sessionKey": "copiloto_operaciones"
+            },
+            "id": "memoria-copiloto",
+            "name": "🧠 Memoria Copiloto",
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.3,
+            "position": [
+                -320,
+                640
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Listar clientes SIN NOMBRE registrado. Úsala cuando pidan 'clientes sin nombre', 'anónimos', 'sin identificar'.",
+                "operation": "executeQuery",
+                "query": "SELECT telefono, estado_conversacion, total_pedidos FROM clientes WHERE nombre IS NULL OR TRIM(nombre) = '' OR nombre ILIKE '%cliente%' OR nombre ILIKE '%whatsapp%' ORDER BY total_pedidos DESC LIMIT 50;",
+                "options": {}
+            },
+            "id": "tool-listar-sin-nombre",
+            "name": "TOOL_ListarClientesSinNombre",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                0,
+                800
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Actualizar NOMBRE y/o DIRECCIÓN de un cliente. Requiere teléfono y al menos un dato.",
+                "operation": "executeQuery",
+                "query": "UPDATE clientes SET nombre = COALESCE($1, nombre), direccion = COALESCE($2, direccion), fecha_actualizacion = NOW() WHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') = REPLACE(REPLACE(REPLACE($3, '+', ''), ' ', ''), '-', '') RETURNING telefono, nombre, direccion, 'Actualización exitosa' as status;",
+                "options": {
+                    "queryReplacement": "=[\n  {\n    \"key\": \"1\",\n    \"value\": \"{{ $fromAI('nombre_cliente', 'SOLO el nombre completo de la persona', 'string') || $('2. Extractor Inteligente').item.json.nombre_extraido }}\",\n    \"type\": \"String\"\n  },\n  {\n    \"key\": \"2\",\n    \"value\": \"{{ $fromAI('direccion_cliente', 'La dirección del cliente, o null si no se menciona', 'string') }}\",\n    \"type\": \"String\"\n  },\n  {\n    \"key\": \"3\",\n    \"value\": \"{{ $fromAI('telefono', 'El número de teléfono del cliente', 'string') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\",\n    \"type\": \"String\"\n  }\n]"
+                }
+            },
+            "id": "tool-actualizar-cliente",
+            "name": "TOOL_ADMIN_ActualizarDatosCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                200,
+                800
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Consultar información de un cliente por teléfono.",
+                "operation": "executeQuery",
+                "query": "SELECT nombre, telefono, direccion, estado_conversacion, total_pedidos, total_gastado FROM clientes WHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') = REPLACE(REPLACE(REPLACE($1, '+', ''), ' ', ''), '-', '');",
+                "options": {
+                    "queryReplacement": "=[{ \"key\": \"1\", \"value\": \"{{ $fromAI('telefono', 'Teléfono del cliente', 'string') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\", \"type\": \"String\" }]"
+                }
+            },
+            "id": "tool-consultar-cliente",
+            "name": "TOOL_ADMIN_ConsultarCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                400,
+                800
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Contar total de clientes en la base de datos.",
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) as total_clientes, COUNT(CASE WHEN nombre IS NOT NULL AND nombre != '' AND nombre NOT ILIKE '%cliente%' THEN 1 END) as con_nombre, COUNT(*) - COUNT(CASE WHEN nombre IS NOT NULL AND nombre != '' AND nombre NOT ILIKE '%cliente%' THEN 1 END) as sin_nombre FROM clientes;",
+                "options": {}
+            },
+            "id": "tool-contar-clientes",
+            "name": "TOOL_ADMIN_ContarClientes",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                600,
+                800
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Reporte de distribución de clientes por estado de conversación.",
+                "operation": "executeQuery",
+                "query": "SELECT estado_conversacion, COUNT(*) AS total_clientes FROM clientes GROUP BY estado_conversacion ORDER BY total_clientes DESC;",
+                "options": {}
+            },
+            "id": "tool-reporte-estados",
+            "name": "TOOL_ReporteEstadoClientes",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                0,
+                960
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Listar clientes VIP (Comprador Élite) en riesgo de perderse.",
+                "operation": "executeQuery",
+                "query": "SELECT nombre, telefono, total_pedidos, total_gastado FROM clientes WHERE tipo_cliente = 'Comprador Élite' AND estado_cliente = 'En riesgo' ORDER BY total_gastado DESC LIMIT 15;",
+                "options": {}
+            },
+            "id": "tool-vips-riesgo",
+            "name": "TOOL_ListarVIPsEnRiesgo",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                200,
+                960
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "📥 Webhook YCloud Copiloto": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Responder OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🛡️ Filtrar y Preparar Comando",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🛡️ Filtrar y Preparar Comando": {
+            "main": [
+                [
+                    {
+                        "node": "2. Extractor Inteligente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "2. Extractor Inteligente": {
+            "main": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🤖 Agente Copiloto": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar Respuesta YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🧠 Memoria Copiloto": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ListarClientesSinNombre": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ActualizarDatosCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ConsultarCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ContarClientes": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ReporteEstadoClientes": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ListarVIPsEnRiesgo": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

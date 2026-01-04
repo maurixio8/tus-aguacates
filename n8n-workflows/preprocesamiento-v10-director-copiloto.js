@@ -1,0 +1,434 @@
+// =====================================================
+// 🧠 PRE-PROCESAMIENTO v10 - DETECCIÓN DE DIRECTOR (COPILOTO)
+// =====================================================
+// Última actualización: 2025-12-30
+// INSTRUCCIONES: Reemplaza el código del nodo "1. Pre-procesamiento YCloud"
+// con este código actualizado
+// =====================================================
+
+const body = $input.item.json.body;
+const whatsappMsg = body.whatsappInboundMessage;
+
+// =====================================================
+// 🛡️ DETECTAR SI ES EL DIRECTOR (MAURICIO) - COPILOTO
+// =====================================================
+// Números del Director - el único que puede dar comandos al Copiloto
+// YCloud no reenvía mensajes de grupos, así que usamos chat directo
+const NUMEROS_DIRECTOR = ['573203062007', '3203062007'];
+
+// Extraer número que envía el mensaje
+const fromRaw = whatsappMsg?.from || '';
+const fromNormalizado = fromRaw.replace(/[+\s-]/g, '');
+
+// Verificar si el mensaje viene del Director
+const esComandoDirector = NUMEROS_DIRECTOR.some(num =>
+    fromNormalizado === num ||
+    fromNormalizado.endsWith(num)
+);
+
+// =====================================================
+
+// Extraer datos básicos (siempre, aunque sea media)
+const from = (whatsappMsg?.from || '').replace('+', '');
+const to = (whatsappMsg?.to || '').replace('+', '');
+const customerName = whatsappMsg?.customerProfile?.name || 'Cliente';
+const messageType = whatsappMsg?.type || 'unknown';
+
+// Saludo según hora (COLOMBIA UTC-5)
+const now = new Date();
+const horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();
+let saludo;
+if (horaCol < 12) saludo = 'Buenos días';
+else if (horaCol < 19) saludo = 'Buenas tardes';
+else saludo = 'Buenas noches';
+
+// =====================================================
+// SI ES EL DIRECTOR → RETORNAR PARA FLUJO COPILOTO
+// =====================================================
+if (esComandoDirector) {
+    const messageText = whatsappMsg?.text?.body || '';
+
+    // Extracción de teléfono colombiano
+    const normalizedText = messageText.replace(/[^\d]/g, '');
+    const phoneMatch = normalizedText.match(/(?:57)?(3\d{9})/);
+    const telefono_objetivo = phoneMatch ? phoneMatch[1].replace(/^57/, '') : null;
+
+    // Extracción de nombre (patrones comunes)
+    let nombre_extraido = null;
+    const nombrePatterns = [
+        /(?:a|al nombre)\s+["']?([A-Za-zÁ-ÿ\s]+?)["']?(?:\s|$)/i,
+        /(?:nombre es|llama)\s+["']?([A-Za-zÁ-ÿ\s]+?)["']?(?:\s+y|\s*$)/i,
+    ];
+    for (const pattern of nombrePatterns) {
+        const match = messageText.match(pattern);
+        if (match && match[1]) {
+            nombre_extraido = match[1].trim().replace(/\b(del|cliente|el|la)\b/gi, '').trim();
+            if (nombre_extraido.length >= 2) break;
+            else nombre_extraido = null;
+        }
+    }
+
+    return [{
+        json: {
+            // ✅ FLAG CRÍTICO: IDENTIFICAR COMO MENSAJE DE COPILOTO
+            esComandoCopiloto: true,
+
+            from, to, customerName, saludo,
+            messageText: messageText,
+            prompt: messageText,
+            mensajeClienteActual: messageText,
+
+            // Datos extraídos para las herramientas del copiloto
+            telefono_objetivo: telefono_objetivo,
+            nombre_extraido: nombre_extraido,
+
+            // Flags estándar (desactivados para copiloto)
+            esMediaNoSoportado: false,
+            esMedia: false,
+            tipoMensaje: messageType,
+            timestamp: whatsappMsg?.sendTime
+        }
+    }];
+}
+
+// =====================================================
+// RESTO DEL CÓDIGO ORIGINAL (PARA CLIENTES NORMALES)
+// =====================================================
+
+// NUEVO: DETECTAR RESPUESTAS DE BOTONES INTERACTIVOS
+let esRespuestaBoton = false;
+let botonId = '';
+let botonTexto = '';
+if (messageType === 'interactive') {
+    const interactive = whatsappMsg.interactive;
+    if (interactive?.type === 'button_reply') {
+        esRespuestaBoton = true;
+        botonId = interactive.button_reply?.id || '';
+        botonTexto = interactive.button_reply?.title || '';
+    } else if (interactive?.type === 'list_reply') {
+        esRespuestaBoton = true;
+        botonId = interactive.list_reply?.id || '';
+        botonTexto = interactive.list_reply?.title || '';
+    }
+}
+
+// MANEJO DE IMÁGENES Y MEDIA
+const esImagen = messageType === 'image';
+const esDocumento = messageType === 'document';
+const esAudio = messageType === 'audio';
+const esVideo = messageType === 'video';
+const esSticker = messageType === 'sticker';
+const esMedia = esImagen || esDocumento || esAudio || esVideo || esSticker;
+
+if (esMedia) {
+    const captionImagen = whatsappMsg?.image?.caption ||
+        whatsappMsg?.document?.caption ||
+        whatsappMsg?.video?.caption || '';
+    let textoMedia = '[Mensaje multimedia]';
+    if (esImagen) textoMedia = '[📸 Imagen recibida]';
+    else if (esDocumento) textoMedia = '[📄 Documento recibido]';
+    else if (esAudio) textoMedia = '[🎵 Audio recibido]';
+    else if (esVideo) textoMedia = '[🎥 Video recibido]';
+    else if (esSticker) textoMedia = '[😊 Sticker recibido]';
+    return [{
+        json: {
+            esComandoCopiloto: false,
+            from, to, customerName, saludo,
+            esMediaNoSoportado: false,
+            esMedia: true,
+            esImagen, esDocumento, esAudio, esVideo, esSticker,
+            tipoMensaje: messageType,
+            messageText: textoMedia,
+            captionImagen,
+            esRespuestaBoton: false,
+            botonId: '',
+            botonTexto: '',
+            productoIdDelBoton: null,
+            accionBoton: '',
+            esSoloSaludo: false,
+            esPreguntaConversacional: false,
+            debeHacerBusqueda: false,
+            esPedidoPlataforma: false,
+            infoPedidoPlataforma: null,
+            tieneMultiplesProductos: false,
+            terminosIndividuales: [],
+            terminoBusqueda: '',
+            terminoNormalizado: '',
+            variantesBusqueda: [],
+            terminosNormalizados: [],
+            timestamp: whatsappMsg?.sendTime
+        }
+    }];
+}
+
+// MANEJO DE RESPUESTAS DE BOTONES
+if (esRespuestaBoton) {
+    let productoIdDelBoton = null;
+    let accionBoton = 'otro';
+    if (botonId.startsWith('agregar_producto_')) {
+        productoIdDelBoton = parseInt(botonId.replace('agregar_producto_', ''));
+        accionBoton = 'agregar';
+    } else if (botonId.startsWith('ver_mas_producto_')) {
+        productoIdDelBoton = parseInt(botonId.replace('ver_mas_producto_', ''));
+        accionBoton = 'ver_mas';
+    } else if (botonId === 'ver_carrito') {
+        accionBoton = 'ver_carrito';
+    }
+    return [{
+        json: {
+            esComandoCopiloto: false,
+            from, to, customerName, saludo,
+            esMediaNoSoportado: false,
+            esMedia: false,
+            tipoMensaje: 'interactive',
+            messageText: botonTexto,
+            esRespuestaBoton: true,
+            botonId: botonId,
+            botonTexto: botonTexto,
+            productoIdDelBoton: productoIdDelBoton,
+            accionBoton: accionBoton,
+            esSoloSaludo: false,
+            esPreguntaConversacional: false,
+            debeHacerBusqueda: false,
+            esPedidoPlataforma: false,
+            infoPedidoPlataforma: null,
+            tieneMultiplesProductos: false,
+            terminosIndividuales: [],
+            terminoBusqueda: '',
+            terminoNormalizado: '',
+            variantesBusqueda: [],
+            terminosNormalizados: [],
+            timestamp: whatsappMsg?.sendTime
+        }
+    }];
+}
+
+// VALIDAR MENSAJE DE TEXTO
+if (!whatsappMsg || messageType !== 'text') {
+    return [{
+        json: {
+            esComandoCopiloto: false,
+            esMediaNoSoportado: true,
+            from, to, customerName, saludo,
+            tipoMensaje: messageType,
+            messageText: '',
+            esRespuestaBoton: false,
+            botonId: '',
+            botonTexto: '',
+            productoIdDelBoton: null,
+            accionBoton: ''
+        }
+    }];
+}
+
+// A PARTIR DE AQUÍ: SOLO MENSAJES DE TEXTO NORMALES
+const messageText = whatsappMsg.text?.body || '';
+const msgLower = messageText.toLowerCase().trim();
+
+// DETECTAR SALUDOS SIMPLES
+const esSoloSaludo = [
+    /^hola[,!.\s]*$/i,
+    /^buenos?\s+(d[ií]as?|tardes?|noches?)[,!.\s]*$/i,
+    /^buenas[,!.\s]*$/i,
+    /^hey[,!.\s]*$/i,
+    /^qu[eé]\s+tal[,\?!.\s]*$/i,
+    /^c[oó]mo\s+est[aá](s|n)?[,\?!.\s]*$/i,
+    /^gracias[,!.\s]*$/i,
+    /^ok[,!.\s]*$/i,
+    /^s[ií][,!.\s]*$/i,
+    /^no[,!.\s]*$/i,
+    /^perfecto[,!.\s]*$/i,
+    /^listo[,!.\s]*$/i,
+    /^dale[,!.\s]*$/i,
+    /^bien[,!.\s]*$/i
+].some(p => p.test(msgLower));
+
+// DETECTAR PEDIDO DESDE PLATAFORMA
+const esPedidoPlataforma = [
+    /acabo\s+de\s+hacer\s+un\s+pedido/i,
+    /hice\s+un\s+pedido\s+en\s+(la\s+)?tienda/i,
+    /tus-aguacates\.vercel\.app/i,
+    /mi\s+pedido:.*\n.*total/is,
+    /quedo\s+atent[oa]\s+a\s+la\s+confirmaci[oó]n/i
+].some(p => p.test(messageText));
+
+let infoPedidoPlataforma = null;
+if (esPedidoPlataforma) {
+    const nombreMatch = messageText.match(/me\s+llamo\s+(\w+)/i);
+    const pagoMatch = messageText.match(/pago:\s*(.+?)(\n|$)/i);
+    const totalMatch = messageText.match(/total:\s*\$?([\d,.]+)/i);
+    infoPedidoPlataforma = {
+        nombre: nombreMatch ? nombreMatch[1] : null,
+        metodoPago: pagoMatch ? pagoMatch[1].trim() : null,
+        total: totalMatch ? totalMatch[1] : null
+    };
+}
+
+// DETECTAR PREGUNTAS CONVERSACIONALES
+const esPreguntaConversacional = [
+    /c[oó]mo\s+(veo|entro|accedo|visito|llego|abro)/i,
+    /d[oó]nde\s+(est[aá]|queda|encuentro|veo)/i,
+    /tienda\s+(en\s+)?l[ií]nea/i,
+    /tienda\s+(online|virtual|web)/i,
+    /ver\s+(la\s+)?tienda/i,
+    /p[aá]gina\s+web/i,
+    /\b(link|enlace|url)\b/i,
+    /\bhorario/i,
+    /a\s+qu[eé]\s+hora/i,
+    /hasta\s+qu[eé]\s+hora/i,
+    /\benv[ií]o/i,
+    /\bentrega/i,
+    /\bdomicilio/i,
+    /hacen\s+env[ií]o/i,
+    /zona\s+de\s+(cobertura|entrega)/i,
+    /m[eé]todo(s)?\s+de\s+pago/i,
+    /forma(s)?\s+de\s+pago/i,
+    /aceptan\s+(tarjeta|nequi|daviplata|efectivo)/i,
+    /puedo\s+pagar\s+con/i,
+    /\bcontacto/i,
+    /\bubicaci[oó]n/i,
+    /\bdirecci[oó]n/i,
+    /d[oó]nde\s+est[aá]n/i,
+    /mi\s+pedido/i,
+    /mi\s+carrito/i,
+    /qu[eé]\s+llevo/i,
+    /eso\s+es\s+todo/i,
+    /total\s+(del\s+)?pedido/i,
+    /cu[aá]nto\s+es\s+(el\s+)?total/i,
+    /cu[aá]nto\s+te\s+debo/i
+].some(p => p.test(msgLower));
+
+// EXTRACCIÓN DE TÉRMINO DE BÚSQUEDA
+const palabrasIgnorar = new Set([
+    'saber', 'conocer', 'decir', 'informar', 'consultar', 'preguntar',
+    'averiguar', 'entender', 'explicar', 'indicar',
+    'ver', 'mostrar', 'enseñar', 'mirar', 'observar',
+    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',
+    'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'como', 'cómo',
+    'sobre', 'sin', 'hacia', 'desde', 'entre',
+    'que', 'qué', 'cuanto', 'cuánto', 'cual', 'cuál',
+    'vale', 'valen', 'cuesta', 'cuestan', 'costar', 'costaría',
+    'precio', 'precios', 'costo', 'costos', 'valor', 'valores',
+    'tienen', 'tienes', 'tiene', 'tener', 'tendrán', 'tendría',
+    'hay', 'habrá', 'habría', 'haber',
+    'busco', 'busca', 'buscando', 'buscar',
+    'quiero', 'quiere', 'quieren', 'querer', 'quisiera', 'querría',
+    'venden', 'vende', 'vender',
+    'manejan', 'maneja', 'manejar',
+    'ofrecen', 'ofrece', 'ofrecer',
+    'necesito', 'necesita', 'necesitar',
+    'dame', 'deme', 'das', 'dan', 'dar',
+    'agregar', 'añadir', 'poner', 'meter', 'agrega', 'agregame', 'agrégame',
+    'llevar', 'llevo', 'lleva', 'llevamos',
+    'comprar', 'compro', 'compra',
+    'pedir', 'pedido', 'pido',
+    'hola', 'buenos', 'buenas', 'días', 'dias', 'tardes', 'noches',
+    'hey', 'oye', 'disculpa', 'perdón', 'perdon', 'perdone',
+    'por', 'favor', 'porfavor', 'gracias', 'muchas',
+    'me', 'te', 'se', 'nos', 'les', 'lo', 'la',
+    'yo', 'tu', 'tú', 'usted', 'ustedes', 'nosotros',
+    'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'eso',
+    'algo', 'más', 'mas', 'otro', 'otra', 'otros', 'otras',
+    'todo', 'todos', 'toda', 'todas',
+    'también', 'tambien', 'además', 'ademas',
+    'ser', 'sería', 'seria', 'son', 'es', 'era',
+    'están', 'esta', 'está', 'estan',
+    'puede', 'puedo', 'puedes', 'poder', 'podría',
+    'bueno', 'buena', 'buenos', 'buenas',
+    'mejor', 'mejores', 'peor', 'peores',
+    'grande', 'pequeño', 'pequeña',
+    'fresco', 'fresca', 'frescos', 'frescas',
+    'uno', 'dos', 'tres', 'cuatro', 'cinco',
+    'kilo', 'kilos', 'gramos', 'grs', 'libra', 'libras',
+    'unidad', 'unidades', 'paquete', 'paquetes',
+    'bandeja', 'bandejas', 'caja', 'cajas',
+    'pero', 'aunque', 'entonces', 'pues', 'bueno', 'mira', 'oiga',
+    'digame', 'dígame', 'cuéntame', 'cuentame', 'dime',
+    'porfa', 'xfa', 'please', 'plz', 'plis',
+    'okay', 'vale', 'listo', 'dale', 'aja', 'ajá',
+    'solo', 'sólo', 'solamente', 'únicamente', 'unicamente',
+    'siempre', 'nunca', 'ahora', 'después', 'despues', 'antes',
+    'aquí', 'aqui', 'acá', 'aca', 'allá', 'alla', 'ahí', 'ahi'
+]);
+
+let terminoBusqueda = msgLower
+    .replace(/[^\w\sáéíóúñü]/g, '')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !palabrasIgnorar.has(w))
+    .join(' ')
+    .trim();
+
+// DETECTAR MÚLTIPLES PRODUCTOS
+const separadores = /\s+(?:y|o|,)\s+/gi;
+const tieneMultiplesProductos = separadores.test(terminoBusqueda);
+let terminosIndividuales = [];
+if (tieneMultiplesProductos) {
+    terminosIndividuales = terminoBusqueda
+        .split(/\s*(?:y|o|,)\s*/gi)
+        .map(t => t.trim())
+        .filter(t => t.length > 0);
+} else if (terminoBusqueda) {
+    terminosIndividuales = [terminoBusqueda];
+}
+
+// NORMALIZACIÓN DE PLURALES
+let terminoNormalizado = terminoBusqueda;
+let variantesBusqueda = [];
+let terminosNormalizados = [];
+terminosIndividuales.forEach(termino => {
+    const palabras = termino.split(' ');
+    const palabrasNormalizadas = palabras.map(palabra => {
+        if (palabra.endsWith('s') && palabra.length > 3) {
+            return palabra.slice(0, -1);
+        }
+        if (palabra.endsWith('es') && palabra.length > 4) {
+            return palabra.slice(0, -2);
+        }
+        return palabra;
+    });
+    terminosNormalizados.push(palabrasNormalizadas.join(' '));
+});
+terminoNormalizado = terminosNormalizados.join(' ');
+variantesBusqueda = [...new Set([...terminosIndividuales, ...terminosNormalizados])];
+
+// DECISIÓN DE BÚSQUEDA
+const debeHacerBusqueda =
+    !esSoloSaludo &&
+    !esPreguntaConversacional &&
+    terminoBusqueda.length > 0;
+
+// RESULTADO FINAL (CLIENTE NORMAL)
+return [{
+    json: {
+        // ✅ FLAG: NO es comando de copiloto
+        esComandoCopiloto: false,
+
+        from, to, messageText, customerName, saludo,
+        esMediaNoSoportado: false,
+        esMedia: false,
+        esImagen: false,
+        esDocumento: false,
+        esAudio: false,
+        esVideo: false,
+        esSticker: false,
+        tipoMensaje: 'text',
+        captionImagen: '',
+        esRespuestaBoton: false,
+        botonId: '',
+        botonTexto: '',
+        productoIdDelBoton: null,
+        accionBoton: '',
+        esSoloSaludo,
+        esPreguntaConversacional,
+        debeHacerBusqueda,
+        esPedidoPlataforma,
+        infoPedidoPlataforma,
+        tieneMultiplesProductos,
+        terminosIndividuales,
+        terminosNormalizados,
+        terminoBusqueda,
+        terminoNormalizado,
+        variantesBusqueda,
+        timestamp: whatsappMsg.sendTime
+    }
+}];

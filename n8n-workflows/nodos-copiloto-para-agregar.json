@@ -1,0 +1,276 @@
+{
+    "nodos_copiloto": [
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "={{ $json.messageText }}",
+                "options": {
+                    "systemMessage": "## 🎯 MISIÓN\nEres el Copiloto de Operaciones de \"Tus Aguacates\". Tu interlocutor es Mauricio (Director).\n\n## 📚 HERRAMIENTAS\n- TOOL_ListarClientesSinNombre: Lista clientes sin nombre\n- TOOL_ADMIN_ActualizarDatosCliente: Actualiza nombre/dirección\n- TOOL_ADMIN_ConsultarCliente: Consulta datos de un cliente\n- TOOL_ADMIN_ContarClientes: Cuenta total de clientes\n- TOOL_ReporteEstadoClientes: Distribución por estado\n- TOOL_ListarVIPsEnRiesgo: Clientes VIP en riesgo\n\n## 💬 EJEMPLOS\n**Actualizar nombre:**\nComando: \"Actualiza el nombre del 3161932558 a Consuelo\"\nAcción: TOOL_ADMIN_ActualizarDatosCliente(nombre='Consuelo', telefono='3161932558')\n\n**Lista sin nombre:**\nComando: \"Dame los clientes sin nombre\"\nAcción: TOOL_ListarClientesSinNombre()\n\n## 🎯 PRINCIPIOS\n1. Usa datos pre-extraídos (telefono_objetivo, nombre_extraido)\n2. Respuestas concisas\n3. Nunca inventes información"
+                }
+            },
+            "id": "copiloto-agente",
+            "name": "🧠 Agente Copiloto",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 2,
+            "position": [
+                2000,
+                -200
+            ]
+        },
+        {
+            "parameters": {
+                "model": "deepseek-reasoner",
+                "options": {
+                    "temperature": 0.3
+                }
+            },
+            "id": "copiloto-deepseek",
+            "name": "DeepSeek Copiloto",
+            "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+            "typeVersion": 1,
+            "position": [
+                1800,
+                0
+            ],
+            "credentials": {
+                "deepSeekApi": {
+                    "id": "YOUR_DEEPSEEK_CREDENTIAL_ID",
+                    "name": "DeepSeek"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionIdType": "customKey",
+                "sessionKey": "copiloto_operaciones",
+                "contextWindowLength": 20
+            },
+            "id": "copiloto-memoria",
+            "name": "🧠 Memoria Copiloto",
+            "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+            "typeVersion": 1.3,
+            "position": [
+                1800,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Listar clientes SIN NOMBRE. Usar cuando pidan 'clientes sin nombre', 'anónimos'.",
+                "operation": "executeQuery",
+                "query": "SELECT telefono, estado_conversacion, total_pedidos FROM clientes WHERE nombre IS NULL OR TRIM(nombre) = '' OR nombre ILIKE '%cliente%' ORDER BY total_pedidos DESC LIMIT 50;",
+                "options": {}
+            },
+            "id": "copiloto-tool-sin-nombre",
+            "name": "TOOL_ListarClientesSinNombre",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                2200,
+                100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Actualizar nombre y/o dirección de un cliente. Input: telefono (requerido), nombre (opcional), direccion (opcional)",
+                "operation": "executeQuery",
+                "query": "UPDATE clientes SET nombre = COALESCE($1, nombre), direccion = COALESCE($2, direccion) WHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $3 || '%' RETURNING telefono, nombre, direccion, 'OK' as status;",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('nombre','Nombre del cliente','string','') }}\n{{ $fromAI('direccion','Dirección del cliente','string','') }}\n{{ $fromAI('telefono','Teléfono del cliente','string','') }}"
+                }
+            },
+            "id": "copiloto-tool-actualizar",
+            "name": "TOOL_ADMIN_ActualizarDatosCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                2200,
+                250
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Consultar datos de UN cliente por teléfono.",
+                "operation": "executeQuery",
+                "query": "SELECT telefono, nombre, direccion, estado_conversacion, total_pedidos, created_at FROM clientes WHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $1 || '%' LIMIT 1;",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('telefono','Teléfono a consultar','string','') }}"
+                }
+            },
+            "id": "copiloto-tool-consultar",
+            "name": "TOOL_ADMIN_ConsultarCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                2200,
+                400
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Contar total de clientes y cuántos tienen nombre.",
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) as total, COUNT(CASE WHEN nombre IS NOT NULL AND TRIM(nombre) != '' THEN 1 END) as con_nombre, COUNT(CASE WHEN nombre IS NULL OR TRIM(nombre) = '' THEN 1 END) as sin_nombre FROM clientes;",
+                "options": {}
+            },
+            "id": "copiloto-tool-contar",
+            "name": "TOOL_ADMIN_ContarClientes",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                2400,
+                100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const respuesta = $input.first().json.output || 'Error procesando comando';\nconst contexto = $('🔀 ¿Es Copiloto?').first().json;\n\nreturn [{\n  json: {\n    from: contexto.to,\n    to: contexto.from,\n    type: 'text',\n    text: { body: respuesta }\n  }\n}];"
+            },
+            "id": "copiloto-preparar-respuesta",
+            "name": "📤 Preparar Respuesta Copiloto",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2600,
+                -200
+            ]
+        }
+    ],
+    "conexiones_copiloto": {
+        "🔀 ¿Es Copiloto?": {
+            "main": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "❓ ¿Es Media?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Copiloto": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🧠 Memoria Copiloto": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ListarClientesSinNombre": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ActualizarDatosCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ConsultarCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_ADMIN_ContarClientes": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🧠 Agente Copiloto",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🧠 Agente Copiloto": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Preparar Respuesta Copiloto",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Preparar Respuesta Copiloto": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar WhatsApp YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "instrucciones": "1. Copiar nodos_copiloto al array 'nodes' del workflow\n2. Merge conexiones_copiloto con 'connections' existentes\n3. Actualizar ID de credencial DeepSeek"
+}

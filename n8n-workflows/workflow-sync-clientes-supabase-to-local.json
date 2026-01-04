@@ -1,0 +1,177 @@
+{
+    "name": "🔄 Sync Clientes Supabase → Local",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours"
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada Hora",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "customers",
+                "limit": 500
+            },
+            "id": "fetch-supabase-customers",
+            "name": "📥 Obtener Clientes Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                220,
+                0
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar y guardar clientes de Supabase\nconst staticData = $getWorkflowStaticData('global');\nconst clientes = [];\n\nfor (const item of $input.all()) {\n  const c = item.json;\n  \n  // Solo procesar si tiene teléfono válido\n  if (!c.phone || c.phone.trim() === '') continue;\n  \n  // Normalizar teléfono (remover +, espacios, guiones)\n  const telefonoNormalizado = c.phone.replace(/[^0-9]/g, '');\n  \n  clientes.push({\n    supabase_id: c.id,\n    telefono: telefonoNormalizado,\n    nombre: c.name || null,\n    email: c.email || null,\n    direccion: c.address || null,\n    ciudad: c.city || 'Bogotá',\n    total_pedidos: c.total_orders || 0,\n    total_gastado: c.total_spent || 0,\n    is_active: c.is_active !== false,\n    synced_at: new Date().toISOString()\n  });\n}\n\n// Guardar en memoria estática\nstaticData.clientesParaSync = clientes;\nstaticData.totalClientes = clientes.length;\n\nreturn [{ json: { mensaje: `${clientes.length} clientes listos para sincronizar` } }];"
+            },
+            "id": "transform-customers",
+            "name": "🔄 Transformar Clientes",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Recuperar clientes y generar UPSERTs\nconst staticData = $getWorkflowStaticData('global');\nconst clientes = staticData.clientesParaSync || [];\n\nif (clientes.length === 0) {\n  return [{ json: { mensaje: 'No hay clientes para sincronizar', total: 0 } }];\n}\n\n// Limpiar memoria\ndelete staticData.clientesParaSync;\n\n// Retornar clientes como items individuales para UPSERT\nreturn clientes.map(c => ({ json: c }));"
+            },
+            "id": "prepare-upsert",
+            "name": "📤 Preparar para UPSERT",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                660,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO clientes (supabase_id, telefono, nombre, email, direccion, ciudad, total_pedidos, total_gastado, activo)\nVALUES (\n  '{{ $json.supabase_id }}'::uuid,\n  '{{ $json.telefono }}',\n  {{ $json.nombre ? \"'\" + $json.nombre.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  {{ $json.email ? \"'\" + $json.email.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  {{ $json.direccion ? \"'\" + $json.direccion.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  '{{ $json.ciudad || 'Bogotá' }}',\n  {{ $json.total_pedidos || 0 }},\n  {{ $json.total_gastado || 0 }},\n  {{ $json.is_active !== false }}\n)\nON CONFLICT (telefono) DO UPDATE SET\n  supabase_id = EXCLUDED.supabase_id,\n  nombre = COALESCE(EXCLUDED.nombre, clientes.nombre),\n  email = COALESCE(EXCLUDED.email, clientes.email),\n  direccion = COALESCE(EXCLUDED.direccion, clientes.direccion),\n  ciudad = COALESCE(EXCLUDED.ciudad, clientes.ciudad),\n  total_pedidos = GREATEST(clientes.total_pedidos, EXCLUDED.total_pedidos),\n  total_gastado = GREATEST(clientes.total_gastado, EXCLUDED.total_gastado),\n  updated_at = NOW();",
+                "options": {}
+            },
+            "id": "upsert-cliente",
+            "name": "💾 UPSERT Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                880,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  COUNT(*) as total_clientes,\n  COUNT(CASE WHEN supabase_id IS NOT NULL THEN 1 END) as sincronizados_supabase,\n  COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END) as con_email\nFROM clientes;",
+                "options": {}
+            },
+            "id": "verify-sync",
+            "name": "✅ Verificar Sincronización",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada Hora": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Clientes Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Clientes Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Clientes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Clientes": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Preparar para UPSERT",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Preparar para UPSERT": {
+            "main": [
+                [
+                    {
+                        "node": "💾 UPSERT Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 UPSERT Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Sincronización",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

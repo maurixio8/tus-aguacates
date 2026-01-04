@@ -1,0 +1,188 @@
+{
+    "name": "🔄 Sync Productos Supabase → Local",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hoursInterval": 1
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada Hora",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                180,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "getAll",
+                "tableId": "products",
+                "limit": 500
+            },
+            "id": "fetch-supabase",
+            "name": "📥 Obtener Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENCIAL_SUPABASE",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar productos de Supabase al formato de productos_tienda\nconst productos = [];\n\nfor (const item of $input.all()) {\n  const p = item.json;\n  \n  productos.push({\n    json: {\n      supabase_id: p.id,\n      name: p.name || 'Sin nombre',\n      slug: p.slug || null,\n      description: p.description || null,\n      price: p.price || 0,\n      discount_price: p.discount_price || null,\n      category_name: p.category?.name || p.category_name || null,\n      category_id: p.category_id || null,\n      main_image_url: p.main_image_url || p.image_url || null,\n      stock: p.stock ?? 100,\n      is_active: p.is_active ?? true,\n      is_featured: p.is_featured ?? false,\n      synced_from_supabase_at: new Date().toISOString()\n    }\n  });\n}\n\nreturn productos;"
+            },
+            "id": "transform-data",
+            "name": "🔄 Transformar Datos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                620,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Limpiar tabla antes de insertar (sincronización completa)\nDELETE FROM productos_tienda;"
+            },
+            "id": "clear-table",
+            "name": "🗑️ Limpiar Tabla",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                840,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENCIAL_POSTGRES",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "table": "productos_tienda",
+                "columns": "supabase_id, name, slug, description, price, discount_price, category_name, category_id, main_image_url, stock, is_active, is_featured, synced_from_supabase_at",
+                "options": {}
+            },
+            "id": "insert-products",
+            "name": "💾 Insertar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1060,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENCIAL_POSTGRES",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) as total_productos FROM productos_tienda WHERE is_active = true;"
+            },
+            "id": "verify-count",
+            "name": "✅ Verificar Total",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1280,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR_CON_TU_CREDENCIAL_POSTGRES",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada Hora": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Datos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Datos": {
+            "main": [
+                [
+                    {
+                        "node": "🗑️ Limpiar Tabla",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Tabla": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Total",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "Sincronización"
+        }
+    ]
+}
