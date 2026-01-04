@@ -32,8 +32,8 @@ export default function AdminB2BProductsPage() {
 
     const loadProducts = async () => {
         try {
-            // Usar la API de productos del catálogo principal
-            const response = await fetch('/api/products?limit=100');
+            // Usar la API de productos del admin
+            const response = await fetch('/api/admin/products?limit=100');
             const data = await response.json();
 
             // Manejar diferentes formatos de respuesta
