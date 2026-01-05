@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const { data: monthOrders, error: monthOrdersError } = await supabase
       .from('b2b_orders')
-      .select('total, status');
+      .select('total, status, created_at');
 
     if (monthOrdersError) throw monthOrdersError;
 
