@@ -16,7 +16,7 @@ import {
   Trash2,
   Edit,
   Eye,
-  WhatsApp,
+  MessageCircle,
   Loader2,
   TrendingUp,
   FileText,
@@ -438,7 +438,7 @@ export default function B2BOrdersPage() {
                                   className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
                                   title="Contactar por WhatsApp"
                                 >
-                                  <WhatsApp className="w-4 h-4" />
+                                  <MessageCircle className="w-4 h-4" />
                                 </a>
                               </div>
                             </td>
@@ -582,7 +582,7 @@ export default function B2BOrdersPage() {
                             rel="noopener noreferrer"
                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg"
                           >
-                            <WhatsApp className="w-5 h-5" />
+                            <MessageCircle className="w-5 h-5" />
                           </a>
                         </div>
                       </div>
