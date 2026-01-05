@@ -16,8 +16,10 @@ import {
   X,
   Loader2,
   TrendingUp,
-  AlertTriangle
+  AlertTriangle,
+  Image as ImageIcon
 } from 'lucide-react';
+import ImageUploadModal from '@/components/admin/ImageUploadModal';
 
 interface Category {
   id: string;
@@ -80,6 +82,7 @@ export default function B2BProductsPage() {
   const [saving, setSaving] = useState(false);
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -166,6 +169,38 @@ export default function B2BProductsPage() {
     } catch (error) {
       console.error('Error actualizando producto:', error);
       showToast('Error al actualizar el producto', 'error');
+    }
+  };
+
+  const handleImageUpload = async (imageUrl: string) => {
+    if (!editingProduct) return;
+
+    // Actualizar el producto con la nueva imagen
+    setEditingProduct({
+      ...editingProduct,
+      main_image_url: imageUrl
+    });
+
+    // Guardar automáticamente
+    try {
+      const response = await fetch(`/api/admin/b2b/products?id=${editingProduct.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ main_image_url: imageUrl }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showToast('Imagen actualizada correctamente', 'success');
+        // Recargar productos
+        loadProducts();
+      } else {
+        showToast(data.error?.message || 'Error al actualizar imagen', 'error');
+      }
+    } catch (error) {
+      console.error('Error al actualizar imagen:', error);
+      showToast('Error de conexión al actualizar imagen', 'error');
     }
   };
 
@@ -657,6 +692,43 @@ export default function B2BProductsPage() {
                 </select>
               </div>
 
+              {/* Imagen del producto */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Imagen del producto</label>
+                <div className="flex items-start gap-4">
+                  {/* Preview de imagen actual */}
+                  <div className="flex-shrink-0">
+                    {editingProduct.main_image_url ? (
+                      <img
+                        src={editingProduct.main_image_url}
+                        alt={editingProduct.name}
+                        className="w-32 h-32 object-cover rounded-lg border border-gray-300"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Botones de acción */}
+                  <div className="flex-1 space-y-2">
+                    <button
+                      onClick={() => setImageModalOpen(true)}
+                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                      {editingProduct.main_image_url ? 'Cambiar Imagen' : 'Subir Imagen'}
+                    </button>
+                    {editingProduct.main_image_url && (
+                      <p className="text-xs text-gray-500">
+                        Haz clic en "Cambiar Imagen" para actualizar la foto del producto
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Estados */}
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2">
@@ -707,6 +779,22 @@ export default function B2BProductsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de carga de imagen */}
+      {imageModalOpen && editingProduct && (
+        <ImageUploadModal
+          product={{
+            id: editingProduct.id,
+            name: editingProduct.name,
+            description: editingProduct.description || '',
+            price: editingProduct.base_price,
+            main_image_url: editingProduct.main_image_url || undefined,
+            category: editingProduct.category?.name
+          }}
+          onUpload={handleImageUpload}
+          onClose={() => setImageModalOpen(false)}
+        />
       )}
     </div>
   );
