@@ -1,0 +1,492 @@
+{
+    "name": "🥑 Tus Aguacates - Agente WhatsApp MVP",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ycloud",
+                "options": {
+                    "responseMode": "responseNode"
+                }
+            },
+            "id": "webhook-entrada",
+            "name": "📥 Webhook YCloud",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "webhookId": "tus-aguacates-whatsapp"
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "OK",
+                "options": {}
+            },
+            "id": "responder-webhook",
+            "name": "✅ Responder OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                220,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extraer datos del mensaje de WhatsApp (YCloud/Meta format)\nconst body = $input.first().json.body || $input.first().json;\n\n// Estructura típica de YCloud\nconst message = body.whatsappInboundMessage || body;\n\n// Extraer información clave\nconst telefono = message.from || message.waId || '';\nconst nombre = message.customerProfile?.name || message.profile?.name || 'Cliente';\nconst tipoMensaje = message.type || 'text';\n\nlet textoMensaje = '';\nif (tipoMensaje === 'text') {\n  textoMensaje = message.text?.body || message.body || '';\n} else if (tipoMensaje === 'button') {\n  textoMensaje = message.button?.text || '';\n} else if (tipoMensaje === 'interactive') {\n  textoMensaje = message.interactive?.button_reply?.title || \n                 message.interactive?.list_reply?.title || '';\n}\n\n// Timestamp\nconst timestamp = message.timestamp || Date.now();\n\nreturn {\n  json: {\n    telefono: telefono.replace(/\\D/g, ''), // Solo números\n    nombre: nombre,\n    mensaje: textoMensaje,\n    tipo_mensaje: tipoMensaje,\n    timestamp: timestamp,\n    raw: body // Guardar original para debug\n  }\n};"
+            },
+            "id": "extraer-datos",
+            "name": "🔍 Extraer Datos Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "select",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "clientes"
+                },
+                "filterType": "string",
+                "filterString": "telefono = '{{ $json.telefono }}'",
+                "options": {}
+            },
+            "id": "buscar-cliente-db",
+            "name": "🔎 Buscar Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                660,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TU_CREDENCIAL_POSTGRES",
+                    "name": "PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "cliente-existe",
+                            "leftValue": "={{ $json.length }}",
+                            "rightValue": 0,
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "cliente-existe",
+            "name": "❓ ¿Cliente Existe?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                880,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Cliente encontrado - preparar contexto\nconst cliente = $('🔎 Buscar Cliente').first().json;\nconst mensaje = $('🔍 Extraer Datos Mensaje').first().json;\n\nreturn {\n  json: {\n    cliente_id: cliente.id,\n    telefono: mensaje.telefono,\n    nombre: cliente.nombre || mensaje.nombre,\n    email: cliente.email || '',\n    direccion: cliente.direccion || '',\n    total_pedidos: cliente.total_pedidos || 0,\n    es_nuevo: false,\n    mensaje_usuario: mensaje.mensaje,\n    tipo_mensaje: mensaje.tipo_mensaje\n  }\n};"
+            },
+            "id": "preparar-contexto-existente",
+            "name": "👤 Cliente Existente",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                -100
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "clientes"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "telefono": "={{ $('🔍 Extraer Datos Mensaje').first().json.telefono }}",
+                        "nombre": "={{ $('🔍 Extraer Datos Mensaje').first().json.nombre }}",
+                        "fecha_registro": "={{ new Date().toISOString() }}",
+                        "activo": true
+                    }
+                },
+                "options": {
+                    "returnData": true
+                }
+            },
+            "id": "crear-cliente-nuevo",
+            "name": "➕ Crear Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1100,
+                100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TU_CREDENCIAL_POSTGRES",
+                    "name": "PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Cliente nuevo - preparar contexto\nconst nuevoCliente = $input.first().json;\nconst mensaje = $('🔍 Extraer Datos Mensaje').first().json;\n\nreturn {\n  json: {\n    cliente_id: nuevoCliente.id,\n    telefono: mensaje.telefono,\n    nombre: mensaje.nombre,\n    email: '',\n    direccion: '',\n    total_pedidos: 0,\n    es_nuevo: true,\n    mensaje_usuario: mensaje.mensaje,\n    tipo_mensaje: mensaje.tipo_mensaje\n  }\n};"
+            },
+            "id": "preparar-contexto-nuevo",
+            "name": "🆕 Cliente Nuevo",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1320,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "mergeByFields": {
+                    "values": []
+                },
+                "options": {}
+            },
+            "id": "merge-contextos",
+            "name": "🔀 Merge Contextos",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.1,
+            "position": [
+                1540,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "model": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "gpt-4o-mini"
+                },
+                "options": {
+                    "temperature": 0.7,
+                    "maxTokens": 1000
+                }
+            },
+            "id": "agente-ia",
+            "name": "🤖 Agente Maya",
+            "type": "@n8n/n8n-nodes-langchain.openAi",
+            "typeVersion": 1.8,
+            "position": [
+                1760,
+                0
+            ],
+            "credentials": {
+                "openAiApi": {
+                    "id": "TU_CREDENCIAL_OPENAI",
+                    "name": "OpenAI API"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=Eres Maya, la asistente virtual de Tus Aguacates 🥑, una empresa colombiana que vende aguacates premium y productos frescos del Eje Cafetero.\n\n## Información del Cliente\n- Nombre: {{ $json.nombre }}\n- Teléfono: {{ $json.telefono }}\n- Es cliente nuevo: {{ $json.es_nuevo ? 'Sí' : 'No' }}\n- Pedidos anteriores: {{ $json.total_pedidos }}\n\n## Mensaje del Cliente\n{{ $json.mensaje_usuario }}\n\n## Tu Personalidad\n- Amable, cálida y profesional\n- Usas emojis moderadamente (🥑 💚 📦 ✅)\n- Hablas en español colombiano natural\n- Eres proactiva sugiriendo productos\n\n## Productos Destacados\n- Aguacate Hass Caja Premium (24 unidades) - $48,000\n- Aguacate Hass Baby (35 unidades) - $15,900\n- Arándanos Orgánicos (250g) - $14,300\n- Fresas Premium (500g) - $8,500\n\n## Categorías Disponibles\n- Frutas (aguacates, berries, tropicales)\n- Hierbas Aromáticas\n- Especias\n- Tubérculos\n- Miel y Salsas\n- Café\n\n## Link de la Tienda\nhttps://tus-aguacates.vercel.app\n\n## Instrucciones\n1. Si es cliente nuevo, dale la bienvenida cálidamente\n2. Responde la pregunta del cliente\n3. Si pregunta por productos, recomienda opciones\n4. Siempre ofrece el link de la tienda para comprar\n5. Mantén respuestas concisas (máximo 3-4 líneas)\n\nResponde al cliente:"
+            },
+            "id": "prompt-agente",
+            "name": "📝 Prompt Maya",
+            "type": "@n8n/n8n-nodes-langchain.promptTemplate",
+            "typeVersion": 1,
+            "position": [
+                1760,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Preparar mensaje para enviar via YCloud\nconst respuestaIA = $input.first().json.text || $input.first().json.output || '';\nconst contexto = $('🔀 Merge Contextos').first().json;\n\n// Limpiar respuesta\nlet mensaje = respuestaIA\n  .replace(/\\*\\*/g, '*') // Convertir bold markdown a WhatsApp\n  .trim();\n\n// Si la respuesta está vacía, mensaje de fallback\nif (!mensaje) {\n  mensaje = '¡Hola! 🥑 Gracias por escribirnos. En un momento te atenderemos. Mientras tanto, puedes ver nuestros productos en: https://tus-aguacates.vercel.app';\n}\n\nreturn {\n  json: {\n    to: contexto.telefono,\n    type: 'text',\n    text: {\n      body: mensaje\n    },\n    // Metadata para logging\n    _metadata: {\n      cliente_id: contexto.cliente_id,\n      nombre: contexto.nombre,\n      mensaje_original: contexto.mensaje_usuario,\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+            },
+            "id": "preparar-respuesta",
+            "name": "📤 Preparar Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1980,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ to: $json.to, type: $json.type, text: $json.text }) }}",
+                "options": {}
+            },
+            "id": "enviar-whatsapp",
+            "name": "📱 Enviar WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                2200,
+                0
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "TU_CREDENCIAL_YCLOUD",
+                    "name": "YCloud API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "conversaciones"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "cliente_id": "={{ $('📤 Preparar Respuesta').first().json._metadata.cliente_id }}",
+                        "mensaje_entrante": "={{ $('📤 Preparar Respuesta').first().json._metadata.mensaje_original }}",
+                        "mensaje_saliente": "={{ $('📤 Preparar Respuesta').first().json.text.body }}",
+                        "created_at": "={{ new Date().toISOString() }}"
+                    }
+                },
+                "options": {}
+            },
+            "id": "guardar-conversacion",
+            "name": "💾 Guardar Conversación",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                2420,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TU_CREDENCIAL_POSTGRES",
+                    "name": "PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "📥 Webhook YCloud": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Responder OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🔍 Extraer Datos Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Extraer Datos Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "🔎 Buscar Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔎 Buscar Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Cliente Existe?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Cliente Existe?": {
+            "main": [
+                [
+                    {
+                        "node": "👤 Cliente Existente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "➕ Crear Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "👤 Cliente Existente": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Merge Contextos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "➕ Crear Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "🆕 Cliente Nuevo",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🆕 Cliente Nuevo": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Merge Contextos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔀 Merge Contextos": {
+            "main": [
+                [
+                    {
+                        "node": "🤖 Agente Maya",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📝 Prompt Maya": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "🤖 Agente Maya",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🤖 Agente Maya": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Preparar Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Preparar Respuesta": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📱 Enviar WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Guardar Conversación",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {
+        "templateCredsSetupCompleted": false
+    },
+    "pinData": {},
+    "versionId": "1",
+    "tags": [
+        {
+            "name": "WhatsApp",
+            "id": "whatsapp-tag"
+        },
+        {
+            "name": "Tus Aguacates",
+            "id": "tus-aguacates-tag"
+        }
+    ]
+}

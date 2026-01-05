@@ -1,0 +1,252 @@
+{
+    "name": "Campaña Navidad - 151 Clientes VIP",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "manual-trigger",
+            "name": "Manual Trigger",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                240,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  id,\n  nombre,\n  telefono,\n  total_pedidos,\n  total_gastado\nFROM clientes\nWHERE \n  nombre IS NOT NULL \n  AND nombre != ''\n  AND total_pedidos >= 6\n  AND activo = true\n  AND telefono IS NOT NULL\nORDER BY total_pedidos DESC, total_gastado DESC\nLIMIT 151;",
+                "options": {}
+            },
+            "id": "postgres-get-vip-clients",
+            "name": "Obtener 151 Clientes VIP",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                460,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TU_CREDENCIAL_POSTGRES",
+                    "name": "PostgreSQL - Local"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Preparar datos para cada cliente\nconst clientes = items.map(item => {\n  const cliente = item.json;\n  \n  return {\n    json: {\n      cliente_id: cliente.id,\n      nombre: cliente.nombre,\n      telefono: cliente.telefono,\n      total_pedidos: cliente.total_pedidos,\n      total_gastado: cliente.total_gastado,\n      // Formatear número de teléfono para WhatsApp\n      whatsapp_number: cliente.telefono.startsWith('+') ? cliente.telefono : `+57${cliente.telefono}`,\n      // Datos para el mensaje\n      mensaje_data: {\n        from: \"+573042582777\",\n        to: cliente.telefono.startsWith('+') ? cliente.telefono : `+57${cliente.telefono}`,\n        type: \"template\",\n        template: {\n          name: \"template_marketing_20251222162632\",\n          language: {\n            code: \"es\"\n          },\n          components: [\n            {\n              type: \"header\",\n              parameters: [\n                {\n                  type: \"text\",\n                  text: cliente.nombre\n                }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  };\n});\n\nreturn clientes;"
+            },
+            "id": "code-prepare-messages",
+            "name": "Preparar Mensajes",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "batchSize": 1,
+                "options": {}
+            },
+            "id": "split-in-batches",
+            "name": "Dividir en Lotes",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "amount": 2,
+                "unit": "seconds"
+            },
+            "id": "wait-2-seconds",
+            "name": "Esperar 2 Segundos",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "X-API-Key",
+                            "value": "TU_API_KEY_YCLOUD_AQUI"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.mensaje_data }}",
+                "options": {}
+            },
+            "id": "http-send-whatsapp",
+            "name": "Enviar WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "=UPDATE clientes \nSET \n  fecha_ultima_campana = NOW(),\n  campanas_enviadas = COALESCE(campanas_enviadas, 0) + 1\nWHERE id = {{ $json.cliente_id }};",
+                "options": {}
+            },
+            "id": "postgres-update-client",
+            "name": "Actualizar Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1560,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "TU_CREDENCIAL_POSTGRES",
+                    "name": "PostgreSQL - Local"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $json.status }}",
+                            "operation": "equals",
+                            "value2": "accepted"
+                        }
+                    ]
+                }
+            },
+            "id": "if-message-sent",
+            "name": "¿Mensaje Enviado?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1780,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "Obtener 151 Clientes VIP",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Obtener 151 Clientes VIP": {
+            "main": [
+                [
+                    {
+                        "node": "Preparar Mensajes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Preparar Mensajes": {
+            "main": [
+                [
+                    {
+                        "node": "Dividir en Lotes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Dividir en Lotes": {
+            "main": [
+                [
+                    {
+                        "node": "Esperar 2 Segundos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Esperar 2 Segundos": {
+            "main": [
+                [
+                    {
+                        "node": "Enviar WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Enviar WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "Actualizar Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Actualizar Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "¿Mensaje Enviado?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "¿Mensaje Enviado?": {
+            "main": [
+                [
+                    {
+                        "node": "Dividir en Lotes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [],
+    "triggerCount": 0,
+    "updatedAt": "2025-12-22T19:27:00.000Z",
+    "versionId": "1"
+}

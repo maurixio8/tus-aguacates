@@ -18,7 +18,8 @@ import {
   Ticket,
   Image as ImageIcon,
   MessageSquare,
-  Layers
+  Layers,
+  Building2
 } from 'lucide-react';
 
 interface AdminUser {
@@ -115,6 +116,15 @@ export default function AdminLayout({
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   ];
 
+  const b2bNavigation = [
+    { name: 'Dashboard B2B', href: '/admin/empresas', icon: LayoutDashboard },
+    { name: 'Clientes B2B', href: '/admin/empresas/clientes', icon: Users },
+    { name: 'Pedidos B2B', href: '/admin/empresas/pedidos', icon: ShoppingCart },
+    { name: 'Productos B2B', href: '/admin/empresas/productos', icon: Package },
+    { name: 'Reportes B2B', href: '/admin/empresas/reportes', icon: BarChart3 },
+    { name: 'Ver Portal', href: '/empresas', icon: Building2 },
+  ];
+
   const isActive = (href: string) => {
     if (href === '/admin') {
       return pathname === '/admin';
@@ -139,7 +149,7 @@ export default function AdminLayout({
               <X className="w-5 h-5" />
             </button>
           </div>
-          <nav className="p-4 space-y-1">
+          <nav className="p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -149,8 +159,8 @@ export default function AdminLayout({
                   href={item.href}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-green-100 text-green-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -158,6 +168,29 @@ export default function AdminLayout({
                 </Link>
               );
             })}
+
+            {/* Separador B2B */}
+            <div className="pt-4 mt-4 border-t border-gray-200">
+              <p className="px-3 mb-2 text-xs font-semibold text-amber-600 uppercase tracking-wider">Empresas B2B</p>
+              {b2bNavigation.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setSidebarOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${active
+                      ? 'bg-amber-100 text-amber-700 font-medium'
+                      : 'text-gray-600 hover:bg-amber-50 hover:text-amber-700'
+                      }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
         </div>
       </div>
@@ -179,7 +212,7 @@ export default function AdminLayout({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -188,8 +221,8 @@ export default function AdminLayout({
                   key={item.name}
                   href={item.href}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
-                      ? 'bg-green-100 text-green-700 font-medium'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                    ? 'bg-green-100 text-green-700 font-medium'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                     }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -197,6 +230,28 @@ export default function AdminLayout({
                 </Link>
               );
             })}
+
+            {/* Separador B2B */}
+            <div className="pt-4 mt-4 border-t border-gray-200">
+              <p className="px-3 mb-2 text-xs font-semibold text-amber-600 uppercase tracking-wider">Empresas B2B</p>
+              {b2bNavigation.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.href);
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${active
+                      ? 'bg-amber-100 text-amber-700 font-medium'
+                      : 'text-gray-600 hover:bg-amber-50 hover:text-amber-700'
+                      }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </div>
           </nav>
 
           {/* User info */}

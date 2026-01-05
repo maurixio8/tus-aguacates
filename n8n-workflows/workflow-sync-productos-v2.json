@@ -1,0 +1,277 @@
+{
+    "name": "🔄 Sync Productos Supabase → Local v2",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "hours",
+                            "hoursInterval": 1
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada Hora",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1,
+            "position": [
+                180,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "getAll",
+                "tableId": "products",
+                "limit": 500
+            },
+            "id": "fetch-supabase",
+            "name": "📥 Obtener Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "REEMPLAZAR",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Este nodo hace DOS cosas:\n// 1. Ejecuta DELETE para limpiar la tabla\n// 2. Retorna los productos transformados para insertar\n\nconst productos = [];\n\nfor (const item of $input.all()) {\n  const p = item.json;\n  \n  productos.push({\n    json: {\n      supabase_id: p.id || null,\n      name: p.name || 'Sin nombre',\n      slug: p.slug || null,\n      description: p.description || null,\n      price: parseFloat(p.price) || 0,\n      discount_price: p.discount_price ? parseFloat(p.discount_price) : null,\n      category_name: p.category?.name || p.category_name || null,\n      category_id: p.category_id || null,\n      main_image_url: p.main_image_url || p.image_url || null,\n      stock: parseInt(p.stock) || 100,\n      is_active: p.is_active !== false,\n      is_featured: p.is_featured === true,\n      synced_from_supabase_at: new Date().toISOString()\n    }\n  });\n}\n\nconsole.log(`Transformados ${productos.length} productos`);\nreturn productos;"
+            },
+            "id": "transform-data",
+            "name": "🔄 Transformar Datos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                620,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM productos_tienda; SELECT 1 as cleaned;",
+                "options": {}
+            },
+            "id": "clear-table",
+            "name": "🗑️ Limpiar Tabla",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                620,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combinationMode": "multiplex",
+                "options": {}
+            },
+            "id": "merge-node",
+            "name": "🔀 Esperar Limpieza",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 2.1,
+            "position": [
+                840,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "value": "public"
+                },
+                "table": {
+                    "value": "productos_tienda"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "values": [
+                        {
+                            "column": "supabase_id",
+                            "value": "={{ $json.supabase_id }}"
+                        },
+                        {
+                            "column": "name",
+                            "value": "={{ $json.name }}"
+                        },
+                        {
+                            "column": "slug",
+                            "value": "={{ $json.slug }}"
+                        },
+                        {
+                            "column": "description",
+                            "value": "={{ $json.description }}"
+                        },
+                        {
+                            "column": "price",
+                            "value": "={{ $json.price }}"
+                        },
+                        {
+                            "column": "discount_price",
+                            "value": "={{ $json.discount_price }}"
+                        },
+                        {
+                            "column": "category_name",
+                            "value": "={{ $json.category_name }}"
+                        },
+                        {
+                            "column": "category_id",
+                            "value": "={{ $json.category_id }}"
+                        },
+                        {
+                            "column": "main_image_url",
+                            "value": "={{ $json.main_image_url }}"
+                        },
+                        {
+                            "column": "stock",
+                            "value": "={{ $json.stock }}"
+                        },
+                        {
+                            "column": "is_active",
+                            "value": "={{ $json.is_active }}"
+                        },
+                        {
+                            "column": "is_featured",
+                            "value": "={{ $json.is_featured }}"
+                        },
+                        {
+                            "column": "synced_from_supabase_at",
+                            "value": "={{ $json.synced_from_supabase_at }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "insert-products",
+            "name": "💾 Insertar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.3,
+            "position": [
+                1060,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT COUNT(*) as total_productos FROM productos_tienda;",
+                "options": {}
+            },
+            "id": "verify-count",
+            "name": "✅ Verificar Total",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1280,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "REEMPLAZAR",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada Hora": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Datos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🗑️ Limpiar Tabla",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Datos": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Tabla": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔀 Esperar Limpieza": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Total",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    }
+}

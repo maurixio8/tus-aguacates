@@ -1,0 +1,1079 @@
+{
+  "name": "Copiloto de Operaciones",
+  "nodes": [
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para CAMBIAR el estado de conversación de un cliente específico. Necesitas el número de teléfono y el nuevo estado.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes SET estado_conversacion = $1 WHERE telefono = $2;",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $fromAI('nuevo_estado', 'El nuevo estado al que se cambiará el cliente. Válidos: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, PEDIDO_LISTO, PEDIDO_FINALIZADO, ESCALADO', 'string') }}\",     \"type\": \"String\"   },   {     \"key\": \"2\",     \"value\": \"{{ $fromAI('telefono', 'El número de teléfono del cliente a modificar', 'string') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "eb119ea8-f90e-47f0-9482-e58f6321f619",
+      "name": "TOOL_ADMIN_CambiarEstadoCliente",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        208
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para LISTAR los nombres y teléfonos de todos los clientes que se encuentran en un estado de conversación específico.",
+        "operation": "executeQuery",
+        "query": "SELECT nombre, telefono FROM clientes WHERE estado_conversacion = $1;",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $fromAI('estado', 'El estado de conversación para filtrar la lista de clientes', 'string') }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "7cebdea2-ccc7-4eb8-9a71-a639bb81e863",
+      "name": "TOOL_ADMIN_ListarClientesPorEstado",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1008,
+        992
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para CONTAR cuántos clientes hay en total en la base de datos.",
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total_clientes FROM clientes;",
+        "options": {}
+      },
+      "id": "0985c156-e55c-4832-90de-c010ccae71b2",
+      "name": "TOOL_ADMIN_ContarClientes",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        928,
+        1184
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "Chatting",
+        "operation": "Send Text",
+        "session": "={{ $('1b. WAHA Trigger').item.json.session }}",
+        "chatId": "={{ $('1b. WAHA Trigger').item.json.payload.from }}",
+        "text": "={{ $json.output }}",
+        "requestOptions": {}
+      },
+      "id": "93d2e950-e8e6-460d-9c5b-4f497a569c00",
+      "name": "4. Enviar Respuesta IA",
+      "type": "@devlikeapro/n8n-nodes-waha.WAHA",
+      "typeVersion": 202502,
+      "position": [
+        400,
+        752
+      ],
+      "retryOnFail": true,
+      "credentials": {
+        "wahaApi": {
+          "id": "dwoYgsdkPf27nzTj",
+          "name": "WAHA plus"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@devlikeapro/n8n-nodes-waha.wahaTrigger",
+      "typeVersion": 202502,
+      "position": [
+        -1968,
+        640
+      ],
+      "id": "c7c86a06-640f-452c-ba19-1d875ce7097d",
+      "name": "1b. WAHA Trigger",
+      "webhookId": "cf6aa8b1-640a-4c4e-b707-f28fe9974146"
+    },
+    {
+      "parameters": {
+        "jsCode": "// --- CONFIGURACIÓN DE SEGURIDAD ---\n// Este es el ID único de tu grupo de comando privado.\nconst ID_GRUPO_COMANDO = '120363041361026474@g.us'; \n\n// Obtiene el remitente del mensaje (que en este caso es el grupo).\nconst remitente = $input.item.json.payload?.from || '';\n\n// --- LÓGICA DE FILTRADO ---\n// Compara si el ID del remitente coincide exactamente con el ID de tu grupo.\nif (remitente !== ID_GRUPO_COMANDO) {\n    // Si NO coincide, el mensaje viene de otro grupo o un cliente. Se ignora.\n    console.log(`Mensaje ignorado de: ${remitente}. No es el grupo de comando.`);\n    return null;\n}\n\n// Si el ID SÍ coincide, el mensaje es un comando válido.\nconsole.log(`Comando recibido del grupo de operaciones: ${ID_GRUPO_COMANDO}`);\n\n// Extraemos el texto del comando para que el agente lo pueda procesar.\n$input.item.json.mensajeClienteActual = $input.item.json.payload?.body?.trim() || '';\n\n// Dejamos pasar el item para que el agente lo procese.\nreturn $input.item;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1248,
+        768
+      ],
+      "id": "1817c0ab-e641-409c-921a-d2212f2c0606",
+      "name": "Filtrar Solo Comando"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta principal y OBLIGATORIA para buscar productos, precios y disponibilidad en la base de datos de la tienda. Úsala SIEMPRE que un cliente pregunte por un producto específico, su precio, si \"tienen\", \"venden\" o \"manejan\" algo. La entrada a esta herramienta debe ser el nombre del producto que el cliente desea, lo más simplificado posible (ej: \"aguacate\", \"fresa\").",
+        "operation": "executeQuery",
+        "query": "SELECT\n    id,\n    product_name,\n    price,\n    description\nFROM\n    productos\nWHERE\n    (\n        -- Búsqueda #1: Búsqueda flexible por la palabra que da el usuario\n        unaccent(lower(regexp_replace(product_name, '[^\\w\\s-]', '', 'g')))\n        LIKE\n        '%' || unaccent(lower(regexp_replace($1, 's$', ''))) || '%'\n\n        OR\n\n        -- Búsqueda #2: Si el usuario dice \"aguacate\" o sinónimos,\n        -- buscamos productos que contengan palabras clave relacionadas\n        (\n            LOWER($1) IN ('aguacate', 'aguacates', 'hass', 'palta')\n            AND\n            (\n                   product_name ILIKE '%caja%'\n                OR product_name ILIKE '%paquete%'\n                OR product_name ILIKE '%hass%'\n                OR product_name ILIKE '%injerto%'\n            )\n        )\n    )\n    AND is_available = TRUE\nORDER BY\n    product_name\nLIMIT 4;",
+        "options": {
+          "queryReplacement": "=[{ \"key\": \"1\", \"value\": \"{{ $fromAI('nombre_producto', 'El nombre del producto que el cliente desea, simplificado.', 'string') }}\", \"type\": \"String\" }]"
+        }
+      },
+      "id": "18efa6a9-046d-42d2-9f03-b4a7735b049d",
+      "name": "TOOL_BuscarProductos",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        416,
+        1504
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta CRÍTICA y OBLIGATORIA para buscar información oficial de la empresa. Úsala SIEMPRE antes de responder preguntas sobre: pagos, Nequi, Daviplata, horarios de entrega, días de entrega, costos de domicilio, métodos de pago, políticas, procesos y cualquier información general sobre Tus Aguacates. NUNCA inventes información sobre estos temas - SIEMPRE consulta esta herramienta primero. La entrada debe ser una palabra clave relacionada con lo que el cliente pregunta.",
+        "operation": "executeQuery",
+        "query": "SELECT respuesta_o_dato FROM (\n    -- Búsqueda de alta prioridad en palabras clave\n    SELECT \n        respuesta_o_dato,\n        1 AS prioridad\n    FROM \n        conocimiento_granular\n    WHERE\n        palabras_clave ~* replace($1, ' ', '|')\n\n    UNION ALL\n\n    -- Búsqueda de baja prioridad en pregunta o respuesta\n    SELECT\n        respuesta_o_dato,\n        2 AS prioridad\n    FROM\n        conocimiento_granular\n    WHERE\n        pregunta_o_tema ILIKE '%' || $1 || '%' OR respuesta_o_dato ILIKE '%' || $1 || '%'\n        \n    UNION ALL\n\n    -- Respuesta de fallback con la prioridad más baja\n    SELECT \n        'Lo siento, no he encontrado una respuesta precisa. Te sugiero que consultes nuestra tienda en línea para detalles específicos.',\n        3 AS prioridad\n) AS resultados_combinados\nORDER BY \n    prioridad\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $fromAI('termino_busqueda', '', 'string') }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "1a4f3e52-acf1-40e6-828d-1b5b8baf4c32",
+      "name": "TOOL_BuscarConocimiento",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        192,
+        1440
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta de acción masiva para cambiar el estado de TODOS los clientes que se encuentran en un estado específico a un nuevo estado. Requiere el estado_actual a buscar y el nuevo_estado a establecer. ES UNA OPERACIÓN DE ALTO RIESGO.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes\nSET estado_conversacion = $2\nWHERE estado_conversacion = $1\nRETURNING count(*) AS clientes_afectados;",
+        "options": {
+          "queryReplacement": "=[ { \"key\": \"1\", \"value\": \"{{ $fromAI('estado_actual', 'El estado de conversación actual de los clientes que se van a modificar.', 'string') }}\", \"type\": \"String\" }, { \"key\": \"2\", \"value\": \"{{ $fromAI('nuevo_estado', 'El nuevo estado de conversación que se les asignará a esos clientes.', 'string') }}\", \"type\": \"String\" } ]"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        112,
+        288
+      ],
+      "id": "96a38a84-c799-4b8b-806c-bd7d8c090d89",
+      "name": "TOOL_CambiarEstadoMasivoClientes",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta de reportería AVANZADA. Úsala cuando el Director pida un resumen, reporte, conteo general o la distribución de clientes a través de TODOS los estados de conversación. No requiere parámetros de entrada.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    estado_conversacion, \n    COUNT(*) AS total_clientes\nFROM clientes\nGROUP BY estado_conversacion\nORDER BY total_clientes DESC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        688,
+        368
+      ],
+      "id": "1c2fcf3e-e41d-4e99-bb91-03bc34885cb2",
+      "name": "TOOL_ReporteEstadoClientes",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta de inteligencia de clientes. Úsala para obtener un perfil 360° completo de un cliente específico usando su número de teléfono. Devuelve su historial de compras, segmento de valor y estado de conversación actual.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    nombre,\n    telefono,\n    fecha_registro,\n    total_pedidos,\n    tipo_cliente,\n    estado_cliente,\n    estado_conversacion\nFROM clientes \nWHERE telefono = $1;",
+        "options": {
+          "queryReplacement": "=[{ \"key\": \"1\", \"value\": \"{{ $fromAI('telefono_cliente', 'El número de teléfono del cliente a consultar') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\", \"type\": \"String\" }]"
+        }
+      },
+      "id": "560e85ee-18fa-4894-8d0d-05c4ecb6ec80",
+      "name": "TOOL_GetPerfilCompletoCliente",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -528,
+        1424
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta de MÁXIMA PRIORIDAD. Devuelve una lista de los clientes más valiosos (Comprador Élite) que están 'En riesgo' de ser perdidos. Úsala para generar la lista de reactivación más importante para el negocio. No requiere parámetros.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    nombre,\n    telefono,\n    total_pedidos,\n    fecha_registro\nFROM clientes \nWHERE \n    tipo_cliente = 'Comprador Élite' AND estado_cliente = 'En riesgo'\nORDER BY \n    total_pedidos DESC\nLIMIT 15;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        896,
+        480
+      ],
+      "id": "cc87aa0b-bf26-475a-8669-766812501d11",
+      "name": "TOOL_ListarVIPsEnRiesgo",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta analítica avanzada para contar clientes que cumplen con criterios específicos de 'tipo_cliente' y 'estado_cliente'. Úsala cuando el Director pregunte 'cuántos' clientes hay en un segmento de valor o riesgo.",
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) AS total_clientes\nFROM clientes\nWHERE tipo_cliente = $1 AND estado_cliente = $2;",
+        "options": {
+          "queryReplacement": "=[{ \"key\": \"1\", \"value\": \"{{ $fromAI('tipo_de_cliente', 'El segmento de valor del cliente a contar, ej: Comprador Élite', 'string') }}\", \"type\": \"String\" }, { \"key\": \"2\", \"value\": \"{{ $fromAI('estado_del_cliente', 'El estado de riesgo del cliente a contar, ej: En riesgo', 'string') }}\", \"type\": \"String\" }]"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        960,
+        672
+      ],
+      "id": "537699b4-9d69-4d21-aa45-e1b095a73741",
+      "name": "TOOL_ContarClientesPorSegmento",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta CRÍTICA para análisis temporal de ventas. Permite analizar ventas por día, semana, mes o año con métricas clave como ingresos, ticket promedio y clientes únicos. Úsala cuando el Director solicite análisis de ventas por períodos, tendencias temporales, o comparaciones de ingresos.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    DATE_TRUNC($1, order_timestamp) as periodo,\n    COUNT(*) as total_pedidos,\n    SUM(order_total) as ingresos_totales,\n    AVG(order_total) as ticket_promedio,\n    COUNT(DISTINCT cliente_telefono) as clientes_unicos,\n    ROUND(SUM(order_total) / COUNT(DISTINCT cliente_telefono), 2) as valor_promedio_por_cliente\nFROM pedidos \nWHERE order_timestamp BETWEEN $2 AND $3\nGROUP BY DATE_TRUNC($1, order_timestamp)\nORDER BY periodo DESC;",
+        "options": {
+          "queryReplacement": "=[ { \"key\": \"1\", \"value\": \"{{ $fromAI('periodo', 'El período de análisis: day, week, month, o year', 'string') }}\", \"type\": \"String\" }, { \"key\": \"2\", \"value\": \"{{ $fromAI('fecha_inicio', 'Fecha de inicio del período a analizar en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" }, { \"key\": \"3\", \"value\": \"{{ $fromAI('fecha_fin', 'Fecha de fin del período a analizar en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" } ]"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -384,
+        256
+      ],
+      "id": "9637a4b5-4578-4d76-b48a-8e0a9c6ca444",
+      "name": "TOOL_AnalisisVentasPorPeriodo",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta de MÁXIMA PRIORIDAD para identificar clientes en riesgo de abandono. Utiliza algoritmos predictivos para clasificar clientes por nivel de riesgo y sugerir acciones específicas de retención. Úsala cuando el Director necesite identificar clientes en peligro, análisis de churn, o estrategias de retención.",
+        "operation": "executeQuery",
+        "query": "WITH metricas_cliente AS (\n    SELECT \n        c.telefono,\n        c.nombre,\n        c.tipo_cliente,\n        c.total_pedidos,\n        COALESCE(MAX(p.order_timestamp), c.fecha_registro) as ultima_actividad,\n        EXTRACT(DAYS FROM NOW() - COALESCE(MAX(p.order_timestamp), c.fecha_registro)) as dias_sin_actividad,\n        AVG(p.order_total) as ticket_promedio,\n        COUNT(CASE WHEN p.order_timestamp >= NOW() - INTERVAL '90 days' THEN 1 END) as pedidos_recientes,\n        SUM(CASE WHEN p.order_timestamp >= NOW() - INTERVAL '90 days' THEN p.order_total ELSE 0 END) as ingresos_recientes\n    FROM clientes c\n    LEFT JOIN pedidos p ON c.telefono = p.cliente_telefono\n    GROUP BY c.telefono, c.nombre, c.tipo_cliente, c.total_pedidos, c.fecha_registro\n)\nSELECT \n    telefono,\n    nombre,\n    tipo_cliente,\n    total_pedidos,\n    dias_sin_actividad,\n    pedidos_recientes,\n    ROUND(ticket_promedio, 2) as ticket_promedio,\n    CASE \n        WHEN dias_sin_actividad > 180 AND tipo_cliente IN ('Comprador Élite', 'Comprador Top') THEN 'CRÍTICO'\n        WHEN dias_sin_actividad > 120 AND pedidos_recientes = 0 THEN 'ALTO'\n        WHEN dias_sin_actividad > 60 AND pedidos_recientes <= 1 THEN 'MEDIO'\n        WHEN dias_sin_actividad > 30 AND total_pedidos = 1 THEN 'MEDIO'\n        ELSE 'BAJO'\n    END as nivel_riesgo_churn,\n    CASE \n        WHEN dias_sin_actividad > 180 THEN 'Contacto personal inmediato + oferta especial VIP'\n        WHEN dias_sin_actividad > 120 THEN 'Campaña de reactivación con descuento 20%'\n        WHEN dias_sin_actividad > 60 THEN 'Email con productos recomendados + descuento 10%'\n        WHEN dias_sin_actividad > 30 AND total_pedidos = 1 THEN 'Campaña onboarding cliente nuevo'\n        ELSE 'Mantener comunicación regular'\n    END as accion_recomendada,\n    ROUND(ingresos_recientes, 2) as valor_en_riesgo\nFROM metricas_cliente\nWHERE total_pedidos > 0\nORDER BY \n    CASE nivel_riesgo_churn \n        WHEN 'CRÍTICO' THEN 1 \n        WHEN 'ALTO' THEN 2 \n        WHEN 'MEDIO' THEN 3 \n        ELSE 4 \n    END,\n    dias_sin_actividad DESC\nLIMIT 50;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        1440
+      ],
+      "id": "c821a35a-001c-4aad-9aca-6f71c56b93e8",
+      "name": "TOOL_PredeccionChurn",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta EJECUTIVA para generar dashboard completo con KPIs principales y comparaciones período a período. Esencial para la toma de decisiones estratégicas. Úsala cuando el Director pida reportes ejecutivos, dashboard de KPIs, o resúmenes de performance del negocio.",
+        "operation": "executeQuery",
+        "query": "WITH periodo_actual AS (\n    SELECT \n        COUNT(*) as pedidos_actuales,\n        SUM(order_total) as ingresos_actuales,\n        AVG(order_total) as ticket_actual,\n        COUNT(DISTINCT cliente_telefono) as clientes_actuales,\n        COUNT(CASE WHEN order_status = 'Entregado' THEN 1 END) as entregados_actuales\n    FROM pedidos \n    WHERE order_timestamp BETWEEN $1 AND $2\n),\nperiodo_anterior AS (\n    SELECT \n        COUNT(*) as pedidos_anteriores,\n        SUM(order_total) as ingresos_anteriores,\n        AVG(order_total) as ticket_anterior,\n        COUNT(DISTINCT cliente_telefono) as clientes_anteriores\n    FROM pedidos \n    WHERE order_timestamp BETWEEN $3 AND $4\n),\nproductos_top AS (\n    SELECT \n        dp.product_name,\n        SUM(dp.quantity) as cantidad_vendida\n    FROM pedidos p\n    JOIN detalle_pedido dp ON p.id = dp.order_id\n    WHERE p.order_timestamp BETWEEN $1 AND $2\n    GROUP BY dp.product_name\n    ORDER BY cantidad_vendida DESC\n    LIMIT 3\n)\nSELECT \n    'REPORTE EJECUTIVO' as tipo_reporte,\n    pa.pedidos_actuales,\n    pa.ingresos_actuales,\n    ROUND(pa.ticket_actual, 2) as ticket_promedio_actual,\n    pa.clientes_actuales,\n    ROUND((pa.entregados_actuales::decimal / pa.pedidos_actuales * 100), 2) as tasa_entrega_pct,\n    ROUND(((pa.pedidos_actuales - pan.pedidos_anteriores)::decimal / NULLIF(pan.pedidos_anteriores, 0) * 100), 2) as crecimiento_pedidos_pct,\n    ROUND(((pa.ingresos_actuales - pan.ingresos_anteriores)::decimal / NULLIF(pan.ingresos_anteriores, 0) * 100), 2) as crecimiento_ingresos_pct,\n    ROUND(((pa.clientes_actuales - pan.clientes_anteriores)::decimal / NULLIF(pan.clientes_anteriores, 0) * 100), 2) as crecimiento_clientes_pct,\n    STRING_AGG(pt.product_name, ', ') as productos_mas_vendidos\nFROM periodo_actual pa\nCROSS JOIN periodo_anterior pan\nCROSS JOIN productos_top pt\nGROUP BY pa.pedidos_actuales, pa.ingresos_actuales, pa.ticket_actual, pa.clientes_actuales, \n         pa.entregados_actuales, pan.pedidos_anteriores, pan.ingresos_anteriores, pan.clientes_anteriores;",
+        "options": {
+          "queryReplacement": "=[ { \"key\": \"1\", \"value\": \"{{ $fromAI('fecha_inicio_actual', 'Fecha de inicio del período actual en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" }, { \"key\": \"2\", \"value\": \"{{ $fromAI('fecha_fin_actual', 'Fecha de fin del período actual en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" }, { \"key\": \"3\", \"value\": \"{{ $fromAI('fecha_inicio_anterior', 'Fecha de inicio del período anterior en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" }, { \"key\": \"4\", \"value\": \"{{ $fromAI('fecha_fin_anterior', 'Fecha de fin del período anterior en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" } ]"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        464,
+        240
+      ],
+      "id": "16abfdd4-29fd-4d53-950c-7900d909f9cf",
+      "name": "TOOL_GenerarReporteEjecutivo",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta ESTRATÉGICA para medir satisfacción del cliente basada en interacciones, comportamiento post-compra y tasa de recompra. Fundamental para Customer Experience. Úsala cuando el Director pida análisis de satisfacción, métricas NPS, o evaluación de experiencia del cliente.",
+        "operation": "executeQuery",
+        "query": "WITH interacciones_cliente AS (\n    SELECT \n        p.cliente_telefono,\n        p.id as pedido_id,\n        p.order_timestamp,\n        p.order_status,\n        COUNT(c.id) as total_mensajes_post_compra,\n        COUNT(CASE WHEN c.message_text ILIKE ANY(ARRAY['%problema%', '%queja%', '%malo%', '%defecto%', '%error%']) THEN 1 END) as mensajes_negativos,\n        COUNT(CASE WHEN c.message_text ILIKE ANY(ARRAY['%gracias%', '%excelente%', '%bueno%', '%perfecto%', '%satisfecho%']) THEN 1 END) as mensajes_positivos,\n        CASE WHEN EXISTS(\n            SELECT 1 FROM pedidos p2 \n            WHERE p2.cliente_telefono = p.cliente_telefono \n            AND p2.order_timestamp > p.order_timestamp\n        ) THEN 1 ELSE 0 END as compro_nuevamente\n    FROM pedidos p\n    LEFT JOIN conversaciones c ON p.cliente_telefono = c.cliente_telefono \n        AND c.timestamp BETWEEN p.order_timestamp AND p.order_timestamp + INTERVAL '7 days'\n    WHERE p.order_timestamp BETWEEN $1 AND $2\n    GROUP BY p.cliente_telefono, p.id, p.order_timestamp, p.order_status\n),\nmetricas_por_cliente AS (\n    SELECT \n        ic.cliente_telefono,\n        COUNT(*) as total_pedidos_periodo,\n        AVG(CASE WHEN ic.mensajes_negativos = 0 THEN 1.0 ELSE 0.0 END) as tasa_sin_quejas,\n        AVG(CASE WHEN ic.mensajes_positivos > 0 THEN 1.0 ELSE 0.0 END) as tasa_feedback_positivo,\n        AVG(ic.compro_nuevamente) as tasa_recompra,\n        SUM(ic.mensajes_negativos) as total_quejas,\n        SUM(ic.mensajes_positivos) as total_elogios\n    FROM interacciones_cliente ic\n    GROUP BY ic.cliente_telefono\n)\nSELECT \n    c.nombre,\n    c.telefono,\n    c.tipo_cliente,\n    mpc.total_pedidos_periodo,\n    ROUND(mpc.tasa_sin_quejas * 100, 2) as satisfaccion_sin_quejas_pct,\n    ROUND(mpc.tasa_feedback_positivo * 100, 2) as feedback_positivo_pct,\n    ROUND(mpc.tasa_recompra * 100, 2) as tasa_recompra_pct,\n    mpc.total_quejas,\n    mpc.total_elogios,\n    CASE \n        WHEN mpc.tasa_sin_quejas >= 0.9 AND mpc.tasa_recompra >= 0.7 THEN 'PROMOTOR'\n        WHEN mpc.tasa_sin_quejas >= 0.7 AND mpc.tasa_recompra >= 0.4 THEN 'NEUTRO'\n        ELSE 'DETRACTOR'\n    END as categoria_nps,\n    CASE \n        WHEN mpc.total_quejas > 2 THEN 'Contacto inmediato para resolver problemas'\n        WHEN mpc.tasa_feedback_positivo < 0.2 THEN 'Solicitar feedback específico sobre experiencia'\n        WHEN mpc.tasa_recompra >= 0.8 THEN 'Cliente embajador - invitar a programa de referidos'\n        WHEN mpc.tasa_sin_quejas >= 0.9 THEN 'Solicitar testimonio o review'\n        ELSE 'Seguimiento estándar de satisfacción'\n    END as accion_recomendada\nFROM metricas_por_cliente mpc\nJOIN clientes c ON mpc.cliente_telefono = c.telefono\nORDER BY \n    CASE categoria_nps \n        WHEN 'DETRACTOR' THEN 1 \n        WHEN 'NEUTRO' THEN 2 \n        ELSE 3 \n    END,\n    mpc.tasa_sin_quejas ASC;",
+        "options": {
+          "queryReplacement": "=[ { \"key\": \"1\", \"value\": \"{{ $fromAI('fecha_inicio', 'Fecha de inicio del análisis en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" }, { \"key\": \"2\", \"value\": \"{{ $fromAI('fecha_fin', 'Fecha de fin del análisis en formato YYYY-MM-DD', 'string') }}\", \"type\": \"String\" } ]"
+        }
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        832,
+        1376
+      ],
+      "id": "73abec46-d7c6-4e92-8345-5df18b7bee8f",
+      "name": "TOOL_AnalisisSatisfaccionCliente",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "940dc623-d14a-4afd-a337-0ca19dee1391",
+      "name": "Unificar Entradas",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para LISTAR los números de teléfono y el estado de conversación de los clientes que NO tienen un nombre registrado (nombre IS NULL o nombre = ''). Úsala cuando se pida una lista de clientes anónimos para su posterior identificación.",
+        "operation": "executeQuery",
+        "query": "SELECT telefono, estado_conversacion FROM clientes WHERE nombre IS NULL OR TRIM(nombre) = '' ORDER BY estado_conversacion DESC LIMIT 50;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -288,
+        1424
+      ],
+      "id": "74f5d5a6-16b6-457b-b3d8-140ba6d26df1",
+      "name": "TOOL_ListarClientesSinNombre",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para actualizar el NOMBRE y/o DIRECCIÓN de un cliente existente. Requiere el teléfono del cliente y al menos uno de los dos datos a actualizar. El cliente DEBE existir previamente en la base de datos.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes \nSET \n    nombre = COALESCE($1, nombre), \n    direccion = COALESCE($2, direccion),\n    fecha_actualizacion = NOW()\nWHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') = \n      REPLACE(REPLACE(REPLACE($3, '+', ''), ' ', ''), '-', '')\nRETURNING \n    telefono,\n    nombre,\n    direccion,\n    'Actualización exitosa' as status;",
+        "options": {
+          "queryReplacement": "=[\n  {\n    \"key\": \"1\",\n    \"value\": \"{{ $fromAI('nombre_cliente', 'SOLO el nombre completo de la persona (ej: Consuelo, Juan Pérez). Extrae únicamente el NOMBRE del comando, sin incluir ninguna otra parte del texto.', 'string') || $('2. Extractor Inteligente').item.json.nombre_extraido }}\",\n    \"type\": \"String\"\n  },\n  {\n    \"key\": \"2\",\n    \"value\": \"{{ $fromAI('direccion_cliente', 'La dirección completa del cliente, o null si no se menciona dirección en el comando', 'string') }}\",\n    \"type\": \"String\"\n  },\n  {\n    \"key\": \"3\",\n    \"value\": \"{{ $fromAI('telefono', 'El número de teléfono del cliente (solo dígitos)', 'string') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\",\n    \"type\": \"String\"\n  }\n]"
+        }
+      },
+      "id": "2be8890d-5b6c-466c-b073-a0c4e42d80df",
+      "name": "TOOL_ADMIN_ActualizarDatosCliente",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1024,
+        896
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ============================================\n// EXTRACTOR INTELIGENTE v2.0\n// Extrae teléfono y nombre del comando\n// ============================================\nconst prompt = $input.item.json.prompt ||\n               $input.item.json.mensajeClienteActual ||\n               $input.item.json.payload?.body || '';\n\nconsole.log('Prompt recibido:', prompt);\n\n// ============================================\n// 1. EXTRACCIÓN DE TELÉFONO (Formato Colombiano)\n// ============================================\n// Normalizar: eliminar caracteres excepto dígitos\nconst normalizedPrompt = prompt.replace(/[^\\d]/g, '');\n\n// Regex para teléfonos colombianos:\n// - 10 dígitos empezando con 3 (ej: 3161932558)\n// - 12 dígitos empezando con 57 y luego 3 (ej: 573161932558)\nconst phoneRegex = /(?:57)?(3\\d{9})/g;\nconst phoneMatches = normalizedPrompt.match(phoneRegex);\nlet telefono_objetivo = null;\n\nif (phoneMatches && phoneMatches.length > 0) {\n    // Tomar el primer teléfono válido encontrado\n    telefono_objetivo = phoneMatches[0].replace(/^57/, ''); // Remover prefijo 57 si existe\n    console.log('Teléfono extraído:', telefono_objetivo);\n} else {\n    console.log('No se encontró teléfono válido');\n}\n\n// ============================================\n// 2. EXTRACCIÓN DE NOMBRE\n// ============================================\nlet nombre_extraido = null;\n// Patrones comunes para detectar nombres en comandos:\n// \"actualiza el nombre del cliente XXX a NOMBRE\"\n// \"registra el nombre NOMBRE para el cliente XXX\"\n// \"el nombre es NOMBRE y el fono es XXX\"\n// \"cliente XXX se llama NOMBRE\"\nconst patrones = [\n    /(?:a|al nombre)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s|$)/i,  // \"a Consuelo\", \"al nombre María\"\n    /(?:nombre es|llama)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+y|\\s*$)/i,  // \"nombre es Juan\", \"se llama María\"\n    /registra(?:\\s+el)?\\s+nombre\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+para|$)/i,  // \"registra el nombre Pedro\"\n];\n\nfor (const patron of patrones) {\n    const match = prompt.match(patron);\n    if (match && match[1]) {\n        nombre_extraido = match[1].trim();\n        \n        // Limpieza: eliminar palabras comunes que no son nombres\n        const palabrasExcluir = ['del', 'cliente', 'el', 'la', 'un', 'una', 'para', 'de'];\n        let palabrasNombre = nombre_extraido.split(/\\s+/).filter(palabra => \n            !palabrasExcluir.includes(palabra.toLowerCase())\n        );\n        \n        nombre_extraido = palabrasNombre.join(' ').trim();\n        \n        // Validación: el nombre debe tener al menos 2 caracteres y no puede ser solo números\n        if (nombre_extraido.length >= 2 && !/^\\d+$/.test(nombre_extraido)) {\n            console.log('Nombre extraído:', nombre_extraido);\n            break;\n        } else {\n            nombre_extraido = null;\n        }\n    }\n}\n\nif (!nombre_extraido) {\n    console.log('No se pudo extraer nombre del comando');\n}\n\n// ============================================\n// 3. SALIDA ESTRUCTURADA\n// ============================================\n$input.item.json.extraccion = {\n    telefono_objetivo: telefono_objetivo,\n    nombre_extraido: nombre_extraido,\n    prompt_original: prompt,\n    extraccion_exitosa: !!(telefono_objetivo || nombre_extraido)\n};\n\n// Mantener compatibilidad con nodos existentes\n$input.item.json.telefono_objetivo = telefono_objetivo;\n$input.item.json.nombre_extraido = nombre_extraido;\n\n// --- CORRECCIÓN ---\n// Devolver el item dentro de un array para cumplir con el formato de n8n\nreturn [$input.item];\n"
+      },
+      "id": "76ad0465-654c-4189-9ed5-2cc8ff63205a",
+      "name": "2. Extractor Inteligente",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        656
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta para CONSULTAR toda la información de un cliente específico usando su número de teléfono.",
+        "operation": "executeQuery",
+        "query": "SELECT nombre, direccion, estado_conversacion, pre_pedido FROM clientes WHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') = REPLACE(REPLACE(REPLACE($1, '+', ''), ' ', ''), '-', '');",
+        "options": {
+          "queryReplacement": "=[   {     \"key\": \"1\",     \"value\": \"{{ $fromAI('telefono', 'El número de teléfono del cliente a consultar', 'string') || $('2. Extractor Inteligente').item.json.telefono_objetivo }}\",     \"type\": \"String\"   } ]"
+        }
+      },
+      "id": "4076c4db-7864-4608-8c7a-079484472375",
+      "name": "TOOL_ADMIN_ConsultarCliente",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        1440
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Herramienta ESENCIAL para análisis de productos. Identifica los productos más vendidos con métricas detalladas de performance, ingresos y participación en ventas. Úsala cuando el Director pida ranking de productos, análisis de performance, o identificar productos estrella.",
+        "operation": "executeQuery",
+        "query": "SELECT \n    p.product_name,\n    SUM(dp.quantity) as total_vendido,\n    COUNT(DISTINCT dp.order_id) as pedidos_con_producto,\n    SUM(dp.quantity * dp.item_price) as ingresos_producto,\n    AVG(dp.item_price) as precio_promedio,\n    ROUND((SUM(dp.quantity * dp.item_price) / COALESCE(NULLIF((\\n        SELECT SUM(order_total) \\n        FROM pedidos \\n        WHERE order_timestamp BETWEEN $1 AND $2\\n    ), 0), 1)) * 100, 2) as porcentaje_ingresos_totales\nFROM detalle_pedido dp\nJOIN pedidos ped ON dp.order_id = ped.id\nJOIN productos p ON p.product_name = dp.product_name\nWHERE ped.order_timestamp BETWEEN $1 AND $2\nGROUP BY p.product_name\nORDER BY total_vendido DESC\nLIMIT 15;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        -688,
+        1392
+      ],
+      "id": "71e40026-3e52-455c-b00d-f33860471a7d",
+      "name": "TOOL_ProductosMasVendidos",
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('2. Extractor Inteligente').item.json.mensajeClienteActual || $('2. Extractor Inteligente').item.json.prompt }}\n",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "## 🎯 MISIÓN PRINCIPAL EXPANDIDAEres un Copiloto de Operaciones y Estratega de Datos AVANZADO para \"Tus Aguacates\". Tu único interlocutor es Mauricio tu jefe (yo). Tu misión es transformar datos en inteligencia estratégica, ejecutar análisis predictivos, y proporcionar insights accionables para maximizar el valor del ciclo de vida del cliente y optimizar operaciones. Eres proactivo, analítico y tu lealtad es hacia la eficiencia y crecimiento del negocio.---## ⛓️ CADENA DE PENSAMIENTO OBLIGATORIAPara CADA comando que recibas, debes seguir estos pasos en orden estricto:1. **Analizar Intención**: ¿Qué tipo de operación necesita? (actualización, consulta, análisis, etc.)2. **Identificar Parámetros Disponibles**: Revisa qué datos ya fueron extraídos por los nodos previos:   - `$('2. Extractor Inteligente').item.json.telefono_objetivo`   - `$('2. Extractor Inteligente').item.json.nombre_extraido`   - `$('2b. Validador de Cliente').item.json` (datos del cliente existente)3. **Seleccionar Herramienta Óptima**: Elige la herramienta más adecuada4. **Validar Parámetros Completos**: Confirma que tienes TODOS los datos necesarios5. **Ejecutar con Parámetros Limpios**: Extrae solo los valores puros, sin contexto adicional---## 📚 SECCIÓN CRÍTICA: USO DE `TOOL_ADMIN_ActualizarDatosCliente`### ⚠️ REGLAS OBLIGATORIAS PARA EXTRACCIÓN DE PARÁMETROS:**Para el parámetro `nombre_cliente`:**✅ **CORRECTO - Extrae SOLO el nombre:**- Comando: \"actualiza el nombre del cliente 3161932558 a Consuelo\"  → `nombre_cliente = \"Consuelo\"`  - Comando: \"el nombre es María Fernanda y el fono es 3201234567\"  → `nombre_cliente = \"María Fernanda\"`  - Comando: \"registra Juan Pérez para el cliente 3156789012\"  → `nombre_cliente = \"Juan Pérez\"`❌ **INCORRECTO - NUNCA incluyas el comando completo:**- ❌ `nombre_cliente = \"actualiza el nombre del cliente 3161932558 a Consuelo\"`- ❌ `nombre_cliente = \"el nombre del cliente 3161932558 a Consuelo\"`- ❌ `nombre_cliente = \"cliente 3161932558 a Consuelo\"`**Proceso mental para extraer el nombre:**1. Identifica patrones: \"a [NOMBRE]\", \"nombre es [NOMBRE]\", \"se llama [NOMBRE]\"2. Extrae únicamente la cadena que representa el nombre de la persona3. Limpia palabras como: \"cliente\", \"del\", \"el\", \"para\"4. El resultado debe ser: Nombre Apellido (si hay) o solo Nombre**Para el parámetro `telefono`:**- Extrae SOLO los dígitos del teléfono (sin +, espacios, guiones)- Formato esperado: 10 dígitos empezando con 3 (ej: `3161932558`)- **IMPORTANTE**: Los nodos previos ya extrajeron el teléfono. Puedes usar el fallback:  `$('2. Extractor Inteligente').item.json.telefono_objetivo`**Para el parámetro `direccion_cliente`:**- Solo si el comando menciona explícitamente una dirección- Si no se menciona dirección, envía `null`### 🔍 VALIDACIÓN PRE-EJECUCIÓN:Antes de llamar a `TOOL_ADMIN_ActualizarDatosCliente`, verifica:1. ✅ ¿Tengo un teléfono válido? (disponible en `telefono_objetivo`)2. ✅ ¿Tengo al menos un dato a actualizar? (nombre o dirección)3. ✅ ¿El cliente ya fue validado por el nodo previo?Si falta información, NO ejecutes la herramienta. Pregunta a Mauricio por los datos faltantes.---## 🛡️ PROTOCOLO DE SEGURIDAD: CONFIRMACIÓN PARA OPERACIONES MASIVASCuando un comando requiera el uso de `TOOL_CambiarEstadoMasivoClientes`:1. **Detección**: Identifica que el comando necesita una acción masiva2. **Pausa y Advertencia**: NO ejecutes la herramienta. Guarda los parámetros en memoria3. **Solicitud de Confirmación**: Responde:\n⚠️ ATENCIÓN: Esta operación masiva afectará a X clientes.\nPara confirmar y ejecutar, responde: confirmar cambio masivo\nPara cancelar, responde cualquier otra cosa.\n\n\n4. **Ejecución Condicional**: Solo si el siguiente mensaje es exactamente `confirmar cambio masivo`, ejecuta la herramienta---## ⏱️ CONTEXTO TEMPORAL ACTUALLa fecha y hora actual es: **{{$now.toFormat('DDDD, HH:mm')}}**---## 📊 MANUAL DE CAPACIDADES Y HERRAMIENTAS**GESTIÓN DE CLIENTES (OPERACIONAL):*** `TOOL_ADMIN_ActualizarDatosCliente`:   - **Propósito**: Actualizar nombre y/o dirección de un cliente existente  - **Cuándo usarla**:     - \"actualiza el nombre del cliente X a Y\"    - \"registra la dirección Z para el cliente X\"    - \"el nombre del cliente X es Y\"  - **Parámetros requeridos**:    - `nombre_cliente`: SOLO el nombre (ej: \"Consuelo\", \"Juan Pérez\") - Ver reglas arriba    - `telefono`: Número de 10 dígitos (disponible en `telefono_objetivo`)    - `direccion_cliente`: (opcional) Solo si se menciona en el comando  - **CRÍTICO**: Revisa las reglas de extracción en la sección anterior* `TOOL_ADMIN_CambiarEstadoCliente`: Cambia el estado de UN cliente* `TOOL_ADMIN_ConsultarCliente`: Obtiene datos de UN cliente* `TOOL_ADMIN_ListarClientesPorEstado`: Lista clientes por estado* `TOOL_ADMIN_ContarClientes`: Cuenta total de clientes* `TOOL_CambiarEstadoMasivoClientes`: Cambio masivo (requiere confirmación)* `TOOL_ListarClientesSinNombre`: Lista clientes sin nombre registrado**BUSINESS INTELLIGENCE (ESTRATÉGICO):*** `TOOL_AnalisisVentasPorPeriodo`: Análisis temporal de ventas* `TOOL_ProductosMasVendidos`: Ranking de productos* `TOOL_GenerarReporteEjecutivo`: Dashboard con KPIs* `TOOL_ReporteEstadoClientes`: Distribución de estados**INTELIGENCIA PREDICTIVA:*** `TOOL_PredeccionChurn`: Clientes en riesgo de abandono* `TOOL_AnalisisSatisfaccionCliente`: Métricas NPS* `TOOL_ListarVIPsEnRiesgo`: Clientes valiosos en riesgo* `TOOL_ContarClientesPorSegmento`: Conteo por tipo y riesgo* `TOOL_GetPerfilCompletoCliente`: Perfil 360° de cliente**CONSULTAS GENERALES:*** `TOOL_BuscarProductos`: Disponibilidad en catálogo* `TOOL_BuscarConocimiento`: Base de conocimiento (políticas, horarios, etc.)---## 💡 EJEMPLOS DE INTERACCIÓN CORRECTA**Ejemplo 1: Actualización de nombre**\nMauricio: \"Actualiza el nombre del cliente 3161932558 a Consuelo\"\nTu proceso mental:\n\nIntención: Actualizar nombre\nParámetros disponibles: telefono_objetivo = \"3161932558\", nombre_extraido = \"Consuelo\"\nHerramienta: TOOL_ADMIN_ActualizarDatosCliente\nExtracción limpia: nombre_cliente = \"Consuelo\" (NO \"a Consuelo\" ni el comando completo)\nEjecutar herramienta\nRespuesta: \"✅ Nombre actualizado exitosamente. El cliente 3161932558 ahora se llama Consuelo.\"\n\n\n**Ejemplo 2: Datos incompletos**\nMauricio: \"Actualiza el cliente 3201234567\"\nTu proceso mental:\n\nIntención: Actualizar (pero ¿qué?)\nParámetros: Solo tengo teléfono, no sé qué actualizar\nValidación: FALTA información\nNO ejecutar herramienta\nRespuesta: \"Entendido, quieres actualizar al cliente 3201234567. ¿Qué dato deseas actualizar? ¿El nombre, la dirección, o ambos?\"\n\n\n---## 🎯 PRINCIPIOS DE OPERACIÓN1. **Precisión sobre velocidad**: Mejor preguntar que ejecutar incorrectamente2. **Usa los datos pre-extraídos**: Los nodos previos ya hicieron trabajo, confía en ellos3. **Mantén respuestas concisas**: Mauricio valora la eficiencia4. **Reporta resultados verificables**: Usa los datos del RETURNING de las queries5. **Nunca inventes información**: Si no tienes el dato, pregunta"
+        }
+      },
+      "id": "675aa8dc-9560-487d-a0e4-e9b10146f9b0",
+      "name": "3. Agente Copiloto1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -32,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "model": "deepseek-reasoner",
+        "options": {
+          "responseFormat": "json_object"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        880
+      ],
+      "id": "5be973b5-48dc-42ae-a2be-5393fb2e3393",
+      "name": "DeepSeek Chat Model",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "8BVSsLxHakKs5L6l",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "default"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        960
+      ],
+      "id": "1c63b85c-d889-4b45-ba78-d2ba58484b6b",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "typeVersion": 1,
+      "position": [
+        144,
+        928
+      ],
+      "id": "bc46274a-49fa-4346-abf9-2ce158395595",
+      "name": "Auto-fixing Output Parser"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1232
+      ],
+      "id": "2149782e-c50b-4147-a35a-105fda04e6b8",
+      "name": "DeepSeek Chat Model1",
+      "credentials": {
+        "deepSeekApi": {
+          "id": "8BVSsLxHakKs5L6l",
+          "name": "DeepSeek account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"action\": {\n      \"type\": \"string\",\n      \"description\": \"The name of the tool to be called (e.g., TOOL_ADMIN_ActualizarDatosCliente)\"\n    },\n    \"action_input\": {\n      \"type\": \"object\",\n      \"description\": \"The input parameters for the tool, as a JSON object.\"\n    }\n  },\n  \"required\": [\"action\", \"action_input\"]\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        288,
+        1136
+      ],
+      "id": "616aff6f-3a68-4177-ab0a-c3cf6b6ceda9",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $('2b. Validador de Cliente').item.json.telefono }}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "797cf123-968e-4e99-b8e4-2e35e73de656",
+      "name": "2c. ¿Cliente Existe?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -240,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n    telefono,\n    nombre,\n    direccion,\n    estado_conversacion,\n    CASE\n        WHEN nombre IS NULL OR TRIM(nombre) = '' THEN 'sin_nombre'\n        ELSE 'con_nombre'\n    END as estado_nombre\nFROM clientes\nWHERE REPLACE(REPLACE(REPLACE(telefono, '+', ''), ' ', ''), '-', '') = REPLACE(REPLACE(REPLACE($1, '+', ''), ' ', ''), '-', '')\nLIMIT 1;",
+        "options": {
+          "queryReplacement": "=={{ $('2. Extractor Inteligente').item.json.telefono_objetivo }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -400,
+        624
+      ],
+      "id": "d6bf06c9-170b-433e-8419-ef8ae2f569b7",
+      "name": "Execute a SQL query",
+      "retryOnFail": true,
+      "credentials": {
+        "postgres": {
+          "id": "cnplkXzn0fvuWCTb",
+          "name": "Postgres account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {
+    "1b. WAHA Trigger": [
+      {
+        "json": {
+          "id": "evt_01k6rrs3ctg2ndanr04vy9yjn0",
+          "timestamp": 1759620402586,
+          "event": "message",
+          "session": "default",
+          "metadata": {},
+          "me": {
+            "id": "573042582777@c.us",
+            "pushName": "Tus Aguacates"
+          },
+          "payload": {
+            "id": "false_120363041361026474@g.us_AC0DC7FF1D7757CCC509049F3A7C0FB8_278301096542409@lid",
+            "timestamp": 1759620402,
+            "from": "120363041361026474@g.us",
+            "fromMe": false,
+            "source": "app",
+            "body": "Actualiza el nombre del cliente 573164679220 a Consuelo",
+            "to": "120363041361026474@g.us",
+            "participant": "278301096542409@lid",
+            "hasMedia": false,
+            "media": null,
+            "ack": 2,
+            "ackName": "DEVICE",
+            "replyTo": null,
+            "_data": {
+              "key": {
+                "remoteJid": "120363041361026474@g.us",
+                "fromMe": false,
+                "id": "AC0DC7FF1D7757CCC509049F3A7C0FB8",
+                "participant": "278301096542409@lid",
+                "participantPn": "573203062007@s.whatsapp.net"
+              },
+              "messageTimestamp": 1759620402,
+              "pushName": "Libre 〽️Poderoso",
+              "broadcast": false,
+              "message": {
+                "conversation": "Actualiza el nombre del cliente 573164679220 a Consuelo",
+                "messageContextInfo": {
+                  "messageSecret": "UNkpqcfbwE1N99Ec67IoRDOARyVs0Pm5fNU4dJjQRzk="
+                }
+              },
+              "status": 3
+            }
+          },
+          "engine": "NOWEB",
+          "environment": {
+            "version": "2025.7.8",
+            "engine": "NOWEB",
+            "tier": "PLUS",
+            "browser": null
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "2. Extraer Teléfono": {
+      "main": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_CambiarEstadoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ListarClientesPorEstado": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ContarClientes": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1b. WAHA Trigger": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Filtrar Solo Comando",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filtrar Solo Comando": {
+      "main": [
+        [
+          {
+            "node": "Unificar Entradas",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarProductos": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarConocimiento": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_CambiarEstadoMasivoClientes": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ReporteEstadoClientes": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_GetPerfilCompletoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ListarVIPsEnRiesgo": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ContarClientesPorSegmento": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_AnalisisVentasPorPeriodo": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_PredeccionChurn": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_GenerarReporteEjecutivo": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_AnalisisSatisfaccionCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Unificar Entradas": {
+      "main": [
+        [
+          {
+            "node": "2. Extractor Inteligente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ListarClientesSinNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ActualizarDatosCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ConsultarCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ProductosMasVendidos": {
+      "ai_tool": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Agente Copiloto1": {
+      "main": [
+        [
+          {
+            "node": "4. Enviar Respuesta IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2c. ¿Cliente Existe?": {
+      "main": [
+        [
+          {
+            "node": "3. Agente Copiloto1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Extractor Inteligente": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "2c. ¿Cliente Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cb30854a-acb8-4ab9-8c42-e20e4b18662e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+  },
+  "id": "yQxrcKxNsURSa9De",
+  "tags": []
+}

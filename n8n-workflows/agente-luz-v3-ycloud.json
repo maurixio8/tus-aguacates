@@ -1,0 +1,605 @@
+{
+    "name": "🥑 Tus Aguacates - Agente Luz v3 (YCloud)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "ycloud",
+                "options": {
+                    "responseMode": "responseNode"
+                }
+            },
+            "id": "webhook-ycloud",
+            "name": "📥 Webhook YCloud",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "webhookId": "tus-aguacates-ycloud-v3"
+        },
+        {
+            "parameters": {
+                "respondWith": "text",
+                "responseBody": "OK",
+                "options": {}
+            },
+            "id": "responder-webhook",
+            "name": "✅ Responder OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.4,
+            "position": [
+                220,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Nodo: 1. Pre-procesamiento para YCloud/Meta\n\nconst item = $input.item.json;\n\n// --- EXTRAER DATOS DE YCLOUD ---\n// YCloud envía el mensaje en diferentes estructuras\nconst whatsappMsg = item.whatsappInboundMessage || item.payload || item;\n\n// Filtrar solo mensajes de texto\nif (!whatsappMsg || !whatsappMsg.from) return null;\nif (whatsappMsg.type && whatsappMsg.type !== 'text') {\n  // Mensaje no es texto (imagen, audio, etc)\n  return [{\n    json: {\n      esMediaNoSoportado: true,\n      clienteTelefonoLimpio: (whatsappMsg.from || '').replace(/\\D/g, ''),\n      chatIdYCloud: whatsappMsg.from,\n      tipoMensaje: whatsappMsg.type || 'unknown'\n    }\n  }];\n}\n\n// --- EXTRACCIÓN DE CAMPOS ---\nconst clienteTelefonoLimpio = (whatsappMsg.from || '').replace(/\\D/g, '');\nconst mensajeClienteActual = whatsappMsg.text?.body || whatsappMsg.body || '';\nconst nombrePerfilWA = whatsappMsg.customerProfile?.name || whatsappMsg.profile?.name || null;\n\n// Saludo según hora (Colombia UTC-5)\nconst now = new Date();\nconst horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();\nlet saludo;\nif (horaCol < 12) saludo = 'Buenos días';\nelse if (horaCol < 19) saludo = 'Buenas tardes';\nelse saludo = 'Buenas noches';\n\n// --- LÓGICA DE MAPEO DE PALABRAS CLAVE (del flujo anterior) ---\nlet textoBusqueda = mensajeClienteActual.toLowerCase().trim();\n\nconst mapeoPalabrasClave = {\n  'aguacate': '🥑', 'aguacates': '🥑',\n  'fresa': '🍓', 'fresas': '🍓',\n  'limon': '🍋', 'limones': '🍋',\n  'arandano': '🫐', 'arandanos': '🫐',\n  'mango': '🥭', 'naranja': '🍊',\n  'manzana': '🍎', 'uva': '🍇',\n  'coco': '🥥', 'banano': '🍌',\n  'caja': 'caja', 'combo': 'combo'\n};\n\nfor (const palabra in mapeoPalabrasClave) {\n  if (textoBusqueda.includes(palabra)) {\n    textoBusqueda = textoBusqueda.replace(new RegExp(palabra, 'g'), mapeoPalabrasClave[palabra]);\n  }\n}\n\n// --- OUTPUT ---\nreturn [{\n  json: {\n    clienteTelefonoLimpio,\n    chatIdYCloud: whatsappMsg.from,\n    mensajeClienteActual,\n    textoBusqueda,\n    saludo,\n    nombrePerfilWA,\n    esMediaNoSoportado: false,\n    datosOriginalesYCloud: item\n  }\n}];"
+            },
+            "id": "preprocesamiento",
+            "name": "1. Pre-procesamiento YCloud",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                440,
+                0
+            ],
+            "alwaysOutputData": false
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "es-media",
+                            "leftValue": "={{ $json.esMediaNoSoportado }}",
+                            "rightValue": true,
+                            "operator": {
+                                "type": "boolean",
+                                "operation": "equals"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "filtro-media",
+            "name": "❓ ¿Es Media?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                660,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"to\": \"{{ $json.clienteTelefonoLimpio }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.saludo }} 😊 Recibí tu {{ $json.tipoMensaje }}. Por el momento, solo puedo procesar mensajes de texto. \\n\\n💚 ¿Hay algo en lo que pueda ayudarte?\"\n  }\n}",
+                "options": {}
+            },
+            "id": "respuesta-media",
+            "name": "📱 Responder Media No Soportado",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                880,
+                -120
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "TU_CREDENCIAL_YCLOUD",
+                    "name": "YCloud API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "WITH nuevo_cliente AS (\n  INSERT INTO clientes (telefono, nombre, estado_conversacion)\n  SELECT\n    $1::text,\n    NULL,\n    'NUEVO'\n  WHERE NOT EXISTS (\n    SELECT 1 FROM clientes WHERE telefono = $1::text\n  )\n  RETURNING id, telefono, nombre, direccion, estado_conversacion, pre_pedido, total_pedidos\n)\nSELECT id, telefono, nombre, direccion, estado_conversacion, pre_pedido, total_pedidos\nFROM nuevo_cliente\nUNION ALL\nSELECT id, telefono, nombre, direccion, estado_conversacion, pre_pedido, total_pedidos\nFROM clientes\nWHERE telefono = $1::text\nLIMIT 1;",
+                "options": {
+                    "queryReplacement": "={{$json.clienteTelefonoLimpio}}"
+                }
+            },
+            "id": "obtener-cliente",
+            "name": "2. Obtener Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                880,
+                100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "sessionIdType": "customKey",
+                "sessionKey": "={{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}",
+                "contextWindowLength": 15
+            },
+            "id": "chat-memory",
+            "name": "🧠 Postgres Chat Memory",
+            "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+            "typeVersion": 1.3,
+            "position": [
+                1320,
+                320
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "promptType": "define",
+                "text": "=Nombre Cliente: {{ $('2. Obtener Cliente').item.json.nombre || 'No registrado' }}\nEstado Conversacion: {{ $('2. Obtener Cliente').item.json.estado_conversacion }}\nTotal Pedidos Anteriores: {{ $('2. Obtener Cliente').item.json.total_pedidos || 0 }}\nCarrito Actual: {{ JSON.stringify($('2. Obtener Cliente').item.json.pre_pedido) || '[]' }}\nMensaje Cliente: {{ $('1. Pre-procesamiento YCloud').item.json.mensajeClienteActual }}",
+                "options": {
+                    "systemMessage": "## 🎯 MISIÓN PRINCIPAL\nEres \"Luz\" 🥑, el asistente virtual de \"Tus Aguacates\", una empresa colombiana que vende aguacates premium y productos frescos del Eje Cafetero.\n\n## 📍 TIENDA EN LÍNEA\nNuestra tienda online es: https://tus-aguacates.vercel.app\n- Categorías: Frutas, Hierbas Aromáticas, Especias, Tubérculos, Miel, Café, Artesanías\n- Más de 100 productos disponibles\n- Envío a Bogotá y alrededores\n\n## 📚 MANUAL DE OPERACIONES\n\n### PROTOCOLO POR ESTADO DEL CLIENTE\n\n* **`NUEVO`:** Preséntate, pide el nombre y cambia el estado a `NOMBRE_SOLICITADO`.\n* **`NOMBRE_SOLICITADO`:** Guarda el nombre con `TOOL_GuardarNombreCliente`.\n* **`ATENCION_LUZ` y `EN_PEDIDO`:** Sigue el PROTOCOLO DE BÚSQUEDA Y VENTA.\n* **`ESCALADO`:** NO uses herramientas. Informa que un humano ya está notificado.\n\n### PROTOCOLO DE BÚSQUEDA Y VENTA\n1. **BÚSQUEDA:** Usa `TOOL_BuscarProductos` para encontrar productos.\n2. **MÚLTIPLES RESULTADOS:** Presenta lista SIN PRECIOS, pregunta cuál le interesa.\n3. **UN SOLO RESULTADO:** Informa nombre y PRECIO, pregunta si desea añadirlo.\n4. **AÑADIR:** Usa `TOOL_AnadirAlCarrito` y confirma con PRECIO.\n\n### PROTOCOLO DE FINALIZACIÓN\n1. Cuando el cliente dice \"eso es todo\" o pregunta el total, usa `TOOL_CalcularTotalPrePedido`.\n2. Responde: \"¡Claro! El total de tu pre-pedido es de $XX.XXX. He notificado a nuestro equipo.\"\n3. Usa `TOOL_EscalarServicioCliente` para que un humano finalice.\n\n## 💡 ALTERNATIVA: TIENDA ONLINE\nSi el cliente prefiere comprar solo, envíalo a la tienda:\n\"Puedes ver todos nuestros productos y hacer tu pedido aquí: 👉 https://tus-aguacates.vercel.app\"\n\n## 🚫 REGLAS INQUEBRANTABLES\n- NUNCA inventes precios - usa SIEMPRE las herramientas\n- SIEMPRE usa emojis moderadamente (🥑 💚 📦 ✅)\n- Habla en español colombiano natural\n- Mantén respuestas CONCISAS (máximo 3-4 líneas)\n- Si no sabes algo, consulta `TOOL_BuscarConocimiento`"
+                }
+            },
+            "id": "agente-luz",
+            "name": "🤖 Agente Luz v3",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 2,
+            "position": [
+                1100,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "model": "deepseek-chat",
+                "options": {
+                    "maxTokens": 500,
+                    "temperature": 0.7
+                }
+            },
+            "id": "deepseek-model",
+            "name": "DeepSeek Chat Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                320
+            ],
+            "credentials": {
+                "deepSeekApi": {
+                    "id": "8BVSsLxHakKs5L6l",
+                    "name": "DeepSeek account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta CRÍTICA para buscar productos en la tienda. Úsala cuando el cliente pregunte por un producto, precio o disponibilidad. Input: nombre del producto a buscar.",
+                "method": "POST",
+                "url": "https://gxqkmaaqoehydulksudj.supabase.co/rest/v1/rpc/search_products",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "apikey",
+                            "value": "={{$credentials.httpHeaderAuth.value}}"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\"search_term\": \"{{ $fromAI('termino_busqueda','Producto a buscar','string','') }}\"}"
+            },
+            "id": "tool-buscar-productos-supabase",
+            "name": "TOOL_BuscarProductos",
+            "type": "n8n-nodes-base.httpRequestTool",
+            "typeVersion": 1.1,
+            "position": [
+                1320,
+                500
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "TU_CREDENCIAL_SUPABASE",
+                    "name": "Supabase API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta para buscar información oficial de la empresa (horarios, pagos, entrega, etc.). Input: palabra clave de búsqueda.",
+                "operation": "executeQuery",
+                "query": "SELECT respuesta_o_dato FROM conocimiento_granular \nWHERE palabras_clave @> ARRAY[COALESCE(NULLIF($1, ''), 'general')]\nORDER BY prioridad LIMIT 1",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('termino_busqueda','Palabra clave para buscar','string','general') }}"
+                }
+            },
+            "id": "tool-buscar-conocimiento",
+            "name": "TOOL_BuscarConocimiento",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1500,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta para guardar el nombre del cliente. Input: {\"nombre_cliente\": \"Nombre Apellido\"}",
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET \n  nombre = $1, \n  estado_conversacion = 'ATENCION_LUZ' \nWHERE \n  telefono = '{{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}';",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('nombre_cliente','Nombre completo del cliente','string','') || 'Cliente' }}"
+                }
+            },
+            "id": "tool-guardar-nombre",
+            "name": "TOOL_GuardarNombreCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1680,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta para añadir productos al carrito del cliente. Input: {\"producto_id\": numero, \"producto_nombre\": \"texto\", \"precio\": numero}",
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET \n  pre_pedido = COALESCE(pre_pedido, '[]'::jsonb) || \n    jsonb_build_object(\n      'producto_id', COALESCE($1::int, 0),\n      'producto_nombre', COALESCE(NULLIF($2, ''), 'Producto'),\n      'precio', COALESCE($3::numeric, 0),\n      'cantidad', 1\n    ),\n  estado_conversacion = 'EN_PEDIDO'\nWHERE telefono = '{{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}'",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('producto_id','ID del producto','number',0) }}\n{{ $fromAI('producto_nombre','Nombre del producto','string','') }}\n{{ $fromAI('precio','Precio unitario','number',0) }}"
+                }
+            },
+            "id": "tool-anadir-carrito",
+            "name": "TOOL_AnadirAlCarrito",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1320,
+                680
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta para calcular el total del pre-pedido del cliente.",
+                "operation": "executeQuery",
+                "query": "SELECT \n  COALESCE(\n    (SELECT SUM((item->>'precio')::numeric * COALESCE((item->>'cantidad')::int, 1))\n     FROM clientes, jsonb_array_elements(pre_pedido) AS item\n     WHERE telefono = '{{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}'\n    ), 0\n  ) as total_pre_pedido,\n  pre_pedido as items_carrito\nFROM clientes\nWHERE telefono = '{{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}';",
+                "options": {}
+            },
+            "id": "tool-calcular-total",
+            "name": "TOOL_CalcularTotalPrePedido",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1500,
+                680
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "descriptionType": "manual",
+                "toolDescription": "Herramienta para cambiar el estado de conversación del cliente. Estados válidos: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, PEDIDO_LISTO, PEDIDO_FINALIZADO, ESCALADO",
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET estado_conversacion = CASE \n  WHEN $1 IN ('NUEVO', 'NOMBRE_SOLICITADO', 'ATENCION_LUZ', 'EN_PEDIDO', 'PEDIDO_LISTO', 'PEDIDO_FINALIZADO', 'ESCALADO') \n  THEN $1 \n  ELSE 'ATENCION_LUZ' \nEND\nWHERE telefono = '{{ $('1. Pre-procesamiento YCloud').item.json.clienteTelefonoLimpio }}'",
+                "options": {
+                    "queryReplacement": "={{ $fromAI('nuevo_estado','Estado de conversación válido','string','ATENCION_LUZ') }}"
+                }
+            },
+            "id": "tool-cambiar-estado",
+            "name": "TOOL_CambiarEstadoCliente",
+            "type": "n8n-nodes-base.postgresTool",
+            "typeVersion": 2.6,
+            "position": [
+                1680,
+                680
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Preparar respuesta para enviar via YCloud\nconst respuestaIA = $input.first().json.output || $input.first().json.text || '';\nconst contexto = $('1. Pre-procesamiento YCloud').first().json;\n\n// Limpiar respuesta para WhatsApp\nlet mensaje = respuestaIA\n  .replace(/\\*\\*/g, '*') // Markdown bold a WhatsApp bold\n  .replace(/\\n{3,}/g, '\\n\\n') // Múltiples saltos a máximo 2\n  .trim();\n\n// Fallback si no hay respuesta\nif (!mensaje) {\n  mensaje = '¡Hola! 🥑 Gracias por escribirnos. ¿En qué puedo ayudarte hoy?';\n}\n\nreturn {\n  json: {\n    to: contexto.clienteTelefonoLimpio,\n    mensaje: mensaje,\n    // Metadata para logging\n    _metadata: {\n      telefono: contexto.clienteTelefonoLimpio,\n      mensaje_original: contexto.mensajeClienteActual,\n      timestamp: new Date().toISOString()\n    }\n  }\n};"
+            },
+            "id": "preparar-respuesta",
+            "name": "📤 Preparar Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1540,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"to\": \"{{ $json.to }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": {{ JSON.stringify($json.mensaje) }}\n  }\n}",
+                "options": {}
+            },
+            "id": "enviar-whatsapp",
+            "name": "📱 Enviar WhatsApp YCloud",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1760,
+                100
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "TU_CREDENCIAL_YCLOUD",
+                    "name": "YCloud API Key"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "📥 Webhook YCloud": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Responder OK",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "1. Pre-procesamiento YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "1. Pre-procesamiento YCloud": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Es Media?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Es Media?": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Responder Media No Soportado",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "2. Obtener Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "2. Obtener Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "DeepSeek Chat Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🧠 Postgres Chat Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_BuscarProductos": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_BuscarConocimiento": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_GuardarNombreCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_AnadirAlCarrito": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_CalcularTotalPrePedido": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "TOOL_CambiarEstadoCliente": {
+            "ai_tool": [
+                [
+                    {
+                        "node": "🤖 Agente Luz v3",
+                        "type": "ai_tool",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🤖 Agente Luz v3": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Preparar Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Preparar Respuesta": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar WhatsApp YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "meta": {
+        "templateCredsSetupCompleted": false
+    },
+    "pinData": {},
+    "versionId": "3",
+    "tags": [
+        {
+            "name": "WhatsApp",
+            "id": "whatsapp-tag"
+        },
+        {
+            "name": "Tus Aguacates",
+            "id": "tus-aguacates-tag"
+        },
+        {
+            "name": "YCloud",
+            "id": "ycloud-tag"
+        }
+    ]
+}

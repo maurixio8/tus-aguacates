@@ -1,0 +1,1173 @@
+{
+    "name":  "🥑 Tus Aguacates - Agente Luz v4 (Híbrido)",
+    "nodes":  [
+                  {
+                      "parameters":  {
+                                         "httpMethod":  "POST",
+                                         "path":  "ycloud",
+                                         "responseMode":  "responseNode",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "6ded60ed-3257-4562-ab57-04d0404d1545",
+                      "name":  "📥 Webhook YCloud",
+                      "type":  "n8n-nodes-base.webhook",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -2032,
+                                       -304
+                                   ],
+                      "webhookId":  "tus-aguacates-ycloud-v4"
+                  },
+                  {
+                      "parameters":  {
+                                         "respondWith":  "text",
+                                         "responseBody":  "OK",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "3e679d7a-2ec5-4256-aa46-822a35ed99ad",
+                      "name":  "✅ Responder OK",
+                      "type":  "n8n-nodes-base.respondToWebhook",
+                      "typeVersion":  1.4,
+                      "position":  [
+                                       -1840,
+                                       -528
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// =====================================================\n// 🧠 PRE-PROCESAMIENTO v10 - DETECCIÓN DE DIRECTOR (COPILOTO)\n// =====================================================\n// Última actualización: 2025-12-30\n// INSTRUCCIONES: Reemplaza el código del nodo \"1. Pre-procesamiento YCloud\"\n// con este código actualizado\n// =====================================================\n\nconst body = $input.item.json.body;\nconst whatsappMsg = body.whatsappInboundMessage;\n\n// =====================================================\n// 🛡️ DETECTAR SI ES EL DIRECTOR (MAURICIO) - COPILOTO\n// =====================================================\n// Números del Director - el único que puede dar comandos al Copiloto\n// YCloud no reenvía mensajes de grupos, así que usamos chat directo\nconst NUMEROS_DIRECTOR = [\u0027573203062007\u0027, \u00273203062007\u0027];\n\n// Extraer número que envía el mensaje\nconst fromRaw = whatsappMsg?.from || \u0027\u0027;\nconst fromNormalizado = fromRaw.replace(/[+\\s-]/g, \u0027\u0027);\n\n// Verificar si el mensaje viene del Director\nconst esComandoDirector = NUMEROS_DIRECTOR.some(num =\u003e\n    fromNormalizado === num ||\n    fromNormalizado.endsWith(num)\n);\n\n// =====================================================\n\n// Extraer datos básicos (siempre, aunque sea media)\nconst from = (whatsappMsg?.from || \u0027\u0027).replace(\u0027+\u0027, \u0027\u0027);\nconst to = (whatsappMsg?.to || \u0027\u0027).replace(\u0027+\u0027, \u0027\u0027);\nconst customerName = whatsappMsg?.customerProfile?.name || \u0027Cliente\u0027;\nconst messageType = whatsappMsg?.type || \u0027unknown\u0027;\n\n// Saludo según hora (COLOMBIA UTC-5)\nconst now = new Date();\nconst horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();\nlet saludo;\nif (horaCol \u003c 12) saludo = \u0027Buenos días\u0027;\nelse if (horaCol \u003c 19) saludo = \u0027Buenas tardes\u0027;\nelse saludo = \u0027Buenas noches\u0027;\n\n// =====================================================\n// SI ES EL DIRECTOR → RETORNAR PARA FLUJO COPILOTO\n// =====================================================\nif (esComandoDirector) {\n    const messageText = whatsappMsg?.text?.body || \u0027\u0027;\n\n    // Extracción de teléfono colombiano\n    const normalizedText = messageText.replace(/[^\\d]/g, \u0027\u0027);\n    const phoneMatch = normalizedText.match(/(?:57)?(3\\d{9})/);\n    const telefono_objetivo = phoneMatch ? phoneMatch[1].replace(/^57/, \u0027\u0027) : null;\n\n    // Extracción de nombre (patrones comunes)\n    let nombre_extraido = null;\n    const nombrePatterns = [\n        /(?:a|al nombre)\\s+[\"\u0027]?([A-Za-zÁ-ÿ\\s]+?)[\"\u0027]?(?:\\s|$)/i,\n        /(?:nombre es|llama)\\s+[\"\u0027]?([A-Za-zÁ-ÿ\\s]+?)[\"\u0027]?(?:\\s+y|\\s*$)/i,\n    ];\n    for (const pattern of nombrePatterns) {\n        const match = messageText.match(pattern);\n        if (match \u0026\u0026 match[1]) {\n            nombre_extraido = match[1].trim().replace(/\\b(del|cliente|el|la)\\b/gi, \u0027\u0027).trim();\n            if (nombre_extraido.length \u003e= 2) break;\n            else nombre_extraido = null;\n        }\n    }\n\n    return [{\n        json: {\n            // ✅ FLAG CRÍTICO: IDENTIFICAR COMO MENSAJE DE COPILOTO\n            esComandoCopiloto: true,\n\n            from, to, customerName, saludo,\n            messageText: messageText,\n            prompt: messageText,\n            mensajeClienteActual: messageText,\n\n            // Datos extraídos para las herramientas del copiloto\n            telefono_objetivo: telefono_objetivo,\n            nombre_extraido: nombre_extraido,\n\n            // Flags estándar (desactivados para copiloto)\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: messageType,\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// =====================================================\n// RESTO DEL CÓDIGO ORIGINAL (PARA CLIENTES NORMALES)\n// =====================================================\n\n// NUEVO: DETECTAR RESPUESTAS DE BOTONES INTERACTIVOS\nlet esRespuestaBoton = false;\nlet botonId = \u0027\u0027;\nlet botonTexto = \u0027\u0027;\nif (messageType === \u0027interactive\u0027) {\n    const interactive = whatsappMsg.interactive;\n    if (interactive?.type === \u0027button_reply\u0027) {\n        esRespuestaBoton = true;\n        botonId = interactive.button_reply?.id || \u0027\u0027;\n        botonTexto = interactive.button_reply?.title || \u0027\u0027;\n    } else if (interactive?.type === \u0027list_reply\u0027) {\n        esRespuestaBoton = true;\n        botonId = interactive.list_reply?.id || \u0027\u0027;\n        botonTexto = interactive.list_reply?.title || \u0027\u0027;\n    }\n}\n\n// MANEJO DE IMÁGENES Y MEDIA\nconst esImagen = messageType === \u0027image\u0027;\nconst esDocumento = messageType === \u0027document\u0027;\nconst esAudio = messageType === \u0027audio\u0027;\nconst esVideo = messageType === \u0027video\u0027;\nconst esSticker = messageType === \u0027sticker\u0027;\nconst esMedia = esImagen || esDocumento || esAudio || esVideo || esSticker;\n\nif (esMedia) {\n    const captionImagen = whatsappMsg?.image?.caption ||\n        whatsappMsg?.document?.caption ||\n        whatsappMsg?.video?.caption || \u0027\u0027;\n    let textoMedia = \u0027[Mensaje multimedia]\u0027;\n    if (esImagen) textoMedia = \u0027[📸 Imagen recibida]\u0027;\n    else if (esDocumento) textoMedia = \u0027[📄 Documento recibido]\u0027;\n    else if (esAudio) textoMedia = \u0027[🎵 Audio recibido]\u0027;\n    else if (esVideo) textoMedia = \u0027[🎥 Video recibido]\u0027;\n    else if (esSticker) textoMedia = \u0027[😊 Sticker recibido]\u0027;\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: true,\n            esImagen, esDocumento, esAudio, esVideo, esSticker,\n            tipoMensaje: messageType,\n            messageText: textoMedia,\n            captionImagen,\n            esRespuestaBoton: false,\n            botonId: \u0027\u0027,\n            botonTexto: \u0027\u0027,\n            productoIdDelBoton: null,\n            accionBoton: \u0027\u0027,\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: \u0027\u0027,\n            terminoNormalizado: \u0027\u0027,\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// MANEJO DE RESPUESTAS DE BOTONES\nif (esRespuestaBoton) {\n    let productoIdDelBoton = null;\n    let accionBoton = \u0027otro\u0027;\n    if (botonId.startsWith(\u0027agregar_producto_\u0027)) {\n        productoIdDelBoton = parseInt(botonId.replace(\u0027agregar_producto_\u0027, \u0027\u0027));\n        accionBoton = \u0027agregar\u0027;\n    } else if (botonId.startsWith(\u0027ver_mas_producto_\u0027)) {\n        productoIdDelBoton = parseInt(botonId.replace(\u0027ver_mas_producto_\u0027, \u0027\u0027));\n        accionBoton = \u0027ver_mas\u0027;\n    } else if (botonId === \u0027ver_carrito\u0027) {\n        accionBoton = \u0027ver_carrito\u0027;\n    }\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: \u0027interactive\u0027,\n            messageText: botonTexto,\n            esRespuestaBoton: true,\n            botonId: botonId,\n            botonTexto: botonTexto,\n            productoIdDelBoton: productoIdDelBoton,\n            accionBoton: accionBoton,\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: \u0027\u0027,\n            terminoNormalizado: \u0027\u0027,\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// VALIDAR MENSAJE DE TEXTO\nif (!whatsappMsg || messageType !== \u0027text\u0027) {\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            esMediaNoSoportado: true,\n            from, to, customerName, saludo,\n            tipoMensaje: messageType,\n            messageText: \u0027\u0027,\n            esRespuestaBoton: false,\n            botonId: \u0027\u0027,\n            botonTexto: \u0027\u0027,\n            productoIdDelBoton: null,\n            accionBoton: \u0027\u0027\n        }\n    }];\n}\n\n// A PARTIR DE AQUÍ: SOLO MENSAJES DE TEXTO NORMALES\nconst messageText = whatsappMsg.text?.body || \u0027\u0027;\nconst msgLower = messageText.toLowerCase().trim();\n\n// DETECTAR SALUDOS SIMPLES\nconst esSoloSaludo = [\n    /^hola[,!.\\s]*$/i,\n    /^buenos?\\s+(d[ií]as?|tardes?|noches?)[,!.\\s]*$/i,\n    /^buenas[,!.\\s]*$/i,\n    /^hey[,!.\\s]*$/i,\n    /^qu[eé]\\s+tal[,\\?!.\\s]*$/i,\n    /^c[oó]mo\\s+est[aá](s|n)?[,\\?!.\\s]*$/i,\n    /^gracias[,!.\\s]*$/i,\n    /^ok[,!.\\s]*$/i,\n    /^s[ií][,!.\\s]*$/i,\n    /^no[,!.\\s]*$/i,\n    /^perfecto[,!.\\s]*$/i,\n    /^listo[,!.\\s]*$/i,\n    /^dale[,!.\\s]*$/i,\n    /^bien[,!.\\s]*$/i\n].some(p =\u003e p.test(msgLower));\n\n// DETECTAR PEDIDO DESDE PLATAFORMA\nconst esPedidoPlataforma = [\n    /acabo\\s+de\\s+hacer\\s+un\\s+pedido/i,\n    /hice\\s+un\\s+pedido\\s+en\\s+(la\\s+)?tienda/i,\n    /tus-aguacates\\.vercel\\.app/i,\n    /mi\\s+pedido:.*\\n.*total/is,\n    /quedo\\s+atent[oa]\\s+a\\s+la\\s+confirmaci[oó]n/i\n].some(p =\u003e p.test(messageText));\n\nlet infoPedidoPlataforma = null;\nif (esPedidoPlataforma) {\n    const nombreMatch = messageText.match(/me\\s+llamo\\s+(\\w+)/i);\n    const pagoMatch = messageText.match(/pago:\\s*(.+?)(\\n|$)/i);\n    const totalMatch = messageText.match(/total:\\s*\\$?([\\d,.]+)/i);\n    infoPedidoPlataforma = {\n        nombre: nombreMatch ? nombreMatch[1] : null,\n        metodoPago: pagoMatch ? pagoMatch[1].trim() : null,\n        total: totalMatch ? totalMatch[1] : null\n    };\n}\n\n// DETECTAR PREGUNTAS CONVERSACIONALES\nconst esPreguntaConversacional = [\n    /c[oó]mo\\s+(veo|entro|accedo|visito|llego|abro)/i,\n    /d[oó]nde\\s+(est[aá]|queda|encuentro|veo)/i,\n    /tienda\\s+(en\\s+)?l[ií]nea/i,\n    /tienda\\s+(online|virtual|web)/i,\n    /ver\\s+(la\\s+)?tienda/i,\n    /p[aá]gina\\s+web/i,\n    /\\b(link|enlace|url)\\b/i,\n    /\\bhorario/i,\n    /a\\s+qu[eé]\\s+hora/i,\n    /hasta\\s+qu[eé]\\s+hora/i,\n    /\\benv[ií]o/i,\n    /\\bentrega/i,\n    /\\bdomicilio/i,\n    /hacen\\s+env[ií]o/i,\n    /zona\\s+de\\s+(cobertura|entrega)/i,\n    /m[eé]todo(s)?\\s+de\\s+pago/i,\n    /forma(s)?\\s+de\\s+pago/i,\n    /aceptan\\s+(tarjeta|nequi|daviplata|efectivo)/i,\n    /puedo\\s+pagar\\s+con/i,\n    /\\bcontacto/i,\n    /\\bubicaci[oó]n/i,\n    /\\bdirecci[oó]n/i,\n    /d[oó]nde\\s+est[aá]n/i,\n    /mi\\s+pedido/i,\n    /mi\\s+carrito/i,\n    /qu[eé]\\s+llevo/i,\n    /eso\\s+es\\s+todo/i,\n    /total\\s+(del\\s+)?pedido/i,\n    /cu[aá]nto\\s+es\\s+(el\\s+)?total/i,\n    /cu[aá]nto\\s+te\\s+debo/i\n].some(p =\u003e p.test(msgLower));\n\n// EXTRACCIÓN DE TÉRMINO DE BÚSQUEDA\nconst palabrasIgnorar = new Set([\n    \u0027saber\u0027, \u0027conocer\u0027, \u0027decir\u0027, \u0027informar\u0027, \u0027consultar\u0027, \u0027preguntar\u0027,\n    \u0027averiguar\u0027, \u0027entender\u0027, \u0027explicar\u0027, \u0027indicar\u0027,\n    \u0027ver\u0027, \u0027mostrar\u0027, \u0027enseñar\u0027, \u0027mirar\u0027, \u0027observar\u0027,\n    \u0027el\u0027, \u0027la\u0027, \u0027los\u0027, \u0027las\u0027, \u0027un\u0027, \u0027una\u0027, \u0027unos\u0027, \u0027unas\u0027,\n    \u0027de\u0027, \u0027del\u0027, \u0027a\u0027, \u0027al\u0027, \u0027en\u0027, \u0027con\u0027, \u0027por\u0027, \u0027para\u0027, \u0027como\u0027, \u0027cómo\u0027,\n    \u0027sobre\u0027, \u0027sin\u0027, \u0027hacia\u0027, \u0027desde\u0027, \u0027entre\u0027,\n    \u0027que\u0027, \u0027qué\u0027, \u0027cuanto\u0027, \u0027cuánto\u0027, \u0027cual\u0027, \u0027cuál\u0027,\n    \u0027vale\u0027, \u0027valen\u0027, \u0027cuesta\u0027, \u0027cuestan\u0027, \u0027costar\u0027, \u0027costaría\u0027,\n    \u0027precio\u0027, \u0027precios\u0027, \u0027costo\u0027, \u0027costos\u0027, \u0027valor\u0027, \u0027valores\u0027,\n    \u0027tienen\u0027, \u0027tienes\u0027, \u0027tiene\u0027, \u0027tener\u0027, \u0027tendrán\u0027, \u0027tendría\u0027,\n    \u0027hay\u0027, \u0027habrá\u0027, \u0027habría\u0027, \u0027haber\u0027,\n    \u0027busco\u0027, \u0027busca\u0027, \u0027buscando\u0027, \u0027buscar\u0027,\n    \u0027quiero\u0027, \u0027quiere\u0027, \u0027quieren\u0027, \u0027querer\u0027, \u0027quisiera\u0027, \u0027querría\u0027,\n    \u0027venden\u0027, \u0027vende\u0027, \u0027vender\u0027,\n    \u0027manejan\u0027, \u0027maneja\u0027, \u0027manejar\u0027,\n    \u0027ofrecen\u0027, \u0027ofrece\u0027, \u0027ofrecer\u0027,\n    \u0027necesito\u0027, \u0027necesita\u0027, \u0027necesitar\u0027,\n    \u0027dame\u0027, \u0027deme\u0027, \u0027das\u0027, \u0027dan\u0027, \u0027dar\u0027,\n    \u0027agregar\u0027, \u0027añadir\u0027, \u0027poner\u0027, \u0027meter\u0027, \u0027agrega\u0027, \u0027agregame\u0027, \u0027agrégame\u0027,\n    \u0027llevar\u0027, \u0027llevo\u0027, \u0027lleva\u0027, \u0027llevamos\u0027,\n    \u0027comprar\u0027, \u0027compro\u0027, \u0027compra\u0027,\n    \u0027pedir\u0027, \u0027pedido\u0027, \u0027pido\u0027,\n    \u0027hola\u0027, \u0027buenos\u0027, \u0027buenas\u0027, \u0027días\u0027, \u0027dias\u0027, \u0027tardes\u0027, \u0027noches\u0027,\n    \u0027hey\u0027, \u0027oye\u0027, \u0027disculpa\u0027, \u0027perdón\u0027, \u0027perdon\u0027, \u0027perdone\u0027,\n    \u0027por\u0027, \u0027favor\u0027, \u0027porfavor\u0027, \u0027gracias\u0027, \u0027muchas\u0027,\n    \u0027me\u0027, \u0027te\u0027, \u0027se\u0027, \u0027nos\u0027, \u0027les\u0027, \u0027lo\u0027, \u0027la\u0027,\n    \u0027yo\u0027, \u0027tu\u0027, \u0027tú\u0027, \u0027usted\u0027, \u0027ustedes\u0027, \u0027nosotros\u0027,\n    \u0027este\u0027, \u0027esta\u0027, \u0027estos\u0027, \u0027estas\u0027, \u0027ese\u0027, \u0027esa\u0027, \u0027eso\u0027,\n    \u0027algo\u0027, \u0027más\u0027, \u0027mas\u0027, \u0027otro\u0027, \u0027otra\u0027, \u0027otros\u0027, \u0027otras\u0027,\n    \u0027todo\u0027, \u0027todos\u0027, \u0027toda\u0027, \u0027todas\u0027,\n    \u0027también\u0027, \u0027tambien\u0027, \u0027además\u0027, \u0027ademas\u0027,\n    \u0027ser\u0027, \u0027sería\u0027, \u0027seria\u0027, \u0027son\u0027, \u0027es\u0027, \u0027era\u0027,\n    \u0027están\u0027, \u0027esta\u0027, \u0027está\u0027, \u0027estan\u0027,\n    \u0027puede\u0027, \u0027puedo\u0027, \u0027puedes\u0027, \u0027poder\u0027, \u0027podría\u0027,\n    \u0027bueno\u0027, \u0027buena\u0027, \u0027buenos\u0027, \u0027buenas\u0027,\n    \u0027mejor\u0027, \u0027mejores\u0027, \u0027peor\u0027, \u0027peores\u0027,\n    \u0027grande\u0027, \u0027pequeño\u0027, \u0027pequeña\u0027,\n    \u0027fresco\u0027, \u0027fresca\u0027, \u0027frescos\u0027, \u0027frescas\u0027,\n    \u0027uno\u0027, \u0027dos\u0027, \u0027tres\u0027, \u0027cuatro\u0027, \u0027cinco\u0027,\n    \u0027kilo\u0027, \u0027kilos\u0027, \u0027gramos\u0027, \u0027grs\u0027, \u0027libra\u0027, \u0027libras\u0027,\n    \u0027unidad\u0027, \u0027unidades\u0027, \u0027paquete\u0027, \u0027paquetes\u0027,\n    \u0027bandeja\u0027, \u0027bandejas\u0027, \u0027caja\u0027, \u0027cajas\u0027,\n    \u0027pero\u0027, \u0027aunque\u0027, \u0027entonces\u0027, \u0027pues\u0027, \u0027bueno\u0027, \u0027mira\u0027, \u0027oiga\u0027,\n    \u0027digame\u0027, \u0027dígame\u0027, \u0027cuéntame\u0027, \u0027cuentame\u0027, \u0027dime\u0027,\n    \u0027porfa\u0027, \u0027xfa\u0027, \u0027please\u0027, \u0027plz\u0027, \u0027plis\u0027,\n    \u0027okay\u0027, \u0027vale\u0027, \u0027listo\u0027, \u0027dale\u0027, \u0027aja\u0027, \u0027ajá\u0027,\n    \u0027solo\u0027, \u0027sólo\u0027, \u0027solamente\u0027, \u0027únicamente\u0027, \u0027unicamente\u0027,\n    \u0027siempre\u0027, \u0027nunca\u0027, \u0027ahora\u0027, \u0027después\u0027, \u0027despues\u0027, \u0027antes\u0027,\n    \u0027aquí\u0027, \u0027aqui\u0027, \u0027acá\u0027, \u0027aca\u0027, \u0027allá\u0027, \u0027alla\u0027, \u0027ahí\u0027, \u0027ahi\u0027\n]);\n\nlet terminoBusqueda = msgLower\n    .replace(/[^\\w\\sáéíóúñü]/g, \u0027\u0027)\n    .split(/\\s+/)\n    .filter(w =\u003e w.length \u003e 2 \u0026\u0026 !palabrasIgnorar.has(w))\n    .join(\u0027 \u0027)\n    .trim();\n\n// DETECTAR MÚLTIPLES PRODUCTOS\nconst separadores = /\\s+(?:y|o|,)\\s+/gi;\nconst tieneMultiplesProductos = separadores.test(terminoBusqueda);\nlet terminosIndividuales = [];\nif (tieneMultiplesProductos) {\n    terminosIndividuales = terminoBusqueda\n        .split(/\\s*(?:y|o|,)\\s*/gi)\n        .map(t =\u003e t.trim())\n        .filter(t =\u003e t.length \u003e 0);\n} else if (terminoBusqueda) {\n    terminosIndividuales = [terminoBusqueda];\n}\n\n// NORMALIZACIÓN DE PLURALES\nlet terminoNormalizado = terminoBusqueda;\nlet variantesBusqueda = [];\nlet terminosNormalizados = [];\nterminosIndividuales.forEach(termino =\u003e {\n    const palabras = termino.split(\u0027 \u0027);\n    const palabrasNormalizadas = palabras.map(palabra =\u003e {\n        if (palabra.endsWith(\u0027s\u0027) \u0026\u0026 palabra.length \u003e 3) {\n            return palabra.slice(0, -1);\n        }\n        if (palabra.endsWith(\u0027es\u0027) \u0026\u0026 palabra.length \u003e 4) {\n            return palabra.slice(0, -2);\n        }\n        return palabra;\n    });\n    terminosNormalizados.push(palabrasNormalizadas.join(\u0027 \u0027));\n});\nterminoNormalizado = terminosNormalizados.join(\u0027 \u0027);\nvariantesBusqueda = [...new Set([...terminosIndividuales, ...terminosNormalizados])];\n\n// DECISIÓN DE BÚSQUEDA\nconst debeHacerBusqueda =\n    !esSoloSaludo \u0026\u0026\n    !esPreguntaConversacional \u0026\u0026\n    terminoBusqueda.length \u003e 0;\n\n// RESULTADO FINAL (CLIENTE NORMAL)\nreturn [{\n    json: {\n        // ✅ FLAG: NO es comando de copiloto\n        esComandoCopiloto: false,\n\n        from, to, messageText, customerName, saludo,\n        esMediaNoSoportado: false,\n        esMedia: false,\n        esImagen: false,\n        esDocumento: false,\n        esAudio: false,\n        esVideo: false,\n        esSticker: false,\n        tipoMensaje: \u0027text\u0027,\n        captionImagen: \u0027\u0027,\n        esRespuestaBoton: false,\n        botonId: \u0027\u0027,\n        botonTexto: \u0027\u0027,\n        productoIdDelBoton: null,\n        accionBoton: \u0027\u0027,\n        esSoloSaludo,\n        esPreguntaConversacional,\n        debeHacerBusqueda,\n        esPedidoPlataforma,\n        infoPedidoPlataforma,\n        tieneMultiplesProductos,\n        terminosIndividuales,\n        terminosNormalizados,\n        terminoBusqueda,\n        terminoNormalizado,\n        variantesBusqueda,\n        timestamp: whatsappMsg.sendTime\n    }\n}];\n"
+                                     },
+                      "id":  "5c7866e8-aa2d-43e3-a1a5-67e4a5e7a29b",
+                      "name":  "1. Pre-procesamiento YCloud",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -1904,
+                                       -64
+                                   ],
+                      "alwaysOutputData":  true
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "es-media",
+                                                                                   "leftValue":  "={{ $json.esMediaNoSoportado }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "b41f4e9e-1667-4c6d-83e3-52e06679e141",
+                      "name":  "❓ ¿Es Media?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -1568,
+                                       -336
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://api.ycloud.com/v2/whatsapp/messages",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "YCloudApi",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{\n{\n  \"from\": $json.to,\n  \"to\": $json.from,\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": $json.saludo + \" 😊 Recibí tu \" + $json.tipoMensaje + \". Por el momento, solo puedo procesar mensajes de texto. \\n\\n💚 ¿Hay algo en lo que pueda ayudarte?\"\n  }\n}\n}}",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "05767b3b-566e-499c-bd22-071d5e6bd49a",
+                      "name":  "📱 Responder Media No Soportado",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       -1472,
+                                       -528
+                                   ],
+                      "credentials":  {
+                                          "YCloudApi":  {
+                                                            "id":  "9YuNWHvIcXFwYdOX",
+                                                            "name":  "YCloud account"
+                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "WITH nuevo_cliente AS (\n  INSERT INTO clientes (telefono, nombre, estado_conversacion)\n  SELECT \n    \u0027{{ $json.from }}\u0027,\n    NULL,\n    \u0027NUEVO\u0027\n  WHERE NOT EXISTS (\n    SELECT 1 FROM clientes WHERE telefono = \u0027{{ $json.from }}\u0027\n  )\n  RETURNING *\n)\nSELECT id, telefono, nombre, direccion, estado_conversacion, pre_pedido, total_pedidos\nFROM clientes\nWHERE telefono = \u0027{{ $json.from }}\u0027\nUNION ALL\nSELECT id, telefono, nombre, direccion, estado_conversacion, pre_pedido, total_pedidos\nFROM nuevo_cliente\nLIMIT 1;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "20d51d3a-5861-4f93-960e-bc5d7e320e92",
+                      "name":  "2. Obtener Cliente",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -1424,
+                                       -160
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "conditions":  {
+                                                            "options":  {
+                                                                            "caseSensitive":  true,
+                                                                            "leftValue":  "",
+                                                                            "typeValidation":  "strict",
+                                                                            "version":  2
+                                                                        },
+                                                            "conditions":  [
+                                                                               {
+                                                                                   "id":  "es-busqueda",
+                                                                                   "leftValue":  "={{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.debeHacerBusqueda }}",
+                                                                                   "rightValue":  true,
+                                                                                   "operator":  {
+                                                                                                    "type":  "boolean",
+                                                                                                    "operation":  "equals"
+                                                                                                }
+                                                                               }
+                                                                           ],
+                                                            "combinator":  "and"
+                                                        },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "1b0a74b3-3a64-4ce1-810d-a9a69dd79832",
+                      "name":  "❓ ¿Busca Producto?",
+                      "type":  "n8n-nodes-base.if",
+                      "typeVersion":  2.2,
+                      "position":  [
+                                       -736,
+                                       -320
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT \n  p.id,\n  p.name,\n  p.price,\n  p.main_image_url,\n  p.description,\n  p.category_id,\n  p.stock\nFROM public.productos_tienda p\nWHERE \n  p.is_active = true\n  AND (\n    LOWER(p.name) LIKE LOWER(\u0027%{{ $json.terminoBusqueda }}%\u0027)\n    OR LOWER(p.description) LIKE LOWER(\u0027%{{ $json.terminoBusqueda }}%\u0027)\n  )\nORDER BY \n  CASE \n    WHEN LOWER(p.name) LIKE LOWER(\u0027{{ $json.terminoBusqueda }}%\u0027) THEN 1\n    ELSE 2\n  END,\n  p.price ASC\nLIMIT 10;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "0f9cf940-0ced-4741-aebe-655e8d1f0cd3",
+                      "name":  "3. Búsqueda Automática Productos",
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -480,
+                                       -576
+                                   ],
+                      "alwaysOutputData":  true,
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// Combinar datos del cliente y resultados de búsqueda\n\nconst preproceso = $(\u00271. Pre-procesamiento YCloud\u0027).first().json;\nconst cliente = $(\u00272. Obtener Cliente\u0027).first().json;\n\n// Obtener productos de búsqueda (puede venir vacío)\nlet productosEncontrados = [];\ntry {\n  const busquedaItems = $(\u00273. Búsqueda Automática Productos\u0027).all();\n  productosEncontrados = busquedaItems.map(item =\u003e item.json);\n} catch (e) {\n  productosEncontrados = [];\n}\n\n// Formatear productos para el prompt\nlet productosTexto = \u0027\u0027;\nif (productosEncontrados.length \u003e 0) {\n  productosTexto = productosEncontrados.map((p, i) =\u003e \n    `${i+1}. ${p.name} - $${Number(p.price).toLocaleString(\u0027es-CO\u0027)} (${p.category_name})`\n  ).join(\u0027\\n\u0027);\n} else if (preproceso.esIntentoBusqueda) {\n  productosTexto = `❌ No se encontraron productos para: \"${preproceso.terminoBusqueda}\"`;\n} else {\n  productosTexto = \u0027(No se realizó búsqueda de productos)\u0027;\n}\n\n// ========== CONTEXTO DE TIEMPO ==========\nconst now = new Date();\nconst dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, 2=Mar, etc.\nconst hour = now.getHours();\nconst pasoCutoff = hour \u003e= 10;\n\n// Calcular días hasta próxima entrega\nlet diasHastaEntrega;\nlet mensajeEntrega;\n\nswitch(dayOfWeek) {\n  case 0: // Domingo\n    diasHastaEntrega = 2;\n    mensajeEntrega = \"Próxima entrega: Martes\";\n    break;\n  case 1: // Lunes\n    diasHastaEntrega = 1;\n    mensajeEntrega = \"Próxima entrega: Martes\";\n    break;\n  case 2: // Martes\n    if (pasoCutoff) {\n      diasHastaEntrega = 3;\n      mensajeEntrega = \"Ya pasaron las 10AM. Próxima entrega: Viernes\";\n    } else {\n      diasHastaEntrega = 0;\n      mensajeEntrega = \"¡Ordena antes de las 10AM para recibir HOY!\";\n    }\n    break;\n  case 3: // Miércoles\n    diasHastaEntrega = 2;\n    mensajeEntrega = \"Próxima entrega: Viernes\";\n    break;\n  case 4: // Jueves\n    diasHastaEntrega = 1;\n    mensajeEntrega = \"Próxima entrega: Viernes\";\n    break;\n  case 5: // Viernes\n    if (pasoCutoff) {\n      diasHastaEntrega = 4;\n      mensajeEntrega = \"Ya pasaron las 10AM. Próxima entrega: Martes\";\n    } else {\n      diasHastaEntrega = 0;\n      mensajeEntrega = \"¡Ordena antes de las 10AM para recibir HOY!\";\n    }\n    break;\n  case 6: // Sábado\n    diasHastaEntrega = 3;\n    mensajeEntrega = \"Próxima entrega: Martes\";\n    break;\n  default:\n    diasHastaEntrega = 1;\n    mensajeEntrega = \"Próxima entrega: Martes o Viernes\";\n}\n\n// Calcular fecha de entrega\nconst fechaEntrega = new Date(now);\nfechaEntrega.setDate(now.getDate() + diasHastaEntrega);\n\nconst proximaEntrega = fechaEntrega.toLocaleDateString(\u0027es-CO\u0027, { \n  weekday: \u0027long\u0027, \n  day: \u0027numeric\u0027, \n  month: \u0027long\u0027 \n});\n\nconst fechaActual = now.toLocaleDateString(\u0027es-CO\u0027, { \n  weekday: \u0027long\u0027, \n  day: \u0027numeric\u0027, \n  month: \u0027long\u0027,\n  year: \u0027numeric\u0027\n});\n\nconst horaActual = now.toLocaleTimeString(\u0027es-CO\u0027, { \n  hour: \u00272-digit\u0027, \n  minute: \u00272-digit\u0027,\n  hour12: true\n});\n\nreturn {\n  json: {\n    // Datos del cliente\n    clienteId: cliente.id,\n    clienteTelefono: cliente.telefono,\n    clienteNombre: cliente.nombre || \u0027No registrado\u0027,\n    clienteEstado: cliente.estado_conversacion,\n    clienteDireccion: cliente.direccion || \u0027\u0027,\n    clienteCarrito: cliente.pre_pedido || [],\n    clienteTotalPedidos: cliente.total_pedidos || 0,\n    \n    // Datos del mensaje\n    mensajeCliente: preproceso.messageText,\n    terminoBusqueda: preproceso.terminoBusqueda,\n    esIntentoBusqueda: preproceso.esIntentoBusqueda,\n    \n    // Productos encontrados\n    productosEncontrados,\n    productosTexto,\n    \n    // Contexto de comunicación\n    from: preproceso.from,\n    to: preproceso.to,\n    saludo: preproceso.saludo,\n    \n    // ========== CONTEXTO DE TIEMPO (NUEVO) ==========\n    fechaActual: fechaActual,\n    horaActual: horaActual,\n    horaNumero: hour,\n    diaNumero: dayOfWeek,\n    pasoCutoff: pasoCutoff,\n    proximaEntrega: proximaEntrega,\n    mensajeEntrega: mensajeEntrega,\n    diasHastaEntrega: diasHastaEntrega\n  }\n};"
+                                     },
+                      "id":  "6d782131-cd9d-4847-a14f-37d28619c4cc",
+                      "name":  "4. Merge Datos + Productos",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -192,
+                                       -480
+                                   ],
+                      "alwaysOutputData":  true
+                  },
+                  {
+                      "parameters":  {
+                                         "sessionIdType":  "customKey",
+                                         "sessionKey":  "={{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}",
+                                         "contextWindowLength":  10
+                                     },
+                      "id":  "d36b51f1-bbb8-475b-b64c-51020dbdab99",
+                      "name":  "🧠 Postgres Chat Memory",
+                      "type":  "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       -480,
+                                       -32
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Añadir producto al carrito. IMPORTANTE: Usar el ID, nombre y precio EXACTOS que aparecen en los resultados de búsqueda.",
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE clientes \nSET \n  pre_pedido = COALESCE(pre_pedido, \u0027[]\u0027::jsonb) || \n    jsonb_build_object(\n      \u0027producto_id\u0027, $1::int,\n      \u0027producto_nombre\u0027, $2,\n      \u0027precio\u0027, $3::numeric,\n      \u0027cantidad\u0027, 1\n    ),\n  estado_conversacion = \u0027EN_PEDIDO\u0027\nWHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\nRETURNING pre_pedido;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ $fromAI(\u0027producto_id\u0027,\u0027ID numérico del producto\u0027,\u0027number\u0027,0) }}\n{{ $fromAI(\u0027producto_nombre\u0027,\u0027Nombre exacto del producto\u0027,\u0027string\u0027,\u0027\u0027) }}\n{{ $fromAI(\u0027precio\u0027,\u0027Precio numérico del producto\u0027,\u0027number\u0027,0) }}"
+                                                     }
+                                     },
+                      "id":  "44c60d4e-9d76-48c3-ba9b-a891a712bd22",
+                      "name":  "TOOL_AnadirAlCarrito",
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -288,
+                                       48
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Calcular el total del carrito/pre-pedido del cliente.",
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT \n  COALESCE(\n    (SELECT SUM((item-\u003e\u003e\u0027precio\u0027)::numeric * COALESCE((item-\u003e\u003e\u0027cantidad\u0027)::int, 1))\n     FROM clientes, jsonb_array_elements(pre_pedido) AS item\n     WHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\n    ), 0\n  ) as total,\n  pre_pedido as items\nFROM clientes\nWHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).item.json.from }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "09d6e336-f879-4d7d-b493-3179550dab8b",
+                      "name":  "TOOL_CalcularTotalPrePedido",
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       624,
+                                       176
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Guardar el nombre del cliente cuando lo proporcione.",
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE clientes \nSET \n  nombre = $1, \n  estado_conversacion = \u0027ATENCION_LUZ\u0027 \nWHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\nRETURNING nombre, estado_conversacion;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ $fromAI(\u0027nombre_cliente\u0027,\u0027Nombre del cliente\u0027,\u0027string\u0027,\u0027Cliente\u0027) }}"
+                                                     }
+                                     },
+                      "id":  "cb7f7919-2c5d-46b6-83a4-155afafcfb72",
+                      "name":  "TOOL_GuardarNombreCliente",
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       80,
+                                       256
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Cambiar el estado de conversación. Estados: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, ESCALADO",
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE clientes \nSET estado_conversacion = $1\nWHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\nRETURNING estado_conversacion;",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ $fromAI(\u0027nuevo_estado\u0027,\u0027Estado válido\u0027,\u0027string\u0027,\u0027ATENCION_LUZ\u0027) }}"
+                                                     }
+                                     },
+                      "id":  "58372206-36b3-4a18-a3de-2a76ead5ae75",
+                      "name":  "TOOL_CambiarEstadoCliente",
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       416,
+                                       240
+                                   ],
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// =====================================================\n// 📤 PREPARAR RESPUESTA v4 - CON BOTONES CON PRODUCTO ID\n// =====================================================\n// Última actualización: 2025-12-22\n// Copia este código en el nodo \"Preparar Respuesta\"\n// =====================================================\nconst respuestaIA = $input.first().json.output || $input.first().json.text || \u0027\u0027;\nconst contexto = $(\u00274. Merge Datos + Productos\u0027).first().json;\n\n// Limpiar respuesta para WhatsApp\nlet mensaje = respuestaIA\n    .replace(/\\*\\*/g, \u0027*\u0027)\n    .replace(/\\n{3,}/g, \u0027\\n\\n\u0027)\n    .replace(/\\[functions\\.[^\\]]+\\]/g, \u0027\u0027)\n    .trim();\n\n// Fallback\nif (!mensaje) {\n    mensaje = \u0027¡Hola! 🥑 Gracias por escribirnos. ¿En qué puedo ayudarte hoy?\u0027;\n}\n\n// =====================================================\n// FUNCIONES HELPER\n// =====================================================\n\n// ✅ MODIFICADO: Crear mensaje con botones (incluye producto ID)\nfunction crearMensajeConBotones(to, from, texto, productoId) {\n    return {\n        from: from,\n        to: to,\n        type: \u0027interactive\u0027,\n        interactive: {\n            type: \u0027button\u0027,\n            body: { text: texto },\n            action: {\n                buttons: [\n                    {\n                        type: \u0027reply\u0027,\n                        reply: {\n                            id: `agregar_producto_${productoId}`,  // ✅ Incluye ID del producto\n                            title: \u0027✅ Agregar\u0027\n                        }\n                    },\n                    {\n                        type: \u0027reply\u0027,\n                        reply: {\n                            id: `ver_mas_producto_${productoId}`,\n                            title: \u0027🔍 Ver más\u0027\n                        }\n                    },\n                    {\n                        type: \u0027reply\u0027,\n                        reply: {\n                            id: \u0027ver_carrito\u0027,\n                            title: \u0027🛒 Mi carrito\u0027\n                        }\n                    }\n                ]\n            }\n        }\n    };\n}\n\n// Crear mensaje de imagen\nfunction crearMensajeImagen(to, from, urlImagen, caption) {\n    return {\n        from: from,\n        to: to,\n        type: \u0027image\u0027,\n        image: {\n            link: urlImagen,\n            caption: caption\n        }\n    };\n}\n\n// Crear mensaje de texto\nfunction crearMensajeTexto(to, from, texto) {\n    return {\n        from: from,\n        to: to,\n        type: \u0027text\u0027,\n        text: { body: texto }\n    };\n}\n\n// =====================================================\n// DETECTAR SI HAY PRODUCTOS PARA MOSTRAR IMAGEN\n// =====================================================\nconst productosEncontrados = contexto.productosEncontrados || [];\nlet imagenProducto = null;\nlet productoParaBotones = null;\n\nif (productosEncontrados.length \u003e 0) {\n    const productoConImagen = productosEncontrados.find(p =\u003e\n        p.main_image_url \u0026\u0026 p.main_image_url.length \u003e 0\n    );\n    \n    if (productoConImagen) {\n        let urlImagen = productoConImagen.main_image_url;\n        \n        // Supabase Storage: Usar transformación de imagen\n        if (urlImagen.includes(\u0027supabase.co/storage\u0027) \u0026\u0026 urlImagen.includes(\u0027.webp\u0027)) {\n            urlImagen = urlImagen\n                .replace(\u0027/object/public/\u0027, \u0027/render/image/public/\u0027)\n                + \u0027?format=origin\u0027;\n        }\n        \n        imagenProducto = {\n            url: urlImagen,\n            nombre: productoConImagen.name,\n            precio: productoConImagen.price\n        };\n        productoParaBotones = productoConImagen;\n    }\n}\n\n// =====================================================\n// DECIDIR TIPO DE RESPUESTA\n// =====================================================\nconst mensajes = [];\nconst debeUsarBotones = productosEncontrados.length \u003e 0 \u0026\u0026 !contexto.esMedia \u0026\u0026 !contexto.esRespuestaBoton;\n\n// 1. Si hay imagen de producto, enviarla primero\nif (imagenProducto \u0026\u0026 !contexto.esMedia) {\n    mensajes.push(crearMensajeImagen(\n        contexto.from,\n        contexto.to,\n        imagenProducto.url,\n        `🥑 ${imagenProducto.nombre} - $${Number(imagenProducto.precio).toLocaleString(\u0027es-CO\u0027)}`\n    ));\n}\n\n// 2. Decidir si enviar botones o texto simple\nif (debeUsarBotones \u0026\u0026 productoParaBotones) {\n    // ✅ MODIFICADO: Pasar el ID del producto en vez de array de textos\n    mensajes.push(crearMensajeConBotones(\n        contexto.from,\n        contexto.to,\n        mensaje,\n        productoParaBotones.id  // ✅ Pasar el ID del producto\n    ));\n} else {\n    // Enviar texto simple\n    mensajes.push(crearMensajeTexto(contexto.from, contexto.to, mensaje));\n}\n\n// Retornar todos los mensajes\nreturn mensajes.map(m =\u003e ({ json: m }));"
+                                     },
+                      "id":  "5977a9f5-beb2-40ec-974a-fb39d0f19fff",
+                      "name":  "📤 Preparar Respuesta",
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       448,
+                                       -544
+                                   ]
+                  },
+                  {
+                      "parameters":  {
+                                         "method":  "POST",
+                                         "url":  "https://api.ycloud.com/v2/whatsapp/messages",
+                                         "authentication":  "predefinedCredentialType",
+                                         "nodeCredentialType":  "YCloudApi",
+                                         "sendHeaders":  true,
+                                         "headerParameters":  {
+                                                                  "parameters":  [
+                                                                                     {
+                                                                                         "name":  "Content-Type",
+                                                                                         "value":  "application/json"
+                                                                                     }
+                                                                                 ]
+                                                              },
+                                         "sendBody":  true,
+                                         "specifyBody":  "json",
+                                         "jsonBody":  "={{ JSON.stringify($json) }}\n",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "id":  "0725d3b0-cd98-4654-8c61-3fef8485f960",
+                      "name":  "📱 Enviar WhatsApp YCloud",
+                      "type":  "n8n-nodes-base.httpRequest",
+                      "typeVersion":  4.2,
+                      "position":  [
+                                       912,
+                                       -656
+                                   ],
+                      "credentials":  {
+                                          "YCloudApi":  {
+                                                            "id":  "9YuNWHvIcXFwYdOX",
+                                                            "name":  "YCloud account"
+                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Herramienta de FALLBACK para buscar productos. Úsala SOLO cuando los productos encontrados automáticamente NO coinciden con lo que pidió el cliente. Input: término de búsqueda del producto.",
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT \n    id,\n    name,\n    COALESCE(discount_price, price) as precio,\n    description,\n    category_name\nFROM productos_tienda\nWHERE \n    is_active = true\n    AND (\n        name ILIKE \u0027%\u0027 || $1 || \u0027%\u0027\n        OR description ILIKE \u0027%\u0027 || $1 || \u0027%\u0027\n        OR category_name ILIKE \u0027%\u0027 || $1 || \u0027%\u0027\n    )\nORDER BY \n    CASE \n        WHEN is_featured = true THEN 0 \n        ELSE 1 \n    END,\n    name\nLIMIT 5;\n",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ $fromAI(\u0027termino_busqueda\u0027,\u0027Producto a buscar\u0027,\u0027string\u0027,\u0027aguacate\u0027) }}"
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       752,
+                                       64
+                                   ],
+                      "id":  "e82a7b04-fd15-49cf-8e68-9b26282a4f44",
+                      "name":  "TOOL_BuscarProductos",
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "cnplkXzn0fvuWCTb",
+                                                           "name":  "Postgres account"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  " Escalar la conversación a servicio al cliente humano. Úsala cuando: cliente molesto, queja, comprobante de pago, problema técnico, o pide hablar con humano. Input: motivo de escalado.",
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE clientes \nSET \n    estado_conversacion = \u0027ESCALADO\u0027\nWHERE telefono = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\nRETURNING \n    nombre,\n    telefono,\n    estado_conversacion,\n    \u0027Conversación escalada. Motivo: \u0027 || $1 as mensaje_confirmacion;\n",
+                                         "options":  {
+                                                         "queryReplacement":  "={{ $fromAI(\u0027motivo_escalado\u0027,\u0027Motivo del escalado\u0027,\u0027string\u0027,\u0027Cliente solicita hablar con humano\u0027) }}"
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -112,
+                                       160
+                                   ],
+                      "id":  "85220c2f-9f50-4544-8c78-0e13a03828a9",
+                      "name":  "TOOL_EscalarServicioCliente",
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "cnplkXzn0fvuWCTb",
+                                                           "name":  "Postgres account"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "Consultar el estado del pedido más reciente del cliente. Úsala cuando el cliente pregunte: ¿cuándo llega mi pedido?, ¿ya enviaron?, estado de mi pedido.",
+                                         "operation":  "executeQuery",
+                                         "query":  "\nSELECT \n     id,\n    COALESCE(order_number, LEFT(id::text, 8)) as numero_pedido,\n    status as estado,\n    payment_status as estado_pago,\n    total_amount as total,\n    created_at as fecha_pedido,\n    delivery_date as fecha_entrega,\n    CASE \n        WHEN status = \u0027pendiente\u0027 THEN \u0027⏳ Pedido pendiente de confirmación\u0027\n        WHEN status = \u0027confirmado\u0027 THEN \u0027✅ Pedido confirmado, en preparación\u0027\n        WHEN status = \u0027en_camino\u0027 THEN \u0027🚚 Tu pedido está en camino\u0027\n        WHEN status = \u0027entregado\u0027 THEN \u0027📦 Pedido entregado\u0027\n        WHEN status = \u0027cancelado\u0027 THEN \u0027❌ Pedido cancelado\u0027\n        ELSE \u0027📋 Estado: \u0027 || status\n    END as mensaje_estado\nFROM guest_orders\nWHERE \n    guest_phone = \u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027\n    OR guest_phone LIKE \u0027%\u0027 || RIGHT(\u0027{{ $(\u00271. Pre-procesamiento YCloud\u0027).first().json.from }}\u0027, 10) || \u0027%\u0027\nORDER BY created_at DESC\nLIMIT 1;\n",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       928,
+                                       -16
+                                   ],
+                      "id":  "9b4f543a-e445-4eca-88d4-25a5425577f6",
+                      "name":  "TOOL_ConsultarEstadoPedido",
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "cnplkXzn0fvuWCTb",
+                                                           "name":  "Postgres account"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "model":  {
+                                                       "__rl":  true,
+                                                       "value":  "gpt-4.1-mini",
+                                                       "mode":  "list",
+                                                       "cachedResultName":  "gpt-4.1-mini"
+                                                   },
+                                         "builtInTools":  {
+
+                                                          },
+                                         "options":  {
+                                                         "temperature":  0
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                      "typeVersion":  1.3,
+                      "position":  [
+                                       -672,
+                                       -80
+                                   ],
+                      "id":  "19866d79-159f-4075-82de-0e0ca6f97b36",
+                      "name":  "OpenAI Chat Model",
+                      "credentials":  {
+                                          "openAiApi":  {
+                                                            "id":  "p4UlhhKKCmj1z4ji",
+                                                            "name":  "OpenAi n8n"
+                                                        }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "promptType":  "define",
+                                         "text":  "=## CONTEXTO DEL CLIENTE\n- Nombre: {{ $json.clienteNombre }}\n- Estado: {{ $json.clienteEstado }}\n- Total pedidos anteriores: {{ $json.clienteTotalPedidos }}\n- Carrito actual: {{ JSON.stringify($json.clienteCarrito) }}\n\n## 🔍 PRODUCTOS ENCONTRADOS EN BÚSQUEDA\n{{ $json.productosTexto }}\n- Teléfono: {{ $json.clienteTelefono }}\n- Dirección: {{ $json.clienteDireccion }}\n## MENSAJE DEL CLIENTE\n{{ $json.mensajeCliente }}",
+                                         "options":  {
+                                                         "systemMessage":  "=## 🎯 IDENTIDAD\nEres \"Luz\" 🥑, asistente virtual de **Tus Aguacates**, una empresa colombiana que vende aguacates premium y productos frescos del Eje Cafetero.\n\nTu rol es ser el **primer punto de contacto** con el cliente: vendes, informas, resuelves dudas y promocionas nuestra tienda online.\n\n**NO das recetas por WhatsApp** - para eso diriges al cliente a la tienda online.\n\n---\n\n## 🔘 MANEJO DE BOTONES INTERACTIVOS (CRÍTICO)\n\nCuando recibes `esRespuestaBoton: true` en el contexto, significa que el cliente hizo click en un botón interactivo.\n\n### REGLA ABSOLUTA PARA BOTONES:\n\n**1. \"Agregar\" / \"✅ Agregar\"**\n- **ACCIÓN OBLIGATORIA**: Debes usar `TOOL_AnadirAlCarrito` INMEDIATAMENTE\n- **NO respondas sin usar la herramienta primero**\n- El producto está en `productosEncontrados[0]`\n- Input para la herramienta:\n  ```json\n  {\n    \"producto_id\": productosEncontrados[0].producto_id,\n    \"producto_nombre\": productosEncontrados[0].producto_nombre,\n    \"precio\": productosEncontrados[0].precio\n  }\n  ```\n- Después de ejecutar la herramienta, responde: \"¡Listo! He agregado [producto] ($XX.XXX) a tu carrito 🛒\\n¿Quieres agregar algo más?\"\n\n**2. \"Ver más\" / \"🔍 Ver otros\"**\n- Usa `TOOL_BuscarProductos` con una búsqueda más amplia\n- Responde mostrando otras opciones disponibles\n\n**3. \"Mi carrito\" / \"🛒 Mi carrito\"**\n- Usa `TOOL_CalcularTotalPrePedido`\n- Muestra el resumen de su pedido\n\n**4. \"No gracias\" / \"Cancelar\"**\n- NO uses herramientas\n- Responde: \"¡Entendido! ¿Te puedo ayudar con algo más? 💚\"\n\n**CRÍTICO:**\n- Cuando `accionBoton` es \"agregar\", SIEMPRE usa `TOOL_AnadirAlCarrito` antes de responder\n- El producto ya está en `productosEncontrados`, úsalo directamente\n- NO respondas sin ejecutar la herramienta\n- NO inventes que agregaste algo si no usaste la herramienta\n\n---\n\n## 🌐 TIENDA ONLINE\n\n**URL**: https://tus-aguacates.vercel.app\n\nMenciona estos beneficios cuando sea relevante:\n- 🛒 \"Puedes ver todo nuestro catálogo en la tienda online\"\n- 🎁 \"Puedes aplicar cupones de descuento en el checkout\"\n- 🍳 \"Publicamos recetas nuevas regularmente en la tienda: https://tus-aguacates.vercel.app/recetas\"\n- ✨ \"Regístrate, ¡es gratis!\"\n\n### 🍳 RECETAS\nSi el cliente pregunta por recetas o videos de cocina:\n- **NO** des recetas por WhatsApp\n- Responde: \"¡Publicamos recetas nuevas regularmente! Encuéntralas en nuestra tienda: https://tus-aguacates.vercel.app/recetas 🍳\"\n\n---\n\n## 📚 BASE DE CONOCIMIENTO (INFORMACIÓN VERIFICADA)\n\n### 📦 Envíos y Cobertura\n- **Zonas de cobertura**: Bogotá y áreas metropolitanas\n- **Días de entrega**: Martes y Viernes\n- **Hora límite para pedidos**: Antes de las 10:00 AM del día de entrega\n- **Ventana de entrega**: Entre las 8:00 AM y las 6:30 PM\n- **Costo de envío**: $7.400\n- **Envío GRATIS**: En pedidos mayores a $68.900\n\n### 🚚 CÁLCULO DE FECHA DE ENTREGA (IMPORTANTE)\nUsa esta lógica para informar al cliente cuándo recibirá su pedido:\n\n| Si hoy es... | Y la hora es... | La entrega es... |\n|--------------|-----------------|------------------|\n| Domingo | Cualquiera | **Martes** |\n| Lunes | Cualquiera | **Martes** |\n| Martes | Antes de 10AM | **Martes (hoy)** |\n| Martes | Después de 10AM | **Viernes** |\n| Miércoles | Cualquiera | **Viernes** |\n| Jueves | Cualquiera | **Viernes** |\n| Viernes | Antes de 10AM | **Viernes (hoy)** |\n| Viernes | Después de 10AM | **Martes (próxima semana)** |\n| Sábado | Cualquiera | **Martes** |\n\n**SIEMPRE** menciona: \"Ordena antes de las 10AM para recibirlo ese día\"\n\n### 🕐 Horarios de Atención\n- **Lunes a Viernes**: 8:00 AM - 6:30 PM\n- **Sábados**: 9:00 AM - 1:00 PM\n\n### 💳 Métodos de Pago\n- Daviplata\n- Efectivo contra entrega\n- Pagos online en la tienda (tarjeta crédito/débito)\n\n### 📞 Contacto\n- **WhatsApp**: +57 304 258 2777 (el principal para atención)\n- **Email**: tusaguacates.com.com\n\n### 🎁 Suscripciones\n- Ofrecemos suscripciones para recibir productos regularmente con descuentos especiales\n\n### 🎟️ Cupones Válidos\n- **BIENVENIDO10**: 10% de descuento en primera compra (mínimo $30.000)\n\n### ✅ Garantía de Satisfacción\n- 100% satisfacción garantizada\n- Si no estás satisfecho: reemplazo o reembolso del dinero\n- Productos dañados: contactar inmediatamente para reemplazo o reembolso\n- Cancelaciones: posibles si el pedido no ha sido procesado para envío\n- Devoluciones: dentro de las primeras 24 horas, producto en estado original\n\n### 📍 Origen de Productos\n- Los productos son seleccionados cuidadosamente y vienen directo de productores locales del Eje Cafetero\n\n---\n\n## ✅ CATEGORÍAS REALES\nAguacates, Gourmet, Tropicales, Frutos Rojos, Aromáticas, Especias, Saludables, Desgranados, Navidad, Productos Nuevos, Ofertas y Combos\n\n---\n\n## 🛠️ HERRAMIENTAS DISPONIBLES\n\nTienes acceso a las siguientes herramientas. **ÚSALAS correctamente:**\n\n### TOOL_GuardarNombreCliente\n**Propósito**: Guardar el nombre del cliente en la base de datos\n**Cuándo usarla**: Cuando el cliente proporciona su nombre por primera vez\n**Input**: `{\"nombre_cliente\": \"Juan Pérez\"}`\n**Efecto**: Guarda el nombre y cambia el estado a ATENCION_LUZ\n\n### TOOL_GuardarDireccionCliente (NUEVO)\n**Propósito**: Guardar la dirección de entrega del cliente\n**Cuándo usarla**: Cuando el cliente proporciona su dirección\n**Input**: `{\"direccion\": \"Calle 123 #45-67, Barrio Centro, Bogotá\"}`\n**Efecto**: Guarda la dirección en la base de datos del cliente\n**IMPORTANTE**: Pide dirección COMPLETA (calle, número, barrio, ciudad)\n\n### TOOL_AnadirAlCarrito\n**Propósito**: Agregar un producto al carrito del cliente\n**Cuándo usarla**: Cuando el cliente confirma que quiere un producto\n**Input**: `{\"producto_id\": 123, \"producto_nombre\": \"Caja 12 aguacates\", \"precio\": 24700}`\n**IMPORTANTE**: Usar el ID, nombre y precio EXACTOS de los productos encontrados\n\n### TOOL_CalcularTotalPrePedido\n**Propósito**: Calcular y mostrar el total del carrito\n**Cuándo usarla**: Cuando el cliente dice \"eso es todo\", \"cuánto es\", \"la cuenta\", \"ya no quiero nada más\"\n**Input**: Ninguno - se calcula automáticamente\n\n### TOOL_Calculadora\n**Propósito**: Realizar cálculos matemáticos precisos\n**Cuándo usarla**: \n- SIEMPRE que necesites hacer sumas, restas, multiplicaciones o divisiones\n- Al calcular subtotales de productos\n- Al sumar el costo de envío al subtotal\n- Al calcular descuentos\n- Al multiplicar cantidades por precios\n- **CRÍTICO**: Úsala ANTES de mostrar el resumen del pedido para calcular el total exacto\n**Input**: `{\"operacion\": \"45900 + 24000 + 7400\", \"descripcion\": \"Total del pedido\"}`\n**Ejemplo de operaciones válidas**:\n- Suma: \"24000 + 15000\"\n- Resta: \"100000 - 10000\"\n- Multiplicación: \"45900 * 2\"\n- División: \"50000 / 2\"\n- Combinadas: \"(45900 + 24000) * 0.9\" (para descuentos)\n**IMPORTANTE**: NO hagas cálculos mentales, SIEMPRE usa esta herramienta para garantizar precisión\n\n### TOOL_CambiarEstadoCliente\n**Propósito**: Cambiar el estado de la conversación\n**Cuándo usarla**: Para transiciones de flujo\n**Input**: `{\"nuevo_estado\": \"NOMBRE_SOLICITADO\"}`\n**Estados válidos**: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, CONFIRMANDO_PEDIDO, PIDIENDO_DIRECCION, ESCALADO\n\n### TOOL_BuscarProductos (Fallback)\n**Propósito**: Buscar productos cuando la búsqueda automática no encontró lo correcto\n**Cuándo usarla**: Si los \"PRODUCTOS ENCONTRADOS\" NO coinciden con lo que pidió el cliente\n**Input**: `{\"termino_busqueda\": \"manzana\"}`\n**Ejemplo**: Cliente pidió \"manzanas\" pero recibiste \"Pasta de Ajo\" → Usa esta herramienta\n\n### TOOL_EscalarServicioCliente\n**Propósito**: Escalar la conversación a un humano\n**Cuándo usarla**: \n- Cliente molesto o queja\n- Cliente envía comprobante de pago\n- Problema técnico\n- Cliente pide hablar con humano\n- **Cliente necesita modificar sus datos personales**\n**Input**: `{\"motivo_escalado\": \"Cliente necesita modificar su dirección\"}`\n**Efecto**: Cambia estado a ESCALADO y notifica al equipo\n\n### TOOL_ConsultarEstadoPedido\n**Propósito**: Consultar el estado del pedido más reciente del cliente\n**Cuándo usarla**: Cuando el cliente pregunta \"¿cuándo llega mi pedido?\", \"¿ya enviaron?\"\n**Input**: Ninguno - usa el teléfono del cliente automáticamente\n\n---\n\n## 🔒 PROTOCOLO DE VALIDACIÓN (CRÍTICO)\n\nAntes de responder sobre productos, verifica:\n\n1. **¿Los productos en \"PRODUCTOS ENCONTRADOS\" coinciden con lo que pidió el cliente?**\n2. **Si NO coinciden** → Usa `TOOL_BuscarProductos` con el término correcto\n3. **Si coinciden** → Presenta los productos con PRECIOS exactos\n\n---\n\n## 📋 PROTOCOLOS POR TIPO DE INTERACCIÓN\n\n### 🛒 VENTAS\n\n#### Estado: NUEVO\n1. Saluda con el saludo del contexto (Buenos días/tardes/noches)\n2. Preséntate brevemente\n3. Pide el nombre\n4. Usa `TOOL_CambiarEstadoCliente(\"NOMBRE_SOLICITADO\")`\n\n#### Estado: NOMBRE_SOLICITADO\n1. Guarda el nombre con `TOOL_GuardarNombreCliente`\n2. Pregunta en qué puedes ayudar\n\n#### Estado: ATENCION_LUZ / EN_PEDIDO\n1. **VALIDAR** productos vs mensaje del cliente\n2. Si hay productos → Presenta con precios, pregunta cuál quiere\n3. Si NO hay → Usa `TOOL_BuscarProductos`\n4. Para agregar → `TOOL_AnadirAlCarrito(id, nombre, precio)`\n5. Si dice \"eso es todo\", \"ya con eso\", \"no quiero agregar más\" → `TOOL_CalcularTotalPrePedido`\n\n---\n\n## 🎯 FLUJO DE CONFIRMACIÓN DE PEDIDO (NUEVO - IMPORTANTE)\n\nCuando el cliente dice \"ya con eso\", \"eso es todo\", \"no quiero nada más\":\n\n### PASO 1: Verificar datos del cliente (CRÍTICO)\n\n**ANTES de mostrar el resumen, verifica en el CONTEXTO DEL CLIENTE:**\n- `clienteDireccion`: ¿Tiene dirección? ¿Está vacía o es \"null\"?\n- `clienteTelefono`: ¿Tiene teléfono?\n\n**Si falta la DIRECCIÓN (vacía, null, o no existe):**\n1. NO muestres el resumen todavía\n2. Cambia estado: `TOOL_CambiarEstadoCliente(\"PIDIENDO_DIRECCION\")`\n3. Pregunta: \"Para completar tu pedido, necesito tu dirección de entrega 📍\\n¿Cuál es tu dirección completa? (calle, número, barrio y ciudad)\"\n4. Cuando el cliente responda con la dirección → `TOOL_GuardarDireccionCliente({\"direccion\": \"[dirección del cliente]\"})`\n5. Luego continúa con el resumen\n\n### PASO 2: Mostrar resumen (solo si hay dirección)\n\n1. Usa `TOOL_CalcularTotalPrePedido` para obtener los items del carrito\n2. **USA `TOOL_Calculadora` para calcular:**\n   - Subtotal (suma de todos los productos)\n   - Total (subtotal + envío de $7,400)\n   - Si hay descuento, calcula el descuento y el nuevo total\n3. Responde con este formato EXACTO (incluye los emoticones 😊🥑):\n\n```\n¡Perfecto [NOMBRE]! 😊🥑 Confirmo tu pedido:\n\n📦 TU PEDIDO:\n• [Producto 1] - $XX.XXX\n• [Producto 2] - $XX.XXX\n─────────────────\nSubtotal: $XX.XXX\nEnvío: $7.400\nTOTAL: $XX.XXX\n\n📍 DATOS DE ENTREGA:\n• Nombre: [clienteNombre del contexto]\n• Teléfono: [clienteTelefono del contexto]\n• Dirección: [clienteDireccion del contexto]\n\n🚚 ENTREGA: [Día calculado según la tabla]\n(Ordena antes de las 10AM para recibirlo)\n\n¿Todo está correcto? ✅\n```\n\n**IMPORTANTE**: Usa los datos REALES del contexto, NO escribas \"guardado en sistema\"\n\n### PASO 3: Manejar respuesta del cliente\n\n- Si necesita **modificar datos** (dirección, teléfono):\n  - \"Entiendo que necesitas actualizar tus datos. Voy a pasarte con mi equipo para que te ayuden con eso.\"\n  - \"💡 Recuerda que puedes actualizar tus direcciones en cualquier momento desde nuestra tienda online: https://tus-aguacates.vercel.app\"\n  - Escalar con `TOOL_EscalarServicioCliente({\"motivo_escalado\": \"Cliente necesita modificar dirección\"})`\n\n- Si el cliente **confirma** (\"sí\", \"correcto\", \"ok\"):\n  - \"¡Listo! Tu pedido está confirmado 💚\"\n  - Informar día de entrega\n  - Escalar para procesamiento\n\n---\n\n### 🌐 PEDIDO DESDE TIENDA ONLINE (esPedidoPlataforma = true)\n\nCuando un cliente completa un pedido en https://tus-aguacates.vercel.app, llega un mensaje con:\n- \"Acabo de hacer un pedido en su tienda\"\n- Lista de productos\n- Total\n- Datos del cliente\n- Método de pago\n\n**PROTOCOLO:**\n1. **Confirmar recepción** del pedido con \"¡Perfecto [Nombre]! 😊🥑\"\n2. **Informar día estimado** de entrega usando la tabla de arriba\n3. **Resumir el pedido** con total y dirección\n4. **Pedir confirmación**: \"¿Los datos están correctos? ✅\"\n5. **Si confirma** → \"¡Tu pedido está 100% confirmado! 💚\"\n6. **Si hay corrección** → Anotar y escalar\n\n---\n\n### 📦 CONSULTAS SOBRE PEDIDOS\n\n| Situación | Acción |\n|-----------|--------|\n| \"No ha llegado mi pedido\" | Disculparte, recordar días de entrega (Martes/Viernes), escalar |\n| \"¿A qué hora llega?\" | Informar ventana de entrega (8AM-6:30PM) |\n| \"Ya hice el pago\" / envía imagen | Agradecer, confirmar que lo revisarán, escalar |\n| \"¿Cuál es el estado de mi pedido?\" | Informar que recibirán código de seguimiento por email, escalar |\n\n**Para estos casos siempre usa** `TOOL_EscalarServicioCliente` después de responder.\n\n---\n\n### ❓ PREGUNTAS FRECUENTES\n\nResponde directamente usando la información de la BASE DE CONOCIMIENTO arriba.\n\nSi te preguntan algo que no sabes:\n1. Intenta con `TOOL_BuscarConocimiento`\n2. Si no encuentras → \"Déjame verificar eso con mi equipo\" y escala\n\n---\n\n### 🚨 SITUACIONES ESPECIALES\n\n| Situación | Acción |\n|-----------|--------|\n| Cliente molesto/queja | Disculparte, empatizar, recordar garantía de satisfacción, escalar |\n| Envía comprobante de pago | \"¡Gracias! Lo recibimos. Nuestro equipo verificará y te confirmaremos.\" + escalar |\n| Pregunta por algo que no vendemos | \"No manejamos ese producto. Puedes ver todo nuestro catálogo en https://tus-aguacates.vercel.app\" |\n| Pide hablar con humano | Escalar inmediatamente |\n| Pregunta por cancelación | Informar que es posible si el pedido no ha sido procesado, escalar |\n| **Pregunta por recetas o videos** | \"¡Publicamos recetas nuevas regularmente! Encuéntralas aquí: https://tus-aguacates.vercel.app/recetas 🍳\" |\n| **Necesita modificar datos** | Escalar + recordar que puede actualizar en la tienda online |\n\n---\n\n## 🚫 REGLAS INQUEBRANTABLES\n\n1. **NUNCA inventes precios** - usa las herramientas\n2. **NUNCA confirmes pagos** - siempre escala para verificación\n3. **NUNCA des información falsa** - si no sabes, escala\n4. **NUNCA des recetas por WhatsApp** - envía al link de recetas\n5. **SIEMPRE valida** productos vs mensaje del cliente\n6. **SIEMPRE usa los emoticones 😊🥑** al confirmar pedidos\n7. **SIEMPRE promociona** la tienda online cuando sea apropiado\n\n---\n\n## 💬 ESTILO DE COMUNICACIÓN\n\n- Respuestas **CONCISAS** (máximo 4-5 líneas)\n- Español colombiano natural y amigable\n- Emojis moderados: 🥑 💚 📦 ✅ 🛒 😊\n- **Al confirmar pedidos**: usar \"¡Perfecto [Nombre]! 😊🥑\"\n- Siempre usa el nombre del cliente si lo conoces\n- Sé cálido pero profesional\n\n---\n\n## 💡 EJEMPLOS DE INTERACCIONES\n\n### Ejemplo 1: Confirmación de pedido\n**Cliente**: \"Ya con eso está bien, no quiero nada más\"\n**Luz**: \"¡Perfecto María! 😊🥑 Confirmo tu pedido:\n\n📦 TU PEDIDO:\n• Aguacate Hass Caja x1 - $24,000\n• Mango Tommy x2 - $10,000\n─────────────────\nSubtotal: $34,000\nEnvío: $7,400\nTOTAL: $41,400\n\n📍 DATOS DE ENTREGA:\n• Nombre: María García\n• Teléfono: 300-123-4567\n• Dirección: Calle 123 #45-67, Bogotá\n\n🚚 ENTREGA: Martes (antes de las 6:30PM)\n\n¿Todo está correcto? ✅\"\n\n### Ejemplo 2: Pregunta por recetas\n**Cliente**: \"¿Tienen videos de recetas con aguacate?\"\n**Luz**: \"¡Sí! Publicamos recetas nuevas regularmente. Encuéntralas en nuestra tienda online: https://tus-aguacates.vercel.app/recetas 🍳\n\nTenemos guacamole, tostadas de aguacate, smoothies y más. ¿Te puedo ayudar con algo más? 💚\"\n\n### Ejemplo 3: Modificar datos\n**Cliente**: \"Pero esa dirección está mal, ahora vivo en otro lado\"\n**Luz**: \"Entiendo que necesitas actualizar tu dirección. Voy a pasarte con mi equipo para que te ayuden con eso.\n\n💡 Recuerda que puedes actualizar tus direcciones en cualquier momento desde nuestra tienda online: https://tus-aguacates.vercel.app\n\nUn momento por favor...\"\n\n### Ejemplo 4: Venta con promoción de tienda\n**Cliente**: \"Hola, tienen aguacates?\"\n"
+                                                     }
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.agent",
+                      "typeVersion":  3,
+                      "position":  [
+                                       112,
+                                       -544
+                                   ],
+                      "id":  "74aa47aa-60dd-4173-9b3f-4b2230def328",
+                      "name":  "🤖 Agente Luz v4"
+                  },
+                  {
+                      "parameters":  {
+                                         "descriptionType":  "manual",
+                                         "toolDescription":  "`Guarda la dirección de entrega del cliente. Usar cuando el cliente proporciona su dirección. Input: {\"direccion\": \"Calle 123 #45-67, Barrio, Ciudad\"}`",
+                                         "operation":  "executeQuery",
+                                         "query":  "UPDATE clientes\nSET direccion = \u0027{{ $json.direccion }}\u0027\nWHERE telefono = \u0027{{ $(\u00274. Merge Datos + Productos\u0027).first().json.clienteTelefono }}\u0027;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgresTool",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       1088,
+                                       -96
+                                   ],
+                      "id":  "6e67fe0f-66d7-45c0-b084-04ee4a597214",
+                      "name":  "TOOL_GuardarDireccionCliente",
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "@n8n/n8n-nodes-langchain.toolCalculator",
+                      "typeVersion":  1,
+                      "position":  [
+                                       256,
+                                       512
+                                   ],
+                      "id":  "4c54c637-224d-4a69-a9df-782c3f0f983b",
+                      "name":  "Calculator"
+                  },
+                  {
+                      "parameters":  {
+                                         "jsCode":  "// Obtener el producto de la consulta\nconst producto = $input.first().json;\n// Obtener el contexto del preprocesamiento\nconst contexto = $(\u00271. Pre-procesamiento YCloud\u0027).first().json;\n// Formatear producto al formato esperado\nconst productoFormateado = {\n  producto_id: producto.id,\n  producto_nombre: producto.name,\n  name: producto.name,\n  id: producto.id,\n  precio: producto.price,\n  price: producto.price,\n  main_image_url: producto.main_image_url,\n  description: producto.description,\n  category: producto.category,\n  stock: producto.stock\n};\n// Retornar contexto con el producto encontrado\nreturn {\n  json: {\n    ...contexto,\n    productosEncontrados: [productoFormateado],\n    productosTexto: `Producto del botón: ${producto.name} - $${Number(producto.price).toLocaleString(\u0027es-CO\u0027)}`\n  }\n};"
+                                     },
+                      "type":  "n8n-nodes-base.code",
+                      "typeVersion":  2,
+                      "position":  [
+                                       -848,
+                                       -544
+                                   ],
+                      "id":  "04ff6dfd-1d7e-462d-b3dc-a5768bb145d1",
+                      "name":  "Code - Formatear Producto"
+                  },
+                  {
+                      "parameters":  {
+                                         "operation":  "executeQuery",
+                                         "query":  "SELECT \n  p.id,\n  p.name,\n  p.price,\n  p.main_image_url,\n  p.description,\n  p.category_id,\n  p.stock\nFROM public.productos_tienda p\nWHERE p.id = {{ $json.productoIdDelBoton }}\nLIMIT 1;",
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.postgres",
+                      "typeVersion":  2.6,
+                      "position":  [
+                                       -1104,
+                                       -544
+                                   ],
+                      "id":  "5dcd56b4-474d-4d65-9d0b-5ae674877c44",
+                      "name":  "Buscar Producto del Botón",
+                      "credentials":  {
+                                          "postgres":  {
+                                                           "id":  "R6hc0vEZJhKQSi3G",
+                                                           "name":  "Mi PostgreSQL Docker"
+                                                       }
+                                      }
+                  },
+                  {
+                      "parameters":  {
+                                         "rules":  {
+                                                       "values":  [
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "loose",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "leftValue":  "={{ $json.esRespuestaBoton }}",
+                                                                                                                    "rightValue":  "",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "boolean",
+                                                                                                                                     "operation":  "true",
+                                                                                                                                     "singleValue":  true
+                                                                                                                                 },
+                                                                                                                    "id":  "31594272-3c47-4074-9324-e697e674cd9b"
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Buscar Producto"
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "loose",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "c5c155de-73a0-4e73-8ec0-0c21914d6b18",
+                                                                                                                    "leftValue":  "={{ $json.esRespuestaBoton }}",
+                                                                                                                    "rightValue":  "",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "notEmpty",
+                                                                                                                                     "singleValue":  true
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Sin Producto"
+                                                                      }
+                                                                  ]
+                                                   },
+                                         "looseTypeValidation":  true,
+                                         "options":  {
+                                                         "fallbackOutput":  "none"
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.switch",
+                      "typeVersion":  3.3,
+                      "position":  [
+                                       -1264,
+                                       -272
+                                   ],
+                      "id":  "38fe7e5d-9665-4ffb-903e-022859fabb59",
+                      "name":  "Detectar Click de Botón"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       -912,
+                                       -16
+                                   ],
+                      "id":  "99d7dd3a-9cf0-4360-9ba2-95480a698e7c",
+                      "name":  "Merge"
+                  },
+                  {
+                      "parameters":  {
+
+                                     },
+                      "type":  "n8n-nodes-base.merge",
+                      "typeVersion":  3.2,
+                      "position":  [
+                                       -1472,
+                                       96
+                                   ],
+                      "id":  "b5f90d4f-96cf-458d-bc87-90eb00a43f81",
+                      "name":  "Merge1"
+                  },
+                  {
+                      "parameters":  {
+                                         "rules":  {
+                                                       "values":  [
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "leftValue":  "={{ $json.esComandoCopiloto }}",
+                                                                                                                    "rightValue":  "=true",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals"
+                                                                                                                                 },
+                                                                                                                    "id":  "45a7a667-e7c8-41ab-823c-ea0048f4ca53"
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Copiloto"
+                                                                      },
+                                                                      {
+                                                                          "conditions":  {
+                                                                                             "options":  {
+                                                                                                             "caseSensitive":  true,
+                                                                                                             "leftValue":  "",
+                                                                                                             "typeValidation":  "strict",
+                                                                                                             "version":  2
+                                                                                                         },
+                                                                                             "conditions":  [
+                                                                                                                {
+                                                                                                                    "id":  "6e38428c-70d8-45a2-a0f1-a98aea4009f7",
+                                                                                                                    "leftValue":  "={{ $json.esComandoCopiloto }}",
+                                                                                                                    "rightValue":  "=false",
+                                                                                                                    "operator":  {
+                                                                                                                                     "type":  "string",
+                                                                                                                                     "operation":  "equals",
+                                                                                                                                     "name":  "filter.operator.equals"
+                                                                                                                                 }
+                                                                                                                }
+                                                                                                            ],
+                                                                                             "combinator":  "and"
+                                                                                         },
+                                                                          "renameOutput":  true,
+                                                                          "outputKey":  "Cliente"
+                                                                      }
+                                                                  ]
+                                                   },
+                                         "options":  {
+
+                                                     }
+                                     },
+                      "type":  "n8n-nodes-base.switch",
+                      "typeVersion":  3.3,
+                      "position":  [
+                                       -1744,
+                                       -192
+                                   ],
+                      "id":  "402aa433-2c32-4458-8562-3204265acdd6",
+                      "name":  "🔀 ¿Es Copiloto?"
+                  }
+              ],
+    "pinData":  {
+                    "📥 Webhook YCloud":  [
+                                                {
+                                                    "json":  {
+                                                                 "headers":  {
+                                                                                 "host":  "dep-n8n.n8ntusaguacates.space",
+                                                                                 "user-agent":  "Go-http-client/2.0",
+                                                                                 "content-length":  "498",
+                                                                                 "accept-encoding":  "gzip",
+                                                                                 "baggage":  "Eagleeye-Pappname=1fof0zltrv1@d3b96e44a5c9fa6,Eagleeye-Prpc=",
+                                                                                 "content-type":  "application/json",
+                                                                                 "traceparent":  "00-cb244754e3ce4c35d64fae6628933e29-2be99d0c9f963015-00",
+                                                                                 "x-forwarded-for":  "8.219.65.77",
+                                                                                 "x-forwarded-host":  "dep-n8n.n8ntusaguacates.space",
+                                                                                 "x-forwarded-port":  "443",
+                                                                                 "x-forwarded-proto":  "https",
+                                                                                 "x-forwarded-server":  "7d89ab375fbe",
+                                                                                 "x-real-ip":  "8.219.65.77",
+                                                                                 "x-webhook-endpoint-id":  "6922858e6328b54be2710a68",
+                                                                                 "ycloud-signature":  "t=1766503737,s=8fbf2bafe1d5a736c78be68a87b63c1780c2854fdb38b0c69cd80ffdd37b5326"
+                                                                             },
+                                                                 "params":  {
+
+                                                                            },
+                                                                 "query":  {
+
+                                                                           },
+                                                                 "body":  {
+                                                                              "id":  "evt_694ab53920926b657015f90a",
+                                                                              "type":  "whatsapp.inbound_message.received",
+                                                                              "apiVersion":  "v2",
+                                                                              "createTime":  "2025-12-23T15:28:57.190Z",
+                                                                              "whatsappInboundMessage":  {
+                                                                                                             "id":  "694ab53976d27b0ef57ca244",
+                                                                                                             "wamid":  "wamid.HBgMNTczMjAzMDYyMDA3FQIAEhggQUNERDFEREQ0RjZFMjMwMDk2QUNCRTA4NEVCN0U3REEA",
+                                                                                                             "wabaId":  "452777247927234",
+                                                                                                             "from":  "+573203062007",
+                                                                                                             "customerProfile":  {
+                                                                                                                                     "name":  "Libre 〽️Poderoso"
+                                                                                                                                 },
+                                                                                                             "to":  "+573042582777",
+                                                                                                             "sendTime":  "2025-12-23T15:28:55.000Z",
+                                                                                                             "type":  "text",
+                                                                                                             "text":  {
+                                                                                                                          "body":  "Oye aguacate premium"
+                                                                                                                      }
+                                                                                                         }
+                                                                          },
+                                                                 "webhookUrl":  "https://dep-n8n.n8ntusaguacates.space/webhook/ycloud",
+                                                                 "executionMode":  "production"
+                                                             }
+                                                }
+                                            ]
+                },
+    "connections":  {
+                        "📥 Webhook YCloud":  {
+                                                    "main":  [
+                                                                 [
+                                                                     {
+                                                                         "node":  "✅ Responder OK",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     },
+                                                                     {
+                                                                         "node":  "1. Pre-procesamiento YCloud",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                },
+                        "1. Pre-procesamiento YCloud":  {
+                                                            "main":  [
+                                                                         [
+                                                                             {
+                                                                                 "node":  "Merge1",
+                                                                                 "type":  "main",
+                                                                                 "index":  1
+                                                                             },
+                                                                             {
+                                                                                 "node":  "🔀 ¿Es Copiloto?",
+                                                                                 "type":  "main",
+                                                                                 "index":  0
+                                                                             }
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "❓ ¿Es Media?":  {
+                                                "main":  [
+                                                             [
+                                                                 {
+                                                                     "node":  "📱 Responder Media No Soportado",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ],
+                                                             [
+                                                                 {
+                                                                     "node":  "2. Obtener Cliente",
+                                                                     "type":  "main",
+                                                                     "index":  0
+                                                                 }
+                                                             ]
+                                                         ]
+                                            },
+                        "2. Obtener Cliente":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "Merge1",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "❓ ¿Busca Producto?":  {
+                                                      "main":  [
+                                                                   [
+                                                                       {
+                                                                           "node":  "3. Búsqueda Automática Productos",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ],
+                                                                   [
+                                                                       {
+                                                                           "node":  "4. Merge Datos + Productos",
+                                                                           "type":  "main",
+                                                                           "index":  0
+                                                                       }
+                                                                   ]
+                                                               ]
+                                                  },
+                        "3. Búsqueda Automática Productos":  {
+                                                                   "main":  [
+                                                                                [
+                                                                                    {
+                                                                                        "node":  "4. Merge Datos + Productos",
+                                                                                        "type":  "main",
+                                                                                        "index":  0
+                                                                                    }
+                                                                                ]
+                                                                            ]
+                                                               },
+                        "4. Merge Datos + Productos":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "🤖 Agente Luz v4",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "🧠 Postgres Chat Memory":  {
+                                                          "ai_memory":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "🤖 Agente Luz v4",
+                                                                                    "type":  "ai_memory",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                      },
+                        "TOOL_AnadirAlCarrito":  {
+                                                     "ai_tool":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "🤖 Agente Luz v4",
+                                                                             "type":  "ai_tool",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                 },
+                        "TOOL_CalcularTotalPrePedido":  {
+                                                            "ai_tool":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "🤖 Agente Luz v4",
+                                                                                    "type":  "ai_tool",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                        },
+                        "TOOL_GuardarNombreCliente":  {
+                                                          "ai_tool":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "🤖 Agente Luz v4",
+                                                                                  "type":  "ai_tool",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                      },
+                        "TOOL_CambiarEstadoCliente":  {
+                                                          "ai_tool":  [
+                                                                          [
+                                                                              {
+                                                                                  "node":  "🤖 Agente Luz v4",
+                                                                                  "type":  "ai_tool",
+                                                                                  "index":  0
+                                                                              }
+                                                                          ]
+                                                                      ]
+                                                      },
+                        "📤 Preparar Respuesta":  {
+                                                        "main":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "📱 Enviar WhatsApp YCloud",
+                                                                             "type":  "main",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                    },
+                        "TOOL_BuscarProductos":  {
+                                                     "ai_tool":  [
+                                                                     [
+                                                                         {
+                                                                             "node":  "🤖 Agente Luz v4",
+                                                                             "type":  "ai_tool",
+                                                                             "index":  0
+                                                                         }
+                                                                     ]
+                                                                 ]
+                                                 },
+                        "TOOL_EscalarServicioCliente":  {
+                                                            "ai_tool":  [
+                                                                            [
+                                                                                {
+                                                                                    "node":  "🤖 Agente Luz v4",
+                                                                                    "type":  "ai_tool",
+                                                                                    "index":  0
+                                                                                }
+                                                                            ]
+                                                                        ]
+                                                        },
+                        "TOOL_ConsultarEstadoPedido":  {
+                                                           "ai_tool":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "🤖 Agente Luz v4",
+                                                                                   "type":  "ai_tool",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                                       },
+                        "OpenAI Chat Model":  {
+                                                  "ai_languageModel":  [
+                                                                           [
+                                                                               {
+                                                                                   "node":  "🤖 Agente Luz v4",
+                                                                                   "type":  "ai_languageModel",
+                                                                                   "index":  0
+                                                                               }
+                                                                           ]
+                                                                       ]
+                                              },
+                        "🤖 Agente Luz v4":  {
+                                                   "main":  [
+                                                                [
+                                                                    {
+                                                                        "node":  "📤 Preparar Respuesta",
+                                                                        "type":  "main",
+                                                                        "index":  0
+                                                                    }
+                                                                ]
+                                                            ]
+                                               },
+                        "TOOL_GuardarDireccionCliente":  {
+                                                             "ai_tool":  [
+                                                                             [
+                                                                                 {
+                                                                                     "node":  "🤖 Agente Luz v4",
+                                                                                     "type":  "ai_tool",
+                                                                                     "index":  0
+                                                                                 }
+                                                                             ]
+                                                                         ]
+                                                         },
+                        "📱 Enviar WhatsApp YCloud":  {
+                                                            "main":  [
+                                                                         [
+
+                                                                         ]
+                                                                     ]
+                                                        },
+                        "Calculator":  {
+                                           "ai_tool":  [
+                                                           [
+                                                               {
+                                                                   "node":  "🤖 Agente Luz v4",
+                                                                   "type":  "ai_tool",
+                                                                   "index":  0
+                                                               }
+                                                           ]
+                                                       ]
+                                       },
+                        "Buscar Producto del Botón":  {
+                                                           "main":  [
+                                                                        [
+                                                                            {
+                                                                                "node":  "Code - Formatear Producto",
+                                                                                "type":  "main",
+                                                                                "index":  0
+                                                                            }
+                                                                        ]
+                                                                    ]
+                                                       },
+                        "Detectar Click de Botón":  {
+                                                         "main":  [
+                                                                      [
+                                                                          {
+                                                                              "node":  "Buscar Producto del Botón",
+                                                                              "type":  "main",
+                                                                              "index":  0
+                                                                          }
+                                                                      ],
+                                                                      [
+                                                                          {
+                                                                              "node":  "Merge",
+                                                                              "type":  "main",
+                                                                              "index":  1
+                                                                          }
+                                                                      ]
+                                                                  ]
+                                                     },
+                        "Code - Formatear Producto":  {
+                                                          "main":  [
+                                                                       [
+                                                                           {
+                                                                               "node":  "Merge",
+                                                                               "type":  "main",
+                                                                               "index":  0
+                                                                           }
+                                                                       ]
+                                                                   ]
+                                                      },
+                        "Merge":  {
+                                      "main":  [
+                                                   [
+                                                       {
+                                                           "node":  "❓ ¿Busca Producto?",
+                                                           "type":  "main",
+                                                           "index":  0
+                                                       }
+                                                   ]
+                                               ]
+                                  },
+                        "Merge1":  {
+                                       "main":  [
+                                                    [
+                                                        {
+                                                            "node":  "Detectar Click de Botón",
+                                                            "type":  "main",
+                                                            "index":  0
+                                                        }
+                                                    ]
+                                                ]
+                                   },
+                        "🔀 ¿Es Copiloto?":  {
+                                                    "main":  [
+                                                                 [
+
+                                                                 ],
+                                                                 [
+                                                                     {
+                                                                         "node":  "❓ ¿Es Media?",
+                                                                         "type":  "main",
+                                                                         "index":  0
+                                                                     }
+                                                                 ]
+                                                             ]
+                                                }
+                    },
+    "active":  true,
+    "settings":  {
+                     "executionOrder":  "v1"
+                 },
+    "versionId":  "d4b30742-790b-431c-9e90-39a1b3a235a9",
+    "meta":  {
+                 "templateCredsSetupCompleted":  true,
+                 "instanceId":  "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+             },
+    "id":  "sZVzHfyGbuiQB0QP",
+    "tags":  [
+                 {
+                     "updatedAt":  "2025-12-20T02:54:30.946Z",
+                     "createdAt":  "2025-12-20T02:54:30.946Z",
+                     "id":  "zGW91xbi2o2VD1wq",
+                     "name":  "WhatsApp"
+                 },
+                 {
+                     "updatedAt":  "2025-12-20T02:54:30.955Z",
+                     "createdAt":  "2025-12-20T02:54:30.955Z",
+                     "id":  "5FmOFMWYQ3pclVHJ",
+                     "name":  "Tus Aguacates"
+                 },
+                 {
+                     "updatedAt":  "2025-12-20T02:54:30.960Z",
+                     "createdAt":  "2025-12-20T02:54:30.960Z",
+                     "id":  "b04EVZkBMSDQK5y9",
+                     "name":  "YCloud"
+                 },
+                 {
+                     "updatedAt":  "2025-12-20T14:00:13.181Z",
+                     "createdAt":  "2025-12-20T14:00:13.181Z",
+                     "id":  "bJUuLhissr1RBxJ9",
+                     "name":  "v4-Híbrido"
+                 }
+             ]
+}
