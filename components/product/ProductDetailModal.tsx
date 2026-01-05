@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart } from 'lucide-react';
 import type { Product } from '@/lib/productStorage';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
@@ -101,27 +101,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     setQuantity(1);
   };
 
-  const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/productos/${product.id}`;
-    const shareText = `Mira este producto: ${product.name} - ${formatPrice(displayPrice)}`;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: product.name,
-          text: shareText,
-          url: shareUrl
-        });
-      } catch (error) {
-        console.log('Error sharing:', error);
-      }
-    } else {
-      // Fallback: Copiar al portapapeles
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Enlace copiado al portapapeles');
-    }
-  };
-
   return (
     <>
       {/* Backdrop */}
@@ -169,6 +148,19 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
                 {/* Acciones en imagen (Mobile-friendly) */}
                 <div className="flex gap-3">
+                  {/* Botón Agregar al Carrito - Primero */}
+                  <button
+                    onClick={handleAddToCart}
+                    disabled={(product.stock || 0) === 0}
+                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 bg-gradient-to-r from-yellow-400 to-yellow-500 border-yellow-500 text-verde-bosque-700 font-semibold hover:from-yellow-500 hover:to-yellow-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ShoppingCart className="w-5 h-5" />
+                    <span className="hidden sm:inline text-sm font-medium">
+                      {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
+                    </span>
+                  </button>
+
+                  {/* Botón Favoritos - Segundo */}
                   <button
                     onClick={handleWishlistClick}
                     disabled={isWishlistLoading}
@@ -181,14 +173,6 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                     <span className="hidden sm:inline text-sm font-medium">
                       {isWishlistLoading ? 'Procesando...' : (isWishlisted ? 'Guardado' : 'Guardar')}
                     </span>
-                  </button>
-
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-gray-300 text-gray-700 hover:border-blue-300 transition-all"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    <span className="hidden sm:inline text-sm font-medium">Compartir</span>
                   </button>
                 </div>
               </div>
