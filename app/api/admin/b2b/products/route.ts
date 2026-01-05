@@ -102,7 +102,8 @@ export async function GET(request: NextRequest) {
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
     }
 
-    // No excluir productos borrados para admin (se muestran con marca)
+    // Filtrar solo productos no borrados (igual que el API público)
+    query = query.is('deleted_at', null);
 
     // Aplicar ordenamiento
     const column = sort_by as string;
