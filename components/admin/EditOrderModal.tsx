@@ -54,9 +54,12 @@ interface OrderItem {
     unit_price: number;
     product_name?: string;
     variant_name?: string;
+    variant_value?: string;
     product_snapshot?: {
         name?: string;
         price?: number;
+        variant_name?: string;
+        variant_value?: string;
     };
 }
 
@@ -145,7 +148,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                     quantity: item.quantity,
                     unit_price: item.unit_price,
                     product_name: item.product_snapshot?.name || item.product_name || 'Producto',
-                    variant_name: item.variant_name
+                    variant_name: item.product_snapshot?.variant_name || item.variant_name,
+                    variant_value: item.product_snapshot?.variant_value
                 })));
             }
             // Inicializar datos del cliente
@@ -232,7 +236,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                 quantity: 1,
                 unit_price: price,
                 product_name: product.name,
-                variant_name: variant ? `${variant.variant_name}: ${variant.variant_value}` : undefined
+                variant_name: variant?.variant_name,
+                variant_value: variant?.variant_value
             }]);
         }
     };
@@ -605,8 +610,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
-                                            {item.variant_name && (
-                                                <p className="text-xs text-gray-500">{item.variant_name}</p>
+                                            {item.variant_name && item.variant_value && (
+                                                <p className="text-xs text-gray-500">{item.variant_name}: {item.variant_value}</p>
                                             )}
                                             <p className="text-green-600 text-sm">{formatCurrency(item.unit_price)}</p>
                                         </div>
