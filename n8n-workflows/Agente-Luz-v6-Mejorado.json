@@ -1,5 +1,5 @@
 {
-  "name": "🥑 Tus Aguacates - Agente Luz v4 (Híbrido)",
+  "name": "🥑 Tus Aguacates - Agente Luz v6 (Mejorado + Toggle Pruebas)",
   "nodes": [
     {
       "parameters": {
@@ -35,7 +35,7 @@
     },
     {
       "parameters": {
-        "jsCode": "// =====================================================\n// 🧠 PRE-PROCESAMIENTO v10 - DETECCIÓN DE DIRECTOR (COPILOTO)\n// =====================================================\n// Última actualización: 2025-12-30\n// INSTRUCCIONES: Reemplaza el código del nodo \"1. Pre-procesamiento YCloud\"\n// con este código actualizado\n// =====================================================\n\nconst body = $input.item.json.body;\nconst whatsappMsg = body.whatsappInboundMessage;\n\n// =====================================================\n// 🛡️ DETECTAR SI ES EL DIRECTOR (MAURICIO) - COPILOTO\n// =====================================================\n// Números del Director - el único que puede dar comandos al Copiloto\n// YCloud no reenvía mensajes de grupos, así que usamos chat directo\nconst NUMEROS_DIRECTOR = ['573203062007', '3203062007'];\n\n// Extraer número que envía el mensaje\nconst fromRaw = whatsappMsg?.from || '';\nconst fromNormalizado = fromRaw.replace(/[+\\s-]/g, '');\n\n// Verificar si el mensaje viene del Director\nconst esComandoDirector = NUMEROS_DIRECTOR.some(num =>\n    fromNormalizado === num ||\n    fromNormalizado.endsWith(num)\n);\n\n// =====================================================\n\n// Extraer datos básicos (siempre, aunque sea media)\nconst from = (whatsappMsg?.from || '').replace('+', '');\nconst to = (whatsappMsg?.to || '').replace('+', '');\nconst customerName = whatsappMsg?.customerProfile?.name || 'Cliente';\nconst messageType = whatsappMsg?.type || 'unknown';\n\n// Saludo según hora (COLOMBIA UTC-5)\nconst now = new Date();\nconst horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();\nlet saludo;\nif (horaCol < 12) saludo = 'Buenos días';\nelse if (horaCol < 19) saludo = 'Buenas tardes';\nelse saludo = 'Buenas noches';\n\n// =====================================================\n// SI ES EL DIRECTOR → RETORNAR PARA FLUJO COPILOTO\n// =====================================================\nif (esComandoDirector) {\n    const messageText = whatsappMsg?.text?.body || '';\n\n    // Extracción de teléfono colombiano\n    const normalizedText = messageText.replace(/[^\\d]/g, '');\n    const phoneMatch = normalizedText.match(/(?:57)?(3\\d{9})/);\n    const telefono_objetivo = phoneMatch ? phoneMatch[1].replace(/^57/, '') : null;\n\n    // Extracción de nombre (patrones comunes)\n    let nombre_extraido = null;\n    const nombrePatterns = [\n        /(?:a|al nombre)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s|$)/i,\n        /(?:nombre es|llama)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+y|\\s*$)/i,\n    ];\n    for (const pattern of nombrePatterns) {\n        const match = messageText.match(pattern);\n        if (match && match[1]) {\n            nombre_extraido = match[1].trim().replace(/\\b(del|cliente|el|la)\\b/gi, '').trim();\n            if (nombre_extraido.length >= 2) break;\n            else nombre_extraido = null;\n        }\n    }\n\n    return [{\n        json: {\n            // ✅ FLAG CRÍTICO: IDENTIFICAR COMO MENSAJE DE COPILOTO\n            esComandoCopiloto: true,\n\n            from, to, customerName, saludo,\n            messageText: messageText,\n            prompt: messageText,\n            mensajeClienteActual: messageText,\n\n            // Datos extraídos para las herramientas del copiloto\n            telefono_objetivo: telefono_objetivo,\n            nombre_extraido: nombre_extraido,\n\n            // Flags estándar (desactivados para copiloto)\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: messageType,\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// =====================================================\n// RESTO DEL CÓDIGO ORIGINAL (PARA CLIENTES NORMALES)\n// =====================================================\n\n// NUEVO: DETECTAR RESPUESTAS DE BOTONES INTERACTIVOS\nlet esRespuestaBoton = false;\nlet botonId = '';\nlet botonTexto = '';\nif (messageType === 'interactive') {\n    const interactive = whatsappMsg.interactive;\n    if (interactive?.type === 'button_reply') {\n        esRespuestaBoton = true;\n        botonId = interactive.button_reply?.id || '';\n        botonTexto = interactive.button_reply?.title || '';\n    } else if (interactive?.type === 'list_reply') {\n        esRespuestaBoton = true;\n        botonId = interactive.list_reply?.id || '';\n        botonTexto = interactive.list_reply?.title || '';\n    }\n}\n\n// MANEJO DE IMÁGENES Y MEDIA\nconst esImagen = messageType === 'image';\nconst esDocumento = messageType === 'document';\nconst esAudio = messageType === 'audio';\nconst esVideo = messageType === 'video';\nconst esSticker = messageType === 'sticker';\nconst esMedia = esImagen || esDocumento || esAudio || esVideo || esSticker;\n\nif (esMedia) {\n    const captionImagen = whatsappMsg?.image?.caption ||\n        whatsappMsg?.document?.caption ||\n        whatsappMsg?.video?.caption || '';\n    let textoMedia = '[Mensaje multimedia]';\n    if (esImagen) textoMedia = '[📸 Imagen recibida]';\n    else if (esDocumento) textoMedia = '[📄 Documento recibido]';\n    else if (esAudio) textoMedia = '[🎵 Audio recibido]';\n    else if (esVideo) textoMedia = '[🎥 Video recibido]';\n    else if (esSticker) textoMedia = '[😊 Sticker recibido]';\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: true,\n            esImagen, esDocumento, esAudio, esVideo, esSticker,\n            tipoMensaje: messageType,\n            messageText: textoMedia,\n            captionImagen,\n            esRespuestaBoton: false,\n            botonId: '',\n            botonTexto: '',\n            productoIdDelBoton: null,\n            accionBoton: '',\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: '',\n            terminoNormalizado: '',\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// MANEJO DE RESPUESTAS DE BOTONES\nif (esRespuestaBoton) {\n    let productoIdDelBoton = null;\n    let accionBoton = 'otro';\n    if (botonId.startsWith('agregar_producto_')) {\n        productoIdDelBoton = parseInt(botonId.replace('agregar_producto_', ''));\n        accionBoton = 'agregar';\n    } else if (botonId.startsWith('ver_mas_producto_')) {\n        productoIdDelBoton = parseInt(botonId.replace('ver_mas_producto_', ''));\n        accionBoton = 'ver_mas';\n    } else if (botonId === 'ver_carrito') {\n        accionBoton = 'ver_carrito';\n    }\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: 'interactive',\n            messageText: botonTexto,\n            esRespuestaBoton: true,\n            botonId: botonId,\n            botonTexto: botonTexto,\n            productoIdDelBoton: productoIdDelBoton,\n            accionBoton: accionBoton,\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: '',\n            terminoNormalizado: '',\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// VALIDAR MENSAJE DE TEXTO\nif (!whatsappMsg || messageType !== 'text') {\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            esMediaNoSoportado: true,\n            from, to, customerName, saludo,\n            tipoMensaje: messageType,\n            messageText: '',\n            esRespuestaBoton: false,\n            botonId: '',\n            botonTexto: '',\n            productoIdDelBoton: null,\n            accionBoton: ''\n        }\n    }];\n}\n\n// A PARTIR DE AQUÍ: SOLO MENSAJES DE TEXTO NORMALES\nconst messageText = whatsappMsg.text?.body || '';\nconst msgLower = messageText.toLowerCase().trim();\n\n// DETECTAR SALUDOS SIMPLES\nconst esSoloSaludo = [\n    /^hola[,!.\\s]*$/i,\n    /^buenos?\\s+(d[ií]as?|tardes?|noches?)[,!.\\s]*$/i,\n    /^buenas[,!.\\s]*$/i,\n    /^hey[,!.\\s]*$/i,\n    /^qu[eé]\\s+tal[,\\?!.\\s]*$/i,\n    /^c[oó]mo\\s+est[aá](s|n)?[,\\?!.\\s]*$/i,\n    /^gracias[,!.\\s]*$/i,\n    /^ok[,!.\\s]*$/i,\n    /^s[ií][,!.\\s]*$/i,\n    /^no[,!.\\s]*$/i,\n    /^perfecto[,!.\\s]*$/i,\n    /^listo[,!.\\s]*$/i,\n    /^dale[,!.\\s]*$/i,\n    /^bien[,!.\\s]*$/i\n].some(p => p.test(msgLower));\n\n// DETECTAR PEDIDO DESDE PLATAFORMA\nconst esPedidoPlataforma = [\n    /acabo\\s+de\\s+hacer\\s+un\\s+pedido/i,\n    /hice\\s+un\\s+pedido\\s+en\\s+(la\\s+)?tienda/i,\n    /tus-aguacates\\.vercel\\.app/i,\n    /mi\\s+pedido:.*\\n.*total/is,\n    /quedo\\s+atent[oa]\\s+a\\s+la\\s+confirmaci[oó]n/i\n].some(p => p.test(messageText));\n\nlet infoPedidoPlataforma = null;\nif (esPedidoPlataforma) {\n    const nombreMatch = messageText.match(/me\\s+llamo\\s+(\\w+)/i);\n    const pagoMatch = messageText.match(/pago:\\s*(.+?)(\\n|$)/i);\n    const totalMatch = messageText.match(/total:\\s*\\$?([\\d,.]+)/i);\n    infoPedidoPlataforma = {\n        nombre: nombreMatch ? nombreMatch[1] : null,\n        metodoPago: pagoMatch ? pagoMatch[1].trim() : null,\n        total: totalMatch ? totalMatch[1] : null\n    };\n}\n\n// DETECTAR PREGUNTAS CONVERSACIONALES\nconst esPreguntaConversacional = [\n    /c[oó]mo\\s+(veo|entro|accedo|visito|llego|abro)/i,\n    /d[oó]nde\\s+(est[aá]|queda|encuentro|veo)/i,\n    /tienda\\s+(en\\s+)?l[ií]nea/i,\n    /tienda\\s+(online|virtual|web)/i,\n    /ver\\s+(la\\s+)?tienda/i,\n    /p[aá]gina\\s+web/i,\n    /\\b(link|enlace|url)\\b/i,\n    /\\bhorario/i,\n    /a\\s+qu[eé]\\s+hora/i,\n    /hasta\\s+qu[eé]\\s+hora/i,\n    /\\benv[ií]o/i,\n    /\\bentrega/i,\n    /\\bdomicilio/i,\n    /hacen\\s+env[ií]o/i,\n    /zona\\s+de\\s+(cobertura|entrega)/i,\n    /m[eé]todo(s)?\\s+de\\s+pago/i,\n    /forma(s)?\\s+de\\s+pago/i,\n    /aceptan\\s+(tarjeta|nequi|daviplata|efectivo)/i,\n    /puedo\\s+pagar\\s+con/i,\n    /\\bcontacto/i,\n    /\\bubicaci[oó]n/i,\n    /\\bdirecci[oó]n/i,\n    /d[oó]nde\\s+est[aá]n/i,\n    /mi\\s+pedido/i,\n    /mi\\s+carrito/i,\n    /qu[eé]\\s+llevo/i,\n    /eso\\s+es\\s+todo/i,\n    /total\\s+(del\\s+)?pedido/i,\n    /cu[aá]nto\\s+es\\s+(el\\s+)?total/i,\n    /cu[aá]nto\\s+te\\s+debo/i\n].some(p => p.test(msgLower));\n\n// EXTRACCIÓN DE TÉRMINO DE BÚSQUEDA\nconst palabrasIgnorar = new Set([\n    'saber', 'conocer', 'decir', 'informar', 'consultar', 'preguntar',\n    'averiguar', 'entender', 'explicar', 'indicar',\n    'ver', 'mostrar', 'enseñar', 'mirar', 'observar',\n    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',\n    'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'como', 'cómo',\n    'sobre', 'sin', 'hacia', 'desde', 'entre',\n    'que', 'qué', 'cuanto', 'cuánto', 'cual', 'cuál',\n    'vale', 'valen', 'cuesta', 'cuestan', 'costar', 'costaría',\n    'precio', 'precios', 'costo', 'costos', 'valor', 'valores',\n    'tienen', 'tienes', 'tiene', 'tener', 'tendrán', 'tendría',\n    'hay', 'habrá', 'habría', 'haber',\n    'busco', 'busca', 'buscando', 'buscar',\n    'quiero', 'quiere', 'quieren', 'querer', 'quisiera', 'querría',\n    'venden', 'vende', 'vender',\n    'manejan', 'maneja', 'manejar',\n    'ofrecen', 'ofrece', 'ofrecer',\n    'necesito', 'necesita', 'necesitar',\n    'dame', 'deme', 'das', 'dan', 'dar',\n    'agregar', 'añadir', 'poner', 'meter', 'agrega', 'agregame', 'agrégame',\n    'llevar', 'llevo', 'lleva', 'llevamos',\n    'comprar', 'compro', 'compra',\n    'pedir', 'pedido', 'pido',\n    'hola', 'buenos', 'buenas', 'días', 'dias', 'tardes', 'noches',\n    'hey', 'oye', 'disculpa', 'perdón', 'perdon', 'perdone',\n    'por', 'favor', 'porfavor', 'gracias', 'muchas',\n    'me', 'te', 'se', 'nos', 'les', 'lo', 'la',\n    'yo', 'tu', 'tú', 'usted', 'ustedes', 'nosotros',\n    'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'eso',\n    'algo', 'más', 'mas', 'otro', 'otra', 'otros', 'otras',\n    'todo', 'todos', 'toda', 'todas',\n    'también', 'tambien', 'además', 'ademas',\n    'ser', 'sería', 'seria', 'son', 'es', 'era',\n    'están', 'esta', 'está', 'estan',\n    'puede', 'puedo', 'puedes', 'poder', 'podría',\n    'bueno', 'buena', 'buenos', 'buenas',\n    'mejor', 'mejores', 'peor', 'peores',\n    'grande', 'pequeño', 'pequeña',\n    'fresco', 'fresca', 'frescos', 'frescas',\n    'uno', 'dos', 'tres', 'cuatro', 'cinco',\n    'kilo', 'kilos', 'gramos', 'grs', 'libra', 'libras',\n    'unidad', 'unidades', 'paquete', 'paquetes',\n    'bandeja', 'bandejas', 'caja', 'cajas',\n    'pero', 'aunque', 'entonces', 'pues', 'bueno', 'mira', 'oiga',\n    'digame', 'dígame', 'cuéntame', 'cuentame', 'dime',\n    'porfa', 'xfa', 'please', 'plz', 'plis',\n    'okay', 'vale', 'listo', 'dale', 'aja', 'ajá',\n    'solo', 'sólo', 'solamente', 'únicamente', 'unicamente',\n    'siempre', 'nunca', 'ahora', 'después', 'despues', 'antes',\n    'aquí', 'aqui', 'acá', 'aca', 'allá', 'alla', 'ahí', 'ahi'\n]);\n\nlet terminoBusqueda = msgLower\n    .replace(/[^\\w\\sáéíóúñü]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length > 2 && !palabrasIgnorar.has(w))\n    .join(' ')\n    .trim();\n\n// DETECTAR MÚLTIPLES PRODUCTOS\nconst separadores = /\\s+(?:y|o|,)\\s+/gi;\nconst tieneMultiplesProductos = separadores.test(terminoBusqueda);\nlet terminosIndividuales = [];\nif (tieneMultiplesProductos) {\n    terminosIndividuales = terminoBusqueda\n        .split(/\\s*(?:y|o|,)\\s*/gi)\n        .map(t => t.trim())\n        .filter(t => t.length > 0);\n} else if (terminoBusqueda) {\n    terminosIndividuales = [terminoBusqueda];\n}\n\n// NORMALIZACIÓN DE PLURALES\nlet terminoNormalizado = terminoBusqueda;\nlet variantesBusqueda = [];\nlet terminosNormalizados = [];\nterminosIndividuales.forEach(termino => {\n    const palabras = termino.split(' ');\n    const palabrasNormalizadas = palabras.map(palabra => {\n        if (palabra.endsWith('s') && palabra.length > 3) {\n            return palabra.slice(0, -1);\n        }\n        if (palabra.endsWith('es') && palabra.length > 4) {\n            return palabra.slice(0, -2);\n        }\n        return palabra;\n    });\n    terminosNormalizados.push(palabrasNormalizadas.join(' '));\n});\nterminoNormalizado = terminosNormalizados.join(' ');\nvariantesBusqueda = [...new Set([...terminosIndividuales, ...terminosNormalizados])];\n\n// DECISIÓN DE BÚSQUEDA\nconst debeHacerBusqueda =\n    !esSoloSaludo &&\n    !esPreguntaConversacional &&\n    terminoBusqueda.length > 0;\n\n// RESULTADO FINAL (CLIENTE NORMAL)\nreturn [{\n    json: {\n        // ✅ FLAG: NO es comando de copiloto\n        esComandoCopiloto: false,\n\n        from, to, messageText, customerName, saludo,\n        esMediaNoSoportado: false,\n        esMedia: false,\n        esImagen: false,\n        esDocumento: false,\n        esAudio: false,\n        esVideo: false,\n        esSticker: false,\n        tipoMensaje: 'text',\n        captionImagen: '',\n        esRespuestaBoton: false,\n        botonId: '',\n        botonTexto: '',\n        productoIdDelBoton: null,\n        accionBoton: '',\n        esSoloSaludo,\n        esPreguntaConversacional,\n        debeHacerBusqueda,\n        esPedidoPlataforma,\n        infoPedidoPlataforma,\n        tieneMultiplesProductos,\n        terminosIndividuales,\n        terminosNormalizados,\n        terminoBusqueda,\n        terminoNormalizado,\n        variantesBusqueda,\n        timestamp: whatsappMsg.sendTime\n    }\n}];\n"
+        "jsCode": "// =====================================================\n// 🧠 PRE-PROCESAMIENTO v11 - CON TOGGLE /test /admin\n// =====================================================\n// Última actualización: 2026-01-04\n// MEJORAS: Toggle modo pruebas con /test y /admin\n// =====================================================\n\nconst body = $input.item.json.body;\nconst whatsappMsg = body.whatsappInboundMessage;\n\n// =====================================================\n// 🛡️ DETECTAR MODO ADMIN/PRUEBAS (MAURICIO)\n// =====================================================\nconst NUMEROS_DIRECTOR = ['573203062007', '3203062007'];\n\nconst fromRaw = whatsappMsg?.from || '';\nconst fromNormalizado = fromRaw.replace(/[+\\s-]/g, '');\nconst from = (whatsappMsg?.from || '').replace('+', '');\nconst to = (whatsappMsg?.to || '').replace('+', '');\nconst customerName = whatsappMsg?.customerProfile?.name || 'Cliente';\nconst messageType = whatsappMsg?.type || 'unknown';\nconst messageTextRaw = whatsappMsg?.text?.body || '';\n\n// Saludo según hora (COLOMBIA UTC-5)\nconst now = new Date();\nconst horaCol = new Date(now.getTime() - 5 * 60 * 60 * 1000).getHours();\nlet saludo;\nif (horaCol < 12) saludo = 'Buenos días';\nelse if (horaCol < 19) saludo = 'Buenas tardes';\nelse saludo = 'Buenas noches';\n\n// =====================================================\n// 🔄 TOGGLE: COMANDOS /test y /admin\n// =====================================================\nconst msgLowerTrim = messageTextRaw.toLowerCase().trim();\nconst esComandoTest = msgLowerTrim === '/test';\nconst esComandoAdmin = msgLowerTrim === '/admin';\n\nconst esNumeroDirector = NUMEROS_DIRECTOR.some(num =>\n    fromNormalizado === num || fromNormalizado.endsWith(num)\n);\n\n// TOGGLE LOGIC\nif (esNumeroDirector) {\n    if (esComandoTest) {\n        // Director quiere probar como cliente\n        return [{\n            json: {\n                esComandoCopiloto: false,\n                from, to, customerName, saludo,\n                messageText: 'Hola',\n                modoTestActivado: true,\n                _notaInterna: '⚡ MODO CLIENTE activado para pruebas',\n                esMediaNoSoportado: false,\n                esMedia: false,\n                tipoMensaje: 'text',\n                esRespuestaBoton: false,\n                botonId: '', botonTexto: '',\n                productoIdDelBoton: null, accionBoton: '',\n                esSoloSaludo: true,\n                esPreguntaConversacional: false,\n                debeHacerBusqueda: false,\n                esPedidoPlataforma: false,\n                infoPedidoPlataforma: null,\n                tieneMultiplesProductos: false,\n                terminosIndividuales: [],\n                terminoBusqueda: '',\n                terminoNormalizado: '',\n                variantesBusqueda: [],\n                terminosNormalizados: [],\n                timestamp: whatsappMsg?.sendTime\n            }\n        }];\n    } else if (esComandoAdmin) {\n        // Director vuelve a modo admin/copiloto\n        return [{\n            json: {\n                esComandoCopiloto: true,\n                from, to, customerName, saludo,\n                messageText: '🔑 Modo Copiloto Activado',\n                modoAdminActivado: true,\n                _notaInterna: '🔑 MODO COPILOTO activado',\n                telefono_objetivo: null,\n                nombre_extraido: null,\n                esMediaNoSoportado: false,\n                esMedia: false,\n                tipoMensaje: messageType,\n                timestamp: whatsappMsg?.sendTime\n            }\n        }];\n    }\n    \n    // Sin comando toggle → Comportamiento normal Copiloto\n    const normalizedText = messageTextRaw.replace(/[^\\d]/g, '');\n    const phoneMatch = normalizedText.match(/(?:57)?(3\\d{9})/);\n    const telefono_objetivo = phoneMatch ? phoneMatch[1].replace(/^57/, '') : null;\n\n    let nombre_extraido = null;\n    const nombrePatterns = [\n        /(?:a|al nombre)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s|$)/i,\n        /(?:nombre es|llama)\\s+[\"']?([A-Za-zÁ-ÿ\\s]+?)[\"']?(?:\\s+y|\\s*$)/i,\n    ];\n    for (const pattern of nombrePatterns) {\n        const match = messageTextRaw.match(pattern);\n        if (match && match[1]) {\n            nombre_extraido = match[1].trim().replace(/\\b(del|cliente|el|la)\\b/gi, '').trim();\n            if (nombre_extraido.length >= 2) break;\n            else nombre_extraido = null;\n        }\n    }\n\n    return [{\n        json: {\n            esComandoCopiloto: true,\n            from, to, customerName, saludo,\n            messageText: messageTextRaw,\n            prompt: messageTextRaw,\n            mensajeClienteActual: messageTextRaw,\n            telefono_objetivo: telefono_objetivo,\n            nombre_extraido: nombre_extraido,\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: messageType,\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// =====================================================\n// RESTO DEL CÓDIGO ORIGINAL (PARA CLIENTES NORMALES)\n// =====================================================\n\n// NUEVO: DETECTAR RESPUESTAS DE BOTONES INTERACTIVOS\nlet esRespuestaBoton = false;\nlet botonId = '';\nlet botonTexto = '';\nif (messageType === 'interactive') {\n    const interactive = whatsappMsg.interactive;\n    if (interactive?.type === 'button_reply') {\n        esRespuestaBoton = true;\n        botonId = interactive.button_reply?.id || '';\n        botonTexto = interactive.button_reply?.title || '';\n    } else if (interactive?.type === 'list_reply') {\n        esRespuestaBoton = true;\n        botonId = interactive.list_reply?.id || '';\n        botonTexto = interactive.list_reply?.title || '';\n    }\n}\n\n// MANEJO DE IMÁGENES Y MEDIA\nconst esImagen = messageType === 'image';\nconst esDocumento = messageType === 'document';\nconst esAudio = messageType === 'audio';\nconst esVideo = messageType === 'video';\nconst esSticker = messageType === 'sticker';\nconst esMedia = esImagen || esDocumento || esAudio || esVideo || esSticker;\n\nif (esMedia) {\n    const captionImagen = whatsappMsg?.image?.caption ||\n        whatsappMsg?.document?.caption ||\n        whatsappMsg?.video?.caption || '';\n    let textoMedia = '[Mensaje multimedia]';\n    if (esImagen) textoMedia = '[📸 Imagen recibida]';\n    else if (esDocumento) textoMedia = '[📄 Documento recibido]';\n    else if (esAudio) textoMedia = '[🎵 Audio recibido]';\n    else if (esVideo) textoMedia = '[🎥 Video recibido]';\n    else if (esSticker) textoMedia = '[😊 Sticker recibido]';\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: true,\n            esImagen, esDocumento, esAudio, esVideo, esSticker,\n            tipoMensaje: messageType,\n            messageText: textoMedia,\n            captionImagen,\n            esRespuestaBoton: false,\n            botonId: '',\n            botonTexto: '',\n            productoIdDelBoton: null,\n            accionBoton: '',\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: '',\n            terminoNormalizado: '',\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// MANEJO DE RESPUESTAS DE BOTONES\nif (esRespuestaBoton) {\n    let productoIdDelBoton = null;\n    let accionBoton = 'otro';\n    if (botonId.startsWith('agregar_producto_')) {\n        productoIdDelBoton = parseInt(botonId.replace('agregar_producto_', ''));\n        accionBoton = 'agregar';\n    } else if (botonId.startsWith('ver_mas_producto_')) {\n        productoIdDelBoton = parseInt(botonId.replace('ver_mas_producto_', ''));\n        accionBoton = 'ver_mas';\n    } else if (botonId === 'ver_carrito') {\n        accionBoton = 'ver_carrito';\n    }\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            from, to, customerName, saludo,\n            esMediaNoSoportado: false,\n            esMedia: false,\n            tipoMensaje: 'interactive',\n            messageText: botonTexto,\n            esRespuestaBoton: true,\n            botonId: botonId,\n            botonTexto: botonTexto,\n            productoIdDelBoton: productoIdDelBoton,\n            accionBoton: accionBoton,\n            esSoloSaludo: false,\n            esPreguntaConversacional: false,\n            debeHacerBusqueda: false,\n            esPedidoPlataforma: false,\n            infoPedidoPlataforma: null,\n            tieneMultiplesProductos: false,\n            terminosIndividuales: [],\n            terminoBusqueda: '',\n            terminoNormalizado: '',\n            variantesBusqueda: [],\n            terminosNormalizados: [],\n            timestamp: whatsappMsg?.sendTime\n        }\n    }];\n}\n\n// VALIDAR MENSAJE DE TEXTO\nif (!whatsappMsg || messageType !== 'text') {\n    return [{\n        json: {\n            esComandoCopiloto: false,\n            esMediaNoSoportado: true,\n            from, to, customerName, saludo,\n            tipoMensaje: messageType,\n            messageText: '',\n            esRespuestaBoton: false,\n            botonId: '',\n            botonTexto: '',\n            productoIdDelBoton: null,\n            accionBoton: ''\n        }\n    }];\n}\n\n// A PARTIR DE AQUÍ: SOLO MENSAJES DE TEXTO NORMALES\nconst messageText = whatsappMsg.text?.body || '';\nconst msgLower = messageText.toLowerCase().trim();\n\n// DETECTAR SALUDOS SIMPLES\nconst esSoloSaludo = [\n    /^hola[,!.\\s]*$/i,\n    /^buenos?\\s+(d[ií]as?|tardes?|noches?)[,!.\\s]*$/i,\n    /^buenas[,!.\\s]*$/i,\n    /^hey[,!.\\s]*$/i,\n    /^qu[eé]\\s+tal[,\\?!.\\s]*$/i,\n    /^c[oó]mo\\s+est[aá](s|n)?[,\\?!.\\s]*$/i,\n    /^gracias[,!.\\s]*$/i,\n    /^ok[,!.\\s]*$/i,\n    /^s[ií][,!.\\s]*$/i,\n    /^no[,!.\\s]*$/i,\n    /^perfecto[,!.\\s]*$/i,\n    /^listo[,!.\\s]*$/i,\n    /^dale[,!.\\s]*$/i,\n    /^bien[,!.\\s]*$/i\n].some(p => p.test(msgLower));\n\n// DETECTAR PEDIDO DESDE PLATAFORMA\nconst esPedidoPlataforma = [\n    /acabo\\s+de\\s+hacer\\s+un\\s+pedido/i,\n    /hice\\s+un\\s+pedido\\s+en\\s+(la\\s+)?tienda/i,\n    /tus-aguacates\\.vercel\\.app/i,\n    /mi\\s+pedido:.*\\n.*total/is,\n    /quedo\\s+atent[oa]\\s+a\\s+la\\s+confirmaci[oó]n/i\n].some(p => p.test(messageText));\n\nlet infoPedidoPlataforma = null;\nif (esPedidoPlataforma) {\n    const nombreMatch = messageText.match(/me\\s+llamo\\s+(\\w+)/i);\n    const pagoMatch = messageText.match(/pago:\\s*(.+?)(\\n|$)/i);\n    const totalMatch = messageText.match(/total:\\s*\\$?([\\d,.]+)/i);\n    infoPedidoPlataforma = {\n        nombre: nombreMatch ? nombreMatch[1] : null,\n        metodoPago: pagoMatch ? pagoMatch[1].trim() : null,\n        total: totalMatch ? totalMatch[1] : null\n    };\n}\n\n// DETECTAR PREGUNTAS CONVERSACIONALES\nconst esPreguntaConversacional = [\n    /c[oó]mo\\s+(veo|entro|accedo|visito|llego|abro)/i,\n    /d[oó]nde\\s+(est[aá]|queda|encuentro|veo)/i,\n    /tienda\\s+(en\\s+)?l[ií]nea/i,\n    /tienda\\s+(online|virtual|web)/i,\n    /ver\\s+(la\\s+)?tienda/i,\n    /p[aá]gina\\s+web/i,\n    /\\b(link|enlace|url)\\b/i,\n    /\\bhorario/i,\n    /a\\s+qu[eé]\\s+hora/i,\n    /hasta\\s+qu[eé]\\s+hora/i,\n    /\\benv[ií]o/i,\n    /\\bentrega/i,\n    /\\bdomicilio/i,\n    /hacen\\s+env[ií]o/i,\n    /zona\\s+de\\s+(cobertura|entrega)/i,\n    /m[eé]todo(s)?\\s+de\\s+pago/i,\n    /forma(s)?\\s+de\\s+pago/i,\n    /aceptan\\s+(tarjeta|nequi|daviplata|efectivo)/i,\n    /puedo\\s+pagar\\s+con/i,\n    /\\bcontacto/i,\n    /\\bubicaci[oó]n/i,\n    /\\bdirecci[oó]n/i,\n    /d[oó]nde\\s+est[aá]n/i,\n    /mi\\s+pedido/i,\n    /mi\\s+carrito/i,\n    /qu[eé]\\s+llevo/i,\n    /eso\\s+es\\s+todo/i,\n    /total\\s+(del\\s+)?pedido/i,\n    /cu[aá]nto\\s+es\\s+(el\\s+)?total/i,\n    /cu[aá]nto\\s+te\\s+debo/i\n].some(p => p.test(msgLower));\n\n// EXTRACCIÓN DE TÉRMINO DE BÚSQUEDA\nconst palabrasIgnorar = new Set([\n    'saber', 'conocer', 'decir', 'informar', 'consultar', 'preguntar',\n    'averiguar', 'entender', 'explicar', 'indicar',\n    'ver', 'mostrar', 'enseñar', 'mirar', 'observar',\n    'el', 'la', 'los', 'las', 'un', 'una', 'unos', 'unas',\n    'de', 'del', 'a', 'al', 'en', 'con', 'por', 'para', 'como', 'cómo',\n    'sobre', 'sin', 'hacia', 'desde', 'entre',\n    'que', 'qué', 'cuanto', 'cuánto', 'cual', 'cuál',\n    'vale', 'valen', 'cuesta', 'cuestan', 'costar', 'costaría',\n    'precio', 'precios', 'costo', 'costos', 'valor', 'valores',\n    'tienen', 'tienes', 'tiene', 'tener', 'tendrán', 'tendría',\n    'hay', 'habrá', 'habría', 'haber',\n    'busco', 'busca', 'buscando', 'buscar',\n    'quiero', 'quiere', 'quieren', 'querer', 'quisiera', 'querría',\n    'venden', 'vende', 'vender',\n    'manejan', 'maneja', 'manejar',\n    'ofrecen', 'ofrece', 'ofrecer',\n    'necesito', 'necesita', 'necesitar',\n    'dame', 'deme', 'das', 'dan', 'dar',\n    'agregar', 'añadir', 'poner', 'meter', 'agrega', 'agregame', 'agrégame',\n    'llevar', 'llevo', 'lleva', 'llevamos',\n    'comprar', 'compro', 'compra',\n    'pedir', 'pedido', 'pido',\n    'hola', 'buenos', 'buenas', 'días', 'dias', 'tardes', 'noches',\n    'hey', 'oye', 'disculpa', 'perdón', 'perdon', 'perdone',\n    'por', 'favor', 'porfavor', 'gracias', 'muchas',\n    'me', 'te', 'se', 'nos', 'les', 'lo', 'la',\n    'yo', 'tu', 'tú', 'usted', 'ustedes', 'nosotros',\n    'este', 'esta', 'estos', 'estas', 'ese', 'esa', 'eso',\n    'algo', 'más', 'mas', 'otro', 'otra', 'otros', 'otras',\n    'todo', 'todos', 'toda', 'todas',\n    'también', 'tambien', 'además', 'ademas',\n    'ser', 'sería', 'seria', 'son', 'es', 'era',\n    'están', 'esta', 'está', 'estan',\n    'puede', 'puedo', 'puedes', 'poder', 'podría',\n    'bueno', 'buena', 'buenos', 'buenas',\n    'mejor', 'mejores', 'peor', 'peores',\n    'grande', 'pequeño', 'pequeña',\n    'fresco', 'fresca', 'frescos', 'frescas',\n    'uno', 'dos', 'tres', 'cuatro', 'cinco',\n    'kilo', 'kilos', 'gramos', 'grs', 'libra', 'libras',\n    'unidad', 'unidades', 'paquete', 'paquetes',\n    'bandeja', 'bandejas', 'caja', 'cajas',\n    'pero', 'aunque', 'entonces', 'pues', 'bueno', 'mira', 'oiga',\n    'digame', 'dígame', 'cuéntame', 'cuentame', 'dime',\n    'porfa', 'xfa', 'please', 'plz', 'plis',\n    'okay', 'vale', 'listo', 'dale', 'aja', 'ajá',\n    'solo', 'sólo', 'solamente', 'únicamente', 'unicamente',\n    'siempre', 'nunca', 'ahora', 'después', 'despues', 'antes',\n    'aquí', 'aqui', 'acá', 'aca', 'allá', 'alla', 'ahí', 'ahi'\n]);\n\nlet terminoBusqueda = msgLower\n    .replace(/[^\\w\\sáéíóúñü]/g, '')\n    .split(/\\s+/)\n    .filter(w => w.length > 2 && !palabrasIgnorar.has(w))\n    .join(' ')\n    .trim();\n\n// DETECTAR MÚLTIPLES PRODUCTOS\nconst separadores = /\\s+(?:y|o|,)\\s+/gi;\nconst tieneMultiplesProductos = separadores.test(terminoBusqueda);\nlet terminosIndividuales = [];\nif (tieneMultiplesProductos) {\n    terminosIndividuales = terminoBusqueda\n        .split(/\\s*(?:y|o|,)\\s*/gi)\n        .map(t => t.trim())\n        .filter(t => t.length > 0);\n} else if (terminoBusqueda) {\n    terminosIndividuales = [terminoBusqueda];\n}\n\n// NORMALIZACIÓN DE PLURALES\nlet terminoNormalizado = terminoBusqueda;\nlet variantesBusqueda = [];\nlet terminosNormalizados = [];\nterminosIndividuales.forEach(termino => {\n    const palabras = termino.split(' ');\n    const palabrasNormalizadas = palabras.map(palabra => {\n        if (palabra.endsWith('s') && palabra.length > 3) {\n            return palabra.slice(0, -1);\n        }\n        if (palabra.endsWith('es') && palabra.length > 4) {\n            return palabra.slice(0, -2);\n        }\n        return palabra;\n    });\n    terminosNormalizados.push(palabrasNormalizadas.join(' '));\n});\nterminoNormalizado = terminosNormalizados.join(' ');\nvariantesBusqueda = [...new Set([...terminosIndividuales, ...terminosNormalizados])];\n\n// DECISIÓN DE BÚSQUEDA\nconst debeHacerBusqueda =\n    !esSoloSaludo &&\n    !esPreguntaConversacional &&\n    terminoBusqueda.length > 0;\n\n// RESULTADO FINAL (CLIENTE NORMAL)\nreturn [{\n    json: {\n        // ✅ FLAG: NO es comando de copiloto\n        esComandoCopiloto: false,\n\n        from, to, messageText, customerName, saludo,\n        esMediaNoSoportado: false,\n        esMedia: false,\n        esImagen: false,\n        esDocumento: false,\n        esAudio: false,\n        esVideo: false,\n        esSticker: false,\n        tipoMensaje: 'text',\n        captionImagen: '',\n        esRespuestaBoton: false,\n        botonId: '',\n        botonTexto: '',\n        productoIdDelBoton: null,\n        accionBoton: '',\n        esSoloSaludo,\n        esPreguntaConversacional,\n        debeHacerBusqueda,\n        esPedidoPlataforma,\n        infoPedidoPlataforma,\n        tieneMultiplesProductos,\n        terminosIndividuales,\n        terminosNormalizados,\n        terminoBusqueda,\n        terminoNormalizado,\n        variantesBusqueda,\n        timestamp: whatsappMsg.sendTime\n    }\n}];\n"
       },
       "id": "5c7866e8-aa2d-43e3-a1a5-67e4a5e7a29b",
       "name": "1. Pre-procesamiento YCloud",
@@ -476,9 +476,9 @@
     {
       "parameters": {
         "promptType": "define",
-        "text": "=## CONTEXTO DEL CLIENTE\n- Nombre: {{ $json.clienteNombre }}\n- Estado: {{ $json.clienteEstado }}\n- Total pedidos anteriores: {{ $json.clienteTotalPedidos }}\n- Carrito actual: {{ JSON.stringify($json.clienteCarrito) }}\n\n## 🔍 PRODUCTOS ENCONTRADOS EN BÚSQUEDA\n{{ $json.productosTexto }}\n- Teléfono: {{ $json.clienteTelefono }}\n- Dirección: {{ $json.clienteDireccion }}\n## MENSAJE DEL CLIENTE\n{{ $json.mensajeCliente }}",
+        "text": "=## CONTEXTO DEL CLIENTE\n- Nombre: {{ $json.clienteNombre }}\n- Saludo: {{ $json.saludo }}\n- Estado: {{ $json.clienteEstado }}\n- Total pedidos anteriores: {{ $json.clienteTotalPedidos }}\n- Carrito actual: {{ JSON.stringify($json.clienteCarrito) }}\n\n## 🔍 PRODUCTOS ENCONTRADOS EN BÚSQUEDA\n{{ $json.productosTexto }}\n- Teléfono: {{ $json.clienteTelefono }}\n- Dirección: {{ $json.clienteDireccion }}\n## MENSAJE DEL CLIENTE\n{{ $json.mensajeCliente }}",
         "options": {
-          "systemMessage": "=## 🎯 IDENTIDAD\nEres \"Luz\" 🥑, asistente virtual de **Tus Aguacates**, una empresa colombiana que vende aguacates premium y productos frescos del Eje Cafetero.\n\nTu rol es ser el **primer punto de contacto** con el cliente: vendes, informas, resuelves dudas y promocionas nuestra tienda online.\n\n**NO das recetas por WhatsApp** - para eso diriges al cliente a la tienda online.\n\n---\n\n## 🔘 MANEJO DE BOTONES INTERACTIVOS (CRÍTICO)\n\nCuando recibes `esRespuestaBoton: true` en el contexto, significa que el cliente hizo click en un botón interactivo.\n\n### REGLA ABSOLUTA PARA BOTONES:\n\n**1. \"Agregar\" / \"✅ Agregar\"**\n- **ACCIÓN OBLIGATORIA**: Debes usar `TOOL_AnadirAlCarrito` INMEDIATAMENTE\n- **NO respondas sin usar la herramienta primero**\n- El producto está en `productosEncontrados[0]`\n- Input para la herramienta:\n  ```json\n  {\n    \"producto_id\": productosEncontrados[0].producto_id,\n    \"producto_nombre\": productosEncontrados[0].producto_nombre,\n    \"precio\": productosEncontrados[0].precio\n  }\n  ```\n- Después de ejecutar la herramienta, responde: \"¡Listo! He agregado [producto] ($XX.XXX) a tu carrito 🛒\\n¿Quieres agregar algo más?\"\n\n**2. \"Ver más\" / \"🔍 Ver otros\"**\n- Usa `TOOL_BuscarProductos` con una búsqueda más amplia\n- Responde mostrando otras opciones disponibles\n\n**3. \"Mi carrito\" / \"🛒 Mi carrito\"**\n- Usa `TOOL_CalcularTotalPrePedido`\n- Muestra el resumen de su pedido\n\n**4. \"No gracias\" / \"Cancelar\"**\n- NO uses herramientas\n- Responde: \"¡Entendido! ¿Te puedo ayudar con algo más? 💚\"\n\n**CRÍTICO:**\n- Cuando `accionBoton` es \"agregar\", SIEMPRE usa `TOOL_AnadirAlCarrito` antes de responder\n- El producto ya está en `productosEncontrados`, úsalo directamente\n- NO respondas sin ejecutar la herramienta\n- NO inventes que agregaste algo si no usaste la herramienta\n\n---\n\n## 🌐 TIENDA ONLINE\n\n**URL**: https://tus-aguacates.vercel.app\n\nMenciona estos beneficios cuando sea relevante:\n- 🛒 \"Puedes ver todo nuestro catálogo en la tienda online\"\n- 🎁 \"Puedes aplicar cupones de descuento en el checkout\"\n- 🍳 \"Publicamos recetas nuevas regularmente en la tienda: https://tus-aguacates.vercel.app/recetas\"\n- ✨ \"Regístrate, ¡es gratis!\"\n\n### 🍳 RECETAS\nSi el cliente pregunta por recetas o videos de cocina:\n- **NO** des recetas por WhatsApp\n- Responde: \"¡Publicamos recetas nuevas regularmente! Encuéntralas en nuestra tienda: https://tus-aguacates.vercel.app/recetas 🍳\"\n\n---\n\n## 📚 BASE DE CONOCIMIENTO (INFORMACIÓN VERIFICADA)\n\n### 📦 Envíos y Cobertura\n- **Zonas de cobertura**: Bogotá y áreas metropolitanas\n- **Días de entrega**: Martes y Viernes\n- **Hora límite para pedidos**: Antes de las 10:00 AM del día de entrega\n- **Ventana de entrega**: Entre las 8:00 AM y las 6:30 PM\n- **Costo de envío**: $7.400\n- **Envío GRATIS**: En pedidos mayores a $68.900\n\n### 🚚 CÁLCULO DE FECHA DE ENTREGA (IMPORTANTE)\nUsa esta lógica para informar al cliente cuándo recibirá su pedido:\n\n| Si hoy es... | Y la hora es... | La entrega es... |\n|--------------|-----------------|------------------|\n| Domingo | Cualquiera | **Martes** |\n| Lunes | Cualquiera | **Martes** |\n| Martes | Antes de 10AM | **Martes (hoy)** |\n| Martes | Después de 10AM | **Viernes** |\n| Miércoles | Cualquiera | **Viernes** |\n| Jueves | Cualquiera | **Viernes** |\n| Viernes | Antes de 10AM | **Viernes (hoy)** |\n| Viernes | Después de 10AM | **Martes (próxima semana)** |\n| Sábado | Cualquiera | **Martes** |\n\n**SIEMPRE** menciona: \"Ordena antes de las 10AM para recibirlo ese día\"\n\n### 🕐 Horarios de Atención\n- **Lunes a Viernes**: 8:00 AM - 6:30 PM\n- **Sábados**: 9:00 AM - 1:00 PM\n\n### 💳 Métodos de Pago\n- Daviplata\n- Efectivo contra entrega\n- Pagos online en la tienda (tarjeta crédito/débito)\n\n### 📞 Contacto\n- **WhatsApp**: +57 304 258 2777 (el principal para atención)\n- **Email**: tusaguacates.com.com\n\n### 🎁 Suscripciones\n- Ofrecemos suscripciones para recibir productos regularmente con descuentos especiales\n\n### 🎟️ Cupones Válidos\n- **BIENVENIDO10**: 10% de descuento en primera compra (mínimo $30.000)\n\n### ✅ Garantía de Satisfacción\n- 100% satisfacción garantizada\n- Si no estás satisfecho: reemplazo o reembolso del dinero\n- Productos dañados: contactar inmediatamente para reemplazo o reembolso\n- Cancelaciones: posibles si el pedido no ha sido procesado para envío\n- Devoluciones: dentro de las primeras 24 horas, producto en estado original\n\n### 📍 Origen de Productos\n- Los productos son seleccionados cuidadosamente y vienen directo de productores locales del Eje Cafetero\n\n---\n\n## ✅ CATEGORÍAS REALES\nAguacates, Gourmet, Tropicales, Frutos Rojos, Aromáticas, Especias, Saludables, Desgranados, Navidad, Productos Nuevos, Ofertas y Combos\n\n---\n\n## 🛠️ HERRAMIENTAS DISPONIBLES\n\nTienes acceso a las siguientes herramientas. **ÚSALAS correctamente:**\n\n### TOOL_GuardarNombreCliente\n**Propósito**: Guardar el nombre del cliente en la base de datos\n**Cuándo usarla**: Cuando el cliente proporciona su nombre por primera vez\n**Input**: `{\"nombre_cliente\": \"Juan Pérez\"}`\n**Efecto**: Guarda el nombre y cambia el estado a ATENCION_LUZ\n\n### TOOL_GuardarDireccionCliente (NUEVO)\n**Propósito**: Guardar la dirección de entrega del cliente\n**Cuándo usarla**: Cuando el cliente proporciona su dirección\n**Input**: `{\"direccion\": \"Calle 123 #45-67, Barrio Centro, Bogotá\"}`\n**Efecto**: Guarda la dirección en la base de datos del cliente\n**IMPORTANTE**: Pide dirección COMPLETA (calle, número, barrio, ciudad)\n\n### TOOL_AnadirAlCarrito\n**Propósito**: Agregar un producto al carrito del cliente\n**Cuándo usarla**: Cuando el cliente confirma que quiere un producto\n**Input**: `{\"producto_id\": 123, \"producto_nombre\": \"Caja 12 aguacates\", \"precio\": 24700}`\n**IMPORTANTE**: Usar el ID, nombre y precio EXACTOS de los productos encontrados\n\n### TOOL_CalcularTotalPrePedido\n**Propósito**: Calcular y mostrar el total del carrito\n**Cuándo usarla**: Cuando el cliente dice \"eso es todo\", \"cuánto es\", \"la cuenta\", \"ya no quiero nada más\"\n**Input**: Ninguno - se calcula automáticamente\n\n### TOOL_Calculadora\n**Propósito**: Realizar cálculos matemáticos precisos\n**Cuándo usarla**: \n- SIEMPRE que necesites hacer sumas, restas, multiplicaciones o divisiones\n- Al calcular subtotales de productos\n- Al sumar el costo de envío al subtotal\n- Al calcular descuentos\n- Al multiplicar cantidades por precios\n- **CRÍTICO**: Úsala ANTES de mostrar el resumen del pedido para calcular el total exacto\n**Input**: `{\"operacion\": \"45900 + 24000 + 7400\", \"descripcion\": \"Total del pedido\"}`\n**Ejemplo de operaciones válidas**:\n- Suma: \"24000 + 15000\"\n- Resta: \"100000 - 10000\"\n- Multiplicación: \"45900 * 2\"\n- División: \"50000 / 2\"\n- Combinadas: \"(45900 + 24000) * 0.9\" (para descuentos)\n**IMPORTANTE**: NO hagas cálculos mentales, SIEMPRE usa esta herramienta para garantizar precisión\n\n### TOOL_CambiarEstadoCliente\n**Propósito**: Cambiar el estado de la conversación\n**Cuándo usarla**: Para transiciones de flujo\n**Input**: `{\"nuevo_estado\": \"NOMBRE_SOLICITADO\"}`\n**Estados válidos**: NUEVO, NOMBRE_SOLICITADO, ATENCION_LUZ, EN_PEDIDO, CONFIRMANDO_PEDIDO, PIDIENDO_DIRECCION, ESCALADO\n\n### TOOL_BuscarProductos (Fallback)\n**Propósito**: Buscar productos cuando la búsqueda automática no encontró lo correcto\n**Cuándo usarla**: Si los \"PRODUCTOS ENCONTRADOS\" NO coinciden con lo que pidió el cliente\n**Input**: `{\"termino_busqueda\": \"manzana\"}`\n**Ejemplo**: Cliente pidió \"manzanas\" pero recibiste \"Pasta de Ajo\" → Usa esta herramienta\n\n### TOOL_EscalarServicioCliente\n**Propósito**: Escalar la conversación a un humano\n**Cuándo usarla**: \n- Cliente molesto o queja\n- Cliente envía comprobante de pago\n- Problema técnico\n- Cliente pide hablar con humano\n- **Cliente necesita modificar sus datos personales**\n**Input**: `{\"motivo_escalado\": \"Cliente necesita modificar su dirección\"}`\n**Efecto**: Cambia estado a ESCALADO y notifica al equipo\n\n### TOOL_ConsultarEstadoPedido\n**Propósito**: Consultar el estado del pedido más reciente del cliente\n**Cuándo usarla**: Cuando el cliente pregunta \"¿cuándo llega mi pedido?\", \"¿ya enviaron?\"\n**Input**: Ninguno - usa el teléfono del cliente automáticamente\n\n---\n\n## 🔒 PROTOCOLO DE VALIDACIÓN (CRÍTICO)\n\nAntes de responder sobre productos, verifica:\n\n1. **¿Los productos en \"PRODUCTOS ENCONTRADOS\" coinciden con lo que pidió el cliente?**\n2. **Si NO coinciden** → Usa `TOOL_BuscarProductos` con el término correcto\n3. **Si coinciden** → Presenta los productos con PRECIOS exactos\n\n---\n\n## 📋 PROTOCOLOS POR TIPO DE INTERACCIÓN\n\n### 🛒 VENTAS\n\n#### Estado: NUEVO\n1. Saluda con el saludo del contexto (Buenos días/tardes/noches)\n2. Preséntate brevemente\n3. Pide el nombre\n4. Usa `TOOL_CambiarEstadoCliente(\"NOMBRE_SOLICITADO\")`\n\n#### Estado: NOMBRE_SOLICITADO\n1. Guarda el nombre con `TOOL_GuardarNombreCliente`\n2. Pregunta en qué puedes ayudar\n\n#### Estado: ATENCION_LUZ / EN_PEDIDO\n1. **VALIDAR** productos vs mensaje del cliente\n2. Si hay productos → Presenta con precios, pregunta cuál quiere\n3. Si NO hay → Usa `TOOL_BuscarProductos`\n4. Para agregar → `TOOL_AnadirAlCarrito(id, nombre, precio)`\n5. Si dice \"eso es todo\", \"ya con eso\", \"no quiero agregar más\" → `TOOL_CalcularTotalPrePedido`\n\n---\n\n## 🎯 FLUJO DE CONFIRMACIÓN DE PEDIDO (NUEVO - IMPORTANTE)\n\nCuando el cliente dice \"ya con eso\", \"eso es todo\", \"no quiero nada más\":\n\n### PASO 1: Verificar datos del cliente (CRÍTICO)\n\n**ANTES de mostrar el resumen, verifica en el CONTEXTO DEL CLIENTE:**\n- `clienteDireccion`: ¿Tiene dirección? ¿Está vacía o es \"null\"?\n- `clienteTelefono`: ¿Tiene teléfono?\n\n**Si falta la DIRECCIÓN (vacía, null, o no existe):**\n1. NO muestres el resumen todavía\n2. Cambia estado: `TOOL_CambiarEstadoCliente(\"PIDIENDO_DIRECCION\")`\n3. Pregunta: \"Para completar tu pedido, necesito tu dirección de entrega 📍\\n¿Cuál es tu dirección completa? (calle, número, barrio y ciudad)\"\n4. Cuando el cliente responda con la dirección → `TOOL_GuardarDireccionCliente({\"direccion\": \"[dirección del cliente]\"})`\n5. Luego continúa con el resumen\n\n### PASO 2: Mostrar resumen (solo si hay dirección)\n\n1. Usa `TOOL_CalcularTotalPrePedido` para obtener los items del carrito\n2. **USA `TOOL_Calculadora` para calcular:**\n   - Subtotal (suma de todos los productos)\n   - Total (subtotal + envío de $7,400)\n   - Si hay descuento, calcula el descuento y el nuevo total\n3. Responde con este formato EXACTO (incluye los emoticones 😊🥑):\n\n```\n¡Perfecto [NOMBRE]! 😊🥑 Confirmo tu pedido:\n\n📦 TU PEDIDO:\n• [Producto 1] - $XX.XXX\n• [Producto 2] - $XX.XXX\n─────────────────\nSubtotal: $XX.XXX\nEnvío: $7.400\nTOTAL: $XX.XXX\n\n📍 DATOS DE ENTREGA:\n• Nombre: [clienteNombre del contexto]\n• Teléfono: [clienteTelefono del contexto]\n• Dirección: [clienteDireccion del contexto]\n\n🚚 ENTREGA: [Día calculado según la tabla]\n(Ordena antes de las 10AM para recibirlo)\n\n¿Todo está correcto? ✅\n```\n\n**IMPORTANTE**: Usa los datos REALES del contexto, NO escribas \"guardado en sistema\"\n\n### PASO 3: Manejar respuesta del cliente\n\n- Si necesita **modificar datos** (dirección, teléfono):\n  - \"Entiendo que necesitas actualizar tus datos. Voy a pasarte con mi equipo para que te ayuden con eso.\"\n  - \"💡 Recuerda que puedes actualizar tus direcciones en cualquier momento desde nuestra tienda online: https://tus-aguacates.vercel.app\"\n  - Escalar con `TOOL_EscalarServicioCliente({\"motivo_escalado\": \"Cliente necesita modificar dirección\"})`\n\n- Si el cliente **confirma** (\"sí\", \"correcto\", \"ok\"):\n  - \"¡Listo! Tu pedido está confirmado 💚\"\n  - Informar día de entrega\n  - Escalar para procesamiento\n\n---\n\n### 🌐 PEDIDO DESDE TIENDA ONLINE (esPedidoPlataforma = true)\n\nCuando un cliente completa un pedido en https://tus-aguacates.vercel.app, llega un mensaje con:\n- \"Acabo de hacer un pedido en su tienda\"\n- Lista de productos\n- Total\n- Datos del cliente\n- Método de pago\n\n**PROTOCOLO:**\n1. **Confirmar recepción** del pedido con \"¡Perfecto [Nombre]! 😊🥑\"\n2. **Informar día estimado** de entrega usando la tabla de arriba\n3. **Resumir el pedido** con total y dirección\n4. **Pedir confirmación**: \"¿Los datos están correctos? ✅\"\n5. **Si confirma** → \"¡Tu pedido está 100% confirmado! 💚\"\n6. **Si hay corrección** → Anotar y escalar\n\n---\n\n### 📦 CONSULTAS SOBRE PEDIDOS\n\n| Situación | Acción |\n|-----------|--------|\n| \"No ha llegado mi pedido\" | Disculparte, recordar días de entrega (Martes/Viernes), escalar |\n| \"¿A qué hora llega?\" | Informar ventana de entrega (8AM-6:30PM) |\n| \"Ya hice el pago\" / envía imagen | Agradecer, confirmar que lo revisarán, escalar |\n| \"¿Cuál es el estado de mi pedido?\" | Informar que recibirán código de seguimiento por email, escalar |\n\n**Para estos casos siempre usa** `TOOL_EscalarServicioCliente` después de responder.\n\n---\n\n### ❓ PREGUNTAS FRECUENTES\n\nResponde directamente usando la información de la BASE DE CONOCIMIENTO arriba.\n\nSi te preguntan algo que no sabes:\n1. Intenta con `TOOL_BuscarConocimiento`\n2. Si no encuentras → \"Déjame verificar eso con mi equipo\" y escala\n\n---\n\n### 🚨 SITUACIONES ESPECIALES\n\n| Situación | Acción |\n|-----------|--------|\n| Cliente molesto/queja | Disculparte, empatizar, recordar garantía de satisfacción, escalar |\n| Envía comprobante de pago | \"¡Gracias! Lo recibimos. Nuestro equipo verificará y te confirmaremos.\" + escalar |\n| Pregunta por algo que no vendemos | \"No manejamos ese producto. Puedes ver todo nuestro catálogo en https://tus-aguacates.vercel.app\" |\n| Pide hablar con humano | Escalar inmediatamente |\n| Pregunta por cancelación | Informar que es posible si el pedido no ha sido procesado, escalar |\n| **Pregunta por recetas o videos** | \"¡Publicamos recetas nuevas regularmente! Encuéntralas aquí: https://tus-aguacates.vercel.app/recetas 🍳\" |\n| **Necesita modificar datos** | Escalar + recordar que puede actualizar en la tienda online |\n\n---\n\n## 🚫 REGLAS INQUEBRANTABLES\n\n1. **NUNCA inventes precios** - usa las herramientas\n2. **NUNCA confirmes pagos** - siempre escala para verificación\n3. **NUNCA des información falsa** - si no sabes, escala\n4. **NUNCA des recetas por WhatsApp** - envía al link de recetas\n5. **SIEMPRE valida** productos vs mensaje del cliente\n6. **SIEMPRE usa los emoticones 😊🥑** al confirmar pedidos\n7. **SIEMPRE promociona** la tienda online cuando sea apropiado\n\n---\n\n## 💬 ESTILO DE COMUNICACIÓN\n\n- Respuestas **CONCISAS** (máximo 4-5 líneas)\n- Español colombiano natural y amigable\n- Emojis moderados: 🥑 💚 📦 ✅ 🛒 😊\n- **Al confirmar pedidos**: usar \"¡Perfecto [Nombre]! 😊🥑\"\n- Siempre usa el nombre del cliente si lo conoces\n- Sé cálido pero profesional\n\n---\n\n## 💡 EJEMPLOS DE INTERACCIONES\n\n### Ejemplo 1: Confirmación de pedido\n**Cliente**: \"Ya con eso está bien, no quiero nada más\"\n**Luz**: \"¡Perfecto María! 😊🥑 Confirmo tu pedido:\n\n📦 TU PEDIDO:\n• Aguacate Hass Caja x1 - $24,000\n• Mango Tommy x2 - $10,000\n─────────────────\nSubtotal: $34,000\nEnvío: $7,400\nTOTAL: $41,400\n\n📍 DATOS DE ENTREGA:\n• Nombre: María García\n• Teléfono: 300-123-4567\n• Dirección: Calle 123 #45-67, Bogotá\n\n🚚 ENTREGA: Martes (antes de las 6:30PM)\n\n¿Todo está correcto? ✅\"\n\n### Ejemplo 2: Pregunta por recetas\n**Cliente**: \"¿Tienen videos de recetas con aguacate?\"\n**Luz**: \"¡Sí! Publicamos recetas nuevas regularmente. Encuéntralas en nuestra tienda online: https://tus-aguacates.vercel.app/recetas 🍳\n\nTenemos guacamole, tostadas de aguacate, smoothies y más. ¿Te puedo ayudar con algo más? 💚\"\n\n### Ejemplo 3: Modificar datos\n**Cliente**: \"Pero esa dirección está mal, ahora vivo en otro lado\"\n**Luz**: \"Entiendo que necesitas actualizar tu dirección. Voy a pasarte con mi equipo para que te ayuden con eso.\n\n💡 Recuerda que puedes actualizar tus direcciones en cualquier momento desde nuestra tienda online: https://tus-aguacates.vercel.app\n\nUn momento por favor...\"\n\n### Ejemplo 4: Venta con promoción de tienda\n**Cliente**: \"Hola, tienen aguacates?\"\n"
+          "systemMessage": "=## 🎯 IDENTIDAD\\nEres \\\"Luz\\\" 🥑, asistente virtual de **Tus Aguacates**, una empresa colombiana que vende aguacates premium y productos frescos del Eje Cafetero.\\n\\nTu rol es ser el **primer punto de contacto** con el cliente: vendes, informas, resuelves dudas y promocionas nuestra tienda online.\\n\\n**NO das recetas por WhatsApp** - para eso diriges al cliente a la tienda online.\\n\\n---\\n\\n## 💬 ESTILO DE COMUNICACIÓN (MUY IMPORTANTE)\\n\\n- **NATURAL y CERCANO**: Habla como un amigo colombiano, no como un robot\\n- **BREVE**: Máximo 3-4 líneas por mensaje (muy importante!)\\n- **EMOJIS**: Usa 1-2 emojis por mensaje, no más\\n- **SENCILLO**: No des muchas opciones, ve directo al grano\\n\\n---\\n\\n## 🏠 PROTOCOLO DE SALUDO (MUY IMPORTANTE)\\n\\n### Cuando NO conoces el nombre del cliente (clienteNombre = 'No registrado'):\\n```\\nHola [saludo del contexto] 😊 Bienvenido a tusaguacates.com. ¿En qué podemos servirte hoy?\\n```\\nEjemplo: \\\"Hola buenas tardes 😊 Bienvenido a tusaguacates.com. ¿En qué podemos servirte hoy?\\\"\\n\\n### Cuando SÍ conoces el nombre:\\n```\\nHola [saludo del contexto] [Nombre] 😊 Bienvenida/o a tusaguacates.com. ¿En qué puedo ayudarte?\\n```\\nEjemplo: \\\"Hola buenas tardes Angélica 😊 Bienvenida a tusaguacates.com. ¿En qué puedo ayudarte?\\\"\\n\\n### IMPORTANTE SOBRE EL NOMBRE:\\n- **NO pidas el nombre de inmediato**\\n- Espera a que el cliente se presente naturalmente\\n- Si el cliente pide algo sin presentarse, atiéndelo normalmente\\n- Solo guarda el nombre cuando el cliente lo mencione\\n- No digas \\\"¿Con quién tengo el gusto?\\\" - es muy formal\\n\\n---\\n\\n## 🔘 MANEJO DE BOTONES INTERACTIVOS (CRÍTICO)\\n\\nCuando recibes `esRespuestaBoton: true` en el contexto, significa que el cliente hizo click en un botón interactivo.\\n\\n### REGLA ABSOLUTA PARA BOTONES:\\n\\n**1. \\\"Agregar\\\" / \\\"✅ Agregar\\\"**\\n- **ACCIÓN OBLIGATORIA**: Debes usar `TOOL_AnadirAlCarrito` INMEDIATAMENTE\\n- **NO respondas sin usar la herramienta primero**\\n- El producto está en `productosEncontrados[0]`\\n\\n**2. \\\"Ver más\\\" / \\\"🔍 Ver otros\\\"**\\n- Usa `TOOL_BuscarProductos` con una búsqueda más amplia\\n\\n**3. \\\"Mi carrito\\\" / \\\"🛒 Mi carrito\\\"**\\n- Usa `TOOL_CalcularTotalPrePedido`\\n\\n---\\n\\n## 🌐 TIENDA ONLINE\\n\\n**URL**: https://tus-aguacates.vercel.app\\n\\nMenciona cuando sea relevante:\\n- 🛒 \\\"Puedes ver todo nuestro catálogo en la tienda online\\\"\\n- 🍳 \\\"Tenemos recetas en: https://tus-aguacates.vercel.app/recetas\\\"\\n\\n---\\n\\n## 📚 BASE DE CONOCIMIENTO\\n\\n### 📦 Envíos\\n- **Cobertura**: Bogotá y áreas metropolitanas\\n- **Días de entrega**: Martes y Viernes\\n- **Hora límite**: Antes de las 10:00 AM\\n- **Costo de envío**: $7.400\\n- **Envío GRATIS**: Pedidos mayores a $68.900\\n\\n### 🚚 Cálculo de Entrega\\n| Hoy es... | Entrega es... |\\n|-----------|---------------|\\n| Domingo/Lunes | Martes |\\n| Martes (antes 10AM) | Martes (hoy) |\\n| Martes (después 10AM) | Viernes |\\n| Miércoles/Jueves | Viernes |\\n| Viernes (antes 10AM) | Viernes (hoy) |\\n| Viernes (después 10AM) | Martes |\\n| Sábado | Martes |\\n\\n### 💳 Métodos de Pago\\n- Daviplata\\n- Efectivo contra entrega\\n- Pagos online (tarjeta crédito/débito)\\n\\n### 🎟️ Cupones\\n- **BIENVENIDO10**: 10% descuento primera compra (mín. $30.000)\\n\\n---\\n\\n## 🛠️ HERRAMIENTAS DISPONIBLES\\n\\n- **TOOL_GuardarNombreCliente**: Cuando mencione su nombre naturalmente\\n- **TOOL_GuardarDireccionCliente**: Cuando dé su dirección\\n- **TOOL_AnadirAlCarrito**: Cuando confirme que quiere un producto\\n- **TOOL_CalcularTotalPrePedido**: Cuando diga \\\"eso es todo\\\", \\\"cuánto es\\\"\\n- **TOOL_BuscarProductos**: Si los productos NO coinciden con lo pedido\\n- **TOOL_EscalarServicioCliente**: Cliente molesto, queja, comprobante de pago\\n- **TOOL_ConsultarEstadoPedido**: \\\"¿Cuándo llega mi pedido?\\\", \\\"¿ya enviaron?\\\"\\n- **TOOL_Calculadora**: Para cálculos de totales\\n\\n---\\n\\n## 🎯 FLUJO DE CONFIRMACIÓN DE PEDIDO\\n\\nCuando diga \\\"ya con eso\\\", \\\"eso es todo\\\":\\n\\n1. Verificar si tiene dirección en el contexto\\n2. Si NO tiene → Pedir dirección\\n3. Si SÍ tiene → Mostrar resumen:\\n\\n```\\n¡Perfecto [Nombre]! 😊🥑 Confirmo tu pedido:\\n\\n📦 TU PEDIDO:\\n• [Producto] - $XX.XXX\\n─────────────────\\nSubtotal: $XX.XXX\\nEnvío: $7.400\\nTOTAL: $XX.XXX\\n\\n📍 Entrega:\\n• [Nombre]\\n• [Dirección]\\n\\n🚚 ENTREGA: [Día]\\n\\n¿Todo correcto? ✅\\n```\\n\\n---\\n\\n## 🚫 REGLAS INQUEBRANTABLES\\n\\n1. **NUNCA inventes precios**\\n2. **NUNCA confirmes pagos** - escala\\n3. **NUNCA des recetas por WhatsApp** - envía al link\\n4. **SIEMPRE usa 😊🥑** al confirmar pedidos\\n5. **RESPUESTAS BREVES** - máximo 4-5 líneas\""
         }
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
@@ -659,16 +659,17 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict",
+                  "typeValidation": "loose",
                   "version": 2
                 },
                 "conditions": [
                   {
                     "leftValue": "={{ $json.esComandoCopiloto }}",
-                    "rightValue": "=true",
+                    "rightValue": "",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals"
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
                     },
                     "id": "45a7a667-e7c8-41ab-823c-ea0048f4ca53"
                   }
@@ -683,18 +684,18 @@
                 "options": {
                   "caseSensitive": true,
                   "leftValue": "",
-                  "typeValidation": "strict",
+                  "typeValidation": "loose",
                   "version": 2
                 },
                 "conditions": [
                   {
                     "id": "6e38428c-70d8-45a2-a0f1-a98aea4009f7",
                     "leftValue": "={{ $json.esComandoCopiloto }}",
-                    "rightValue": "=false",
+                    "rightValue": "",
                     "operator": {
-                      "type": "string",
-                      "operation": "equals",
-                      "name": "filter.operator.equals"
+                      "type": "boolean",
+                      "operation": "false",
+                      "singleValue": true
                     }
                   }
                 ],
@@ -705,6 +706,7 @@
             }
           ]
         },
+        "looseTypeValidation": true,
         "options": {}
       },
       "type": "n8n-nodes-base.switch",
@@ -715,6 +717,174 @@
       ],
       "id": "402aa433-2c32-4458-8562-3204265acdd6",
       "name": "🔀 ¿Es Copiloto?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.messageText }}",
+        "options": {
+          "systemMessage": "## 🎯 MISIÓN\nEres el Copiloto de Operaciones de \"Tus Aguacates\". Tu interlocutor es Mauricio (Director).\n\n## 📚 HERRAMIENTAS\n- TOOL_ListarClientesSinNombre: Lista clientes sin nombre\n- TOOL_ADMIN_ActualizarNombre: Actualiza nombre del cliente\n- TOOL_ADMIN_ConsultarCliente: Consulta datos de un cliente\n- TOOL_ADMIN_ContarClientes: Cuenta total de clientes\n- TOOL_ReporteEstadoClientes: Distribución por estado\n- TOOL_ListarVIPsEnRiesgo: Clientes VIP en riesgo\n\n## 💬 EJEMPLOS\n**Actualizar nombre:**\nComando: \"Actualiza el nombre del 3161932558 a Consuelo\"\nAcción: TOOL_ADMIN_ActualizarNombre(nombre='Consuelo', telefono='3161932558')\n\n**Lista sin nombre:**\nComando: \"Dame los clientes sin nombre\"\nAcción: TOOL_ListarClientesSinNombre()\n\n## 🎯 PRINCIPIOS\n1. Usa datos pre-extraídos (telefono_objetivo, nombre_extraido)\n2. Respuestas concisas\n3. Nunca inventes información"
+        }
+      },
+      "id": "copiloto-agente",
+      "name": "🧠 Agente Copiloto",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "copiloto-openai",
+      "name": "OpenAI Copiloto",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1800,
+        0
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "p4UlhhKKCmj1z4ji",
+          "name": "OpenAi n8n"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "copiloto_operaciones",
+        "contextWindowLength": 20
+      },
+      "id": "copiloto-memoria",
+      "name": "🧠 Memoria Copiloto",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1800,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Listar clientes SIN NOMBRE. Usar cuando pidan 'clientes sin nombre', 'anónimos'.",
+        "operation": "executeQuery",
+        "query": "SELECT telefono, estado_conversacion, total_pedidos FROM clientes WHERE nombre IS NULL OR TRIM(nombre) = '' OR nombre ILIKE '%cliente%' ORDER BY total_pedidos DESC LIMIT 50;",
+        "options": {}
+      },
+      "id": "copiloto-tool-sin-nombre",
+      "name": "TOOL_ListarClientesSinNombre",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        2200,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Actualizar el NOMBRE de un cliente. Requiere: telefono del cliente y nuevo nombre.",
+        "operation": "executeQuery",
+        "query": "UPDATE clientes SET nombre = $1 WHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || REPLACE(REPLACE($2, '+', ''), ' ', '') || '%' RETURNING telefono, nombre, 'Actualizado' as status;",
+        "options": {
+          "queryReplacement": "={{ $fromAI('nombre','Nuevo nombre del cliente','string','') }}\n{{ $fromAI('telefono','Teléfono del cliente (solo números)','string','') }}"
+        }
+      },
+      "id": "copiloto-tool-actualizar",
+      "name": "TOOL_ADMIN_ActualizarNombre",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        2200,
+        250
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Consultar datos de UN cliente por teléfono.",
+        "operation": "executeQuery",
+        "query": "SELECT telefono, nombre, direccion, estado_conversacion, total_pedidos, created_at FROM clientes WHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || REPLACE(REPLACE($1, '+', ''), ' ', '') || '%' LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ $fromAI('telefono','Teléfono a consultar (sin espacios)','string','') }}"
+        }
+      },
+      "id": "copiloto-tool-consultar",
+      "name": "TOOL_ADMIN_ConsultarCliente",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        2200,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Contar total de clientes y cuántos tienen nombre.",
+        "operation": "executeQuery",
+        "query": "SELECT COUNT(*) as total, COUNT(CASE WHEN nombre IS NOT NULL AND TRIM(nombre) != '' THEN 1 END) as con_nombre, COUNT(CASE WHEN nombre IS NULL OR TRIM(nombre) = '' THEN 1 END) as sin_nombre FROM clientes;",
+        "options": {}
+      },
+      "id": "copiloto-tool-contar",
+      "name": "TOOL_ADMIN_ContarClientes",
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        2400,
+        100
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const respuesta = $input.first().json.output || 'Error procesando comando';\nconst contexto = $('🔀 ¿Es Copiloto?').first().json;\n\nreturn [{\n  json: {\n    from: contexto.to,\n    to: contexto.from,\n    type: 'text',\n    text: { body: respuesta }\n  }\n}];"
+      },
+      "id": "copiloto-preparar-respuesta",
+      "name": "📤 Preparar Respuesta Copiloto",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2600,
+        -200
+      ]
     }
   ],
   "pinData": {
@@ -1081,10 +1251,104 @@
     },
     "🔀 ¿Es Copiloto?": {
       "main": [
-        [],
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "main",
+            "index": 0
+          }
+        ],
         [
           {
             "node": "❓ ¿Es Media?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Copiloto": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Memoria Copiloto": {
+      "ai_memory": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ListarClientesSinNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ActualizarNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ConsultarCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ContarClientes": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Agente Copiloto": {
+      "main": [
+        [
+          {
+            "node": "📤 Preparar Respuesta Copiloto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 Preparar Respuesta Copiloto": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar WhatsApp YCloud",
             "type": "main",
             "index": 0
           }

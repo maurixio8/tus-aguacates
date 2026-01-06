@@ -43,7 +43,7 @@
         },
         {
             "parameters": {
-                "jsCode": "// Preparar clientes para crear en Supabase\nconst clientes = $input.all();\n\nif (clientes.length === 0 || !clientes[0].json.telefono) {\n  return [{ json: { mensaje: 'No hay clientes nuevos para sincronizar a Supabase', total: 0 } }];\n}\n\nconst resultado = [];\n\nfor (const item of clientes) {\n  const c = item.json;\n  \n  // Normalizar teléfono (agregar + si no tiene)\n  let phone = c.telefono;\n  if (!phone.startsWith('+')) {\n    phone = '+' + phone;\n  }\n  \n  resultado.push({\n    json: {\n      local_id: c.id,\n      phone: phone,\n      name: c.nombre || 'Cliente WhatsApp',\n      email: c.email || null,\n      address: c.direccion || null,\n      city: c.ciudad || 'Bogotá',\n      total_orders: parseInt(c.total_pedidos) || 0,\n      total_spent: parseFloat(c.total_gastado) || 0,\n      is_active: c.activo !== false\n    }\n  });\n}\n\nreturn resultado;"
+                "jsCode": "// Preparar clientes para crear en Supabase\nconst clientes = $input.all();\n\nif (clientes.length === 0 || !clientes[0].json.telefono) {\n  return [{ json: { mensaje: 'No hay clientes nuevos para sincronizar a Supabase', total: 0 } }];\n}\n\nconst resultado = [];\n\nfor (const item of clientes) {\n  const c = item.json;\n  \n  // Normalizar teléfono\n  // 1. Quitar todo lo que no sea número\n  let rawPhone = (c.telefono || '').replace(/[^0-9]/g, '');\n  \n  // 2. Si empieza por 57 y tiene 12 dígitos (57 + 10), es válido tal cual\n  // 3. Si tiene 10 dígitos y empieza por 3, agregar 57\n  if (rawPhone.length === 10 && rawPhone.startsWith('3')) {\n      rawPhone = '57' + rawPhone;\n  }\n  \n  // 4. Formato E.164 para Supabase (con +)\n  // Si ya tiene el 57 (o es otro country code), le ponemos +\n  const finalPhone = '+' + rawPhone;\n  \n  resultado.push({\n    json: {\n      local_id: c.id,\n      phone: finalPhone,\n      name: c.nombre || 'Cliente WhatsApp',\n      email: c.email || null,\n      address: c.direccion || null,\n      city: c.ciudad || 'Bogotá',\n      total_orders: parseInt(c.total_pedidos) || 0,\n      total_spent: parseFloat(c.total_gastado) || 0,\n      is_active: c.activo !== false\n    }\n  });\n}\n\nreturn resultado;"
             },
             "id": "transform-for-supabase",
             "name": "🔄 Preparar para Supabase",
@@ -203,7 +203,7 @@
             ]
         }
     },
-    "active": false,
+    "active": true,
     "settings": {
         "executionOrder": "v1"
     },
