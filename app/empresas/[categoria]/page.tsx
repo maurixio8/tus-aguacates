@@ -19,11 +19,12 @@ interface Category {
 }
 
 async function CategoryHeader({ categoria }: { categoria: string }) {
-  // Obtener datos de la categoría desde la base de datos
+  // Obtener datos de la categoría B2B desde la base de datos
   const { data: categoryData } = await supabase
-    .from('categories')
+    .from('b2b_categories')
     .select('*')
     .eq('slug', categoria)
+    .eq('is_active', true)
     .single();
 
   if (!categoryData) {
@@ -92,11 +93,12 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
 export default async function EmpresasCategoriaPage({ params }: Props) {
   const { categoria } = await params;
 
-  // Verificar que la categoría exista
+  // Verificar que la categoría B2B exista
   const { data: categoryData } = await supabase
-    .from('categories')
+    .from('b2b_categories')
     .select('slug')
     .eq('slug', categoria)
+    .eq('is_active', true)
     .single();
 
   if (!categoryData) {

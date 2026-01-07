@@ -17,6 +17,7 @@ import {
 } from '@/lib/b2b-supabase-service';
 import {
   BusinessProduct,
+  BusinessProductVariant,
   BUSINESS_PRODUCTS,
   BUSINESS_CATEGORIES,
   getBusinessProductsByCategory,
@@ -114,17 +115,70 @@ export function useB2BProductsByCategory(categorySlug: string): UseB2BProductsRe
     setError(null);
 
     try {
-      // Intentar obtener de Supabase
-      const hasData = await hasB2BDataInSupabase();
+      // Primero obtener el category_id desde el slug
+      const { supabase } = await import('@/lib/supabase');
+      const { data: category } = await supabase
+        .from('b2b_categories')
+        .select('id')
+        .eq('slug', categorySlug)
+        .eq('is_active', true)
+        .single();
 
-      if (hasData) {
-        const supabaseProducts = await fetchB2BProductsByCategory(categorySlug);
-        if (supabaseProducts.length > 0) {
-          setProducts(supabaseProducts);
-          setSource('supabase');
-          setLoading(false);
-          return;
-        }
+      if (!category) {
+        // Fallback a datos locales si no existe la categoría
+        setProducts(getBusinessProductsByCategory(categorySlug));
+        setSource('local');
+        setLoading(false);
+        return;
+      }
+
+      // Usar la API pública con el category_id correcto
+      const response = await fetch(`/api/b2b/products?category_id=${category.id}&is_active=true`);
+
+      if (!response.ok) {
+        throw new Error('Error fetching from API');
+      }
+
+      const result = await response.json();
+
+      if (result.success && result.data && result.data.length > 0) {
+        // Transformar los datos de la API al formato BusinessProduct
+        const transformedProducts = result.data.map((p: any) => {
+          // Mapear pricing_tiers a variants
+          const variants: BusinessProductVariant[] = (p.pricing_tiers || [])
+            .sort((a: any, b: any) => a.min_quantity - b.min_quantity)
+            .slice(0, 3)
+            .map((tier: any, index: number) => {
+              const tierNames: Array<'tier1' | 'tier2' | 'tier3'> = ['tier1', 'tier2', 'tier3'];
+              return {
+                id: `${p.sku}-t${tier.min_quantity}`,
+                name: tier.tier_name,
+                price: tier.price_per_unit * tier.min_quantity,
+                minKg: tier.min_quantity,
+                maxKg: tier.max_quantity ?? tier.min_quantity * 10,
+                pricePerKg: tier.price_per_unit,
+                tier: tierNames[index] || 'tier3',
+              };
+            });
+
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.description || '',
+            category: p.category?.name || 'Sin categoría',
+            categorySlug: p.category?.slug || categorySlug,
+            unit: p.unit,
+            image: p.main_image_url || undefined,
+            variants,
+            available_for: 'business' as const,
+            is_active: p.is_active,
+          };
+        });
+
+        setProducts(transformedProducts);
+        setSource('supabase');
+        setLoading(false);
+        return;
       }
 
       // Fallback a datos locales

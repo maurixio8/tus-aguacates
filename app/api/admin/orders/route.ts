@@ -301,26 +301,70 @@ export async function GET(request: NextRequest) {
 
     // Procesar pedidos de invitados
     if (guestOrdersData.data) {
-      const guestOrders = guestOrdersData.data.map((order: any) => ({
-        id: order.id,
-        order_number: `INV-${order.id.toString().slice(-8)}`, // Formato INV-XXXXXXXX
-        user_id: null,
-        status: order.status,
-        subtotal: order.order_data?.subtotal || 0,
-        total: order.total_amount,
-        total_amount: order.total_amount,
-        customer_name: order.guest_name,
-        customer_email: order.guest_email,
-        customer_phone: order.guest_phone,
-        delivery_address: order.guest_address,
-        delivery_notes: null,
-        order_data: order.order_data,
-        created_at: order.created_at,
-        updated_at: order.updated_at,
-        order_type: 'guest',
-        payment_status: order.payment_status || 'pending',
-        payment_method: order.payment_method || null
-      }));
+      const guestOrders = guestOrdersData.data.map((order: any) => {
+        // Extraer items de order_data y mapear de camelCase a snake_case
+        let orderItems: any[] = [];
+
+        try {
+          let parsedData: any;
+
+          // order_data puede venir como string u objeto
+          if (typeof order.order_data === 'string') {
+            parsedData = JSON.parse(order.order_data);
+          } else if (order.order_data && typeof order.order_data === 'object') {
+            parsedData = order.order_data;
+          }
+
+          // Extraer items si existen
+          if (parsedData?.items && Array.isArray(parsedData.items)) {
+            console.log(`✅ API: Extracting ${parsedData.items.length} items from guest order ${order.id.substring(0, 8)}`);
+
+            // Mapear de camelCase (BD) a snake_case (frontend esperado)
+            orderItems = parsedData.items.map((item: any) => ({
+              id: item.id || null,
+              product_id: item.productId || item.product_id || null,
+              variant_id: item.variantId || item.variant_id || null,
+              quantity: item.quantity || 0,
+              unit_price: item.price || item.unit_price || 0,
+              subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
+              product_name: item.productName || item.product_name || 'Producto sin nombre',
+              variant_name: item.variantName || item.variant_name || null,
+              product_snapshot: {
+                name: item.productName || item.product_name || 'Producto',
+                price: item.price || item.unit_price || 0
+              }
+            }));
+
+            console.log(`✅ API: Mapped ${orderItems.length} items for guest order`);
+          } else {
+            console.warn(`⚠️ API: No items found in guest order ${order.id.substring(0, 8)}`);
+          }
+        } catch (error) {
+          console.error(`❌ API: Error parsing order_data for guest order ${order.id}:`, error);
+        }
+
+        return {
+          id: order.id,
+          order_number: `INV-${order.id.toString().slice(-8)}`, // Formato INV-XXXXXXXX
+          user_id: null,
+          status: order.status,
+          subtotal: order.order_data?.subtotal || 0,
+          total: order.total_amount,
+          total_amount: order.total_amount,
+          customer_name: order.guest_name,
+          customer_email: order.guest_email,
+          customer_phone: order.guest_phone,
+          delivery_address: order.guest_address,
+          delivery_notes: null,
+          order_data: order.order_data,
+          order_items: orderItems, // ← AGREGADO: Items correctamente mapeados
+          created_at: order.created_at,
+          updated_at: order.updated_at,
+          order_type: 'guest',
+          payment_status: order.payment_status || 'pending',
+          payment_method: order.payment_method || null
+        };
+      });
       allOrders.push(...guestOrders);
     }
 
