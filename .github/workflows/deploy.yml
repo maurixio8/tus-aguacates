@@ -12,7 +12,7 @@ on:
 
 # Variables de entorno
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'  # Next.js 16 requiere Node.js >= 20.9.0
 
 jobs:
   # ============================================
