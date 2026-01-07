@@ -13,7 +13,6 @@ on:
 # Variables de entorno
 env:
   NODE_VERSION: '18'
-  PNPM_VERSION: '9'
 
 jobs:
   # ============================================
@@ -26,25 +25,20 @@ jobs:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🔎 TypeScript check
-        run: pnpm tsc --noEmit
+        run: npx tsc --noEmit
 
       - name: 🧹 Lint check
-        run: pnpm lint || echo "Lint check skipped (no lint script)"
+        run: npm run lint || echo "Lint check skipped (no lint script)"
 
   # ============================================
   # JOB 2: Tests E2E con Playwright
@@ -58,25 +52,20 @@ jobs:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🎭 Install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: 🧪 Run E2E tests
-        run: pnpm test:e2e
+        run: npm run test:e2e
         env:
           # URL del preview deployment para tests
           BASE_URL: http://localhost:3000
@@ -101,22 +90,17 @@ jobs:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🏗️ Build production
-        run: pnpm build
+        run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -174,25 +158,20 @@ jobs:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
 
-      - name: 📦 Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📥 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🎭 Install Playwright
-        run: pnpm exec playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: 🧪 Run smoke tests against production
-        run: pnpm exec playwright test
+        run: npx playwright test
         env:
           BASE_URL: https://tus-aguacates.vercel.app
         continue-on-error: true
