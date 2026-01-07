@@ -49,8 +49,8 @@ jobs:
     name: 🧪 E2E Tests
     runs-on: ubuntu-latest
     needs: lint
-    # Desactivado temporalmente con 'if: false()'
-    if: false()
+    # Desactivado temporalmente - eliminar esta línea para reactivar
+    if: github.event_name == 'never_trigger'
     timeout-minutes: 10
     steps:
       - name: 📥 Checkout código
@@ -158,7 +158,8 @@ jobs:
     name: 🕵️ Smoke Tests (Post-Deploy)
     runs-on: ubuntu-latest
     needs: [deploy]
-    if: false()  # Desactivado temporalmente
+    # Desactivado temporalmente - eliminar esta línea para reactivar
+    if: github.event_name == 'never_trigger'
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
