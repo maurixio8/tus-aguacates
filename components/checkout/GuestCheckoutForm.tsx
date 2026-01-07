@@ -59,6 +59,22 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
   };
 
+  // Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
+  const normalizePhone = (phone: string): string => {
+    // Quitar todo excepto números
+    const digits = phone.replace(/\D/g, '');
+    // Si tiene 10 dígitos y empieza con 3, agregar 57
+    if (digits.length === 10 && digits.startsWith('3')) {
+      return '57' + digits;
+    }
+    // Si ya tiene 12 dígitos con 57, retornar tal cual
+    if (digits.length === 12 && digits.startsWith('57')) {
+      return digits;
+    }
+    // Retornar con prefijo 57 si no lo tiene
+    return digits.startsWith('57') ? digits : '57' + digits;
+  };
+
   // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
     // Only calculate shipping if there are items in the cart
@@ -141,7 +157,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         .insert({
           guest_name: formData.name,
           guest_email: formData.email,
-          guest_phone: formData.phone,
+          guest_phone: normalizePhone(formData.phone),
           guest_address: formData.address,
           order_data: orderData,
           total_amount: totals.total,
@@ -375,7 +391,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         .insert({
           guest_name: formData.name,
           guest_email: formData.email,
-          guest_phone: formData.phone,
+          guest_phone: normalizePhone(formData.phone),
           guest_address: formData.address,
           order_data: orderData,
           total_amount: totals.total,

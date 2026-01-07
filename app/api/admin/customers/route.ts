@@ -3,6 +3,19 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
+// Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
+const normalizePhone = (phone: string): string => {
+  if (!phone) return phone;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length === 10 && digits.startsWith('3')) {
+    return '57' + digits;
+  }
+  if (digits.length === 12 && digits.startsWith('57')) {
+    return digits;
+  }
+  return digits.startsWith('57') ? digits : '57' + digits;
+};
+
 // GET - Listar clientes con búsqueda y paginación
 // Ahora lee de TODAS las fuentes: customers, profiles, y guest_orders
 export async function GET(request: NextRequest) {
@@ -329,7 +342,7 @@ export async function POST(request: NextRequest) {
       .from('customers')
       .insert({
         name: body.name,
-        phone: body.phone,
+        phone: normalizePhone(body.phone),
         email: body.email || null,
         address: body.address || null,
         neighborhood: body.neighborhood || null,
@@ -390,7 +403,7 @@ export async function PATCH(request: NextRequest) {
         .from('customers')
         .insert({
           name: body.name,
-          phone: phone,
+          phone: normalizePhone(phone),
           email: body.email || null,
           address: body.address || null,
           neighborhood: body.neighborhood || null,
@@ -421,7 +434,7 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.phone !== undefined) updateData.phone = body.phone;
+    if (body.phone !== undefined) updateData.phone = normalizePhone(body.phone);
     if (body.email !== undefined) updateData.email = body.email || null;
     if (body.address !== undefined) updateData.address = body.address || null;
     if (body.neighborhood !== undefined) updateData.neighborhood = body.neighborhood || null;
