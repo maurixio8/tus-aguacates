@@ -1,0 +1,192 @@
+[
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Cambiar el estado de conversación de un cliente. Estados válidos: NUEVO, ATENCION_LUZ, EN_PEDIDO, CONFIRMANDO_PEDIDO, PIDIENDO_DIRECCION, ESCALADO. Input: nuevo_estado, telefono_cliente.",
+            "operation": "executeQuery",
+            "query": "UPDATE clientes \nSET estado_conversacion = $1\nWHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $2 || '%'\nRETURNING nombre, telefono, estado_conversacion as nuevo_estado, 'Estado actualizado correctamente' as mensaje;",
+            "options": {
+                "queryReplacement": "={{ [$fromAI('nuevo_estado','Estado nuevo del cliente','string','ATENCION_LUZ'), $fromAI('telefono','Últimos dígitos del teléfono','string','')] }}"
+            }
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            500
+        ],
+        "id": "tool-admin-cambiar-estado",
+        "name": "TOOL_ADMIN_CambiarEstado",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Vaciar/resetear el carrito (pre_pedido) de un cliente específico. Input: telefono_cliente.",
+            "operation": "executeQuery",
+            "query": "UPDATE clientes \nSET pre_pedido = '[]'::jsonb\nWHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $1 || '%'\nRETURNING nombre, telefono, 'Carrito vaciado correctamente' as mensaje;",
+            "options": {
+                "queryReplacement": "={{ [$fromAI('telefono','Últimos dígitos del teléfono del cliente','string','')] }}"
+            }
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            600
+        ],
+        "id": "tool-admin-resetear-carrito",
+        "name": "TOOL_ADMIN_ResetearCarrito",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Vaciar TODOS los carritos de todos los clientes. Usa cuando el admin diga 'resetea todos los carritos' o 'vacía todos los carritos'.",
+            "operation": "executeQuery",
+            "query": "WITH reset AS (\n  UPDATE clientes \n  SET pre_pedido = '[]'::jsonb\n  WHERE pre_pedido IS NOT NULL AND pre_pedido != '[]'::jsonb\n  RETURNING 1\n)\nSELECT COUNT(*) as carritos_reseteados, 'Todos los carritos han sido vaciados' as mensaje FROM reset;",
+            "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            700
+        ],
+        "id": "tool-admin-reset-masivo-carritos",
+        "name": "TOOL_ADMIN_ResetMasivoCarritos",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Resetear estados de TODOS los clientes a ATENCION_LUZ. Afecta solo a clientes en estados: EN_PEDIDO, CONFIRMANDO_PEDIDO, PIDIENDO_DIRECCION, ESCALADO. Usa cuando el admin diga 'resetea todos los estados'.",
+            "operation": "executeQuery",
+            "query": "WITH reset AS (\n  UPDATE clientes \n  SET estado_conversacion = 'ATENCION_LUZ'\n  WHERE estado_conversacion IN ('EN_PEDIDO', 'CONFIRMANDO_PEDIDO', 'PIDIENDO_DIRECCION', 'ESCALADO')\n  RETURNING 1\n)\nSELECT COUNT(*) as clientes_reseteados, 'Todos los estados han sido reseteados a ATENCION_LUZ' as mensaje FROM reset;",
+            "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            800
+        ],
+        "id": "tool-admin-reset-masivo-estados",
+        "name": "TOOL_ADMIN_ResetMasivoEstados",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Ver estadísticas de clientes agrupados por estado de conversación. Muestra cuántos clientes hay en cada estado.",
+            "operation": "executeQuery",
+            "query": "SELECT \n  estado_conversacion as estado,\n  COUNT(*) as cantidad\nFROM clientes\nGROUP BY estado_conversacion\nORDER BY cantidad DESC;",
+            "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            900
+        ],
+        "id": "tool-admin-estadisticas",
+        "name": "TOOL_ADMIN_EstadisticasClientes",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Listar clientes que tienen productos en su carrito (pre_pedido no vacío). Muestra nombre, teléfono y cantidad de items.",
+            "operation": "executeQuery",
+            "query": "SELECT \n  nombre, \n  telefono, \n  jsonb_array_length(COALESCE(pre_pedido, '[]'::jsonb)) as items_en_carrito,\n  pre_pedido as detalle_carrito\nFROM clientes\nWHERE pre_pedido IS NOT NULL AND pre_pedido != '[]'::jsonb AND jsonb_array_length(pre_pedido) > 0\nORDER BY jsonb_array_length(pre_pedido) DESC\nLIMIT 20;",
+            "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            1000
+        ],
+        "id": "tool-admin-clientes-carrito",
+        "name": "TOOL_ADMIN_ClientesConCarrito",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Listar clientes con estado ESCALADO (esperando atención humana). Muestra nombre, teléfono y desde cuándo están esperando.",
+            "operation": "executeQuery",
+            "query": "SELECT \n  nombre, \n  telefono,\n  updated_at as escalado_desde,\n  EXTRACT(EPOCH FROM (NOW() - updated_at))/60 as minutos_esperando\nFROM clientes\nWHERE estado_conversacion = 'ESCALADO'\nORDER BY updated_at ASC;",
+            "options": {}
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            1100
+        ],
+        "id": "tool-admin-clientes-escalados",
+        "name": "TOOL_ADMIN_ClientesEscalados",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    },
+    {
+        "parameters": {
+            "descriptionType": "manual",
+            "toolDescription": "Actualizar la dirección de un cliente. Input: nueva_direccion, telefono_cliente.",
+            "operation": "executeQuery",
+            "query": "UPDATE clientes \nSET direccion = $1\nWHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $2 || '%'\nRETURNING nombre, telefono, direccion as nueva_direccion, 'Dirección actualizada correctamente' as mensaje;",
+            "options": {
+                "queryReplacement": "={{ [$fromAI('direccion','Nueva dirección del cliente','string',''), $fromAI('telefono','Últimos dígitos del teléfono','string','')] }}"
+            }
+        },
+        "type": "n8n-nodes-base.postgresTool",
+        "typeVersion": 2.6,
+        "position": [
+            200,
+            1200
+        ],
+        "id": "tool-admin-actualizar-direccion",
+        "name": "TOOL_ADMIN_ActualizarDireccion",
+        "credentials": {
+            "postgres": {
+                "id": "cnplkXzn0fvuWCTb",
+                "name": "Postgres account"
+            }
+        }
+    }
+]

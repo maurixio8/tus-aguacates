@@ -250,9 +250,17 @@ export function AddressManager() {
                   <Input
                     id="phone"
                     type="tel"
-                    placeholder="3001234567"
+                    placeholder="300 123 4567"
                     value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '');
+                      if (val.length <= 10) {
+                        setFormData({ ...formData, phone: val });
+                      }
+                    }}
+                    pattern="3[0-9]{9}"
+                    title="Debe ser un número celular de 10 dígitos iniciando en 3"
+                    maxLength={10}
                     required
                   />
                 </div>

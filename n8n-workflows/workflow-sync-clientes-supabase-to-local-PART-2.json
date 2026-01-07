@@ -1,5 +1,5 @@
 {
-    "name": "🔄 Sync Clientes Supabase → Local",
+    "name": "🔄 Sync Clientes Supabase → Local (PARTE 2)",
     "nodes": [
         {
             "parameters": {
@@ -11,8 +11,8 @@
                     ]
                 }
             },
-            "id": "schedule-trigger",
-            "name": "⏰ Cada Hora",
+            "id": "schedule-trigger-2",
+            "name": "⏰ Manual",
             "type": "n8n-nodes-base.scheduleTrigger",
             "typeVersion": 1,
             "position": [
@@ -24,10 +24,13 @@
             "parameters": {
                 "operation": "getAll",
                 "tableId": "customers",
-                "limit": 2000
+                "limit": 3000,
+                "additionalFields": {
+                    "offset": 2000
+                }
             },
-            "id": "fetch-supabase-customers",
-            "name": "📥 Obtener Clientes Supabase",
+            "id": "fetch-supabase-customers-2",
+            "name": "📥 Obtener Restantes (Offset 2000)",
             "type": "n8n-nodes-base.supabase",
             "typeVersion": 1,
             "position": [
@@ -43,9 +46,9 @@
         },
         {
             "parameters": {
-                "jsCode": "// Transformar y guardar clientes de Supabase\nconst staticData = $getWorkflowStaticData('global');\nconst clientes = [];\n\nfor (const item of $input.all()) {\n  const c = item.json;\n  \n  // Solo procesar si tiene teléfono válido\n  if (!c.phone || c.phone.trim() === '') continue;\n  \n  // Normalizar teléfono (remover caracteres no numéricos)\n  let telefonoNormalizado = c.phone.replace(/[^0-9]/g, '');\n  \n  // Asegurar prefijo 57 si es número colombiano (10 dígitos)\n  if (telefonoNormalizado.length === 10 && telefonoNormalizado.startsWith('3')) {\n      telefonoNormalizado = '57' + telefonoNormalizado;\n  }\n  \n  clientes.push({\n    supabase_id: c.id,\n    telefono: telefonoNormalizado,\n    nombre: c.name || null,\n    email: c.email || null,\n    direccion: c.address || null,\n    ciudad: c.city || 'Bogotá',\n    total_pedidos: c.total_orders || 0,\n    total_gastado: c.total_spent || 0,\n    is_active: c.is_active !== false,\n    synced_at: new Date().toISOString()\n  });\n}\n\n// Guardar en memoria estática\nstaticData.clientesParaSync = clientes;\nstaticData.totalClientes = clientes.length;\n\nreturn [{ json: { mensaje: `${clientes.length} clientes listos para sincronizar` } }];"
+                "jsCode": "// Transformar y guardar clientes de Supabase (PARTE 2)\nconst staticData = $getWorkflowStaticData('global');\nconst clientes = [];\n\nfor (const item of $input.all()) {\n  const c = item.json;\n  \n  // Solo procesar si tiene teléfono válido\n  if (!c.phone || c.phone.trim() === '') continue;\n  \n  // Normalizar teléfono (remover caracteres no numéricos)\n  let telefonoNormalizado = c.phone.replace(/[^0-9]/g, '');\n  \n  // Asegurar prefijo 57 si es número colombiano (10 dígitos)\n  if (telefonoNormalizado.length === 10 && telefonoNormalizado.startsWith('3')) {\n      telefonoNormalizado = '57' + telefonoNormalizado;\n  }\n  \n  clientes.push({\n    supabase_id: c.id,\n    telefono: telefonoNormalizado,\n    nombre: c.name || null,\n    email: c.email || null,\n    direccion: c.address || null,\n    ciudad: c.city || 'Bogotá',\n    total_pedidos: c.total_orders || 0,\n    total_spent: c.total_spent || 0,\n    is_active: c.is_active !== false,\n    synced_at: new Date().toISOString()\n  });\n}\n\nreturn [{ json: { mensaje: `${clientes.length} clientes listos para sincronizar (Parte 2)` }, clientes }];"
             },
-            "id": "transform-customers",
+            "id": "transform-customers-2",
             "name": "🔄 Transformar Clientes",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
@@ -56,9 +59,9 @@
         },
         {
             "parameters": {
-                "jsCode": "// Recuperar clientes y generar UPSERTs\nconst staticData = $getWorkflowStaticData('global');\nconst clientes = staticData.clientesParaSync || [];\n\nif (clientes.length === 0) {\n  return [{ json: { mensaje: 'No hay clientes para sincronizar', total: 0 } }];\n}\n\n// Limpiar memoria\ndelete staticData.clientesParaSync;\n\n// Retornar clientes como items individuales para UPSERT\nreturn clientes.map(c => ({ json: c }));"
+                "jsCode": "// Recuperar clientes y generar UPSERTs\nconst inputData = $input.first().json;\nconst clientes = inputData.clientes || [];\n\nif (clientes.length === 0) {\n  return [{ json: { mensaje: 'No hay clientes para sincronizar en Parte 2', total: 0 } }];\n}\n\nreturn clientes.map(c => ({ json: c }));"
             },
-            "id": "prepare-upsert",
+            "id": "prepare-upsert-2",
             "name": "📤 Preparar para UPSERT",
             "type": "n8n-nodes-base.code",
             "typeVersion": 2,
@@ -73,7 +76,7 @@
                 "query": "INSERT INTO clientes (supabase_id, telefono, nombre, email, direccion, ciudad, total_pedidos, total_gastado, activo)\nVALUES (\n  '{{ $json.supabase_id }}'::uuid,\n  '{{ $json.telefono }}',\n  {{ $json.nombre ? \"'\" + $json.nombre.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  {{ $json.email ? \"'\" + $json.email.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  {{ $json.direccion ? \"'\" + $json.direccion.replace(/'/g, \"''\") + \"'\" : 'NULL' }},\n  '{{ $json.ciudad || 'Bogotá' }}',\n  {{ $json.total_pedidos || 0 }},\n  {{ $json.total_gastado || 0 }},\n  {{ $json.is_active !== false }}\n)\nON CONFLICT (telefono) DO UPDATE SET\n  supabase_id = EXCLUDED.supabase_id,\n  nombre = COALESCE(EXCLUDED.nombre, clientes.nombre),\n  email = COALESCE(EXCLUDED.email, clientes.email),\n  direccion = COALESCE(EXCLUDED.direccion, clientes.direccion),\n  ciudad = COALESCE(EXCLUDED.ciudad, clientes.ciudad),\n  total_pedidos = GREATEST(clientes.total_pedidos, EXCLUDED.total_pedidos),\n  total_gastado = GREATEST(clientes.total_gastado, EXCLUDED.total_gastado),\n  updated_at = NOW();",
                 "options": {}
             },
-            "id": "upsert-cliente",
+            "id": "upsert-cliente-2",
             "name": "💾 UPSERT Cliente",
             "type": "n8n-nodes-base.postgres",
             "typeVersion": 2,
@@ -87,42 +90,21 @@
                     "name": "Mi PostgreSQL Docker"
                 }
             }
-        },
-        {
-            "parameters": {
-                "operation": "executeQuery",
-                "query": "SELECT \n  COUNT(*) as total_clientes,\n  COUNT(CASE WHEN supabase_id IS NOT NULL THEN 1 END) as sincronizados_supabase,\n  COUNT(CASE WHEN email IS NOT NULL AND email != '' THEN 1 END) as con_email\nFROM clientes;",
-                "options": {}
-            },
-            "id": "verify-sync",
-            "name": "✅ Verificar Sincronización",
-            "type": "n8n-nodes-base.postgres",
-            "typeVersion": 2,
-            "position": [
-                1100,
-                0
-            ],
-            "credentials": {
-                "postgres": {
-                    "id": "R6hc0vEZJhKQSi3G",
-                    "name": "Mi PostgreSQL Docker"
-                }
-            }
         }
     ],
     "connections": {
-        "⏰ Cada Hora": {
+        "⏰ Manual": {
             "main": [
                 [
                     {
-                        "node": "📥 Obtener Clientes Supabase",
+                        "node": "📥 Obtener Restantes (Offset 2000)",
                         "type": "main",
                         "index": 0
                     }
                 ]
             ]
         },
-        "📥 Obtener Clientes Supabase": {
+        "📥 Obtener Restantes (Offset 2000)": {
             "main": [
                 [
                     {
@@ -154,24 +136,6 @@
                     }
                 ]
             ]
-        },
-        "💾 UPSERT Cliente": {
-            "main": [
-                [
-                    {
-                        "node": "✅ Verificar Sincronización",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
         }
-    },
-    "active": true,
-    "settings": {
-        "executionOrder": "v1"
-    },
-    "meta": {
-        "templateCredsSetupCompleted": true
     }
 }

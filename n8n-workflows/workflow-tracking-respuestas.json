@@ -1,0 +1,142 @@
+{
+    "name": "📊 Tracking Respuestas Campaña",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "tracking-respuesta-campana",
+                "options": {}
+            },
+            "id": "webhook-tracking",
+            "name": "🔔 Webhook Mensaje Entrante",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                200,
+                300
+            ],
+            "webhookId": "tracking-respuesta-campana"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- Buscar si este cliente tiene envío pendiente de respuesta\nSELECT \n  ec.id as envio_id,\n  ec.campana_id,\n  ec.telefono,\n  ec.nombre_enviado,\n  ec.respondio\nFROM envios_campana ec\nWHERE ec.telefono LIKE '%{{ $json.from.replace(/\\D/g, '').slice(-10) }}'\n  AND ec.respondio = false\nORDER BY ec.enviado_at DESC\nLIMIT 1;",
+                "options": {}
+            },
+            "id": "buscar-envio",
+            "name": "🔍 Buscar Envío del Cliente",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                440,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "number": [
+                        {
+                            "value1": "={{ $json.envio_id }}",
+                            "operation": "isNotEmpty"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "tiene-envio",
+            "name": "¿Tiene Envío?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE envios_campana\nSET \n  respondio = true,\n  fecha_respuesta = NOW(),\n  mensaje_respuesta = '{{ $('🔔 Webhook Mensaje Entrante').item.json.text.body.substring(0, 500).replace(/'/g, \"''\") }}'\nWHERE id = {{ $('🔍 Buscar Envío del Cliente').item.json.envio_id }}\nRETURNING id, telefono, campana_id, respondio;",
+                "options": {}
+            },
+            "id": "marcar-respuesta",
+            "name": "✅ Marcar como Respondió",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                920,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "no-envio",
+            "name": "❌ No Tiene Envío",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                920,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "🔔 Webhook Mensaje Entrante": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Buscar Envío del Cliente",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Buscar Envío del Cliente": {
+            "main": [
+                [
+                    {
+                        "node": "¿Tiene Envío?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "¿Tiene Envío?": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Marcar como Respondió",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "❌ No Tiene Envío",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+    }
+}

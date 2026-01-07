@@ -1,0 +1,20 @@
+{
+    "name": "🧹 Nodo Pulidor - Insertar en Agente Luz v6",
+    "description": "Este nodo va entre el Agente Luz y Preparar Respuesta",
+    "nodes": [
+        {
+            "parameters": {
+                "jsCode": "// =====================================================\n// ✨ PULIDOR DE RESPUESTAS - Filtro de Lenguaje\n// =====================================================\n// Mejora las respuestas para que sean más humanas y cercanas\n// Costo: $0 (procesamiento local)\n// =====================================================\n\nconst respuestaOriginal = $input.first().json.output || $input.first().json.text || '';\n\nlet respuestaMejorada = respuestaOriginal;\n\n// 1. FORMATEO DE PRECIOS (formato colombiano)\nrespuestaMejorada = respuestaMejorada.replace(\n    /\\$(\\d+)(?:\\.(\\d+))?/g,\n    (match, entero, decimales) => {\n        const numero = parseInt(entero);\n        const formateado = numero.toLocaleString('es-CO');\n        return decimales ? `$${formateado},${decimales}` : `$${formateado}`;\n    }\n);\n\n// 2. LIMITAR LONGITUD (máx ~500 caracteres para WhatsApp)\nif (respuestaMejorada.length > 600) {\n    const corte = respuestaMejorada.lastIndexOf('.', 550);\n    if (corte > 300) {\n        respuestaMejorada = respuestaMejorada.substring(0, corte + 1);\n    } else {\n        respuestaMejorada = respuestaMejorada.substring(0, 550) + '...';\n    }\n}\n\n// 3. AGREGAR EMOJIS SI FALTAN\nconst tieneEmoji = /[\\u{1F300}-\\u{1F9FF}]/u.test(respuestaMejorada);\nif (!tieneEmoji) {\n    if (respuestaMejorada.toLowerCase().includes('pedido')) {\n        respuestaMejorada = '📦 ' + respuestaMejorada;\n    } else if (respuestaMejorada.toLowerCase().includes('aguacate')) {\n        respuestaMejorada = '🥑 ' + respuestaMejorada;\n    } else if (respuestaMejorada.toLowerCase().includes('gracias')) {\n        respuestaMejorada = '💚 ' + respuestaMejorada;\n    } else if (respuestaMejorada.toLowerCase().includes('hola')) {\n        respuestaMejorada = '😊 ' + respuestaMejorada;\n    }\n}\n\n// 4. LIMPIAR FORMATO EXCESIVO\nrespuestaMejorada = respuestaMejorada.replace(/\\n{3,}/g, '\\n\\n');\nrespuestaMejorada = respuestaMejorada.replace(/  +/g, ' ');\n\n// 5. HACER MÁS CERCANO\nconst reemplazos = {\n    'Le informo que': 'Te cuento que',\n    'Estimado cliente': '',\n    'Por favor, proporcione': '¿Me das',\n    'se encuentra disponible': 'tenemos disponible',\n    'No dude en': 'Si necesitas algo más',\n    'Lamentablemente': 'Ups,',\n};\n\nfor (const [formal, cercano] of Object.entries(reemplazos)) {\n    respuestaMejorada = respuestaMejorada.replace(new RegExp(formal, 'gi'), cercano);\n}\n\nreturn [{\n    json: {\n        ...$input.first().json,\n        output: respuestaMejorada.trim(),\n        text: respuestaMejorada.trim(),\n        respuestaOriginal: respuestaOriginal\n    }\n}];"
+            },
+            "id": "pulidor-respuestas",
+            "name": "✨ Pulir Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                280,
+                -544
+            ],
+            "notes": "Agregar entre Agente Luz y Preparar Respuesta"
+        }
+    ]
+}

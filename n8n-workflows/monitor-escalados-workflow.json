@@ -1,0 +1,217 @@
+{
+    "name": "🔔 Monitor Clientes Escalados",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 5
+                        }
+                    ]
+                }
+            },
+            "id": "trigger-interval",
+            "name": "⏰ Cada 5 minutos",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                220,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  nombre, \n  telefono,\n  updated_at as escalado_desde,\n  ROUND(EXTRACT(EPOCH FROM (NOW() - updated_at))/60) as minutos_esperando\nFROM clientes\nWHERE estado_conversacion = 'ESCALADO'\n  AND (notificado_escalado IS NULL OR notificado_escalado = false)\nORDER BY updated_at ASC;",
+                "options": {}
+            },
+            "id": "query-escalados",
+            "name": "🔍 Buscar Escalados No Notificados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                440,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "cnplkXzn0fvuWCTb",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "hay-escalados",
+                            "leftValue": "={{ $json.telefono }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "if-hay-escalados",
+            "name": "❓ ¿Hay Escalados?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                660,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\n\nif (items.length === 0) {\n  return [{ json: { mensaje: 'No hay clientes escalados' } }];\n}\n\nlet mensaje = '🚨 *CLIENTES ESPERANDO ATENCIÓN*\\n\\n';\n\nitems.forEach((item, i) => {\n  const { nombre, telefono, minutos_esperando } = item.json;\n  mensaje += `${i + 1}. *${nombre || 'Sin nombre'}*\\n`;\n  mensaje += `   📱 ${telefono}\\n`;\n  mensaje += `   ⏱️ ${minutos_esperando} min esperando\\n\\n`;\n});\n\nmensaje += `Total: ${items.length} cliente(s)`;\n\n// Lista de teléfonos para marcar como notificados\nconst telefonos = items.map(i => i.json.telefono);\n\nreturn [{\n  json: {\n    mensaje,\n    telefonos,\n    cantidad: items.length\n  }\n}];"
+            },
+            "id": "code-preparar-mensaje",
+            "name": "📝 Preparar Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"from\": \"573042582777\",\n  \"to\": \"573203062007\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": {{ JSON.stringify($json.mensaje) }}\n  }\n}"
+            },
+            "id": "send-whatsapp",
+            "name": "📱 Notificar Admin WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1100,
+                200
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "uvgBRxvMXP6aXlIT",
+                    "name": "Header Auth YCloud"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET notificado_escalado = true\nWHERE estado_conversacion = 'ESCALADO'\n  AND (notificado_escalado IS NULL OR notificado_escalado = false)\nRETURNING telefono;",
+                "options": {}
+            },
+            "id": "marcar-notificados",
+            "name": "✅ Marcar como Notificados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1320,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "cnplkXzn0fvuWCTb",
+                    "name": "Postgres account"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "no-op",
+            "name": "🔇 Sin Escalados",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                880,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 5 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Buscar Escalados No Notificados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Buscar Escalados No Notificados": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Hay Escalados?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Hay Escalados?": {
+            "main": [
+                [
+                    {
+                        "node": "📝 Preparar Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "🔇 Sin Escalados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📝 Preparar Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Notificar Admin WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📱 Notificar Admin WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Marcar como Notificados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "active": false
+}

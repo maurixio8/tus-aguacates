@@ -1,0 +1,255 @@
+{
+    "name": "Campaña Masiva YCloud - Anti-Duplicados v2",
+    "nodes": [
+        {
+            "parameters": {},
+            "id": "700c0f2f-fee2-4136-a8ae-73c472edbd42",
+            "name": "▶️ Iniciar Campaña",
+            "type": "n8n-nodes-base.manualTrigger",
+            "typeVersion": 1,
+            "position": [
+                192,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "-- ============================================\n-- ⭐ CAMPAÑA VIP - 250 MEJORES CLIENTES\n-- ============================================\nSELECT \n  c.id,\n  c.nombre,\n  c.telefono,\n  c.total_pedidos,\n  c.total_gastado,\n  COALESCE(SPLIT_PART(c.nombre, ' ', 1), 'Amigo') as primer_nombre\nFROM clientes c\nWHERE \n  c.activo = true\n  AND c.telefono IS NOT NULL\n  AND c.telefono != ''\n  AND LENGTH(c.telefono) >= 10\n  AND c.nombre IS NOT NULL\n  AND LENGTH(c.nombre) > 3\n  AND c.direccion IS NOT NULL\n  AND NOT EXISTS (\n    SELECT 1 FROM envios_campana ec \n    WHERE ec.telefono = c.telefono \n      AND ec.campana_id = 'invitatienda_enero_2026'\n  )\nORDER BY c.fecha_registro DESC\nLIMIT 250;",
+                "options": {}
+            },
+            "id": "b9276f48-b3d3-4f96-904f-bfe41c6df1e4",
+            "name": "📋 Obtener Clientes NO Enviados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                416,
+                48
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// ============================================\n// ⭐ CONFIGURACIÓN DE CAMPAÑA\n// Cambiar estos valores para cada nueva campaña:\n// ============================================\nconst CAMPANA_ID = 'invitatienda_enero_2026';\nconst TEMPLATE_NAME = 'invitatienda';\nconst IMAGEN_HEADER = 'https://oss-ycloud-publicread.oss-ap-southeast-1.aliyuncs.com/online/BASE-FILE/2025/12/28/2c9a5937-8289-4d56-80b9-b1dbb7acc2a7.jpg';\n// ============================================\n\nconst clientes = items.map(item => {\n  const cliente = item.json;\n  \n  // Limpiar teléfono\n  let telefono = cliente.telefono.replace(/\\D/g, '');\n  if (telefono.length === 10 && telefono.startsWith('3')) {\n    telefono = '57' + telefono;\n  } else if (!telefono.startsWith('57')) {\n    telefono = '57' + telefono;\n  }\n  \n  // ⭐ SOLO PRIMER NOMBRE (ejemplo: \"María González\" → \"María\")\n  const primerNombre = cliente.primer_nombre || 'Amigo';\n  \n  return {\n    json: {\n      cliente_id: cliente.id,\n      nombre_completo: cliente.nombre,\n      nombre: primerNombre,\n      telefono_original: cliente.telefono,\n      telefono_limpio: telefono,\n      campana_id: CAMPANA_ID,\n      mensaje_data: {\n        from: \"+573042582777\",\n        to: telefono,\n        type: \"template\",\n        template: {\n          name: TEMPLATE_NAME,\n          language: { code: \"es\" },\n          components: [\n            {\n              type: \"header\",\n              parameters: [{ type: \"image\", image: { link: IMAGEN_HEADER } }]\n            },\n            {\n              type: \"body\",\n              parameters: [{ type: \"text\", text: primerNombre }]\n            }\n          ]\n        }\n      }\n    }\n  };\n});\n\nreturn clientes;"
+            },
+            "id": "0c51c6fd-8cb9-4141-b952-4eeec955728a",
+            "name": "🔧 Preparar Mensajes",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                640,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "options": {}
+            },
+            "id": "371ea3b3-a9e3-4f4e-a602-77717c6cf1f0",
+            "name": "📦 Dividir en Lotes",
+            "type": "n8n-nodes-base.splitInBatches",
+            "typeVersion": 3,
+            "position": [
+                864,
+                48
+            ]
+        },
+        {
+            "parameters": {
+                "amount": 2
+            },
+            "id": "3c502f1c-39c4-46e2-9691-78aeb2ce5018",
+            "name": "⏱️ Esperar 2s",
+            "type": "n8n-nodes-base.wait",
+            "typeVersion": 1.1,
+            "position": [
+                1072,
+                48
+            ],
+            "webhookId": "3b27cb37-290b-466b-8a09-405d4de5d2e5"
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "X-API-Key",
+                            "value": "fe67a090b287cfb6e1425221b3cc32e2"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ $json.mensaje_data }}",
+                "options": {}
+            },
+            "id": "707e108d-a605-4b56-8605-fadd2aed14ae",
+            "name": "📱 Enviar WhatsApp",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1296,
+                48
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "nh3MiQhrvbBTnnSk",
+                    "name": "KIE.AI API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO envios_campana (\n  campana_id,\n  cliente_id, \n  telefono,\n  nombre_enviado,\n  estado,\n  ycloud_message_id\n)\nVALUES (\n  '{{ $('🔧 Preparar Mensajes').item.json.campana_id }}',\n  {{ $('🔧 Preparar Mensajes').item.json.cliente_id }},\n  '{{ $json.to }}',\n  '{{ $('🔧 Preparar Mensajes').item.json.nombre }}',\n  '{{ $json.status }}',\n  '{{ $json.id }}'\n)\nON CONFLICT (campana_id, telefono) DO NOTHING\nRETURNING id, telefono, estado;",
+                "options": {}
+            },
+            "id": "8b7aaa68-aa2e-410b-914e-bcc30fbe287a",
+            "name": "✅ Registrar Envío",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.4,
+            "position": [
+                1520,
+                48
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "string": [
+                        {
+                            "value1": "={{ $('📱 Enviar WhatsApp').item.json.status }}",
+                            "operation": "equals",
+                            "value2": "accepted"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "0c61a539-eba2-491e-983b-ccc49ab2fd37",
+            "name": "¿Éxito?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1744,
+                48
+            ]
+        }
+    ],
+    "connections": {
+        "▶️ Iniciar Campaña": {
+            "main": [
+                [
+                    {
+                        "node": "📋 Obtener Clientes NO Enviados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📋 Obtener Clientes NO Enviados": {
+            "main": [
+                [
+                    {
+                        "node": "🔧 Preparar Mensajes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔧 Preparar Mensajes": {
+            "main": [
+                [
+                    {
+                        "node": "📦 Dividir en Lotes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📦 Dividir en Lotes": {
+            "main": [
+                [],
+                [
+                    {
+                        "node": "⏱️ Esperar 2s",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "⏱️ Esperar 2s": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar WhatsApp",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📱 Enviar WhatsApp": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Registrar Envío",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Registrar Envío": {
+            "main": [
+                [
+                    {
+                        "node": "¿Éxito?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "¿Éxito?": {
+            "main": [
+                [
+                    {
+                        "node": "📦 Dividir en Lotes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "pinData": {},
+    "meta": {
+        "templateCredsSetupCompleted": true,
+        "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+    }
+}

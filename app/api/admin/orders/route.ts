@@ -868,7 +868,8 @@ export async function PATCH(request: NextRequest) {
         subtotal: item.unit_price * item.quantity,
         product_snapshot: {
           name: item.product_name || 'Producto',
-          variant_name: item.variant_name || null
+          variant_name: item.variant_name || null,
+          variant_value: item.variant_value || null
         },
         created_at: new Date().toISOString()
       }));
