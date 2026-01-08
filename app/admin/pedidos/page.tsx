@@ -1204,11 +1204,12 @@ export default function OrdersPage() {
                           Enviar
                         </button>
                       )}
-                      {order.status === 'shipped' && (
+                      {(order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped') && (
                         <button
                           onClick={() => handleUpdateStatus(order.id, 'delivered')}
                           disabled={updatingOrder === order.id}
                           className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                          title={order.status === 'shipped' ? 'Marcar como entregado' : 'Marcar como entregado (salta pasos)'}
                         >
                           <CheckCircle className="w-4 h-4" />
                           Marcar Entregado
