@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
+import { verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -52,15 +53,24 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
 
   try {
     // Get the admin-token cookie from the request
-    const token = request.cookies.get('admin-token')?.value;
+    let token = request.cookies.get('admin-token')?.value;
+
+    // Si no hay token en cookie, intentar obtenerlo del header Authorization
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remover 'Bearer ' prefix
+      }
+    }
 
     if (!token) {
       // ❌ CASE 1: No cookie found - log all available cookies for debugging
       const allCookies = request.cookies.getAll().map(c => c.name);
-      console.warn(`⚠️ [${requestId}] ❌ FALTA COOKIE admin-token`, {
+      console.warn(`⚠️ [${requestId}] ❌ FALTA TOKEN (cookie o Authorization)`, {
         endpoint,
         method,
         cookiesPresentes: allCookies.length > 0 ? allCookies.join(', ') : 'NINGUNA',
+        hasAuthHeader: !!request.headers.get('Authorization'),
         timestamp: new Date().toISOString(),
         causasPosibles: [
           '1. Usuario no ha iniciado sesión (falta login en /admin/login)',
@@ -465,8 +475,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
+      // Devolver más detalles del error para diagnóstico
       return NextResponse.json(
-        { error: 'Error al crear el producto' },
+        {
+          error: 'Error al crear el producto',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          details_full: JSON.stringify(error)
+        },
         { status: 500, headers: corsHeaders }
       );
     }
@@ -482,7 +499,11 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('❌ API: Unexpected error creating product:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      {
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500, headers: corsHeaders }
     );
   }

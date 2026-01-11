@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
+import { NextRequest } from 'next/server';
 
 // Interfaces para TypeScript
 export interface AdminUser {
@@ -270,6 +271,46 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   } catch (error) {
     console.error('Error getting current admin user:', error);
     return null;
+  }
+}
+
+/**
+ * Verifica autenticación de admin desde una NextRequest
+ * Acepta token tanto de cookie como de Authorization header
+ */
+export async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
+  try {
+    // Intentar obtener token de cookie primero
+    let token = request.cookies.get('admin-token')?.value;
+
+    // Si no hay token en cookie, intentar obtenerlo del header Authorization
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remover 'Bearer ' prefix
+      }
+    }
+
+    if (!token) {
+      return { success: false, error: 'No autenticado - falta token' };
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const decoded = jwt.verify(token, jwtSecret) as any;
+
+    if (decoded.type !== 'admin') {
+      return { success: false, error: 'No autorizado - token no es de admin' };
+    }
+
+    return { success: true, adminId: decoded.id };
+  } catch (error) {
+    if (error instanceof jwt.TokenExpiredError) {
+      return { success: false, error: 'Token expirado' };
+    }
+    if (error instanceof jwt.JsonWebTokenError) {
+      return { success: false, error: 'Token inválido' };
+    }
+    return { success: false, error: 'Error de autenticación' };
   }
 }
 
