@@ -5,7 +5,10 @@ import {
   Package,
   CheckSquare,
   Square,
-  ShoppingCart
+  ShoppingCart,
+  ChevronDown,
+  ChevronRight,
+  Scale
 } from 'lucide-react';
 
 interface OrderItem {
@@ -49,28 +52,30 @@ interface Order {
   order_data?: any;
 }
 
-interface ProductGrouped {
-  // Clave única para agrupación
-  grouping_key: string;
-  // Nombre base del producto
-  product_name: string;
-  // Variante si existe (null si no hay)
-  variant_name?: string;
-  variant_value?: string;
-  // Texto completo a mostrar
-  display_name: string;
-  // Precio unitario de venta
+// Variante individual dentro de un producto
+interface VariantDetail {
+  variant_name: string;
   unit_price: number;
-  // Cantidad total (unidades)
   total_quantity: number;
-  // Peso de la variante por unidad (en gramos)
   weight_per_unit_grams?: number;
-  // Peso total (en gramos)
   total_weight_grams?: number;
-  // Texto del peso total formateado (ej: "2.5 kg", "500 gr")
   total_weight_display?: string;
-  // En cuántos pedidos aparece
   orders_count: number;
+}
+
+// Producto padre con sus variantes agrupadas
+interface ProductWithVariants {
+  product_name: string;
+  // Totales del producto (suma de todas las variantes)
+  total_quantity: number;
+  total_weight_grams?: number;
+  total_weight_display?: string;
+  total_orders_count: number;
+  // Lista de variantes (si tiene)
+  variants: VariantDetail[];
+  // Si no tiene variantes, estos son los datos directos
+  has_variants: boolean;
+  single_unit_price?: number;
 }
 
 export default function ListaComprasPage() {
@@ -80,6 +85,7 @@ export default function ListaComprasPage() {
   const [dateTo, setDateTo] = useState('');
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
 
   // Inicializar con últimos 10 días
   useEffect(() => {
@@ -221,19 +227,27 @@ export default function ListaComprasPage() {
     return `${grams} gr`;
   };
 
-  // Calcular productos agrupados de los pedidos seleccionados
-  const groupedProducts = useMemo(() => {
+  // Calcular productos agrupados por producto padre con variantes
+  const productsWithVariants = useMemo((): ProductWithVariants[] => {
     const selectedOrdersList = orders.filter(order =>
       selectedOrders.has(order.id)
     );
 
-    const productMap = new Map<string, ProductGrouped>();
+    // Primero agrupar por producto + variante (como antes)
+    const variantMap = new Map<string, {
+      product_name: string;
+      variant_name: string | null;
+      unit_price: number;
+      total_quantity: number;
+      weight_per_unit_grams?: number;
+      total_weight_grams?: number;
+      orders_count: number;
+    }>();
 
     selectedOrdersList.forEach(order => {
       const items = extractItemsFromOrder(order);
 
       items.forEach(item => {
-        // Extraer información del producto
         const productName =
           item.product_snapshot?.name ||
           item.products?.name ||
@@ -241,7 +255,6 @@ export default function ListaComprasPage() {
           item.productName ||
           'Producto sin nombre';
 
-        // Extraer variante si existe - buscar en múltiples fuentes
         const variantName =
           item.product_snapshot?.variant_name ||
           item.variant_name ||
@@ -250,67 +263,121 @@ export default function ListaComprasPage() {
         const variantValue =
           item.product_snapshot?.variant_value ||
           item.variant_value ||
-          item.variantName ||  // En checkout se guarda variant_value como variantName
+          item.variantName ||
           null;
 
-        // Precio unitario de venta
         const unitPrice = item.unit_price || item.price || 0;
-
-        // Extraer peso de la variante (si existe)
         const weightPerUnitGrams = extractWeightFromVariant(variantName || variantValue || null);
+        const variantKey = variantName || variantValue || 'SIN_VARIANTE';
+        const groupingKey = `${productName}|${variantKey}`;
 
-        // Crear clave de agrupación: producto + variante + precio
-        // Agrupamos por producto+variante, pero si hay diferente precio, se separa
-        const variantKey = (variantName || variantValue)
-          ? `${variantName || variantValue}`
-          : 'Sin variante';
-
-        const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
-
-        // Verificar si ya existe este grupo
-        if (productMap.has(groupingKey)) {
-          const existing = productMap.get(groupingKey)!;
+        if (variantMap.has(groupingKey)) {
+          const existing = variantMap.get(groupingKey)!;
           existing.total_quantity += item.quantity;
           existing.orders_count += 1;
-
-          // Recalcular peso total si hay peso por unidad
-          if (existing.weight_per_unit_grams) {
-            existing.total_weight_grams = (existing.total_weight_grams || 0) + (weightPerUnitGrams || 0) * item.quantity;
+          if (weightPerUnitGrams) {
+            existing.total_weight_grams = (existing.total_weight_grams || 0) + weightPerUnitGrams * item.quantity;
           }
         } else {
-          // Crear nombre a mostrar
-          let displayName = productName;
-
-          // Si hay variante separada, agregarla
-          if (variantName || variantValue) {
-            displayName = `${productName} (${variantName || variantValue})`;
-          }
-
-          // Calcular peso total inicial
-          const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
-          const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
-
-          productMap.set(groupingKey, {
-            grouping_key: groupingKey,
+          const initialWeight = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+          variantMap.set(groupingKey, {
             product_name: productName,
-            variant_name: variantName || variantValue || undefined,
-            variant_value: variantValue || undefined,
-            display_name: displayName,
+            variant_name: variantKey === 'SIN_VARIANTE' ? null : variantKey,
             unit_price: unitPrice,
             total_quantity: item.quantity,
             weight_per_unit_grams: weightPerUnitGrams,
-            total_weight_grams: initialWeightGrams,
-            total_weight_display: weightDisplay,
+            total_weight_grams: initialWeight,
             orders_count: 1
           });
         }
       });
     });
 
-    return Array.from(productMap.values()).sort(
-      (a, b) => b.total_quantity - a.total_quantity
-    );
+    // Ahora agrupar por producto padre
+    const productMap = new Map<string, ProductWithVariants>();
+
+    variantMap.forEach((variant) => {
+      const { product_name, variant_name, unit_price, total_quantity, weight_per_unit_grams, total_weight_grams, orders_count } = variant;
+
+      if (productMap.has(product_name)) {
+        const existing = productMap.get(product_name)!;
+        existing.total_quantity += total_quantity;
+        existing.total_orders_count += orders_count;
+        if (total_weight_grams) {
+          existing.total_weight_grams = (existing.total_weight_grams || 0) + total_weight_grams;
+        }
+
+        // Agregar variante si tiene nombre
+        if (variant_name) {
+          existing.has_variants = true;
+          existing.variants.push({
+            variant_name,
+            unit_price,
+            total_quantity,
+            weight_per_unit_grams,
+            total_weight_grams,
+            total_weight_display: total_weight_grams ? formatWeight(total_weight_grams) : undefined,
+            orders_count
+          });
+        }
+      } else {
+        const hasVariant = variant_name !== null;
+        productMap.set(product_name, {
+          product_name,
+          total_quantity,
+          total_weight_grams,
+          total_weight_display: total_weight_grams ? formatWeight(total_weight_grams) : undefined,
+          total_orders_count: orders_count,
+          variants: hasVariant ? [{
+            variant_name: variant_name!,
+            unit_price,
+            total_quantity,
+            weight_per_unit_grams,
+            total_weight_grams,
+            total_weight_display: total_weight_grams ? formatWeight(total_weight_grams) : undefined,
+            orders_count
+          }] : [],
+          has_variants: hasVariant,
+          single_unit_price: hasVariant ? undefined : unit_price
+        });
+      }
+    });
+
+    // Recalcular peso total display y ordenar variantes
+    const result = Array.from(productMap.values()).map(product => {
+      if (product.total_weight_grams) {
+        product.total_weight_display = formatWeight(product.total_weight_grams);
+      }
+      // Ordenar variantes por cantidad descendente
+      product.variants.sort((a, b) => b.total_quantity - a.total_quantity);
+      return product;
+    });
+
+    // Ordenar productos por cantidad total descendente
+    return result.sort((a, b) => b.total_quantity - a.total_quantity);
   }, [orders, selectedOrders]);
+
+  // Toggle para expandir/colapsar producto
+  const toggleProductExpanded = (productName: string) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(productName)) {
+      newExpanded.delete(productName);
+    } else {
+      newExpanded.add(productName);
+    }
+    setExpandedProducts(newExpanded);
+  };
+
+  // Expandir todos los productos
+  const expandAll = () => {
+    const allProducts = new Set(productsWithVariants.filter(p => p.has_variants).map(p => p.product_name));
+    setExpandedProducts(allProducts);
+  };
+
+  // Colapsar todos
+  const collapseAll = () => {
+    setExpandedProducts(new Set());
+  };
 
   // Toggle selección individual
   const toggleOrderSelection = (orderId: string) => {
@@ -408,7 +475,7 @@ export default function ListaComprasPage() {
       ) : (
         <>
           {/* Resumen */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
               <p className="text-sm text-gray-600">Pedidos en el rango</p>
               <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
@@ -418,8 +485,14 @@ export default function ListaComprasPage() {
               <p className="text-2xl font-bold text-green-600">{selectedOrders.size}</p>
             </div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <p className="text-sm text-gray-600">Productos únicos</p>
-              <p className="text-2xl font-bold text-blue-600">{groupedProducts.length}</p>
+              <p className="text-sm text-gray-600">Productos</p>
+              <p className="text-2xl font-bold text-blue-600">{productsWithVariants.length}</p>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+              <p className="text-sm text-gray-600">Total unidades</p>
+              <p className="text-2xl font-bold text-purple-600">
+                {productsWithVariants.reduce((sum, p) => sum + p.total_quantity, 0)}
+              </p>
             </div>
           </div>
 
@@ -480,70 +553,152 @@ export default function ListaComprasPage() {
             </div>
           )}
 
-          {/* Lista Consolidada de Productos */}
-          {selectedOrders.size > 0 && groupedProducts.length > 0 && (
+          {/* Lista Consolidada de Productos - Agrupados por Producto Padre */}
+          {selectedOrders.size > 0 && productsWithVariants.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Lista de Compras
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
-                </p>
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Lista de Compras
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
+                  </p>
+                </div>
+                {/* Botones expandir/colapsar */}
+                {productsWithVariants.some(p => p.has_variants) && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={expandAll}
+                      className="text-xs px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      Expandir todo
+                    </button>
+                    <button
+                      onClick={collapseAll}
+                      className="text-xs px-3 py-1.5 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      Colapsar todo
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="divide-y divide-gray-200">
-                {groupedProducts.map(product => (
-                  <div
-                    key={product.grouping_key}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Info del producto */}
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                          <Package className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          {/* Nombre del producto con variante */}
-                          <p className="font-medium text-gray-900 text-base">
-                            {product.display_name}
-                          </p>
+                {productsWithVariants.map(product => {
+                  const isExpanded = expandedProducts.has(product.product_name);
+                  const hasVariants = product.has_variants && product.variants.length > 0;
 
-                          {/* Precio unitario y cantidad */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                            <p className="text-sm text-green-700 font-semibold">
-                              Precio: {formatPrice(product.unit_price)}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Cantidad: <span className="font-bold text-gray-900">{product.total_quantity}</span>
-                              {product.total_weight_display && (
-                                <span className="ml-1">({product.total_weight_display} total)</span>
+                  return (
+                    <div key={product.product_name}>
+                      {/* Producto Padre */}
+                      <div
+                        className={`p-4 transition-colors ${hasVariants ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                        onClick={() => hasVariants && toggleProductExpanded(product.product_name)}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Info del producto */}
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            {/* Icono expandir/colapsar o package */}
+                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                              {hasVariants ? (
+                                isExpanded ? (
+                                  <ChevronDown className="w-5 h-5 text-green-600" />
+                                ) : (
+                                  <ChevronRight className="w-5 h-5 text-green-600" />
+                                )
+                              ) : (
+                                <Package className="w-5 h-5 text-green-600" />
                               )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              {/* Nombre del producto */}
+                              <p className="font-semibold text-gray-900 text-base">
+                                {product.product_name}
+                              </p>
+
+                              {/* Info adicional */}
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                {!hasVariants && product.single_unit_price && (
+                                  <p className="text-sm text-green-700 font-semibold">
+                                    Precio: {formatPrice(product.single_unit_price)}
+                                  </p>
+                                )}
+                                {hasVariants && (
+                                  <p className="text-sm text-blue-600 font-medium">
+                                    {product.variants.length} variante{product.variants.length === 1 ? '' : 's'}
+                                  </p>
+                                )}
+                                {product.total_weight_display && (
+                                  <p className="text-sm text-gray-600 flex items-center gap-1">
+                                    <Scale className="w-3.5 h-3.5" />
+                                    {product.total_weight_display} total
+                                  </p>
+                                )}
+                                <p className="text-sm text-gray-500">
+                                  En {product.total_orders_count} pedido{product.total_orders_count === 1 ? '' : 's'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Total destacado */}
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm text-gray-500">Total</p>
+                            <p className="text-3xl font-bold text-green-600">
+                              {product.total_quantity}
                             </p>
-                            <p className="text-sm text-gray-500">
-                              En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
-                            </p>
+                            <p className="text-sm text-gray-500">unidades</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Total destacado */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {product.total_quantity}
-                        </p>
-                        <p className="text-sm text-gray-500">unidades</p>
-                      </div>
+                      {/* Variantes expandidas */}
+                      {hasVariants && isExpanded && (
+                        <div className="bg-gray-50 border-t border-gray-100">
+                          {product.variants.map((variant, idx) => (
+                            <div
+                              key={`${product.product_name}-${variant.variant_name}-${idx}`}
+                              className="px-4 py-3 ml-12 mr-4 border-b border-gray-100 last:border-b-0"
+                            >
+                              <div className="flex items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <p className="font-medium text-gray-800">
+                                    {variant.variant_name}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-0.5">
+                                    <p className="text-sm text-green-700">
+                                      {formatPrice(variant.unit_price)}
+                                    </p>
+                                    {variant.total_weight_display && (
+                                      <p className="text-sm text-gray-500">
+                                        ({variant.total_weight_display})
+                                      </p>
+                                    )}
+                                    <p className="text-xs text-gray-400">
+                                      {variant.orders_count} pedido{variant.orders_count === 1 ? '' : 's'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xl font-bold text-gray-700">
+                                    {variant.total_quantity}
+                                  </p>
+                                  <p className="text-xs text-gray-400">unid.</p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
 
           {/* Estado cuando hay pedidos seleccionados pero sin productos */}
-          {selectedOrders.size > 0 && groupedProducts.length === 0 && (
+          {selectedOrders.size > 0 && productsWithVariants.length === 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
               <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
               <p className="text-yellow-800 font-medium">
