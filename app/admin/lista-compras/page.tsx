@@ -17,6 +17,8 @@ interface OrderItem {
     price?: number;
     main_image_url?: string;
     image?: string;
+    variant_name?: string;
+    variant_value?: string;
   };
   quantity: number;
   unit_price: number;
@@ -28,6 +30,7 @@ interface OrderItem {
   product_name?: string;
   productName?: string;
   variantName?: string;
+  variant_value?: string;
   price?: number;
 }
 
@@ -48,6 +51,7 @@ interface Order {
 interface ProductGrouped {
   product_id: string;
   product_name: string;
+  variant_display: string; // Texto a mostrar: "Mandarina - Grande" o "Mandarina"
   total_quantity: number;
   orders_count: number;
 }
@@ -127,11 +131,15 @@ export default function ListaComprasPage() {
         product_id: item.productId || item.product_id || `product-${index}`,
         product_snapshot: {
           name: item.productName || item.product_name || 'Producto',
-          price: item.price || item.unit_price || 0
+          price: item.price || item.unit_price || 0,
+          variant_name: item.variantName || item.variant_name || null,
+          variant_value: item.variantValue || item.variant_value || null
         },
         quantity: item.quantity || 0,
         unit_price: item.price || item.unit_price || 0,
-        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0)
+        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
+        variantName: item.variantName || item.variant_name || null,
+        variant_value: item.variantValue || item.variant_value || null
       }));
     }
 
@@ -150,7 +158,7 @@ export default function ListaComprasPage() {
       const items = extractItemsFromOrder(order);
 
       items.forEach(item => {
-        const productId = item.product_id || item.id;
+        // Extraer nombre del producto
         const productName =
           item.product_snapshot?.name ||
           item.products?.name ||
@@ -158,14 +166,34 @@ export default function ListaComprasPage() {
           item.productName ||
           'Producto sin nombre';
 
-        if (productMap.has(productId)) {
-          const existing = productMap.get(productId)!;
+        // Extraer variante si existe
+        const variantName =
+          item.product_snapshot?.variant_value ||
+          item.variant_value ||
+          item.product_snapshot?.variant_name ||
+          item.variantName ||
+          null;
+
+        // Crear clave de agrupación: producto + variante
+        // Si no hay variante, se agrupa por producto solo
+        const groupingKey = variantName
+          ? `${productName}|${variantName}`
+          : productName;
+
+        // Texto a mostrar
+        const variantDisplay = variantName
+          ? `${productName} - ${variantName}`
+          : productName;
+
+        if (productMap.has(groupingKey)) {
+          const existing = productMap.get(groupingKey)!;
           existing.total_quantity += item.quantity;
           existing.orders_count += 1;
         } else {
-          productMap.set(productId, {
-            product_id: productId,
+          productMap.set(groupingKey, {
+            product_id: item.product_id || item.id,
             product_name: productName,
+            variant_display: variantDisplay,
             total_quantity: item.quantity,
             orders_count: 1
           });
@@ -333,11 +361,10 @@ export default function ListaComprasPage() {
                     </button>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">
-                        #{order.order_number || order.id.substring(0, 8)} - {order.customer_name || 'Cliente'}
+                        {order.customer_name || 'Cliente'}
                       </p>
-                      <p className="text-sm text-gray-500 flex items-center gap-2">
-                        <Calendar className="w-3 h-3" />
-                        {formatDate(order.created_at)} • {itemCount} productos
+                      <p className="text-sm text-gray-500">
+                        {itemCount} productos
                       </p>
                     </div>
                   </div>
@@ -370,7 +397,7 @@ export default function ListaComprasPage() {
               <div className="divide-y divide-gray-200">
                 {groupedProducts.map(product => (
                   <div
-                    key={product.product_id}
+                    key={product.product_id + product.variant_display}
                     className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -378,7 +405,7 @@ export default function ListaComprasPage() {
                         <Package className="w-5 h-5 text-green-600" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 truncate">{product.product_name}</p>
+                        <p className="font-medium text-gray-900 truncate">{product.variant_display}</p>
                         <p className="text-sm text-gray-500">
                           En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
                         </p>
