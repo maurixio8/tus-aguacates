@@ -19,7 +19,8 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Layers,
-  Building2
+  Building2,
+  ClipboardList
 } from 'lucide-react';
 
 interface AdminUser {
@@ -108,6 +109,7 @@ export default function AdminLayout({
     { name: 'Productos', href: '/admin/productos', icon: Package },
     { name: 'Categorías', href: '/admin/categorias', icon: Layers },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
+    { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
