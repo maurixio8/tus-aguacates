@@ -29,7 +29,9 @@ interface OrderItem {
   product_name?: string;
   productName?: string;
   variantName?: string;
+  variant_name?: string;
   variant_value?: string;
+  variantValue?: string;
   price?: number;
 }
 
@@ -141,21 +143,27 @@ export default function ListaComprasPage() {
 
     // Finalmente extraer desde order_data (para pedidos de invitados)
     if (order.order_data?.items) {
-      return order.order_data.items.map((item: any, index: number) => ({
-        id: item.id || `item-${index}`,
-        product_id: item.productId || item.product_id || `product-${index}`,
-        product_snapshot: {
-          name: item.productName || item.product_name || 'Producto',
-          price: item.price || item.unit_price || 0,
-          variant_name: item.variantName || item.variant_name || null,
-          variant_value: item.variantValue || item.variant_value || null
-        },
-        quantity: item.quantity || 0,
-        unit_price: item.price || item.unit_price || 0,
-        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
-        variantName: item.variantName || item.variant_name || null,
-        variant_value: item.variantValue || item.variant_value || null
-      }));
+      return order.order_data.items.map((item: any, index: number) => {
+        // La variante puede venir como variantName (valor) o variant_name
+        const variantInfo = item.variantName || item.variant_name || item.variantValue || item.variant_value || null;
+        return {
+          id: item.id || `item-${index}`,
+          product_id: item.productId || item.product_id || `product-${index}`,
+          product_snapshot: {
+            name: item.productName || item.product_name || 'Producto',
+            price: item.price || item.unit_price || 0,
+            variant_name: variantInfo,
+            variant_value: variantInfo
+          },
+          quantity: item.quantity || 0,
+          unit_price: item.price || item.unit_price || 0,
+          subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
+          variantName: variantInfo,
+          variant_name: variantInfo,
+          variant_value: variantInfo,
+          variantValue: variantInfo
+        };
+      });
     }
 
     return [];
@@ -233,9 +241,17 @@ export default function ListaComprasPage() {
           item.productName ||
           'Producto sin nombre';
 
-        // Extraer variante si existe
-        const variantName = item.product_snapshot?.variant_name || null;
-        const variantValue = item.product_snapshot?.variant_value || null;
+        // Extraer variante si existe - buscar en múltiples fuentes
+        const variantName =
+          item.product_snapshot?.variant_name ||
+          item.variant_name ||
+          item.variantName ||
+          null;
+        const variantValue =
+          item.product_snapshot?.variant_value ||
+          item.variant_value ||
+          item.variantName ||  // En checkout se guarda variant_value como variantName
+          null;
 
         // Precio unitario de venta
         const unitPrice = item.unit_price || item.price || 0;
