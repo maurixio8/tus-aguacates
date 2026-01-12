@@ -59,8 +59,14 @@ interface ProductGrouped {
   display_name: string;
   // Precio unitario de venta
   unit_price: number;
-  // Cantidad total
+  // Cantidad total (unidades)
   total_quantity: number;
+  // Peso de la variante por unidad (en gramos)
+  weight_per_unit_grams?: number;
+  // Peso total (en gramos)
+  total_weight_grams?: number;
+  // Texto del peso total formateado (ej: "2.5 kg", "500 gr")
+  total_weight_display?: string;
   // En cuántos pedidos aparece
   orders_count: number;
 }
@@ -165,6 +171,48 @@ export default function ListaComprasPage() {
     }).format(price);
   };
 
+  // Extraer peso en gramos desde la variante
+  // Busca patrones como: "1000grs", "500 gramos", "1kg", "0.5 kg", "250grs"
+  const extractWeightFromVariant = (variantName: string | null): number | undefined => {
+    if (!variantName) return undefined;
+
+    // Patrones de búsqueda (en orden de especificidad)
+    const patterns = [
+      // "1000 grs", "500 gramos", "250 grs"
+      /(\d+(?:\.\d+)?)\s*(?:grs|gramas|gr)\b/i,
+      // "1 kg", "0.5 kg", "2 kilos"
+      /(\d+(?:\.\d+)?)\s*(?:kg|kilos)\b/i,
+      // "1000grs" (sin espacio)
+      /(\d+(?:\.\d+)?)grs/i,
+      // "X250grs" (formato especial)
+      /x(\d+(?:\.\d+)?)grs/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = variantName.match(pattern);
+      if (match) {
+        const value = parseFloat(match[1]);
+        // Si está en kg, convertir a gramos
+        if (/kg|kilos/i.test(variantName)) {
+          return value * 1000;
+        }
+        return value;
+      }
+    }
+
+    return undefined;
+  };
+
+  // Formatear peso total para mostrar
+  const formatWeight = (grams: number): string => {
+    if (grams >= 1000) {
+      const kg = grams / 1000;
+      // Si es entero, mostrar sin decimales, si no, con 1 decimal
+      return kg % 1 === 0 ? `${kg.toFixed(0)} kg` : `${kg.toFixed(1)} kg`;
+    }
+    return `${grams} gr`;
+  };
+
   // Calcular productos agrupados de los pedidos seleccionados
   const groupedProducts = useMemo(() => {
     const selectedOrdersList = orders.filter(order =>
@@ -192,10 +240,13 @@ export default function ListaComprasPage() {
         // Precio unitario de venta
         const unitPrice = item.unit_price || item.price || 0;
 
+        // Extraer peso de la variante (si existe)
+        const weightPerUnitGrams = extractWeightFromVariant(variantName || variantValue || null);
+
         // Crear clave de agrupación: producto + variante + precio
         // Agrupamos por producto+variante, pero si hay diferente precio, se separa
-        const variantKey = (variantName && variantValue)
-          ? `${variantName}: ${variantValue}`
+        const variantKey = (variantName || variantValue)
+          ? `${variantName || variantValue}`
           : 'Sin variante';
 
         const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
@@ -205,23 +256,35 @@ export default function ListaComprasPage() {
           const existing = productMap.get(groupingKey)!;
           existing.total_quantity += item.quantity;
           existing.orders_count += 1;
+
+          // Recalcular peso total si hay peso por unidad
+          if (existing.weight_per_unit_grams) {
+            existing.total_weight_grams = (existing.total_weight_grams || 0) + (weightPerUnitGrams || 0) * item.quantity;
+          }
         } else {
           // Crear nombre a mostrar
           let displayName = productName;
 
           // Si hay variante separada, agregarla
-          if (variantName && variantValue) {
-            displayName = `${productName} (${variantName}: ${variantValue})`;
+          if (variantName || variantValue) {
+            displayName = `${productName} (${variantName || variantValue})`;
           }
+
+          // Calcular peso total inicial
+          const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+          const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
 
           productMap.set(groupingKey, {
             grouping_key: groupingKey,
             product_name: productName,
-            variant_name: variantName || undefined,
+            variant_name: variantName || variantValue || undefined,
             variant_value: variantValue || undefined,
             display_name: displayName,
             unit_price: unitPrice,
             total_quantity: item.quantity,
+            weight_per_unit_grams: weightPerUnitGrams,
+            total_weight_grams: initialWeightGrams,
+            total_weight_display: weightDisplay,
             orders_count: 1
           });
         }
@@ -437,6 +500,9 @@ export default function ListaComprasPage() {
                             </p>
                             <p className="text-sm text-gray-600">
                               Cantidad: <span className="font-bold text-gray-900">{product.total_quantity}</span>
+                              {product.total_weight_display && (
+                                <span className="ml-1">({product.total_weight_display} total)</span>
+                              )}
                             </p>
                             <p className="text-sm text-gray-500">
                               En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
