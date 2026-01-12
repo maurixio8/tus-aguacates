@@ -890,10 +890,11 @@ export async function PATCH(request: NextRequest) {
         updated_at: new Date().toISOString()
       };
 
-      // Also update top-level fields
-      if (customerData?.customer_name) updatePayload.customer_name = customerData.customer_name.trim();
-      if (customerData?.customer_phone) updatePayload.customer_phone = customerData.customer_phone.trim();
-      if (customerData?.customer_email) updatePayload.customer_email = customerData.customer_email.trim();
+      // Also update top-level fields (guest_orders uses guest_* column names)
+      if (customerData?.customer_name) updatePayload.guest_name = customerData.customer_name.trim();
+      if (customerData?.customer_phone) updatePayload.guest_phone = customerData.customer_phone.trim();
+      if (customerData?.customer_email) updatePayload.guest_email = customerData.customer_email.trim();
+      if (customerData?.delivery_address) updatePayload.guest_address = customerData.delivery_address.trim();
       if (total) updatePayload.total_amount = total;
       if (status) updatePayload.status = status;
 
