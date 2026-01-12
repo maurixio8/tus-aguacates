@@ -798,6 +798,126 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
+    // First, determine if the order is in 'orders' or 'guest_orders'
+    let orderType: 'registered' | 'guest' = 'registered';
+    let existingOrder: any = null;
+
+    // Try to find in orders table first
+    const { data: regularOrder } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('id', orderId)
+      .single();
+
+    if (regularOrder) {
+      orderType = 'registered';
+      existingOrder = regularOrder;
+    } else {
+      // Try to find in guest_orders
+      const { data: guestOrder } = await supabase
+        .from('guest_orders')
+        .select('id, order_data')
+        .eq('id', orderId)
+        .single();
+
+      if (guestOrder) {
+        orderType = 'guest';
+        existingOrder = guestOrder;
+      }
+    }
+
+    if (!existingOrder) {
+      return NextResponse.json(
+        { error: 'Pedido no encontrado' },
+        { status: 404, headers: corsHeaders }
+      );
+    }
+
+    console.log(`📝 API PATCH: Order ${orderId} is type: ${orderType}`);
+
+    // Handle GUEST orders
+    if (orderType === 'guest') {
+      // Parse existing order_data
+      let orderData: any = {};
+      try {
+        if (typeof existingOrder.order_data === 'string') {
+          orderData = JSON.parse(existingOrder.order_data);
+        } else {
+          orderData = existingOrder.order_data || {};
+        }
+      } catch {
+        orderData = {};
+      }
+
+      // Update customer data in order_data
+      if (customerData) {
+        console.log('📝 API: Updating guest order customer data:', customerData);
+        if (customerData.customer_name) orderData.customer_name = customerData.customer_name.trim();
+        if (customerData.customer_phone) orderData.customer_phone = customerData.customer_phone.trim();
+        if (customerData.customer_email) orderData.customer_email = customerData.customer_email.trim();
+        if (customerData.delivery_address) orderData.delivery_address = customerData.delivery_address.trim();
+        if (customerData.delivery_notes) orderData.delivery_notes = customerData.delivery_notes.trim();
+      }
+
+      // Update items in order_data
+      if (items && Array.isArray(items)) {
+        console.log('📝 API: Updating guest order items:', items.length, 'items');
+        orderData.items = items.map((item: any) => ({
+          productId: item.product_id,
+          productName: item.product_name || 'Producto',
+          variantId: item.variant_id || null,
+          variantName: item.variant_name || null,
+          quantity: item.quantity,
+          price: item.unit_price
+        }));
+
+        // Recalculate subtotal
+        const subtotal = items.reduce((sum: number, item: any) =>
+          sum + (item.unit_price * item.quantity), 0
+        );
+        orderData.subtotal = subtotal;
+        orderData.total = total || subtotal;
+      }
+
+      // Update status if provided
+      if (status) {
+        orderData.status = status;
+      }
+
+      // Save updated order_data to guest_orders
+      const updatePayload: any = {
+        order_data: orderData,
+        updated_at: new Date().toISOString()
+      };
+
+      // Also update top-level fields
+      if (customerData?.customer_name) updatePayload.customer_name = customerData.customer_name.trim();
+      if (customerData?.customer_phone) updatePayload.customer_phone = customerData.customer_phone.trim();
+      if (customerData?.customer_email) updatePayload.customer_email = customerData.customer_email.trim();
+      if (total) updatePayload.total_amount = total;
+      if (status) updatePayload.status = status;
+
+      const { error: guestUpdateError } = await supabase
+        .from('guest_orders')
+        .update(updatePayload)
+        .eq('id', orderId);
+
+      if (guestUpdateError) {
+        console.error('❌ API: Error updating guest order:', guestUpdateError);
+        return NextResponse.json(
+          { error: 'Error al actualizar pedido de invitado', details: guestUpdateError.message },
+          { status: 500, headers: corsHeaders }
+        );
+      }
+
+      console.log('✅ API: Guest order updated successfully');
+      return NextResponse.json({
+        success: true,
+        message: 'Pedido de invitado actualizado exitosamente'
+      }, { headers: corsHeaders });
+    }
+
+    // Handle REGISTERED orders (original logic)
     // If updating customer data
     if (customerData) {
       console.log('📝 API: Updating customer data for order:', orderId, customerData);
