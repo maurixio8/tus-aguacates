@@ -5,7 +5,6 @@ import {
   Package,
   CheckSquare,
   Square,
-  Calendar,
   ShoppingCart
 } from 'lucide-react';
 
@@ -49,10 +48,20 @@ interface Order {
 }
 
 interface ProductGrouped {
-  product_id: string;
+  // Clave única para agrupación
+  grouping_key: string;
+  // Nombre base del producto
   product_name: string;
-  variant_display: string; // Texto a mostrar: "Mandarina - Grande" o "Mandarina"
+  // Variante si existe (null si no hay)
+  variant_name?: string;
+  variant_value?: string;
+  // Texto completo a mostrar
+  display_name: string;
+  // Precio unitario de venta
+  unit_price: number;
+  // Cantidad total
   total_quantity: number;
+  // En cuántos pedidos aparece
   orders_count: number;
 }
 
@@ -146,6 +155,16 @@ export default function ListaComprasPage() {
     return [];
   };
 
+  // Formatear precio para mostrar
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
   // Calcular productos agrupados de los pedidos seleccionados
   const groupedProducts = useMemo(() => {
     const selectedOrdersList = orders.filter(order =>
@@ -158,7 +177,7 @@ export default function ListaComprasPage() {
       const items = extractItemsFromOrder(order);
 
       items.forEach(item => {
-        // Extraer nombre del producto
+        // Extraer información del producto
         const productName =
           item.product_snapshot?.name ||
           item.products?.name ||
@@ -167,33 +186,41 @@ export default function ListaComprasPage() {
           'Producto sin nombre';
 
         // Extraer variante si existe
-        const variantName =
-          item.product_snapshot?.variant_value ||
-          item.variant_value ||
-          item.product_snapshot?.variant_name ||
-          item.variantName ||
-          null;
+        const variantName = item.product_snapshot?.variant_name || null;
+        const variantValue = item.product_snapshot?.variant_value || null;
 
-        // Crear clave de agrupación: producto + variante
-        // Si no hay variante, se agrupa por producto solo
-        const groupingKey = variantName
-          ? `${productName}|${variantName}`
-          : productName;
+        // Precio unitario de venta
+        const unitPrice = item.unit_price || item.price || 0;
 
-        // Texto a mostrar
-        const variantDisplay = variantName
-          ? `${productName} - ${variantName}`
-          : productName;
+        // Crear clave de agrupación: producto + variante + precio
+        // Agrupamos por producto+variante, pero si hay diferente precio, se separa
+        const variantKey = (variantName && variantValue)
+          ? `${variantName}: ${variantValue}`
+          : 'Sin variante';
 
+        const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
+
+        // Verificar si ya existe este grupo
         if (productMap.has(groupingKey)) {
           const existing = productMap.get(groupingKey)!;
           existing.total_quantity += item.quantity;
           existing.orders_count += 1;
         } else {
+          // Crear nombre a mostrar
+          let displayName = productName;
+
+          // Si hay variante separada, agregarla
+          if (variantName && variantValue) {
+            displayName = `${productName} (${variantName}: ${variantValue})`;
+          }
+
           productMap.set(groupingKey, {
-            product_id: item.product_id || item.id,
+            grouping_key: groupingKey,
             product_name: productName,
-            variant_display: variantDisplay,
+            variant_name: variantName || undefined,
+            variant_value: variantValue || undefined,
+            display_name: displayName,
+            unit_price: unitPrice,
             total_quantity: item.quantity,
             orders_count: 1
           });
@@ -228,15 +255,6 @@ export default function ListaComprasPage() {
       setSelectedOrders(new Set(orders.map(o => o.id)));
     }
     setSelectAll(!selectAll);
-  };
-
-  // Funciones de formato
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-CO', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    });
   };
 
   // Calcular total de items en un pedido
@@ -397,25 +415,44 @@ export default function ListaComprasPage() {
               <div className="divide-y divide-gray-200">
                 {groupedProducts.map(product => (
                   <div
-                    key={product.product_id + product.variant_display}
-                    className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    key={product.grouping_key}
+                    className="p-4 hover:bg-gray-50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                      <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <Package className="w-5 h-5 text-green-600" />
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Info del producto */}
+                      <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                          <Package className="w-5 h-5 text-green-600" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          {/* Nombre del producto con variante */}
+                          <p className="font-medium text-gray-900 text-base">
+                            {product.display_name}
+                          </p>
+
+                          {/* Precio unitario y cantidad */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                            <p className="text-sm text-green-700 font-semibold">
+                              Precio: {formatPrice(product.unit_price)}
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Cantidad: <span className="font-bold text-gray-900">{product.total_quantity}</span>
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 truncate">{product.variant_display}</p>
-                        <p className="text-sm text-gray-500">
-                          En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
+
+                      {/* Total destacado */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm text-gray-500">Total</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          {product.total_quantity}
                         </p>
+                        <p className="text-sm text-gray-500">unidades</p>
                       </div>
-                    </div>
-                    <div className="text-right flex-shrink-0 ml-4">
-                      <p className="text-2xl font-bold text-green-600">
-                        {product.total_quantity}
-                      </p>
-                      <p className="text-sm text-gray-500">unidades</p>
                     </div>
                   </div>
                 ))}
