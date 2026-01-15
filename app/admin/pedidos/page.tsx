@@ -1241,7 +1241,11 @@ export default function OrdersPage() {
                         <div className="flex gap-2">
                           {/* Basic WhatsApp button */}
                           <a
-                            href={`https://wa.me/57${customerInfo.phone.replace(/\D/g, '')}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`}
+                            href={(() => {
+                              const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                              const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                              return `https://wa.me/${fullPhone}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`;
+                            })()}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"

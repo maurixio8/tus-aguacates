@@ -8,9 +8,12 @@ import {
   ShoppingCart,
   ChevronDown,
   ChevronUp,
-  Download,
   User,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Copy,
+  MapPin,
+  ClipboardList,
+  Check
 } from 'lucide-react';
 
 interface OrderItem {
@@ -44,6 +47,7 @@ interface Order {
   customer_name?: string;
   customer_phone?: string;
   customer_email?: string;
+  delivery_address?: string;
   status: string;
   created_at: string;
   order_items?: OrderItem[];
@@ -55,12 +59,19 @@ interface Order {
 // Desglose de un producto por cliente
 interface CustomerBreakdown {
   customer_name: string;
-  customer_phone?: string;
-  order_number: string;
+  customer_address?: string;
   order_id: string;
+  variant_name?: string;
   quantity: number;
   weight_grams?: number;
   weight_display?: string;
+  // Para el resumen del pedido completo
+  order_items?: Array<{
+    product_name: string;
+    variant_name?: string;
+    quantity: number;
+    weight_display?: string;
+  }>;
 }
 
 interface ProductGrouped {
@@ -97,6 +108,7 @@ export default function ListaComprasPage() {
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
   // Inicializar con últimos 10 días
   useEffect(() => {
@@ -232,6 +244,36 @@ export default function ListaComprasPage() {
     return `${grams} gr`;
   };
 
+  // Pre-procesar pedidos para obtener el resumen de cada uno
+  const orderSummaries = useMemo(() => {
+    const summaries = new Map<string, Array<{
+      product_name: string;
+      variant_name?: string;
+      quantity: number;
+      weight_display?: string;
+    }>>();
+
+    orders.forEach(order => {
+      const items = extractItemsFromOrder(order);
+      const orderItems = items.map(item => {
+        const productName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
+        const variantName = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || null;
+        const weightPerUnit = extractWeightFromVariant(variantName);
+        const totalWeight = weightPerUnit ? weightPerUnit * item.quantity : undefined;
+
+        return {
+          product_name: productName,
+          variant_name: variantName || undefined,
+          quantity: item.quantity,
+          weight_display: totalWeight ? formatWeight(totalWeight) : undefined
+        };
+      });
+      summaries.set(order.id, orderItems);
+    });
+
+    return summaries;
+  }, [orders]);
+
   // Calcular productos agrupados de los pedidos seleccionados
   const groupedProducts = useMemo(() => {
     const selectedOrdersList = orders.filter(order =>
@@ -243,8 +285,7 @@ export default function ListaComprasPage() {
     selectedOrdersList.forEach(order => {
       const items = extractItemsFromOrder(order);
       const customerName = order.customer_name || 'Cliente sin nombre';
-      const customerPhone = order.customer_phone;
-      const orderNumber = order.order_number || order.id.slice(0, 8);
+      const customerAddress = order.delivery_address || order.order_data?.customer?.address || order.order_data?.delivery_address || '';
 
       items.forEach(item => {
         // Extraer información del producto
@@ -258,19 +299,16 @@ export default function ListaComprasPage() {
         // Extraer variante si existe
         const variantName = item.product_snapshot?.variant_name || null;
         const variantValue = item.product_snapshot?.variant_value || null;
+        const variantDisplay = variantName || variantValue || null;
 
         // Precio unitario de venta
         const unitPrice = item.unit_price || item.price || 0;
 
         // Extraer peso de la variante (si existe)
-        const weightPerUnitGrams = extractWeightFromVariant(variantName || variantValue || null);
+        const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
 
         // Crear clave de agrupación: producto + variante + precio
-        // Agrupamos por producto+variante, pero si hay diferente precio, se separa
-        const variantKey = (variantName || variantValue)
-          ? `${variantName || variantValue}`
-          : 'Sin variante';
-
+        const variantKey = variantDisplay || 'Sin variante';
         const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
 
         // Calcular peso para este item
@@ -280,12 +318,13 @@ export default function ListaComprasPage() {
         // Info del cliente para este item
         const customerInfo: CustomerBreakdown = {
           customer_name: customerName,
-          customer_phone: customerPhone,
-          order_number: orderNumber,
+          customer_address: customerAddress,
           order_id: order.id,
+          variant_name: variantDisplay || undefined,
           quantity: item.quantity,
           weight_grams: itemWeightGrams,
-          weight_display: itemWeightDisplay
+          weight_display: itemWeightDisplay,
+          order_items: orderSummaries.get(order.id)
         };
 
         // Verificar si ya existe este grupo
@@ -307,8 +346,8 @@ export default function ListaComprasPage() {
           let displayName = productName;
 
           // Si hay variante separada, agregarla
-          if (variantName || variantValue) {
-            displayName = `${productName} (${variantName || variantValue})`;
+          if (variantDisplay) {
+            displayName = `${productName} (${variantDisplay})`;
           }
 
           // Calcular peso total inicial
@@ -318,7 +357,7 @@ export default function ListaComprasPage() {
           productMap.set(groupingKey, {
             grouping_key: groupingKey,
             product_name: productName,
-            variant_name: variantName || variantValue || undefined,
+            variant_name: variantDisplay || undefined,
             variant_value: variantValue || undefined,
             display_name: displayName,
             unit_price: unitPrice,
@@ -388,13 +427,49 @@ export default function ListaComprasPage() {
     }
   };
 
+  // Copiar al portapapeles con feedback visual
+  const copyToClipboard = async (text: string, itemId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedItems(new Set([...copiedItems, itemId]));
+      // Remover el estado de copiado después de 2 segundos
+      setTimeout(() => {
+        setCopiedItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (err) {
+      console.error('Error copiando:', err);
+    }
+  };
+
+  // Generar resumen del pedido como texto
+  const generateOrderSummary = (customer: CustomerBreakdown) => {
+    if (!customer.order_items || customer.order_items.length === 0) return '';
+
+    const lines = [`Pedido para: ${customer.customer_name}`, ''];
+    customer.order_items.forEach(item => {
+      const variant = item.variant_name ? ` (${item.variant_name})` : '';
+      const weight = item.weight_display ? ` - ${item.weight_display}` : '';
+      lines.push(`• ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
+    });
+
+    if (customer.customer_address) {
+      lines.push('', `Dirección: ${customer.customer_address}`);
+    }
+
+    return lines.join('\n');
+  };
+
   // Exportar a Excel (CSV)
   const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
 
     // Crear CSV con BOM para Excel
     const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Cliente', 'Teléfono', 'Pedido #', 'Cantidad Cliente', 'Peso Cliente'];
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
 
     const rows: string[][] = [];
 
@@ -405,9 +480,7 @@ export default function ListaComprasPage() {
         product.variant_name || 'Sin variante',
         product.total_quantity.toString(),
         product.total_weight_display || '-',
-        formatPrice(product.unit_price),
         '--- TOTAL ---',
-        '',
         '',
         '',
         ''
@@ -420,10 +493,8 @@ export default function ListaComprasPage() {
           '',
           '',
           '',
-          '',
           customer.customer_name,
-          customer.customer_phone || '-',
-          customer.order_number,
+          customer.customer_address || '-',
           customer.quantity.toString(),
           customer.weight_display || '-'
         ]);
@@ -694,49 +765,111 @@ export default function ListaComprasPage() {
                         <div className="bg-gray-50 border-t border-gray-200">
                           <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
                             <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                              Desglose por cliente
+                              Entregar a:
                             </p>
                           </div>
                           <div className="divide-y divide-gray-200">
-                            {product.customer_breakdown.map((customer, idx) => (
-                              <div
-                                key={`${customer.order_id}-${idx}`}
-                                className="px-4 py-3 flex items-center justify-between gap-4"
-                              >
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
-                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                    <User className="w-4 h-4 text-blue-600" />
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <p className="font-medium text-gray-900 text-sm truncate">
-                                      {customer.customer_name}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      Pedido #{customer.order_number}
-                                      {customer.customer_phone && (
-                                        <span className="ml-2">Tel: {customer.customer_phone}</span>
+                            {product.customer_breakdown.map((customer, idx) => {
+                              const addressCopyId = `addr-${customer.order_id}-${idx}`;
+                              const summaryCopyId = `sum-${customer.order_id}-${idx}`;
+
+                              return (
+                                <div
+                                  key={`${customer.order_id}-${idx}`}
+                                  className="px-4 py-3"
+                                >
+                                  <div className="flex items-start justify-between gap-4">
+                                    {/* Info del cliente */}
+                                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                        <User className="w-4 h-4 text-blue-600" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="font-semibold text-gray-900 text-sm">
+                                          {customer.customer_name}
+                                        </p>
+                                        {/* Dirección si existe */}
+                                        {customer.customer_address && (
+                                          <div className="flex items-start gap-1 mt-1">
+                                            <MapPin className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                                            <p className="text-xs text-gray-600 break-words">
+                                              {customer.customer_address}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    {/* Cantidad a entregar */}
+                                    <div className="text-right flex-shrink-0">
+                                      {customer.weight_display ? (
+                                        <p className="font-bold text-gray-900 text-lg">
+                                          {customer.weight_display}
+                                        </p>
+                                      ) : (
+                                        <p className="font-bold text-gray-900 text-lg">
+                                          {customer.quantity} ud{customer.quantity === 1 ? '' : 's'}
+                                        </p>
                                       )}
-                                    </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Botones de copiar */}
+                                  <div className="flex gap-2 mt-2 ml-11">
+                                    {customer.customer_address && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(customer.customer_address!, addressCopyId);
+                                        }}
+                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
+                                          copiedItems.has(addressCopyId)
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                        }`}
+                                      >
+                                        {copiedItems.has(addressCopyId) ? (
+                                          <>
+                                            <Check className="w-3 h-3" />
+                                            Copiado
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Copy className="w-3 h-3" />
+                                            Copiar dirección
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
+                                    {customer.order_items && customer.order_items.length > 0 && (
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          copyToClipboard(generateOrderSummary(customer), summaryCopyId);
+                                        }}
+                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
+                                          copiedItems.has(summaryCopyId)
+                                            ? 'bg-green-100 text-green-700'
+                                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                        }`}
+                                      >
+                                        {copiedItems.has(summaryCopyId) ? (
+                                          <>
+                                            <Check className="w-3 h-3" />
+                                            Copiado
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ClipboardList className="w-3 h-3" />
+                                            Copiar resumen
+                                          </>
+                                        )}
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
-                                <div className="text-right flex-shrink-0">
-                                  {customer.weight_display ? (
-                                    <>
-                                      <p className="font-bold text-gray-900">
-                                        {customer.weight_display}
-                                      </p>
-                                      <p className="text-xs text-gray-500">
-                                        {customer.quantity} unidad{customer.quantity === 1 ? '' : 'es'}
-                                      </p>
-                                    </>
-                                  ) : (
-                                    <p className="font-bold text-gray-900">
-                                      {customer.quantity} unidad{customer.quantity === 1 ? '' : 'es'}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       )}
