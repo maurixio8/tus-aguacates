@@ -5,7 +5,12 @@ import {
   Package,
   CheckSquare,
   Square,
-  ShoppingCart
+  ShoppingCart,
+  ChevronDown,
+  ChevronUp,
+  Download,
+  User,
+  FileSpreadsheet
 } from 'lucide-react';
 
 interface OrderItem {
@@ -47,6 +52,17 @@ interface Order {
   order_data?: any;
 }
 
+// Desglose de un producto por cliente
+interface CustomerBreakdown {
+  customer_name: string;
+  customer_phone?: string;
+  order_number: string;
+  order_id: string;
+  quantity: number;
+  weight_grams?: number;
+  weight_display?: string;
+}
+
 interface ProductGrouped {
   // Clave única para agrupación
   grouping_key: string;
@@ -69,6 +85,8 @@ interface ProductGrouped {
   total_weight_display?: string;
   // En cuántos pedidos aparece
   orders_count: number;
+  // Desglose por cliente
+  customer_breakdown: CustomerBreakdown[];
 }
 
 export default function ListaComprasPage() {
@@ -78,6 +96,7 @@ export default function ListaComprasPage() {
   const [dateTo, setDateTo] = useState('');
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
 
   // Inicializar con últimos 10 días
   useEffect(() => {
@@ -223,6 +242,9 @@ export default function ListaComprasPage() {
 
     selectedOrdersList.forEach(order => {
       const items = extractItemsFromOrder(order);
+      const customerName = order.customer_name || 'Cliente sin nombre';
+      const customerPhone = order.customer_phone;
+      const orderNumber = order.order_number || order.id.slice(0, 8);
 
       items.forEach(item => {
         // Extraer información del producto
@@ -251,15 +273,34 @@ export default function ListaComprasPage() {
 
         const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
 
+        // Calcular peso para este item
+        const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+        const itemWeightDisplay = itemWeightGrams ? formatWeight(itemWeightGrams) : undefined;
+
+        // Info del cliente para este item
+        const customerInfo: CustomerBreakdown = {
+          customer_name: customerName,
+          customer_phone: customerPhone,
+          order_number: orderNumber,
+          order_id: order.id,
+          quantity: item.quantity,
+          weight_grams: itemWeightGrams,
+          weight_display: itemWeightDisplay
+        };
+
         // Verificar si ya existe este grupo
         if (productMap.has(groupingKey)) {
           const existing = productMap.get(groupingKey)!;
           existing.total_quantity += item.quantity;
           existing.orders_count += 1;
 
+          // Agregar desglose por cliente
+          existing.customer_breakdown.push(customerInfo);
+
           // Recalcular peso total si hay peso por unidad
-          if (existing.weight_per_unit_grams) {
-            existing.total_weight_grams = (existing.total_weight_grams || 0) + (weightPerUnitGrams || 0) * item.quantity;
+          if (existing.weight_per_unit_grams && itemWeightGrams) {
+            existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
+            existing.total_weight_display = formatWeight(existing.total_weight_grams);
           }
         } else {
           // Crear nombre a mostrar
@@ -285,7 +326,8 @@ export default function ListaComprasPage() {
             weight_per_unit_grams: weightPerUnitGrams,
             total_weight_grams: initialWeightGrams,
             total_weight_display: weightDisplay,
-            orders_count: 1
+            orders_count: 1,
+            customer_breakdown: [customerInfo]
           });
         }
       });
@@ -324,6 +366,85 @@ export default function ListaComprasPage() {
   const getOrderItemCount = (order: Order): number => {
     const items = extractItemsFromOrder(order);
     return items.reduce((sum, item) => sum + item.quantity, 0);
+  };
+
+  // Toggle expandir producto para ver desglose
+  const toggleProductExpanded = (groupingKey: string) => {
+    const newExpanded = new Set(expandedProducts);
+    if (newExpanded.has(groupingKey)) {
+      newExpanded.delete(groupingKey);
+    } else {
+      newExpanded.add(groupingKey);
+    }
+    setExpandedProducts(newExpanded);
+  };
+
+  // Expandir/colapsar todos los productos
+  const toggleExpandAll = () => {
+    if (expandedProducts.size === groupedProducts.length) {
+      setExpandedProducts(new Set());
+    } else {
+      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
+    }
+  };
+
+  // Exportar a Excel (CSV)
+  const exportToExcel = () => {
+    if (groupedProducts.length === 0) return;
+
+    // Crear CSV con BOM para Excel
+    const BOM = '\uFEFF';
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Cliente', 'Teléfono', 'Pedido #', 'Cantidad Cliente', 'Peso Cliente'];
+
+    const rows: string[][] = [];
+
+    groupedProducts.forEach(product => {
+      // Primera fila con el total del producto
+      rows.push([
+        product.product_name,
+        product.variant_name || 'Sin variante',
+        product.total_quantity.toString(),
+        product.total_weight_display || '-',
+        formatPrice(product.unit_price),
+        '--- TOTAL ---',
+        '',
+        '',
+        '',
+        ''
+      ]);
+
+      // Filas con el desglose por cliente
+      product.customer_breakdown.forEach(customer => {
+        rows.push([
+          '',
+          '',
+          '',
+          '',
+          '',
+          customer.customer_name,
+          customer.customer_phone || '-',
+          customer.order_number,
+          customer.quantity.toString(),
+          customer.weight_display || '-'
+        ]);
+      });
+    });
+
+    const csvContent = BOM + [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    // Crear y descargar archivo
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lista-compras-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -468,60 +589,160 @@ export default function ListaComprasPage() {
           {selectedOrders.size > 0 && groupedProducts.length > 0 && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-4 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Lista de Compras
-                </h2>
-                <p className="text-sm text-gray-600">
-                  Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Lista de Compras
+                    </h2>
+                    <p className="text-sm text-gray-600">
+                      Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={toggleExpandAll}
+                      className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1"
+                    >
+                      {expandedProducts.size === groupedProducts.length ? (
+                        <>
+                          <ChevronUp className="w-4 h-4" />
+                          Colapsar
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="w-4 h-4" />
+                          Expandir todo
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={exportToExcel}
+                      className="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      Descargar Excel
+                    </button>
+                  </div>
+                </div>
               </div>
               <div className="divide-y divide-gray-200">
-                {groupedProducts.map(product => (
-                  <div
-                    key={product.grouping_key}
-                    className="p-4 hover:bg-gray-50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Info del producto */}
-                      <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                          <Package className="w-5 h-5 text-green-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          {/* Nombre del producto con variante */}
-                          <p className="font-medium text-gray-900 text-base">
-                            {product.display_name}
-                          </p>
-
-                          {/* Precio unitario y cantidad */}
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                            <p className="text-sm text-green-700 font-semibold">
-                              Precio: {formatPrice(product.unit_price)}
-                            </p>
-                            <p className="text-sm text-gray-600">
-                              Cantidad: <span className="font-bold text-gray-900">{product.total_quantity}</span>
-                              {product.total_weight_display && (
-                                <span className="ml-1">({product.total_weight_display} total)</span>
+                {groupedProducts.map(product => {
+                  const isExpanded = expandedProducts.has(product.grouping_key);
+                  return (
+                    <div key={product.grouping_key}>
+                      {/* Fila principal del producto */}
+                      <div
+                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                        onClick={() => toggleProductExpanded(product.grouping_key)}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Info del producto */}
+                          <div className="flex items-start gap-3 flex-1 min-w-0">
+                            <button className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 hover:bg-green-200 transition-colors">
+                              {isExpanded ? (
+                                <ChevronUp className="w-5 h-5 text-green-600" />
+                              ) : (
+                                <ChevronDown className="w-5 h-5 text-green-600" />
                               )}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              En {product.orders_count} pedido{product.orders_count === 1 ? '' : 's'}
-                            </p>
+                            </button>
+                            <div className="min-w-0 flex-1">
+                              {/* Nombre del producto con variante */}
+                              <p className="font-medium text-gray-900 text-base">
+                                {product.display_name}
+                              </p>
+
+                              {/* Precio unitario y cantidad */}
+                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                                <p className="text-sm text-green-700 font-semibold">
+                                  {formatPrice(product.unit_price)} c/u
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Total destacado con peso */}
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm text-gray-500">Comprar</p>
+                            {product.total_weight_display ? (
+                              <>
+                                <p className="text-2xl font-bold text-green-600">
+                                  {product.total_weight_display}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  ({product.total_quantity} unidad{product.total_quantity === 1 ? '' : 'es'})
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-2xl font-bold text-green-600">
+                                  {product.total_quantity}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  unidad{product.total_quantity === 1 ? '' : 'es'}
+                                </p>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
 
-                      {/* Total destacado */}
-                      <div className="text-right flex-shrink-0">
-                        <p className="text-sm text-gray-500">Total</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          {product.total_quantity}
-                        </p>
-                        <p className="text-sm text-gray-500">unidades</p>
-                      </div>
+                      {/* Desglose por cliente (expandible) */}
+                      {isExpanded && (
+                        <div className="bg-gray-50 border-t border-gray-200">
+                          <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                              Desglose por cliente
+                            </p>
+                          </div>
+                          <div className="divide-y divide-gray-200">
+                            {product.customer_breakdown.map((customer, idx) => (
+                              <div
+                                key={`${customer.order_id}-${idx}`}
+                                className="px-4 py-3 flex items-center justify-between gap-4"
+                              >
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <User className="w-4 h-4 text-blue-600" />
+                                  </div>
+                                  <div className="min-w-0 flex-1">
+                                    <p className="font-medium text-gray-900 text-sm truncate">
+                                      {customer.customer_name}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      Pedido #{customer.order_number}
+                                      {customer.customer_phone && (
+                                        <span className="ml-2">Tel: {customer.customer_phone}</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  {customer.weight_display ? (
+                                    <>
+                                      <p className="font-bold text-gray-900">
+                                        {customer.weight_display}
+                                      </p>
+                                      <p className="text-xs text-gray-500">
+                                        {customer.quantity} unidad{customer.quantity === 1 ? '' : 'es'}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <p className="font-bold text-gray-900">
+                                      {customer.quantity} unidad{customer.quantity === 1 ? '' : 'es'}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
