@@ -1,4 +1,9 @@
 import { BannerConfig } from '@/lib/types/banner';
+import {
+  getNowInColombia,
+  addDaysFromToday,
+  getDayNameInSpanish
+} from '@/lib/utils/colombia-date';
 
 export interface DeliverySchedule {
   nextDeliveryDate: Date;
@@ -26,12 +31,14 @@ export class DeliveryScheduler {
   /**
    * Calcula la siguiente fecha de entrega basado en el día y hora actual
    * usando el nuevo horario de corte de 10AM
+   * IMPORTANTE: Ahora usa zona horaria de Colombia correctamente
    */
   getNextDeliveryDate(): Date {
-    const now = new Date();
-    const dayOfWeek = now.getDay(); // 0 = Domingo, 1 = Lunes, etc.
-    const hour = now.getHours();
-    const currentMinutes = now.getMinutes();
+    // Usar funciones de Colombia para obtener fecha/hora correcta
+    const colombiaTime = getNowInColombia();
+    const dayOfWeek = colombiaTime.dayOfWeek; // 0 = Domingo, 1 = Lunes, etc.
+    const hour = colombiaTime.hour;
+    const currentMinutes = colombiaTime.minute;
 
     // Determinar si ya pasó la hora de corte de hoy
     const hasPassedCutoff = hour > this.config.cutoffHour ||
@@ -70,8 +77,8 @@ export class DeliveryScheduler {
         daysUntilDelivery = 1;
     }
 
-    const deliveryDate = new Date(now);
-    deliveryDate.setDate(now.getDate() + daysUntilDelivery);
+    // Usar addDaysFromToday para calcular la fecha de entrega correctamente
+    const deliveryDate = addDaysFromToday(daysUntilDelivery);
 
     // Si es hoy y ya pasó el cutoff, mover al siguiente día de entrega
     if (daysUntilDelivery === 0 && hasPassedCutoff) {
@@ -99,16 +106,17 @@ export class DeliveryScheduler {
 
   /**
    * Calcula el deadline (hora de corte) para la siguiente entrega
+   * IMPORTANTE: Usa zona horaria de Colombia
    */
   getDeadlineDate(): Date {
     const deliveryDate = this.getNextDeliveryDate();
     const deadline = new Date(deliveryDate);
+    const colombiaTime = getNowInColombia();
 
     // Si la entrega es hoy, el deadline es hoy a las 10AM
-    const now = new Date();
-    const isDeliveryToday = deliveryDate.toDateString() === now.toDateString();
+    const isDeliveryToday = deliveryDate.toDateString() === colombiaTime.date.toDateString();
 
-    if (isDeliveryToday && now.getHours() < this.config.cutoffHour) {
+    if (isDeliveryToday && colombiaTime.hour < this.config.cutoffHour) {
       deadline.setHours(this.config.cutoffHour, 0, 0, 0);
     } else {
       // Si no, el deadline es el día de entrega anterior a las 10AM
@@ -126,9 +134,11 @@ export class DeliveryScheduler {
 
   /**
    * Calcula el tiempo restante para el deadline
+   * IMPORTANTE: Usa zona horaria de Colombia
    */
   getTimeRemaining(): DeliverySchedule {
-    const now = new Date();
+    const colombiaTime = getNowInColombia();
+    const now = colombiaTime.date;
     const deadline = this.getDeadlineDate();
     const deliveryDate = this.getNextDeliveryDate();
 
@@ -167,24 +177,27 @@ export class DeliveryScheduler {
 
   /**
    * Formatea la fecha de entrega para mostrar en el banner
+   * IMPORTANTE: Usa zona horaria de Colombia
    */
   formatDeliveryDate(deliveryDate?: Date): string {
     const date = deliveryDate || this.getNextDeliveryDate();
     const options: Intl.DateTimeFormatOptions = {
       weekday: 'long',
       day: 'numeric',
-      month: 'short'
+      month: 'short',
+      timeZone: 'America/Bogota'
     };
     return date.toLocaleDateString('es-CO', options);
   }
 
   /**
    * Verifica si hay entrega hoy
+   * IMPORTANTE: Usa zona horaria de Colombia
    */
   hasDeliveryToday(): boolean {
-    const now = new Date();
+    const colombiaTime = getNowInColombia();
     const deliveryDate = this.getNextDeliveryDate();
-    return deliveryDate.toDateString() === now.toDateString();
+    return deliveryDate.toDateString() === colombiaTime.date.toDateString();
   }
 
   /**
