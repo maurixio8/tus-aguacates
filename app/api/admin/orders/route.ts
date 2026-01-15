@@ -798,6 +798,22 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
+    // Determinar si el pedido es de invitado o registrado
+    // Primero verificar en guest_orders, si no existe, buscar en orders
+    let isGuestOrder = false;
+    const { data: guestOrderCheck } = await supabase
+      .from('guest_orders')
+      .select('id')
+      .eq('id', orderId)
+      .single();
+
+    if (guestOrderCheck) {
+      isGuestOrder = true;
+      console.log('📝 API: Detected guest order:', orderId);
+    } else {
+      console.log('📝 API: Detected registered order:', orderId);
+    }
+
     // If updating customer data
     if (customerData) {
       console.log('📝 API: Updating customer data for order:', orderId, customerData);
@@ -806,30 +822,49 @@ export async function PATCH(request: NextRequest) {
         updated_at: new Date().toISOString()
       };
 
-      if (customerData.customer_name !== undefined) {
-        updateData.customer_name = customerData.customer_name.trim();
-      }
-      if (customerData.customer_phone !== undefined) {
-        updateData.customer_phone = customerData.customer_phone.trim();
-      }
-      if (customerData.customer_email !== undefined) {
-        updateData.customer_email = customerData.customer_email.trim() || null;
-      }
-      if (customerData.delivery_address !== undefined) {
-        updateData.delivery_address = customerData.delivery_address.trim();
-        // También actualizar shipping_address como JSON
-        updateData.shipping_address = JSON.stringify({
-          street_address: customerData.delivery_address.trim(),
-          city: 'Bogotá',
-          state: 'Cundinamarca'
-        });
-      }
-      if (customerData.delivery_notes !== undefined) {
-        updateData.delivery_notes = customerData.delivery_notes.trim() || null;
+      // Mapear campos según tipo de pedido
+      if (isGuestOrder) {
+        // Para guest_orders, los campos son: guest_name, guest_phone, guest_email, guest_address
+        if (customerData.customer_name !== undefined) {
+          updateData.guest_name = customerData.customer_name.trim();
+        }
+        if (customerData.customer_phone !== undefined) {
+          updateData.guest_phone = customerData.customer_phone.trim();
+        }
+        if (customerData.customer_email !== undefined) {
+          updateData.guest_email = customerData.customer_email.trim() || null;
+        }
+        if (customerData.delivery_address !== undefined) {
+          updateData.guest_address = customerData.delivery_address.trim();
+        }
+      } else {
+        // Para orders, usar campos normales
+        if (customerData.customer_name !== undefined) {
+          updateData.customer_name = customerData.customer_name.trim();
+        }
+        if (customerData.customer_phone !== undefined) {
+          updateData.customer_phone = customerData.customer_phone.trim();
+        }
+        if (customerData.customer_email !== undefined) {
+          updateData.customer_email = customerData.customer_email.trim() || null;
+        }
+        if (customerData.delivery_address !== undefined) {
+          updateData.delivery_address = customerData.delivery_address.trim();
+          // También actualizar shipping_address como JSON
+          updateData.shipping_address = JSON.stringify({
+            street_address: customerData.delivery_address.trim(),
+            city: 'Bogotá',
+            state: 'Cundinamarca'
+          });
+        }
+        if (customerData.delivery_notes !== undefined) {
+          updateData.delivery_notes = customerData.delivery_notes.trim() || null;
+        }
       }
 
+      const tableName = isGuestOrder ? 'guest_orders' : 'orders';
       const { error: customerUpdateError } = await supabase
-        .from('orders')
+        .from(tableName)
         .update(updateData)
         .eq('id', orderId);
 
@@ -918,8 +953,12 @@ export async function PATCH(request: NextRequest) {
 
     // If updating status only
     if (status) {
+      // Usar la tabla correcta según el tipo de pedido
+      const tableName = isGuestOrder ? 'guest_orders' : 'orders';
+      console.log(`📝 API: Updating status in table '${tableName}' for order:`, orderId);
+
       const { data, error } = await supabase
-        .from('orders')
+        .from(tableName)
         .update({
           status,
           updated_at: new Date().toISOString()
@@ -931,7 +970,7 @@ export async function PATCH(request: NextRequest) {
       if (error) {
         console.error('❌ API: Error updating order:', error);
         return NextResponse.json(
-          { error: 'Error al actualizar el pedido' },
+          { error: 'Error al actualizar el pedido', details: error.message },
           { status: 500, headers: corsHeaders }
         );
       }
