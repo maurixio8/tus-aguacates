@@ -27,7 +27,12 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Búsqueda con debounce usando Supabase directamente
+  // Función para normalizar texto (quitar acentos)
+  const normalizeText = (text: string) => {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  };
+
+  // Búsqueda mejorada con debounce más rápido
   useEffect(() => {
     if (!query || query.length < 2) {
       setResults([]);
@@ -37,6 +42,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
+        const normalizedQuery = normalizeText(query);
 
         // ✅ Consultar directamente a Supabase con variantes
         const { data, error } = await supabase
@@ -47,8 +53,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           `)
           .eq('is_active', true)
           .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-          .order('name', { ascending: true })
-          .limit(12);
+          .limit(50); // Traer más para filtrar mejor
 
         if (error) {
           console.error('Error searching products:', error);
@@ -56,8 +61,28 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           return;
         }
 
-        console.log(`🔍 Búsqueda "${query}": ${data?.length || 0} productos encontrados`);
-        setResults(data || []);
+        // ✅ Ordenar por relevancia: primero los que empiezan con la búsqueda
+        const sortedResults = (data || [])
+          .map(product => ({
+            ...product,
+            // Calcular score de relevancia
+            _score: (() => {
+              const name = normalizeText(product.name);
+              // Coincidencia exacta al inicio = máximo score
+              if (name.startsWith(normalizedQuery)) return 100;
+              // Primera palabra empieza con búsqueda
+              if (name.split(' ').some((word: string) => word.startsWith(normalizedQuery))) return 75;
+              // Contiene la palabra exacta
+              if (name.includes(normalizedQuery)) return 50;
+              // Coincidencia parcial
+              return 25;
+            })()
+          }))
+          .sort((a, b) => b._score - a._score)
+          .slice(0, 12); // Limitar a 12 resultados
+
+        console.log(`🔍 Búsqueda "${query}": ${sortedResults.length} productos encontrados`);
+        setResults(sortedResults as UnifiedProduct[]);
 
       } catch (error) {
         console.error('Error in search:', error);
@@ -65,7 +90,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       } finally {
         setLoading(false);
       }
-    }, 300);
+    }, 200); // ⚡ Debounce más rápido (200ms vs 300ms)
 
     return () => clearTimeout(timer);
   }, [query]);
@@ -167,15 +192,29 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
             </div>
           )}
 
-          {/* Initial state */}
+          {/* Initial state with suggestions */}
           {!query && !loading && (
-            <div className="text-center py-12">
-              <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">
-                ¿Qué estás buscando?
+            <div className="text-center py-8">
+              <Search className="w-10 h-10 text-green-400 mx-auto mb-4" />
+              <p className="text-gray-600 text-lg mb-4">
+                ¿Qué estás buscando hoy?
               </p>
+
+              {/* Quick search suggestions */}
+              <div className="flex flex-wrap justify-center gap-2 mb-6">
+                {['Aguacate', 'Mango', 'Fresa', 'Lechuga', 'Limón', 'Germinados'].map((term) => (
+                  <button
+                    key={term}
+                    onClick={() => setQuery(term)}
+                    className="px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-full text-sm font-medium transition-colors border border-green-200"
+                  >
+                    {term}
+                  </button>
+                ))}
+              </div>
+
               <p className="text-gray-400 text-sm">
-                Escribe al menos 2 caracteres para comenzar a buscar
+                Escribe al menos 2 letras para buscar
               </p>
             </div>
           )}
