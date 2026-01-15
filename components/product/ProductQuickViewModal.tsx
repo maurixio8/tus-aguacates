@@ -57,9 +57,9 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   }, [product.id, isOpen]);
 
   // Calcular precio final
+  // ✅ Usar el precio de la variante directamente si existe
   const basePrice = product.discount_price || product.price;
-  const variantPrice = selectedVariant?.price_adjustment || 0;
-  const finalPrice = basePrice + variantPrice;
+  const finalPrice = (selectedVariant as any)?.price || basePrice;
 
   const handleAddToCart = () => {
     const itemToAdd = {

@@ -43,9 +43,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     async function loadVariants() {
       // Si el producto ya tiene variantes cargadas
       if (product.variants && product.variants.length > 0) {
+        // ✅ Usar el precio de la variante directamente si existe
         const variantsWithPrice = product.variants.map((v: any) => ({
           ...v,
-          price: (product.discount_price || product.price) + (v.price_adjustment || 0)
+          price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
         }));
         setVariants(variantsWithPrice);
         setSelectedVariant(variantsWithPrice[0]);
@@ -64,9 +65,10 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
         );
 
         if (data && data.length > 0) {
+          // ✅ Usar el precio de la variante directamente si existe
           const variantsWithPrice = data.map((v: any) => ({
             ...v,
-            price: (product.discount_price || product.price) + (v.price_adjustment || 0)
+            price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
           }));
           setVariants(variantsWithPrice);
           setSelectedVariant(variantsWithPrice[0]);

@@ -42,13 +42,15 @@ export function ProductCard({ product }: ProductCardProps) {
 
   // Cargar variantes del producto (locales o Supabase)
   useEffect(() => {
-    // ✅ USAR VARIANTES DEL OBJETO PRODUCTO (vienen del JSON)
+    // ✅ USAR VARIANTES DEL OBJETO PRODUCTO
     if (product.variants && product.variants.length > 0) {
-      console.log('📦 Usando variantes locales del producto:', product.name, product.variants);
+      console.log('📦 Usando variantes del producto:', product.name, product.variants);
 
+      // ✅ Usar el precio de la variante directamente si existe, no recalcular
       const variantsWithPrice = product.variants.map(v => ({
         ...v,
-        price: (product.discount_price || product.base_price || product.price) + v.price_adjustment
+        // Si la variante ya tiene precio, usarlo; si no, calcular con price_adjustment
+        price: (v as any).price || ((product.discount_price || product.price) + ((v as any).price_adjustment || 0))
       }));
       setVariants(variantsWithPrice);
       setSelectedVariant(variantsWithPrice[0]); // Seleccionar primer variante por defecto
@@ -64,9 +66,10 @@ export function ProductCard({ product }: ProductCardProps) {
             .order('price_adjustment', { ascending: true });
 
           if (data && data.length > 0) {
+            // ✅ Usar el precio de la variante directamente si existe
             const variantsWithPrice = data.map(v => ({
               ...v,
-              price: (product.discount_price || product.price) + v.price_adjustment
+              price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
             }));
             setVariants(variantsWithPrice);
             setSelectedVariant(variantsWithPrice[0]);
