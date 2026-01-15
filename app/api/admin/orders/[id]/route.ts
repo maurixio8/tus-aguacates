@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +34,7 @@ export async function DELETE(
     }
 
     // Primero, verificar si el pedido existe
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number')
       .eq('id', orderId)
@@ -51,7 +51,7 @@ export async function DELETE(
     }
 
     // Primero eliminar los order_items relacionados
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await supabaseAdmin
       .from('order_items')
       .delete()
       .eq('order_id', orderId);
@@ -62,7 +62,7 @@ export async function DELETE(
     }
 
     // Luego eliminar el pedido
-    const { error: orderError } = await supabase
+    const { error: orderError } = await supabaseAdmin
       .from('orders')
       .delete()
       .eq('id', orderId);
