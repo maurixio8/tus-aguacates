@@ -145,8 +145,9 @@ export function ProductCard({ product }: ProductCardProps) {
     setIsModalOpen(true);
   };
 
-  // Precio a mostrar (variante seleccionada o precio base con descuento)
-  const displayPrice = selectedVariant ? selectedVariant.price : (product.discount_price || product.price);
+  // Precio a mostrar: siempre el precio base del producto (no el de la variante)
+  // Las variantes muestran su precio en los botones de selección
+  const displayPrice = product.discount_price || product.price;
 
   return (
     <>
