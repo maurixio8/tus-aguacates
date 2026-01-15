@@ -1,0 +1,522 @@
+{
+    "name": "🔧 MCP Helper - Gestión de Workflows",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "mcp-helper/list",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-list",
+            "name": "📋 Webhook: Listar Workflows",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                100
+            ],
+            "webhookId": "mcp-list-workflows"
+        },
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "mcp-helper/get/{{$request.params.id}}",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-get",
+            "name": "📄 Webhook: Obtener Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                300
+            ],
+            "webhookId": "mcp-get-workflow"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/create",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-create",
+            "name": "➕ Webhook: Crear Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                500
+            ],
+            "webhookId": "mcp-create-workflow"
+        },
+        {
+            "parameters": {
+                "httpMethod": "PUT",
+                "path": "mcp-helper/update/{{$request.params.id}}",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-update",
+            "name": "✏️ Webhook: Actualizar Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                700
+            ],
+            "webhookId": "mcp-update-workflow"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/activate/{{$request.params.id}}",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-activate",
+            "name": "🟢 Webhook: Activar Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                900
+            ],
+            "webhookId": "mcp-activate-workflow"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/execute/{{$request.params.id}}",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-execute",
+            "name": "▶️ Webhook: Ejecutar Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                1100
+            ],
+            "webhookId": "mcp-execute-workflow"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Accept",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "http-list",
+            "name": "API: Listar Workflows",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                100
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows/{{ $json.params?.id || $json.query?.id }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "http-get",
+            "name": "API: Obtener Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "bodyParameters": {
+                    "parameters": []
+                },
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json.body) }}",
+                "options": {}
+            },
+            "id": "http-create",
+            "name": "API: Crear Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                500
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "PUT",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows/{{ $json.params?.id || $json.query?.id }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json.body) }}",
+                "options": {}
+            },
+            "id": "http-update",
+            "name": "API: Actualizar Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                700
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows/{{ $json.params?.id || $json.query?.id }}/activate",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "http-activate",
+            "name": "API: Activar Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                900
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/executions",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({ workflowId: $json.params?.id || $json.query?.id, data: $json.body || {} }) }}",
+                "options": {}
+            },
+            "id": "http-execute",
+            "name": "API: Ejecutar Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                1100
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Formatear respuesta de lista\nconst workflows = $input.first().json.data || [];\n\nreturn {\n  json: {\n    success: true,\n    count: workflows.length,\n    active: workflows.filter(w => w.active).length,\n    inactive: workflows.filter(w => !w.active).length,\n    workflows: workflows.map(w => ({\n      id: w.id,\n      name: w.name,\n      active: w.active,\n      createdAt: w.createdAt,\n      updatedAt: w.updatedAt\n    }))\n  }\n};"
+            },
+            "id": "code-format-list",
+            "name": "Formatear Lista",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Formatear respuesta de operación\nconst data = $input.first().json;\n\nreturn {\n  json: {\n    success: true,\n    message: 'Operación completada',\n    data: data\n  }\n};"
+            },
+            "id": "code-format-response",
+            "name": "Formatear Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "GET",
+                "path": "mcp-helper/audit/{{$request.params.id}}",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-audit",
+            "name": "🔍 Webhook: Auditar Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                1300
+            ],
+            "webhookId": "mcp-audit-workflow"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "={{ $env.N8N_BASE_URL || 'http://localhost:5678' }}/api/v1/workflows/{{ $json.params?.id || $json.query?.id }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "http-audit-get",
+            "name": "API: Obtener para Auditar",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                1300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Auditar workflow\nconst workflow = $input.first().json;\nconst nodes = workflow.nodes || [];\n\nconst nodeTypes = {};\nconst triggers = [];\nconst aiNodes = [];\nconst dbNodes = [];\nconst httpNodes = [];\nconst codeNodes = [];\nconst warnings = [];\nconst recommendations = [];\n\nfor (const node of nodes) {\n  const type = node.type || 'unknown';\n  const name = node.name || 'Sin nombre';\n  \n  // Contar tipos\n  nodeTypes[type] = (nodeTypes[type] || 0) + 1;\n  \n  // Clasificar nodos\n  if (type.toLowerCase().includes('trigger') || type.toLowerCase().includes('webhook')) {\n    triggers.push({ name, type });\n  }\n  if (['openai', 'langchain', 'agent', 'chat'].some(ai => type.toLowerCase().includes(ai))) {\n    aiNodes.push({ name, type });\n  }\n  if (['postgres', 'mysql', 'supabase', 'mongodb'].some(db => type.toLowerCase().includes(db))) {\n    dbNodes.push({ name, type });\n  }\n  if (type.toLowerCase().includes('http')) {\n    httpNodes.push({ name, type });\n  }\n  if (type.toLowerCase().includes('code') || type.toLowerCase().includes('function')) {\n    codeNodes.push({ name, type });\n  }\n}\n\n// Generar warnings\nif (triggers.length === 0) {\n  warnings.push('⚠️ No se encontraron triggers. El workflow no puede iniciar automáticamente.');\n}\nif (triggers.length > 1) {\n  warnings.push(`⚠️ Se encontraron ${triggers.length} triggers. Solo uno puede estar activo.`);\n}\n\n// Generar recomendaciones\nif (aiNodes.length > 0 && dbNodes.length === 0) {\n  recommendations.push('💡 Considera agregar persistencia para conversaciones.');\n}\nif (codeNodes.length > 3) {\n  recommendations.push('💡 Muchos nodos de código. Considera modularizar.');\n}\n\nreturn {\n  json: {\n    success: true,\n    audit: {\n      workflowId: workflow.id,\n      name: workflow.name,\n      active: workflow.active,\n      totalNodes: nodes.length,\n      nodeTypes,\n      triggers,\n      aiNodes,\n      dbNodes,\n      httpNodes,\n      codeNodes,\n      warnings,\n      recommendations\n    }\n  }\n};"
+            },
+            "id": "code-audit",
+            "name": "Analizar Workflow",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                1300
+            ]
+        }
+    ],
+    "connections": {
+        "📋 Webhook: Listar Workflows": {
+            "main": [
+                [
+                    {
+                        "node": "API: Listar Workflows",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Listar Workflows": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Lista",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📄 Webhook: Obtener Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Obtener Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Obtener Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "➕ Webhook: Crear Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Crear Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Crear Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✏️ Webhook: Actualizar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Actualizar Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Actualizar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🟢 Webhook: Activar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Activar Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Activar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "▶️ Webhook: Ejecutar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Ejecutar Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Ejecutar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Webhook: Auditar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Obtener para Auditar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Obtener para Auditar": {
+            "main": [
+                [
+                    {
+                        "node": "Analizar Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "1",
+    "meta": {
+        "instanceId": "mcp-helper-v1"
+    },
+    "tags": [
+        {
+            "name": "MCP",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        },
+        {
+            "name": "Antigravity",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        }
+    ],
+    "pinData": {}
+}

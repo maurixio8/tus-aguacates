@@ -1,0 +1,226 @@
+{
+    "name": "⏰ Procesador de Buffer - Mensajes Agrupados",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "seconds",
+                            "secondsInterval": 10
+                        }
+                    ]
+                }
+            },
+            "id": "buffer-schedule",
+            "name": "⏰ Schedule Trigger (10s)",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                -400,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "WITH ultimos_mensajes AS (\n    SELECT \n        cliente_telefono,\n        MAX(timestamp) as ultimo_mensaje\n    FROM mensaje_buffer\n    WHERE procesado = false\n    GROUP BY cliente_telefono\n    HAVING MAX(timestamp) < NOW() - INTERVAL '30 seconds'\n),\nmensajes_agrupados AS (\n    SELECT \n        mb.cliente_telefono,\n        STRING_AGG(mb.mensaje, ' ' ORDER BY mb.timestamp) as mensaje_combinado,\n        MIN(mb.timestamp) as primer_mensaje,\n        MAX(mb.timestamp) as ultimo_mensaje,\n        COUNT(*) as total_mensajes,\n        ARRAY_AGG(mb.id ORDER BY mb.timestamp) as mensaje_ids\n    FROM mensaje_buffer mb\n    INNER JOIN ultimos_mensajes um ON mb.cliente_telefono = um.cliente_telefono\n    WHERE mb.procesado = false\n    GROUP BY mb.cliente_telefono\n)\nSELECT \n    cliente_telefono,\n    mensaje_combinado,\n    primer_mensaje,\n    ultimo_mensaje,\n    total_mensajes,\n    mensaje_ids\nFROM mensajes_agrupados\nORDER BY ultimo_mensaje ASC\nLIMIT 10;",
+                "options": {}
+            },
+            "id": "buffer-query",
+            "name": "📦 Obtener Mensajes Listos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                -160,
+                0
+            ],
+            "alwaysOutputData": true,
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "loose",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "tiene-mensajes",
+                            "leftValue": "={{ $json.cliente_telefono }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty",
+                                "singleValue": true
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "buffer-check",
+            "name": "❓ ¿Hay mensajes?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                80,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Preparar datos para enviar al webhook principal\nconst item = $input.first().json;\n\n// Formatear teléfono (agregar 57 si no está)\nlet telefono = item.cliente_telefono;\nif (!telefono.startsWith('57')) {\n    telefono = '57' + telefono;\n}\n\nreturn {\n    json: {\n        fromBuffer: true,\n        cliente_telefono: telefono,\n        mensaje_combinado: item.mensaje_combinado,\n        total_mensajes: item.total_mensajes,\n        mensaje_ids: item.mensaje_ids,\n        primer_mensaje: item.primer_mensaje,\n        ultimo_mensaje: item.ultimo_mensaje\n    }\n};"
+            },
+            "id": "buffer-prepare",
+            "name": "📤 Preparar Payload",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                320,
+                -80
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://dep-n8n.n8ntusaguacates.space/webhook/ycloud",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"body\": {\n    \"whatsappInboundMessage\": {\n      \"from\": \"{{ $json.cliente_telefono }}\",\n      \"to\": \"573042582777\",\n      \"type\": \"text\",\n      \"text\": {\n        \"body\": \"{{ $json.mensaje_combinado }}\"\n      },\n      \"fromBuffer\": true,\n      \"bufferMessageIds\": {{ JSON.stringify($json.mensaje_ids) }},\n      \"customerProfile\": {\n        \"name\": \"Cliente\"\n      },\n      \"sendTime\": \"{{ $now.toISO() }}\"\n    }\n  }\n}",
+                "options": {
+                    "timeout": 30000
+                }
+            },
+            "id": "buffer-webhook",
+            "name": "🔗 Llamar Webhook Principal",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                560,
+                -80
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE mensaje_buffer \nSET procesado = true\nWHERE id = ANY(ARRAY{{ $('📤 Preparar Payload').item.json.mensaje_ids }})\nRETURNING id;",
+                "options": {}
+            },
+            "id": "buffer-mark",
+            "name": "✅ Marcar Procesados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                800,
+                -80
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "buffer-noop",
+            "name": "⏹️ Sin mensajes",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                320,
+                80
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Schedule Trigger (10s)": {
+            "main": [
+                [
+                    {
+                        "node": "📦 Obtener Mensajes Listos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📦 Obtener Mensajes Listos": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Hay mensajes?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Hay mensajes?": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Preparar Payload",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "⏹️ Sin mensajes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Preparar Payload": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Llamar Webhook Principal",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Llamar Webhook Principal": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Marcar Procesados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [],
+    "triggerCount": 1,
+    "pinData": {}
+}

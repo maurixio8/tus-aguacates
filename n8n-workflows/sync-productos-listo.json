@@ -1,0 +1,343 @@
+{
+    "name": "🔄 Sync Productos Supabase → Local (LISTO)",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 30
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada 30 minutos",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                180,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "sync-productos-manual",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-manual",
+            "name": "🔗 Webhook Manual",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                180,
+                500
+            ],
+            "webhookId": "sync-productos-manual"
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "products",
+                "returnAll": true
+            },
+            "id": "fetch-supabase",
+            "name": "📥 Obtener Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                460,
+                400
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar productos de Supabase al formato local\nconst productos = [];\n\nfor (const item of $input.all()) {\n  const p = item.json;\n  \n  // Solo productos activos\n  if (p.is_active === false) continue;\n  \n  productos.push({\n    json: {\n      supabase_id: p.id || null,\n      name: p.name || 'Sin nombre',\n      slug: p.slug || null,\n      description: p.description || null,\n      price: parseFloat(p.price) || 0,\n      discount_price: p.discount_price ? parseFloat(p.discount_price) : null,\n      category_name: p.category?.name || p.category_name || null,\n      category_id: p.category_id || null,\n      main_image_url: p.main_image_url || p.image_url || null,\n      stock: parseInt(p.stock) || 100,\n      is_active: p.is_active !== false,\n      is_featured: p.is_featured === true,\n      unit: p.unit || 'kg',\n      min_quantity: p.min_quantity || 1,\n      has_variants: p.has_variants || false,\n      synced_from_supabase_at: new Date().toISOString()\n    }\n  });\n}\n\nconsole.log(`Transformados ${productos.length} productos`);\nreturn productos;"
+            },
+            "id": "transform-data",
+            "name": "🔄 Transformar Datos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM productos_tienda; SELECT 1 as limpiado;",
+                "options": {}
+            },
+            "id": "clear-table",
+            "name": "🗑️ Limpiar Tabla Local",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                680,
+                600
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combinationMode": "multiplex",
+                "options": {}
+            },
+            "id": "merge-node",
+            "name": "🔀 Esperar Limpieza",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3,
+            "position": [
+                900,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "value": "public"
+                },
+                "table": {
+                    "value": "productos_tienda"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "values": [
+                        {
+                            "column": "supabase_id",
+                            "value": "={{ $json.supabase_id }}"
+                        },
+                        {
+                            "column": "name",
+                            "value": "={{ $json.name }}"
+                        },
+                        {
+                            "column": "slug",
+                            "value": "={{ $json.slug }}"
+                        },
+                        {
+                            "column": "description",
+                            "value": "={{ $json.description }}"
+                        },
+                        {
+                            "column": "price",
+                            "value": "={{ $json.price }}"
+                        },
+                        {
+                            "column": "discount_price",
+                            "value": "={{ $json.discount_price }}"
+                        },
+                        {
+                            "column": "category_name",
+                            "value": "={{ $json.category_name }}"
+                        },
+                        {
+                            "column": "category_id",
+                            "value": "={{ $json.category_id }}"
+                        },
+                        {
+                            "column": "main_image_url",
+                            "value": "={{ $json.main_image_url }}"
+                        },
+                        {
+                            "column": "stock",
+                            "value": "={{ $json.stock }}"
+                        },
+                        {
+                            "column": "is_active",
+                            "value": "={{ $json.is_active }}"
+                        },
+                        {
+                            "column": "is_featured",
+                            "value": "={{ $json.is_featured }}"
+                        },
+                        {
+                            "column": "synced_from_supabase_at",
+                            "value": "={{ $json.synced_from_supabase_at }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "insert-products",
+            "name": "💾 Insertar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1120,
+                400
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  COUNT(*) as total_productos,\n  COUNT(CASE WHEN is_active = true THEN 1 END) as activos,\n  COUNT(CASE WHEN discount_price IS NOT NULL THEN 1 END) as con_descuento,\n  MAX(synced_from_supabase_at) as ultima_sync\nFROM productos_tienda;",
+                "options": {}
+            },
+            "id": "verify-count",
+            "name": "✅ Verificar Sync",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1340,
+                400
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const stats = $input.first().json;\nconst now = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });\n\nreturn [{\n  json: {\n    success: true,\n    mensaje: `✅ Sincronización completada`,\n    timestamp: now,\n    estadisticas: {\n      total_productos: parseInt(stats.total_productos) || 0,\n      activos: parseInt(stats.activos) || 0,\n      con_descuento: parseInt(stats.con_descuento) || 0,\n      ultima_sync: stats.ultima_sync\n    }\n  }\n}];"
+            },
+            "id": "format-response",
+            "name": "📊 Formatear Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1560,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 30 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Webhook Manual": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Datos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🗑️ Limpiar Tabla Local",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Datos": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Tabla Local": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔀 Esperar Limpieza": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Sync",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Verificar Sync": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "Sync",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        },
+        {
+            "name": "Productos",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        }
+    ],
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

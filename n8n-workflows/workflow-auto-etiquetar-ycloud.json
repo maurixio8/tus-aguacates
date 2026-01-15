@@ -1,0 +1,205 @@
+{
+    "name": "🏷️ Auto-Etiquetar YCloud por Estado",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 5
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada 5 minutos",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                0,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  c.id,\n  c.telefono,\n  c.nombre,\n  c.estado_conversacion,\n  c.updated_at,\n  CASE \n    WHEN c.estado_conversacion = 'PEDIDO_CONFIRMADO' THEN 'Pre-pedido WhatsApp'\n    WHEN c.estado_conversacion = 'PEDIDO_ONLINE' THEN 'Pedido Tienda'\n    ELSE 'Confirmado'\n  END as etiqueta_ycloud\nFROM clientes c\nWHERE c.estado_conversacion IN ('PEDIDO_CONFIRMADO', 'PEDIDO_ONLINE')\n  AND c.etiquetado_ycloud IS DISTINCT FROM true\n  AND c.updated_at > NOW() - INTERVAL '2 hours'\nLIMIT 10;",
+                "options": {}
+            },
+            "id": "get-pending-tags",
+            "name": "📋 Clientes sin etiquetar",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                220,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "has-clients",
+                            "leftValue": "={{ $json.telefono }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-has-clients",
+            "name": "❓ ¿Hay clientes?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/contacts",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"phoneNumber\": \"+{{ $json.telefono }}\",\n  \"tags\": [\"{{ $json.etiqueta_ycloud }}\"]\n}"
+            },
+            "id": "ycloud-add-tag",
+            "name": "🏷️ Etiquetar en YCloud",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                660,
+                -100
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "YCloudCredentials",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET etiquetado_ycloud = true\nWHERE id = {{ $('📋 Clientes sin etiquetar').item.json.id }}\nRETURNING id, telefono, nombre, '{{ $('📋 Clientes sin etiquetar').item.json.etiqueta_ycloud }}' as etiqueta_aplicada;",
+                "options": {}
+            },
+            "id": "mark-tagged",
+            "name": "✅ Marcar como etiquetado",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                880,
+                -100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "no-op",
+            "name": "🚫 Sin clientes pendientes",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                660,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 5 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "📋 Clientes sin etiquetar",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📋 Clientes sin etiquetar": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Hay clientes?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Hay clientes?": {
+            "main": [
+                [
+                    {
+                        "node": "🏷️ Etiquetar en YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "🚫 Sin clientes pendientes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🏷️ Etiquetar en YCloud": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Marcar como etiquetado",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "instanceId": "ab1998a704d11234ff3fa9bd1731d403e132e4a5fab05c4518dc075982b0cd5c"
+    }
+}

@@ -1,0 +1,331 @@
+{
+    "name": "🔄 Sync Productos+Variantes v2",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 30
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada 30 min",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                180,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "sync-productos-v2",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-manual",
+            "name": "🔗 Manual Trigger",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                180,
+                480
+            ],
+            "webhookId": "sync-productos-v2"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM productos_tienda; DELETE FROM variantes_productos;",
+                "options": {}
+            },
+            "id": "limpiar-todo",
+            "name": "🗑️ Limpiar Tablas",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                420,
+                390
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "products",
+                "returnAll": true
+            },
+            "id": "fetch-productos",
+            "name": "📥 Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                660,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "product_variants",
+                "returnAll": true
+            },
+            "id": "fetch-variantes",
+            "name": "📥 Variantes Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                660,
+                500
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Insertar productos - SIN category_id que tiene tipo incompatible\nconst productos = $input.all();\nconst resultados = [];\n\nfor (const item of productos) {\n  const p = item.json;\n  if (p.is_active === false) continue;\n  \n  const escape = (val) => val ? String(val).replace(/'/g, \"''\") : null;\n  \n  const name = escape(p.name) || 'Sin nombre';\n  const slug = escape(p.slug);\n  const description = escape(p.description);\n  const price = parseFloat(p.price) || 0;\n  const discount_price = p.discount_price ? parseFloat(p.discount_price) : null;\n  const category_name = escape(p.category?.name || p.category_name);\n  const main_image_url = escape(p.main_image_url || p.image_url);\n  const stock = parseInt(p.stock) || 100;\n  const is_active = p.is_active !== false;\n  const is_featured = p.is_featured === true;\n  const supabase_id = p.id;\n  \n  resultados.push({\n    json: {\n      query: `INSERT INTO productos_tienda (supabase_id, name, slug, description, price, discount_price, category_name, main_image_url, stock, is_active, is_featured, synced_from_supabase_at) VALUES ('${supabase_id}', '${name}', ${slug ? \"'\" + slug + \"'\" : 'NULL'}, ${description ? \"'\" + description + \"'\" : 'NULL'}, ${price}, ${discount_price !== null ? discount_price : 'NULL'}, ${category_name ? \"'\" + category_name + \"'\" : 'NULL'}, ${main_image_url ? \"'\" + main_image_url + \"'\" : 'NULL'}, ${stock}, ${is_active}, ${is_featured}, NOW());`\n    }\n  });\n}\n\nreturn resultados;"
+            },
+            "id": "preparar-productos",
+            "name": "🔄 Preparar INSERTs Productos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Insertar variantes una por una via query\nconst variantes = $input.all();\nconst resultados = [];\n\nfor (const item of variantes) {\n  const v = item.json;\n  if (v.is_active === false) continue;\n  \n  const escape = (val) => val ? String(val).replace(/'/g, \"''\") : null;\n  \n  const supabase_id = v.id;\n  const product_supabase_id = v.product_id;\n  const variant_name = escape(v.variant_name) || 'Variante';\n  const variant_value = escape(v.variant_value) || '';\n  const price = parseFloat(v.price) || 0;\n  const price_adjustment = parseFloat(v.price_adjustment) || 0;\n  const stock_quantity = parseInt(v.stock_quantity) || 100;\n  const sku = escape(v.sku);\n  const is_active = v.is_active !== false;\n  const sort_order = parseInt(v.sort_order) || 0;\n  \n  resultados.push({\n    json: {\n      query: `INSERT INTO variantes_productos (supabase_id, product_supabase_id, variant_name, variant_value, price, price_adjustment, stock_quantity, sku, is_active, sort_order, synced_from_supabase_at) VALUES ('${supabase_id}', '${product_supabase_id}', '${variant_name}', '${variant_value}', ${price}, ${price_adjustment}, ${stock_quantity}, ${sku ? \"'\" + sku + \"'\" : 'NULL'}, ${is_active}, ${sort_order}, NOW());`\n    }\n  });\n}\n\n// Si no hay variantes, retornar un dummy\nif (resultados.length === 0) {\n  return [{ json: { query: 'SELECT 1 as no_variantes;' } }];\n}\n\nreturn resultados;"
+            },
+            "id": "preparar-variantes",
+            "name": "🔄 Preparar INSERTs Variantes",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                900,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "={{ $json.query }}",
+                "options": {}
+            },
+            "id": "insertar-productos",
+            "name": "💾 Ejecutar INSERT Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1140,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "={{ $json.query }}",
+                "options": {}
+            },
+            "id": "insertar-variantes",
+            "name": "💾 Ejecutar INSERT Variantes",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1140,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT (SELECT COUNT(*) FROM productos_tienda) as productos, (SELECT COUNT(*) FROM variantes_productos) as variantes;",
+                "options": {}
+            },
+            "id": "verificar",
+            "name": "✅ Contar Resultados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1380,
+                400
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const stats = $input.first().json;\nreturn [{\n  json: {\n    success: true,\n    mensaje: '✅ Sync completado',\n    productos: parseInt(stats.productos) || 0,\n    variantes: parseInt(stats.variantes) || 0,\n    timestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "respuesta",
+            "name": "📊 Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1620,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 30 min": {
+            "main": [
+                [
+                    {
+                        "node": "🗑️ Limpiar Tablas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Manual Trigger": {
+            "main": [
+                [
+                    {
+                        "node": "🗑️ Limpiar Tablas",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Tablas": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📥 Variantes Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Preparar INSERTs Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Variantes Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Preparar INSERTs Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Preparar INSERTs Productos": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Ejecutar INSERT Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Preparar INSERTs Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Ejecutar INSERT Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Ejecutar INSERT Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Contar Resultados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Ejecutar INSERT Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Contar Resultados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Contar Resultados": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

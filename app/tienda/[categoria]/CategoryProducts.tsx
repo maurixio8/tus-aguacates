@@ -4,38 +4,52 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ChevronLeft } from 'lucide-react';
 import { ProductCard } from '@/components/product/ProductCard';
-import { getProductsByCategory } from '@/lib/productStorage';
-import type { Product } from '@/lib/productStorage';
+import { supabase } from '@/lib/supabase';
+import type { UnifiedProduct } from '@/lib/types';
 
 export function CategoryProducts({ categoria }: { categoria: string }) {
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<UnifiedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchProducts();
-
-    // 👂 Escuchar actualizaciones de fondo (cuando termine el sync)
-    const handleUpdate = () => {
-      console.log('⚡ Actualización recibida en CategoryProducts');
-      fetchProducts();
-    };
-
-    window.addEventListener('products-updated', handleUpdate);
-    return () => window.removeEventListener('products-updated', handleUpdate);
   }, [categoria]);
 
   async function fetchProducts() {
     try {
       setLoading(true);
+      console.log(`🔍 Buscando productos activos para categoría: ${categoria}`);
 
-      // ✅ Pasar el SLUG directamente (getProductsByCategory es inteligente)
-      console.log(`🔍 Buscando productos para slug: ${categoria}`);
+      // ✅ Consultar directamente a Supabase con filtro is_active=true
+      // Primero obtenemos el category_id desde el slug
+      const { data: categoryData, error: categoryError } = await supabase
+        .from('categories')
+        .select('id')
+        .eq('slug', categoria)
+        .single();
 
-      // Obtener productos usando el slug
-      const productsData = await getProductsByCategory(categoria);
+      if (categoryError || !categoryData) {
+        console.warn(`⚠️ No se encontró categoría con slug: ${categoria}`);
+        setProducts([]);
+        return;
+      }
 
-      console.log(`✅ Encontrados ${productsData.length} productos para ${categoria}`);
-      setProducts(productsData);
+      // Ahora obtenemos los productos activos de esa categoría
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('category_id', categoryData.id)
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+
+      if (productsError) {
+        console.error('❌ Error obteniendo productos:', productsError);
+        setProducts([]);
+        return;
+      }
+
+      console.log(`✅ Encontrados ${productsData?.length || 0} productos activos para ${categoria}`);
+      setProducts(productsData || []);
 
     } catch (error) {
       console.error('❌ Error in fetchProducts:', error);

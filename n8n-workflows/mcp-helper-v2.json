@@ -1,0 +1,323 @@
+{
+    "name": "🔧 MCP Helper - Gestión de Workflows v2",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/list",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-list",
+            "name": "📋 Webhook: Listar Workflows",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                100
+            ],
+            "webhookId": "mcp-list-workflows"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/get",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-get",
+            "name": "📄 Webhook: Obtener Workflow",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                300
+            ],
+            "webhookId": "mcp-get-workflow"
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "mcp-helper/patch-node",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-patch-node",
+            "name": "🔄 Webhook: Patch Node",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                260,
+                500
+            ],
+            "webhookId": "mcp-patch-node"
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "https://dep-n8n.n8ntusaguacates.space/api/v1/workflows",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Accept",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "http-list",
+            "name": "API: Listar Workflows",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                100
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "=https://dep-n8n.n8ntusaguacates.space/api/v1/workflows/{{ $json.body.workflowId }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "http-get",
+            "name": "API: Obtener Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                300
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "GET",
+                "url": "=https://dep-n8n.n8ntusaguacates.space/api/v1/workflows/{{ $json.body.workflowId }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "options": {}
+            },
+            "id": "http-patch-get",
+            "name": "1. Obtener Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                500,
+                500
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// PATCH NODE - Modificar un nodo específico\nconst workflow = $input.first().json;\nconst requestBody = $('🔄 Webhook: Patch Node').first().json.body;\n\nconst nodeName = requestBody.nodeName;\nconst newQuery = requestBody.newQuery;\nconst newParameters = requestBody.newParameters || {};\n\nif (!nodeName) {\n  return { json: { success: false, error: 'nodeName es requerido' } };\n}\n\n// Encontrar el nodo\nconst nodeIndex = workflow.nodes.findIndex(n => n.name === nodeName);\n\nif (nodeIndex === -1) {\n  return { json: { success: false, error: `Nodo '${nodeName}' no encontrado` } };\n}\n\n// Actualizar el nodo\nif (newQuery) {\n  workflow.nodes[nodeIndex].parameters.query = newQuery;\n}\n\n// Aplicar otros parámetros\nfor (const [key, value] of Object.entries(newParameters)) {\n  workflow.nodes[nodeIndex].parameters[key] = value;\n}\n\nreturn {\n  json: {\n    workflowId: workflow.id,\n    patchedNode: nodeName,\n    updatedWorkflow: workflow\n  }\n};"
+            },
+            "id": "code-patch-node",
+            "name": "2. Modificar Nodo",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "method": "PUT",
+                "url": "=https://dep-n8n.n8ntusaguacates.space/api/v1/workflows/{{ $json.workflowId }}",
+                "authentication": "genericCredentialType",
+                "genericAuthType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify($json.updatedWorkflow) }}",
+                "options": {}
+            },
+            "id": "http-patch-update",
+            "name": "3. Actualizar Workflow",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                980,
+                500
+            ],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "n8n-api-key",
+                    "name": "N8N API Key"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Formatear respuesta de lista\nconst workflows = $input.first().json.data || [];\n\nreturn {\n  json: {\n    success: true,\n    count: workflows.length,\n    workflows: workflows.map(w => ({\n      id: w.id,\n      name: w.name,\n      active: w.active\n    }))\n  }\n};"
+            },
+            "id": "code-format-list",
+            "name": "Formatear Lista",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Formatear respuesta\nconst data = $input.first().json;\n\nreturn {\n  json: {\n    success: true,\n    message: 'Operación completada',\n    data: data\n  }\n};"
+            },
+            "id": "code-format-response",
+            "name": "Formatear Respuesta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                740,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Confirmar patch exitoso\nconst result = $input.first().json;\nconst patchedNode = $('2. Modificar Nodo').first().json.patchedNode;\n\nreturn {\n  json: {\n    success: true,\n    message: `Nodo '${patchedNode}' actualizado exitosamente`,\n    workflowId: result.id,\n    workflowName: result.name,\n    active: result.active\n  }\n};"
+            },
+            "id": "code-patch-response",
+            "name": "4. Confirmar Patch",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1220,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "📋 Webhook: Listar Workflows": {
+            "main": [
+                [
+                    {
+                        "node": "API: Listar Workflows",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Listar Workflows": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Lista",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📄 Webhook: Obtener Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "API: Obtener Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "API: Obtener Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Webhook: Patch Node": {
+            "main": [
+                [
+                    {
+                        "node": "1. Obtener Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "1. Obtener Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "2. Modificar Nodo",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "2. Modificar Nodo": {
+            "main": [
+                [
+                    {
+                        "node": "3. Actualizar Workflow",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "3. Actualizar Workflow": {
+            "main": [
+                [
+                    {
+                        "node": "4. Confirmar Patch",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "2",
+    "meta": {
+        "instanceId": "mcp-helper-v2"
+    },
+    "tags": [
+        {
+            "name": "MCP",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        },
+        {
+            "name": "Antigravity",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        }
+    ],
+    "pinData": {}
+}

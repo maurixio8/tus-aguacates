@@ -1,0 +1,243 @@
+{
+    "name": "🛒 Recordatorio Carritos Abandonados",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "triggerAtHour": 9
+                        },
+                        {
+                            "triggerAtHour": 13
+                        },
+                        {
+                            "triggerAtHour": 17
+                        },
+                        {
+                            "triggerAtHour": 21
+                        }
+                    ]
+                }
+            },
+            "id": "trigger-001",
+            "name": "⏰ Cada 4 horas",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                220,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  c.id,\n  c.telefono,\n  c.nombre,\n  c.pre_pedido,\n  c.updated_at,\n  c.estado_conversacion,\n  -- Calcular total del carrito\n  COALESCE(\n    (SELECT SUM((item->>'precio')::numeric * COALESCE((item->>'cantidad')::int, 1))\n     FROM jsonb_array_elements(c.pre_pedido) AS item\n    ), 0\n  ) as total_carrito,\n  -- Calcular tiempo desde última actividad\n  EXTRACT(EPOCH FROM (NOW() - c.updated_at)) / 3600 as horas_inactivo\nFROM clientes c\nWHERE c.estado_conversacion = 'EN_PEDIDO'\n  AND c.pre_pedido IS NOT NULL\n  AND jsonb_array_length(c.pre_pedido) > 0\n  -- Al menos 2 horas sin actividad\n  AND c.updated_at < NOW() - INTERVAL '2 hours'\n  -- Máximo 23 horas (ventana de 24h de WhatsApp)\n  AND c.updated_at > NOW() - INTERVAL '23 hours'\n  -- No enviar si ya se envió recordatorio hoy\n  AND NOT EXISTS (\n    SELECT 1 FROM recordatorios_enviados r\n    WHERE r.cliente_telefono = c.telefono\n      AND r.tipo = 'carrito_abandonado'\n      AND r.created_at > NOW() - INTERVAL '20 hours'\n  )\nORDER BY c.updated_at DESC\nLIMIT 20;",
+                "options": {}
+            },
+            "id": "buscar-carritos",
+            "name": "🔍 Buscar Carritos Abandonados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                440,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "loose",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "tiene-carrito",
+                            "leftValue": "={{ $json.telefono }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "filtro-tiene-datos",
+            "name": "❓ ¿Tiene Datos?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [
+                660,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Formatear mensaje de recordatorio con botones\nconst cliente = $input.first().json;\nconst nombre = cliente.nombre || 'amigo/a';\nconst prePedido = cliente.pre_pedido || [];\nconst totalCarrito = Number(cliente.total_carrito) || 0;\nconst horasInactivo = Math.floor(cliente.horas_inactivo || 0);\n\n// Formatear lista de productos\nlet productosTexto = '';\nif (Array.isArray(prePedido) && prePedido.length > 0) {\n  productosTexto = prePedido.map((item, i) => {\n    const nombre = item.producto_nombre || 'Producto';\n    const precio = Number(item.precio) || 0;\n    const cantidad = item.cantidad || 1;\n    return `• *${nombre}* x${cantidad} - $${precio.toLocaleString('es-CO')}`;\n  }).join('\\n');\n} else {\n  productosTexto = '• Tu carrito tiene productos esperándote';\n}\n\n// Calcular día de entrega\nconst now = new Date();\nconst dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, etc.\nlet proximaEntrega = 'Martes';\nif (dayOfWeek >= 2 && dayOfWeek <= 4) {\n  proximaEntrega = 'Viernes';\n} else {\n  proximaEntrega = 'Martes';\n}\n\nconst mensaje = `Hola ${nombre} 👋\n\n¿Olvidaste algo? Vi que tienes productos en tu carrito:\n\n${productosTexto}\n\n💰 *Total: $${totalCarrito.toLocaleString('es-CO')}*\n\n🚚 Si completas ahora, te llega el *${proximaEntrega}*\n\n¿Qué te gustaría hacer?`;\n\nreturn {\n  json: {\n    telefono: cliente.telefono,\n    nombre: nombre,\n    mensaje: mensaje,\n    totalCarrito: totalCarrito,\n    horasInactivo: horasInactivo\n  }\n};"
+            },
+            "id": "formatear-mensaje",
+            "name": "📝 Formatear Mensaje",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"from\": \"573042582777\",\n  \"to\": \"{{ $json.telefono }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"button\",\n    \"body\": {\n      \"text\": {{ JSON.stringify($json.mensaje) }}\n    },\n    \"action\": {\n      \"buttons\": [\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"completar_pedido\",\n            \"title\": \"✅ Completar Pedido\"\n          }\n        },\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"ver_carrito\",\n            \"title\": \"🛒 Ver Carrito\"\n          }\n        },\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"cancelar_pedido\",\n            \"title\": \"❌ Cancelar\"\n          }\n        }\n      ]\n    }\n  }\n}",
+                "options": {}
+            },
+            "id": "enviar-whatsapp",
+            "name": "📱 Enviar Recordatorio",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1100,
+                200
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO recordatorios_enviados (cliente_telefono, tipo, mensaje_enviado, metadata)\nVALUES (\n  '{{ $('📝 Formatear Mensaje').first().json.telefono }}',\n  'carrito_abandonado',\n  '{{ $('📝 Formatear Mensaje').first().json.mensaje.substring(0, 200) }}...',\n  '{{ JSON.stringify({total: $('📝 Formatear Mensaje').first().json.totalCarrito, horas_inactivo: $('📝 Formatear Mensaje').first().json.horasInactivo}) }}'\n)\nRETURNING id, created_at;",
+                "options": {}
+            },
+            "id": "registrar-envio",
+            "name": "📊 Registrar Envío",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.6,
+            "position": [
+                1320,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "noop-sin-datos",
+            "name": "Sin Carritos",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                880,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 4 horas": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Buscar Carritos Abandonados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Buscar Carritos Abandonados": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Tiene Datos?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Tiene Datos?": {
+            "main": [
+                [
+                    {
+                        "node": "📝 Formatear Mensaje",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "Sin Carritos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📝 Formatear Mensaje": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar Recordatorio",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📱 Enviar Recordatorio": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Registrar Envío",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "WhatsApp"
+        },
+        {
+            "name": "Automatización"
+        }
+    ]
+}

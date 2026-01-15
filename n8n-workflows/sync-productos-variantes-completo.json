@@ -1,0 +1,559 @@
+{
+    "name": "🔄 Sync COMPLETO: Productos + Variantes",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 30
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-trigger",
+            "name": "⏰ Cada 30 minutos",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                180,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "sync-completo",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "webhook-manual",
+            "name": "🔗 Webhook Manual",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                180,
+                500
+            ],
+            "webhookId": "sync-completo"
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "products",
+                "returnAll": true
+            },
+            "id": "fetch-productos",
+            "name": "📥 Obtener Productos",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                460,
+                400
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "product_variants",
+                "returnAll": true
+            },
+            "id": "fetch-variantes",
+            "name": "📥 Obtener Variantes",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                460,
+                600
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar productos de Supabase\nconst productos = [];\n\nfor (const item of $input.all()) {\n  const p = item.json;\n  if (p.is_active === false) continue;\n  \n  productos.push({\n    json: {\n      supabase_id: p.id || null,\n      name: p.name || 'Sin nombre',\n      slug: p.slug || null,\n      description: p.description || null,\n      price: parseFloat(p.price) || 0,\n      discount_price: p.discount_price ? parseFloat(p.discount_price) : null,\n      category_name: p.category?.name || p.category_name || null,\n      category_id: p.category_id || null,\n      main_image_url: p.main_image_url || p.image_url || null,\n      stock: parseInt(p.stock) || 100,\n      is_active: p.is_active !== false,\n      is_featured: p.is_featured === true,\n      unit: p.unit || 'kg',\n      min_quantity: p.min_quantity || 1,\n      has_variants: p.has_variants || false,\n      synced_from_supabase_at: new Date().toISOString()\n    }\n  });\n}\n\nconsole.log(`Transformados ${productos.length} productos`);\nreturn productos;"
+            },
+            "id": "transform-productos",
+            "name": "🔄 Transformar Productos",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Transformar variantes de Supabase\nconst variantes = [];\n\nfor (const item of $input.all()) {\n  const v = item.json;\n  if (v.is_active === false) continue;\n  \n  variantes.push({\n    json: {\n      supabase_id: v.id || null,\n      product_supabase_id: v.product_id || null,\n      variant_name: v.variant_name || 'Variante',\n      variant_value: v.variant_value || '',\n      price: parseFloat(v.price) || 0,\n      price_adjustment: parseFloat(v.price_adjustment) || 0,\n      stock_quantity: parseInt(v.stock_quantity) || 100,\n      sku: v.sku || null,\n      is_active: v.is_active !== false,\n      sort_order: parseInt(v.sort_order) || 0,\n      synced_from_supabase_at: new Date().toISOString()\n    }\n  });\n}\n\nconsole.log(`Transformadas ${variantes.length} variantes`);\nreturn variantes;"
+            },
+            "id": "transform-variantes",
+            "name": "🔄 Transformar Variantes",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                680,
+                600
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM productos_tienda; SELECT 1 as limpiado;",
+                "options": {}
+            },
+            "id": "clear-productos",
+            "name": "🗑️ Limpiar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                900,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "DELETE FROM variantes_productos; SELECT 1 as limpiado;",
+                "options": {}
+            },
+            "id": "clear-variantes",
+            "name": "🗑️ Limpiar Variantes",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                900,
+                700
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "append"
+            },
+            "id": "merge-productos",
+            "name": "🔀 Esperar Limpieza Productos",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3,
+            "position": [
+                1120,
+                350
+            ]
+        },
+        {
+            "parameters": {
+                "mode": "append"
+            },
+            "id": "merge-variantes",
+            "name": "🔀 Esperar Limpieza Variantes",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3,
+            "position": [
+                1120,
+                650
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "value": "public"
+                },
+                "table": {
+                    "value": "productos_tienda"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "values": [
+                        {
+                            "column": "supabase_id",
+                            "value": "={{ $json.supabase_id }}"
+                        },
+                        {
+                            "column": "name",
+                            "value": "={{ $json.name }}"
+                        },
+                        {
+                            "column": "slug",
+                            "value": "={{ $json.slug }}"
+                        },
+                        {
+                            "column": "description",
+                            "value": "={{ $json.description }}"
+                        },
+                        {
+                            "column": "price",
+                            "value": "={{ $json.price }}"
+                        },
+                        {
+                            "column": "discount_price",
+                            "value": "={{ $json.discount_price }}"
+                        },
+                        {
+                            "column": "category_name",
+                            "value": "={{ $json.category_name }}"
+                        },
+                        {
+                            "column": "category_id",
+                            "value": "={{ $json.category_id }}"
+                        },
+                        {
+                            "column": "main_image_url",
+                            "value": "={{ $json.main_image_url }}"
+                        },
+                        {
+                            "column": "stock",
+                            "value": "={{ $json.stock }}"
+                        },
+                        {
+                            "column": "is_active",
+                            "value": "={{ $json.is_active }}"
+                        },
+                        {
+                            "column": "is_featured",
+                            "value": "={{ $json.is_featured }}"
+                        },
+                        {
+                            "column": "synced_from_supabase_at",
+                            "value": "={{ $json.synced_from_supabase_at }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "insert-productos",
+            "name": "💾 Insertar Productos",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1340,
+                350
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "value": "public"
+                },
+                "table": {
+                    "value": "variantes_productos"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "values": [
+                        {
+                            "column": "supabase_id",
+                            "value": "={{ $json.supabase_id }}"
+                        },
+                        {
+                            "column": "product_supabase_id",
+                            "value": "={{ $json.product_supabase_id }}"
+                        },
+                        {
+                            "column": "variant_name",
+                            "value": "={{ $json.variant_name }}"
+                        },
+                        {
+                            "column": "variant_value",
+                            "value": "={{ $json.variant_value }}"
+                        },
+                        {
+                            "column": "price",
+                            "value": "={{ $json.price }}"
+                        },
+                        {
+                            "column": "price_adjustment",
+                            "value": "={{ $json.price_adjustment }}"
+                        },
+                        {
+                            "column": "stock_quantity",
+                            "value": "={{ $json.stock_quantity }}"
+                        },
+                        {
+                            "column": "sku",
+                            "value": "={{ $json.sku }}"
+                        },
+                        {
+                            "column": "is_active",
+                            "value": "={{ $json.is_active }}"
+                        },
+                        {
+                            "column": "sort_order",
+                            "value": "={{ $json.sort_order }}"
+                        },
+                        {
+                            "column": "synced_from_supabase_at",
+                            "value": "={{ $json.synced_from_supabase_at }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "insert-variantes",
+            "name": "💾 Insertar Variantes",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1340,
+                650
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  (SELECT COUNT(*) FROM productos_tienda) as total_productos,\n  (SELECT COUNT(*) FROM variantes_productos) as total_variantes,\n  (SELECT COUNT(DISTINCT product_supabase_id) FROM variantes_productos) as productos_con_variantes,\n  NOW() as sync_timestamp;",
+                "options": {}
+            },
+            "id": "verify-sync",
+            "name": "✅ Verificar Sync",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1560,
+                500
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const stats = $input.first().json;\nconst now = new Date().toLocaleString('es-CO', { timeZone: 'America/Bogota' });\n\nreturn [{\n  json: {\n    success: true,\n    mensaje: '✅ Sincronización COMPLETA',\n    timestamp: now,\n    estadisticas: {\n      productos: parseInt(stats.total_productos) || 0,\n      variantes: parseInt(stats.total_variantes) || 0,\n      productos_con_variantes: parseInt(stats.productos_con_variantes) || 0\n    }\n  }\n}];"
+            },
+            "id": "format-response",
+            "name": "📊 Respuesta Final",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1780,
+                500
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada 30 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📥 Obtener Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Webhook Manual": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Productos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📥 Obtener Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Productos": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Productos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🗑️ Limpiar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "🔄 Transformar Variantes",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "🗑️ Limpiar Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza Productos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔄 Transformar Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🗑️ Limpiar Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 Esperar Limpieza Variantes",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔀 Esperar Limpieza Productos": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Productos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔀 Esperar Limpieza Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "💾 Insertar Variantes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Productos": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Sync",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💾 Insertar Variantes": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Verificar Sync",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Verificar Sync": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Respuesta Final",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": true,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "tags": [
+        {
+            "name": "Sync",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        },
+        {
+            "name": "Productos",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        },
+        {
+            "name": "Variantes",
+            "createdAt": "2026-01-07T00:00:00.000Z",
+            "updatedAt": "2026-01-07T00:00:00.000Z"
+        }
+    ],
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

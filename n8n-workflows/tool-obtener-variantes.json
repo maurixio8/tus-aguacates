@@ -1,0 +1,25 @@
+{
+    "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Buscar variantes/presentaciones de un producto. Úsala cuando el cliente pregunte por variantes, pesos, tamaños o presentaciones de un producto. Input: ID del producto del cual obtener variantes.",
+        "operation": "executeQuery",
+        "query": "SELECT \n  v.supabase_id,\n  v.variant_name as tipo,\n  v.variant_value as presentacion,\n  v.price as precio,\n  v.price_adjustment as ajuste_precio,\n  v.stock_quantity as stock,\n  v.sku\nFROM variantes_productos v\nWHERE v.product_supabase_id = $1::uuid\n  AND v.is_active = true\nORDER BY v.variant_name, v.sort_order, v.price;",
+        "options": {
+            "queryReplacement": "={{ $fromAI('product_supabase_id','UUID del producto en Supabase','string','') }}"
+        }
+    },
+    "id": "tool-variantes",
+    "name": "TOOL_ObtenerVariantes",
+    "type": "n8n-nodes-base.postgresTool",
+    "typeVersion": 2.6,
+    "position": [
+        1200,
+        100
+    ],
+    "credentials": {
+        "postgres": {
+            "id": "R6hc0vEZJhKQSi3G",
+            "name": "Mi PostgreSQL Docker"
+        }
+    }
+}

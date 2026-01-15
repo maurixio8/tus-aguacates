@@ -1,0 +1,223 @@
+{
+    "name": "🔍 Auditoría de Pedidos Históricos",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "auditoria-pedidos",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-auditoria",
+            "name": "🎯 Iniciar Auditoría",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "webhookId": "auditoria-pedidos"
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "getAll",
+                "tableId": "guest_orders",
+                "returnAll": true,
+                "options": {}
+            },
+            "id": "obtener-pedidos",
+            "name": "📦 Obtener Todos los Pedidos",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                220,
+                0
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "getAll",
+                "tableId": "products",
+                "returnAll": true,
+                "options": {}
+            },
+            "id": "obtener-catalogo",
+            "name": "💰 Obtener Catálogo Actual",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                220,
+                200
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "append"
+            },
+            "id": "merge-datos",
+            "name": "🔗 Combinar Datos",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3.2,
+            "position": [
+                440,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// =====================================================\n// 🔍 AUDITORÍA DE PEDIDOS HISTÓRICOS v1.0\n// =====================================================\n// Compara TODOS los pedidos existentes contra el catálogo actual\n// Genera reporte de discrepancias de precios\n// =====================================================\n\n// Obtener datos de ambas fuentes\nconst allItems = $input.all();\n\n// Separar pedidos y productos (vienen mezclados del merge)\nlet pedidos = [];\nlet productos = [];\n\nallItems.forEach(item => {\n  if (item.json.order_data || item.json.guest_name) {\n    pedidos.push(item.json);\n  } else if (item.json.name && item.json.price !== undefined) {\n    productos.push(item.json);\n  }\n});\n\n// Si no hay separación clara, intentar de otra forma\nif (pedidos.length === 0 || productos.length === 0) {\n  // Asumir que el primer input tiene pedidos\n  const input1 = $('📦 Obtener Todos los Pedidos').all();\n  const input2 = $('💰 Obtener Catálogo Actual').all();\n  \n  pedidos = input1.map(i => i.json);\n  productos = input2.map(i => i.json);\n}\n\n// Crear mapa de precios actuales (ID -> Precio)\nconst preciosActuales = {};\nproductos.forEach(p => {\n  preciosActuales[p.id] = {\n    nombre: p.name,\n    precio: parseFloat(p.price) || 0\n  };\n});\n\n// Estadísticas globales\nlet totalPedidosAnalizados = 0;\nlet pedidosConDiscrepancias = 0;\nlet totalDiscrepancias = 0;\nlet montoTotalDiferencia = 0;\n\nconst reporteDetallado = [];\nconst resumenDiscrepancias = [];\n\npedidos.forEach(pedido => {\n  totalPedidosAnalizados++;\n  \n  // Parsear order_data\n  let orderData;\n  try {\n    orderData = typeof pedido.order_data === 'string' \n      ? JSON.parse(pedido.order_data) \n      : pedido.order_data;\n  } catch (e) {\n    return; // Skip invalid orders\n  }\n  \n  if (!orderData || !orderData.items || !Array.isArray(orderData.items)) {\n    return;\n  }\n  \n  const discrepanciasPedido = [];\n  let diferenciaTotal = 0;\n  \n  orderData.items.forEach(item => {\n    const productoId = item.product_id || item.id;\n    const precioEnPedido = parseFloat(item.unit_price || item.precio) || 0;\n    const cantidad = parseInt(item.quantity || item.cantidad) || 1;\n    \n    const productoActual = preciosActuales[productoId];\n    \n    if (productoActual && productoActual.precio !== precioEnPedido) {\n      totalDiscrepancias++;\n      const diferencia = (productoActual.precio - precioEnPedido) * cantidad;\n      diferenciaTotal += diferencia;\n      \n      discrepanciasPedido.push({\n        producto: item.product_name || productoActual.nombre,\n        precio_pedido: precioEnPedido,\n        precio_actual: productoActual.precio,\n        cantidad: cantidad,\n        diferencia: diferencia\n      });\n    }\n  });\n  \n  if (discrepanciasPedido.length > 0) {\n    pedidosConDiscrepancias++;\n    montoTotalDiferencia += diferenciaTotal;\n    \n    resumenDiscrepancias.push({\n      order_id: pedido.id?.substring(0, 8) || 'N/A',\n      cliente: pedido.guest_name || 'Desconocido',\n      telefono: pedido.guest_phone || 'N/A',\n      fecha: pedido.created_at ? new Date(pedido.created_at).toLocaleDateString('es-CO') : 'N/A',\n      total_pedido: pedido.total_amount,\n      discrepancias: discrepanciasPedido,\n      diferencia_total: diferenciaTotal\n    });\n  }\n});\n\n// Generar mensaje de reporte para WhatsApp\nlet mensaje = `📊 *AUDITORÍA DE PEDIDOS*\\n`;\nmensaje += `Fecha: ${new Date().toLocaleDateString('es-CO')}\\n\\n`;\nmensaje += `📈 *RESUMEN:*\\n`;\nmensaje += `• Pedidos analizados: ${totalPedidosAnalizados}\\n`;\nmensaje += `• Con discrepancias: ${pedidosConDiscrepancias}\\n`;\nmensaje += `• Total discrepancias: ${totalDiscrepancias}\\n`;\nmensaje += `• Diferencia total: $${montoTotalDiferencia.toLocaleString('es-CO')}\\n\\n`;\n\nif (pedidosConDiscrepancias === 0) {\n  mensaje += `✅ *¡Todos los pedidos tienen precios correctos!*`;\n} else {\n  mensaje += `⚠️ *PEDIDOS CON PROBLEMAS:*\\n`;\n  resumenDiscrepancias.slice(0, 5).forEach((p, i) => {\n    mensaje += `\\n${i+1}. ID: ${p.order_id} (${p.cliente})\\n`;\n    mensaje += `   Diferencia: $${p.diferencia_total.toLocaleString('es-CO')}\\n`;\n  });\n  \n  if (resumenDiscrepancias.length > 5) {\n    mensaje += `\\n... y ${resumenDiscrepancias.length - 5} pedidos más.`;\n  }\n}\n\nreturn [{\n  json: {\n    resumen: {\n      total_pedidos: totalPedidosAnalizados,\n      con_discrepancias: pedidosConDiscrepancias,\n      total_discrepancias: totalDiscrepancias,\n      monto_diferencia: montoTotalDiferencia\n    },\n    detalle: resumenDiscrepancias,\n    mensaje_whatsapp: mensaje\n  }\n}];"
+            },
+            "id": "analizar-discrepancias",
+            "name": "🔍 Analizar Discrepancias",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                660,
+                100
+            ]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  \"from\": \"573042582777\",\n  \"to\": \"573203062007\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": $json.mensaje_whatsapp\n  }\n}) }}",
+                "options": {}
+            },
+            "id": "enviar-reporte",
+            "name": "📢 Enviar Reporte al Admin",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                880,
+                100
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, auditoria: $('🔍 Analizar Discrepancias').first().json }) }}"
+            },
+            "id": "respuesta-ok",
+            "name": "✅ Respuesta con Reporte",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1100,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "🎯 Iniciar Auditoría": {
+            "main": [
+                [
+                    {
+                        "node": "📦 Obtener Todos los Pedidos",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "💰 Obtener Catálogo Actual",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📦 Obtener Todos los Pedidos": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Combinar Datos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💰 Obtener Catálogo Actual": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Combinar Datos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔗 Combinar Datos": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Analizar Discrepancias",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Analizar Discrepancias": {
+            "main": [
+                [
+                    {
+                        "node": "📢 Enviar Reporte al Admin",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📢 Enviar Reporte al Admin": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Respuesta con Reporte",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

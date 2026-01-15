@@ -1,0 +1,404 @@
+{
+    "name": "📦 Confirmar Pre-Pedido → Supabase (CON VERIFICACIÓN)",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "confirmar-prepedido",
+                "responseMode": "responseNode",
+                "options": {}
+            },
+            "id": "webhook-confirmar",
+            "name": "🎯 Webhook Confirmar",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                0
+            ],
+            "webhookId": "confirmar-prepedido"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT c.telefono, c.nombre, c.direccion, c.pre_pedido, (SELECT COALESCE(SUM((item->>'precio')::numeric * COALESCE((item->>'cantidad')::numeric, 1)), 0) FROM jsonb_array_elements(c.pre_pedido) item) as total FROM clientes c WHERE REPLACE(REPLACE(c.telefono, '+', ''), ' ', '') LIKE '%' || $1 || '%' AND c.pre_pedido IS NOT NULL AND jsonb_array_length(c.pre_pedido) > 0 LIMIT 1;",
+                "options": {
+                    "queryReplacement": "={{ $json.telefono }}"
+                }
+            },
+            "id": "obtener-prepedido",
+            "name": "📥 Obtener Pre-Pedido",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                220,
+                0
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "id": "check-prepedido",
+                            "leftValue": "={{ $json.pre_pedido }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "array",
+                                "operation": "notEmpty"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-existe",
+            "name": "🔀 ¿Tiene Pre-Pedido?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.1,
+            "position": [
+                440,
+                0
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "getAll",
+                "tableId": "products",
+                "returnAll": false,
+                "limit": 100,
+                "options": {}
+            },
+            "id": "obtener-precios-supabase",
+            "name": "💰 Obtener Precios Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                660,
+                -200
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "// =====================================================\n// 🔍 VERIFICADOR DE PRECIOS v1.0\n// =====================================================\n// Compara precios del carrito vs. catálogo oficial\n// Si hay discrepancia, corrige al precio real\n// =====================================================\n\nconst cliente = $('📥 Obtener Pre-Pedido').first().json;\nconst items = cliente.pre_pedido || [];\nconst productosSupabase = $input.all().map(item => item.json);\n\n// Crear mapa de precios reales (ID -> Precio)\nconst preciosReales = {};\nproductosSupabase.forEach(p => {\n  preciosReales[p.id] = p.price;\n});\n\nlet totalVerificado = 0;\nlet hayDiscrepancias = false;\nconst itemsVerificados = [];\nconst discrepanciasDetectadas = [];\n\nitems.forEach(item => {\n  const productoId = item.producto_id || item.id;\n  const precioCarrito = parseFloat(item.precio) || 0;\n  const precioReal = preciosReales[productoId];\n  const cantidad = parseInt(item.cantidad) || 1;\n\n  let precioFinal = precioCarrito;\n  let estadoVerificacion = 'OK';\n\n  // VERIFICAR SI EL PRECIO ES CORRECTO\n  if (precioReal !== undefined && precioReal !== precioCarrito) {\n    hayDiscrepancias = true;\n    estadoVerificacion = 'CORREGIDO';\n    precioFinal = precioReal;\n    \n    discrepanciasDetectadas.push({\n      producto: item.producto_nombre || item.nombre,\n      precio_carrito: precioCarrito,\n      precio_real: precioReal,\n      diferencia: precioReal - precioCarrito\n    });\n  }\n\n  const subtotal = precioFinal * cantidad;\n  totalVerificado += subtotal;\n\n  itemsVerificados.push({\n    product_id: productoId,\n    product_name: item.producto_nombre || item.nombre || 'Producto',\n    quantity: cantidad,\n    unit_price: precioFinal,\n    variant_name: item.variante || null,\n    verificacion: estadoVerificacion\n  });\n});\n\n// Normalizar teléfono a formato con 57\nlet phone = (cliente.telefono || '').replace(/\\D/g, '');\nif (phone.length === 10 && phone.startsWith('3')) {\n  phone = '57' + phone;\n}\n\nreturn [{\n  json: {\n    guest_name: cliente.nombre || 'Cliente WhatsApp',\n    guest_phone: phone,\n    guest_email: null,\n    guest_address: cliente.direccion || 'Por confirmar',\n    order_data: {\n      items: itemsVerificados,\n      source: 'whatsapp',\n      pre_pedido_id: `WA-${Date.now()}`,\n      verificado: true,\n      discrepancias: hayDiscrepancias\n    },\n    total_amount: totalVerificado,\n    status: 'confirmado',\n    payment_status: 'pendiente',\n    telefono_original: cliente.telefono,\n    // Datos para notificación\n    verificacion_resultado: {\n      hay_discrepancias: hayDiscrepancias,\n      discrepancias: discrepanciasDetectadas,\n      total_verificado: totalVerificado\n    }\n  }\n}];"
+            },
+            "id": "verificar-precios",
+            "name": "🔍 Verificar Precios",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                880,
+                -100
+            ]
+        },
+        {
+            "parameters": {
+                "resource": "row",
+                "operation": "create",
+                "tableId": "guest_orders",
+                "fieldsUi": {
+                    "fieldValues": [
+                        {
+                            "fieldName": "guest_name",
+                            "fieldValue": "={{ $json.guest_name }}"
+                        },
+                        {
+                            "fieldName": "guest_phone",
+                            "fieldValue": "={{ $json.guest_phone }}"
+                        },
+                        {
+                            "fieldName": "guest_address",
+                            "fieldValue": "={{ $json.guest_address }}"
+                        },
+                        {
+                            "fieldName": "order_data",
+                            "fieldValue": "={{ JSON.stringify($json.order_data) }}"
+                        },
+                        {
+                            "fieldName": "total_amount",
+                            "fieldValue": "={{ $json.total_amount }}"
+                        },
+                        {
+                            "fieldName": "status",
+                            "fieldValue": "={{ $json.status }}"
+                        },
+                        {
+                            "fieldName": "payment_status",
+                            "fieldValue": "={{ $json.payment_status }}"
+                        }
+                    ]
+                },
+                "options": {}
+            },
+            "id": "crear-guest-order",
+            "name": "📤 Crear en Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1100,
+                -100
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE clientes SET pre_pedido = '[]'::jsonb, estado_conversacion = 'PEDIDO_CONFIRMADO' WHERE REPLACE(REPLACE(telefono, '+', ''), ' ', '') LIKE '%' || $1 || '%' RETURNING telefono, nombre;",
+                "options": {
+                    "queryReplacement": "={{ $('🔍 Verificar Precios').first().json.telefono_original.replace(/\\D/g, '').slice(-10) }}"
+                }
+            },
+            "id": "limpiar-carrito",
+            "name": "🧹 Limpiar Carrito",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                1320,
+                -100
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/contacts",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ JSON.stringify({\n  \"phoneNumber\": $('🔍 Verificar Precios').first().json.guest_phone,\n  \"tags\": [\"CONFIRMADOS\"]\n}) }}",
+                "options": {}
+            },
+            "id": "etiquetar-ycloud",
+            "name": "🏷️ Etiquetar en YCloud",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1540,
+                -100
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "YCloudApi",
+                "sendHeaders": true,
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                },
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={{ \nconst datos = $('🔍 Verificar Precios').first().json;\nconst order = $('📤 Crear en Supabase').first().json;\nconst verificacion = datos.verificacion_resultado;\n\nlet mensaje = `🔔 *NUEVO PEDIDO CONFIRMADO*\\n\\n`;\nmensaje += `👤 Cliente: ${datos.guest_name}\\n`;\nmensaje += `📞 Teléfono: ${datos.guest_phone}\\n`;\nmensaje += `📍 Dirección: ${datos.guest_address}\\n`;\nmensaje += `💰 Total: $${verificacion.total_verificado.toLocaleString('es-CO')}\\n`;\nmensaje += `🆔 Order ID: ${order.id.substring(0, 8)}\\n\\n`;\n\nif (verificacion.hay_discrepancias) {\n  mensaje += `⚠️ *PRECIOS CORREGIDOS:*\\n`;\n  verificacion.discrepancias.forEach(d => {\n    mensaje += `• ${d.producto}: $${d.precio_carrito} → $${d.precio_real}\\n`;\n  });\n} else {\n  mensaje += `✅ Todos los precios verificados correctamente`;\n}\n\nJSON.stringify({\n  \"from\": \"573042582777\",\n  \"to\": \"573203062007\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": mensaje\n  }\n})\n}}",
+                "options": {}
+            },
+            "id": "notificar-admin",
+            "name": "📢 Notificar Admin",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [
+                1760,
+                -100
+            ],
+            "credentials": {
+                "YCloudApi": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: true, message: 'Pedido creado exitosamente', order_id: $('📤 Crear en Supabase').first().json.id, total: $('🔍 Verificar Precios').first().json.total_amount }) }}"
+            },
+            "id": "respuesta-ok",
+            "name": "✅ Respuesta OK",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1980,
+                -100
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ JSON.stringify({ success: false, message: 'No se encontró pre-pedido para ese teléfono' }) }}"
+            },
+            "id": "respuesta-error",
+            "name": "❌ Sin Pre-Pedido",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                660,
+                100
+            ]
+        }
+    ],
+    "connections": {
+        "🎯 Webhook Confirmar": {
+            "main": [
+                [
+                    {
+                        "node": "📥 Obtener Pre-Pedido",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📥 Obtener Pre-Pedido": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 ¿Tiene Pre-Pedido?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔀 ¿Tiene Pre-Pedido?": {
+            "main": [
+                [
+                    {
+                        "node": "💰 Obtener Precios Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "❌ Sin Pre-Pedido",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "💰 Obtener Precios Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Verificar Precios",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Verificar Precios": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Crear en Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📤 Crear en Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🧹 Limpiar Carrito",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🧹 Limpiar Carrito": {
+            "main": [
+                [
+                    {
+                        "node": "🏷️ Etiquetar en YCloud",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🏷️ Etiquetar en YCloud": {
+            "main": [
+                [
+                    {
+                        "node": "📢 Notificar Admin",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📢 Notificar Admin": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Respuesta OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}
