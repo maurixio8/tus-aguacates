@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Search, X, Loader2 } from 'lucide-react';
-import { initializeProducts, getProductsByCategory } from '@/lib/productStorage';
-import type { Product } from '@/lib/productStorage';
+import { supabase } from '@/lib/supabase';
+import type { UnifiedProduct } from '@/lib/types';
 import { ProductCard } from '../product/ProductCard';
 import { ProductQuickViewModal } from '../product/ProductQuickViewModal';
 
@@ -14,9 +14,9 @@ interface SearchModalProps {
 
 export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<Product[]>([]);
+  const [results, setResults] = useState<UnifiedProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<UnifiedProduct | null>(null);
 
   // Resetear query cuando se abre/cierra
   useEffect(() => {
@@ -27,7 +27,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }
   }, [isOpen]);
 
-  // Búsqueda con debounce usando localStorage
+  // Búsqueda con debounce usando Supabase directamente
   useEffect(() => {
     if (!query || query.length < 2) {
       setResults([]);
@@ -38,23 +38,26 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       try {
         setLoading(true);
 
-        // Asegurar que los productos están sincronizados
-        await initializeProducts();
+        // ✅ Consultar directamente a Supabase con variantes
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            variants:product_variants(*)
+          `)
+          .eq('is_active', true)
+          .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
+          .order('name', { ascending: true })
+          .limit(12);
 
-        // Obtener todos los productos de localStorage
-        const allProducts = await getProductsByCategory('todos');
+        if (error) {
+          console.error('Error searching products:', error);
+          setResults([]);
+          return;
+        }
 
-        // Filtrar productos que coincidan con la búsqueda
-        const searchResults = allProducts
-          .filter(product => product.is_active === true)
-          .filter(product =>
-            product.name.toLowerCase().includes(query.toLowerCase()) ||
-            product.description?.toLowerCase().includes(query.toLowerCase()) ||
-            product.category?.toLowerCase().includes(query.toLowerCase())
-          )
-          .slice(0, 8); // Limitar a 8 resultados
-
-        setResults(searchResults);
+        console.log(`🔍 Búsqueda "${query}": ${data?.length || 0} productos encontrados`);
+        setResults(data || []);
 
       } catch (error) {
         console.error('Error in search:', error);
@@ -183,7 +186,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
       {selectedProduct && (
         <ProductQuickViewModal
           isOpen={true}
-          product={selectedProduct}
+          product={selectedProduct as any}
           onClose={() => setSelectedProduct(null)}
         />
       )}
