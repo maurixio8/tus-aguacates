@@ -328,10 +328,13 @@ export async function GET(request: NextRequest) {
               unit_price: item.price || item.unit_price || 0,
               subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
               product_name: item.productName || item.product_name || 'Producto sin nombre',
+              variantName: item.variantName || item.variant_name || null,
               variant_name: item.variantName || item.variant_name || null,
               product_snapshot: {
                 name: item.productName || item.product_name || 'Producto',
-                price: item.price || item.unit_price || 0
+                price: item.price || item.unit_price || 0,
+                variant_name: item.variantName || item.variant_name || null,
+                variant_value: item.variantName || item.variant_name || null
               }
             }));
 
