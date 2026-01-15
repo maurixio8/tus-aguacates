@@ -18,7 +18,10 @@ import {
   ChefHat,
   Trash2,
   AlertTriangle,
-  FileText
+  FileText,
+  Copy,
+  Check,
+  ClipboardList
 } from 'lucide-react';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
 import EditOrderModal from '@/components/admin/EditOrderModal';
@@ -157,6 +160,69 @@ export default function OrdersPage() {
     cancelled: 0,
     total: 0
   });
+  const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+
+  // Copiar al portapapeles con feedback visual
+  const copyToClipboard = async (text: string, itemId: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedItems(new Set([...copiedItems, itemId]));
+      setTimeout(() => {
+        setCopiedItems(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(itemId);
+          return newSet;
+        });
+      }, 2000);
+    } catch (err) {
+      console.error('Error copiando:', err);
+    }
+  };
+
+  // Extraer dirección como texto plano
+  const getAddressText = (order: Order): string => {
+    const addr = order.shipping_address || order.delivery_address;
+    if (!addr) return '';
+
+    if (typeof addr === 'string') {
+      try {
+        const parsed = JSON.parse(addr);
+        return getAddressFromObject(parsed);
+      } catch {
+        return addr;
+      }
+    }
+
+    return getAddressFromObject(addr);
+  };
+
+  const getAddressFromObject = (addr: any): string => {
+    if (!addr || typeof addr !== 'object') return '';
+    const streetAddress = addr.street_address || addr.address || addr.street || '';
+    const city = addr.city || '';
+    const state = addr.state || addr.department || '';
+    const parts = [streetAddress, city, state].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  // Generar resumen del pedido para copiar
+  const getOrderSummaryText = (order: Order, customerName: string, orderItems: any[]): string => {
+    const lines = [`Pedido para: ${customerName}`, ''];
+
+    orderItems.forEach(item => {
+      const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
+      const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
+      const variantText = variant ? ` (${variant})` : '';
+      lines.push(`• ${item.quantity}x ${itemName}${variantText}`);
+    });
+
+    const address = getAddressText(order);
+    if (address) {
+      lines.push('', `Dirección: ${address}`);
+    }
+
+    return lines.join('\n');
+  };
 
   // Funciones helper para calcular rangos de fechas
   const getDateRanges = () => {
@@ -1236,6 +1302,57 @@ export default function OrdersPage() {
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
                       )}
 
+                      {/* Copy buttons */}
+                      <div className="flex gap-2">
+                        {/* Copy Address button */}
+                        {getAddressText(order) && (
+                          <button
+                            onClick={() => copyToClipboard(getAddressText(order), `addr-${order.id}`)}
+                            className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${
+                              copiedItems.has(`addr-${order.id}`)
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            }`}
+                            title="Copiar dirección"
+                          >
+                            {copiedItems.has(`addr-${order.id}`) ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                Copiado
+                              </>
+                            ) : (
+                              <>
+                                <MapPin className="w-4 h-4" />
+                                Dirección
+                              </>
+                            )}
+                          </button>
+                        )}
+
+                        {/* Copy Summary button */}
+                        <button
+                          onClick={() => copyToClipboard(getOrderSummaryText(order, customerInfo.name, orderItems), `sum-${order.id}`)}
+                          className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${
+                            copiedItems.has(`sum-${order.id}`)
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                          }`}
+                          title="Copiar resumen del pedido"
+                        >
+                          {copiedItems.has(`sum-${order.id}`) ? (
+                            <>
+                              <Check className="w-4 h-4" />
+                              Copiado
+                            </>
+                          ) : (
+                            <>
+                              <ClipboardList className="w-4 h-4" />
+                              Resumen
+                            </>
+                          )}
+                        </button>
+                      </div>
+
                       {/* WhatsApp buttons wrapper */}
                       {customerInfo.phone && (
                         <div className="flex gap-2">
@@ -1267,10 +1384,10 @@ export default function OrdersPage() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm text-center flex items-center gap-2"
-                            title="Enviar resumen completo del pedido"
+                            title="Enviar resumen por WhatsApp"
                           >
                             <FileText className="w-4 h-4" />
-                            Resumen
+                            WA Resumen
                           </a>
                         </div>
                       )}

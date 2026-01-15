@@ -800,15 +800,14 @@ export default function ListaComprasPage() {
                                       </div>
                                     </div>
 
-                                    {/* Cantidad a entregar */}
+                                    {/* Cantidad a entregar con variante */}
                                     <div className="text-right flex-shrink-0">
-                                      {customer.weight_display ? (
-                                        <p className="font-bold text-gray-900 text-lg">
-                                          {customer.weight_display}
-                                        </p>
-                                      ) : (
-                                        <p className="font-bold text-gray-900 text-lg">
-                                          {customer.quantity} ud{customer.quantity === 1 ? '' : 's'}
+                                      <p className="font-bold text-gray-900 text-lg">
+                                        {customer.quantity}x {customer.variant_name || (customer.weight_display ? customer.weight_display : 'unidad')}
+                                      </p>
+                                      {customer.weight_display && customer.variant_name && (
+                                        <p className="text-xs text-gray-500">
+                                          ({customer.weight_display})
                                         </p>
                                       )}
                                     </div>
