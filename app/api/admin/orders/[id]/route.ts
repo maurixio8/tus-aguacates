@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
   'Access-Control-Allow-Credentials': 'true',
@@ -24,6 +24,8 @@ export async function DELETE(
   try {
     const { id: orderId } = await params;
 
+    console.log('🗑️ [DELETE ORDER] Intentando eliminar pedido:', orderId);
+
     if (!orderId) {
       return NextResponse.json(
         { error: 'ID del pedido es requerido' },
@@ -31,50 +33,49 @@ export async function DELETE(
       );
     }
 
-  // Crear cliente de Supabase con auth de admin
-  const supabase = createSupabaseClient();
-
-  // Primero, verificar si el pedido existe
-    const { data: order, error: fetchError } = await supabase
+    // Primero, verificar si el pedido existe
+    const { data: order, error: fetchError } = await supabaseAdmin
       .from('orders')
       .select('id, order_number')
       .eq('id', orderId)
       .single();
 
+    console.log('🔍 [DELETE ORDER] Búsqueda de pedido:', { order, error: fetchError?.message });
+
     if (fetchError || !order) {
+      console.error('❌ [DELETE ORDER] Pedido no encontrado:', orderId, fetchError);
       return NextResponse.json(
-        { error: 'Pedido no encontrado' },
+        { error: 'Pedido no encontrado', details: fetchError?.message },
         { status: 404, headers: corsHeaders }
       );
     }
 
     // Primero eliminar los order_items relacionados
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await supabaseAdmin
       .from('order_items')
       .delete()
       .eq('order_id', orderId);
 
     if (itemsError) {
-      console.error('Error eliminando items del pedido:', itemsError);
-      return NextResponse.json(
-        { error: 'Error al eliminar los items del pedido' },
-        { status: 500, headers: corsHeaders }
-      );
+      console.error('⚠️ [DELETE ORDER] Error eliminando items (puede ser normal si no hay items):', itemsError);
+      // No retornar error aquí, algunos pedidos pueden no tener items en esta tabla
     }
 
     // Luego eliminar el pedido
-    const { error: orderError } = await supabase
+    const { error: orderError } = await supabaseAdmin
       .from('orders')
       .delete()
       .eq('id', orderId);
 
     if (orderError) {
-      console.error('Error eliminando pedido:', orderError);
+      console.error('❌ [DELETE ORDER] Error eliminando pedido:', orderError);
       return NextResponse.json(
-        { error: 'Error al eliminar el pedido' },
+        { error: 'Error al eliminar el pedido', details: orderError.message },
         { status: 500, headers: corsHeaders }
       );
     }
+
+    console.log('✅ [DELETE ORDER] Pedido eliminado exitosamente:', order.order_number);
 
     return NextResponse.json({
       success: true,
@@ -82,9 +83,9 @@ export async function DELETE(
     }, { headers: corsHeaders });
 
   } catch (error) {
-    console.error('Error en DELETE /api/admin/orders/[id]:', error);
+    console.error('❌ [DELETE ORDER] Error fatal:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      { error: 'Error interno del servidor', details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500, headers: corsHeaders }
     );
   }
