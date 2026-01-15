@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
+import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -33,8 +33,11 @@ export async function DELETE(
       );
     }
 
+    // Crear cliente de Supabase (mismo que usa el diagnóstico que sí funciona)
+    const supabase = createSupabaseClient();
+
     // Primero, verificar si el pedido existe
-    const { data: order, error: fetchError } = await supabaseAdmin
+    const { data: order, error: fetchError } = await supabase
       .from('orders')
       .select('id, order_number')
       .eq('id', orderId)
@@ -51,7 +54,7 @@ export async function DELETE(
     }
 
     // Primero eliminar los order_items relacionados
-    const { error: itemsError } = await supabaseAdmin
+    const { error: itemsError } = await supabase
       .from('order_items')
       .delete()
       .eq('order_id', orderId);
@@ -62,7 +65,7 @@ export async function DELETE(
     }
 
     // Luego eliminar el pedido
-    const { error: orderError } = await supabaseAdmin
+    const { error: orderError } = await supabase
       .from('orders')
       .delete()
       .eq('id', orderId);
