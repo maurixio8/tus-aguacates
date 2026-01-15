@@ -38,15 +38,46 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
 
-  // Cargar variantes
+  // Cargar variantes (del producto o desde Supabase)
   useEffect(() => {
-    if (product.variants && product.variants.length > 0) {
-      const variantsWithPrice = product.variants.map((v: any) => ({
-        ...v,
-        price: (product.discount_price || product.base_price || product.price) + (v.price_adjustment || 0)
-      }));
-      setVariants(variantsWithPrice);
-      setSelectedVariant(variantsWithPrice[0]);
+    async function loadVariants() {
+      // Si el producto ya tiene variantes cargadas
+      if (product.variants && product.variants.length > 0) {
+        const variantsWithPrice = product.variants.map((v: any) => ({
+          ...v,
+          price: (product.discount_price || product.price) + (v.price_adjustment || 0)
+        }));
+        setVariants(variantsWithPrice);
+        setSelectedVariant(variantsWithPrice[0]);
+        return;
+      }
+
+      // Si no, buscar en Supabase
+      try {
+        const { data } = await import('@/lib/supabase').then(m =>
+          m.supabase
+            .from('product_variants')
+            .select('*')
+            .eq('product_id', product.id)
+            .eq('is_active', true)
+            .order('price_adjustment', { ascending: true })
+        );
+
+        if (data && data.length > 0) {
+          const variantsWithPrice = data.map((v: any) => ({
+            ...v,
+            price: (product.discount_price || product.price) + (v.price_adjustment || 0)
+          }));
+          setVariants(variantsWithPrice);
+          setSelectedVariant(variantsWithPrice[0]);
+        }
+      } catch (error) {
+        console.log('Error cargando variantes:', error);
+      }
+    }
+
+    if (isOpen) {
+      loadVariants();
     }
   }, [product, isOpen]);
 
@@ -173,8 +204,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                     onClick={handleWishlistClick}
                     disabled={isWishlistLoading}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all ${isWishlisted
-                        ? 'bg-red-50 border-red-300 text-red-600'
-                        : 'border-gray-300 text-gray-700 hover:border-red-300'
+                      ? 'bg-red-50 border-red-300 text-red-600'
+                      : 'border-gray-300 text-gray-700 hover:border-red-300'
                       } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                   >
                     <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
@@ -261,8 +292,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                           key={variant.id}
                           onClick={() => setSelectedVariant(variant)}
                           className={`px-3 py-2 rounded-lg border-2 font-medium transition-all text-sm ${selectedVariant?.id === variant.id
-                              ? 'bg-verde-bosque text-white border-verde-bosque'
-                              : 'border-gray-300 text-gray-700 hover:border-verde-bosque'
+                            ? 'bg-verde-bosque text-white border-verde-bosque'
+                            : 'border-gray-300 text-gray-700 hover:border-verde-bosque'
                             }`}
                         >
                           <div className="font-semibold">{variant.variant_value}</div>
@@ -273,16 +304,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                   </div>
                 )}
 
-                {/* Stock Info */}
-                <div className="text-sm">
-                  {(product.stock || 0) > 0 ? (
-                    <span className="text-green-600 font-medium">
-                      ✓ Disponible ({product.stock || 'varios'} unidades)
-                    </span>
-                  ) : (
-                    <span className="text-red-600 font-medium">✗ Agotado</span>
-                  )}
-                </div>
+
 
                 {/* Selector de Cantidad */}
                 {(product.stock || 0) > 0 && (

@@ -34,10 +34,13 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
         return;
       }
 
-      // Ahora obtenemos los productos activos de esa categoría
+      // Ahora obtenemos los productos activos de esa categoría CON sus variantes
       const { data: productsData, error: productsError } = await supabase
         .from('products')
-        .select('*')
+        .select(`
+          *,
+          variants:product_variants(*)
+        `)
         .eq('category_id', categoryData.id)
         .eq('is_active', true)
         .order('name', { ascending: true });
