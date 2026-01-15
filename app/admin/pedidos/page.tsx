@@ -18,7 +18,9 @@ import {
   ChefHat,
   Trash2,
   AlertTriangle,
-  FileText
+  FileText,
+  CalendarX2,
+  X
 } from 'lucide-react';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
 import EditOrderModal from '@/components/admin/EditOrderModal';
@@ -157,6 +159,18 @@ export default function OrdersPage() {
     cancelled: 0,
     total: 0
   });
+
+  // Estados para eliminación masiva
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleteDate, setBulkDeleteDate] = useState('');
+  const [bulkDeletePreview, setBulkDeletePreview] = useState<{
+    ordersCount: number;
+    guestOrdersCount: number;
+    totalCount: number;
+    message: string;
+  } | null>(null);
+  const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
+  const [bulkDeleteError, setBulkDeleteError] = useState('');
 
   // Funciones helper para calcular rangos de fechas
   const getDateRanges = () => {
@@ -550,12 +564,112 @@ export default function OrdersPage() {
     }
   };
 
+  // Funciones para eliminación masiva
+  const handleBulkDeletePreview = async () => {
+    if (!bulkDeleteDate) {
+      setBulkDeleteError('Por favor selecciona una fecha');
+      return;
+    }
+
+    setBulkDeleteLoading(true);
+    setBulkDeleteError('');
+    setBulkDeletePreview(null);
+
+    try {
+      const response = await fetch(`/api/admin/orders/bulk-delete?beforeDate=${bulkDeleteDate}`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setBulkDeletePreview(data.preview);
+      } else {
+        setBulkDeleteError(data.error || 'Error al obtener vista previa');
+      }
+    } catch (error) {
+      console.error('Error obteniendo preview:', error);
+      setBulkDeleteError('Error de conexión');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!bulkDeleteDate || !bulkDeletePreview) return;
+
+    const confirmMessage = `¿Estás SEGURO de que deseas eliminar ${bulkDeletePreview.totalCount} pedidos?\n\n` +
+      `- ${bulkDeletePreview.ordersCount} pedidos de usuarios registrados\n` +
+      `- ${bulkDeletePreview.guestOrdersCount} pedidos de invitados\n\n` +
+      `Esta acción NO se puede deshacer.`;
+
+    if (!confirm(confirmMessage)) return;
+
+    // Segunda confirmación
+    const finalConfirm = prompt(
+      `Para confirmar, escribe "ELIMINAR" (en mayúsculas):`
+    );
+
+    if (finalConfirm !== 'ELIMINAR') {
+      alert('Eliminación cancelada. No escribiste "ELIMINAR" correctamente.');
+      return;
+    }
+
+    setBulkDeleteLoading(true);
+    setBulkDeleteError('');
+
+    try {
+      const response = await fetch('/api/admin/orders/bulk-delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          beforeDate: bulkDeleteDate,
+          confirmDelete: true
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`${data.message}`);
+        setShowBulkDeleteModal(false);
+        setBulkDeleteDate('');
+        setBulkDeletePreview(null);
+        loadOrders();
+        loadOrderStats();
+      } else {
+        setBulkDeleteError(data.error || 'Error al eliminar pedidos');
+      }
+    } catch (error) {
+      console.error('Error eliminando pedidos:', error);
+      setBulkDeleteError('Error de conexión');
+    } finally {
+      setBulkDeleteLoading(false);
+    }
+  };
+
+  const closeBulkDeleteModal = () => {
+    setShowBulkDeleteModal(false);
+    setBulkDeleteDate('');
+    setBulkDeletePreview(null);
+    setBulkDeleteError('');
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Pedidos</h1>
-        <p className="text-gray-600 mt-1">Administra y da seguimiento a todos los pedidos</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Pedidos</h1>
+          <p className="text-gray-600 mt-1">Administra y da seguimiento a todos los pedidos</p>
+        </div>
+        <button
+          onClick={() => setShowBulkDeleteModal(true)}
+          className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm font-medium shadow-sm"
+        >
+          <CalendarX2 className="w-5 h-5" />
+          Eliminar Pedidos Antiguos
+        </button>
       </div>
 
       {/* Quick Stats Panel */}
@@ -1333,6 +1447,154 @@ export default function OrdersPage() {
           onClose={() => setEditingOrder(null)}
           onSave={handleSaveOrderEdit}
         />
+      )}
+
+      {/* Modal de Eliminación Masiva */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            {/* Header del Modal */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <CalendarX2 className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Eliminar Pedidos Antiguos</h2>
+                  <p className="text-sm text-gray-500">Elimina pedidos hasta una fecha específica</p>
+                </div>
+              </div>
+              <button
+                onClick={closeBulkDeleteModal}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 space-y-6">
+              {/* Advertencia */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <div className="flex gap-3">
+                  <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-800">Acción Irreversible</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Esta acción eliminará permanentemente todos los pedidos creados hasta la fecha seleccionada.
+                      Los datos de los clientes NO serán eliminados.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selector de Fecha */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Eliminar pedidos hasta (incluyendo esta fecha):
+                </label>
+                <input
+                  type="date"
+                  value={bulkDeleteDate}
+                  onChange={(e) => {
+                    setBulkDeleteDate(e.target.value);
+                    setBulkDeletePreview(null);
+                    setBulkDeleteError('');
+                  }}
+                  max={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none text-lg"
+                />
+              </div>
+
+              {/* Botón de Vista Previa */}
+              <button
+                onClick={handleBulkDeletePreview}
+                disabled={!bulkDeleteDate || bulkDeleteLoading}
+                className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {bulkDeleteLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600"></div>
+                    Calculando...
+                  </>
+                ) : (
+                  <>
+                    <Package className="w-5 h-5" />
+                    Ver cuántos pedidos se eliminarán
+                  </>
+                )}
+              </button>
+
+              {/* Error */}
+              {bulkDeleteError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
+                  {bulkDeleteError}
+                </div>
+              )}
+
+              {/* Vista Previa */}
+              {bulkDeletePreview && (
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
+                  <p className="font-semibold text-gray-900">Resumen de eliminación:</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Pedidos de usuarios registrados:</span>
+                      <span className="font-bold text-gray-900">{bulkDeletePreview.ordersCount}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Pedidos de invitados:</span>
+                      <span className="font-bold text-gray-900">{bulkDeletePreview.guestOrdersCount}</span>
+                    </div>
+                    <div className="border-t border-gray-300 pt-2 flex justify-between items-center">
+                      <span className="font-semibold text-gray-900">Total a eliminar:</span>
+                      <span className="font-bold text-red-600 text-xl">{bulkDeletePreview.totalCount}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Botón de Eliminar */}
+              {bulkDeletePreview && bulkDeletePreview.totalCount > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleteLoading}
+                  className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {bulkDeleteLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      Eliminando...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-5 h-5" />
+                      Eliminar {bulkDeletePreview.totalCount} pedidos
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Mensaje si no hay pedidos */}
+              {bulkDeletePreview && bulkDeletePreview.totalCount === 0 && (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-green-700 text-center">
+                  <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                  <p className="font-medium">No hay pedidos para eliminar</p>
+                  <p className="text-sm mt-1">No existen pedidos creados hasta la fecha seleccionada.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer del Modal */}
+            <div className="p-6 border-t border-gray-200 bg-gray-50 rounded-b-2xl">
+              <button
+                onClick={closeBulkDeleteModal}
+                className="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl transition-colors font-medium"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
