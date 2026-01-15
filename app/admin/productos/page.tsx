@@ -290,35 +290,53 @@ export default function ProductsPage() {
     if (!editingProduct) return;
     setSaving(true);
 
+    const payload = {
+      name: editingProduct.name,
+      description: editingProduct.description,
+      price: editingProduct.price,
+      discount_price: editingProduct.discount_price || null,
+      stock: editingProduct.stock,
+      is_active: editingProduct.is_active,
+      is_featured: editingProduct.is_featured,
+      main_image_url: editingProduct.main_image_url,
+      category_id: editingProduct.category_id,
+    };
+
+    console.log('📤 [SaveProduct] Sending payload:', payload);
+
     try {
       const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          name: editingProduct.name,
-          description: editingProduct.description,
-          price: editingProduct.price,
-          discount_price: editingProduct.discount_price || null,
-          stock: editingProduct.stock,
-          is_active: editingProduct.is_active,
-          is_featured: editingProduct.is_featured,
-          main_image_url: editingProduct.main_image_url,
-          category_id: editingProduct.category_id,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
+      console.log('📥 [SaveProduct] Response:', {
+        status: response.status,
+        ok: response.ok,
+        success: data.success,
+        data: data.data,
+        error: data.error
+      });
 
       if (data.success) {
+        // Verify price was actually saved
+        if (data.data && data.data.price !== payload.price) {
+          console.error('⚠️ [SaveProduct] PRICE MISMATCH! Sent:', payload.price, 'Received:', data.data.price);
+          showToast('⚠️ El precio no se guardó correctamente', 'error');
+        } else {
+          showToast('Producto actualizado correctamente', 'success');
+        }
         setEditingProduct(null);
         loadProducts();
       } else {
-        alert(data.error || 'Error al guardar');
+        showToast(data.error || 'Error al guardar', 'error');
       }
     } catch (error) {
       console.error('Error guardando producto:', error);
-      alert('Error al guardar el producto');
+      showToast('Error al guardar el producto', 'error');
     } finally {
       setSaving(false);
     }

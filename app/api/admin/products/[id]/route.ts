@@ -285,8 +285,20 @@ export async function PATCH(
     console.log('✅ API: Product updated successfully via PATCH:', {
       id: data.id,
       name: data.name,
-      main_image_url: data.main_image_url
+      main_image_url: data.main_image_url,
+      price: data.price,
+      discount_price: data.discount_price,
+      sentPrice: updateData.price,
+      sentDiscountPrice: updateData.discount_price
     });
+
+    // Verify price was actually saved if it was part of the update
+    if (updateData.price !== undefined && data.price !== updateData.price) {
+      console.error('❌ API: CRITICAL PRICE MISMATCH!', {
+        sent: updateData.price,
+        received: data.price
+      });
+    }
 
     // Force cache invalidation for both admin and frontend
     revalidatePath('/admin/productos');
