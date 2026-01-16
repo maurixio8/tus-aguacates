@@ -99,7 +99,8 @@ export function generateOrderSummary(order: Order): string {
   const orderNumber = order.order_number || `INV-${order.id.slice(-8)}`;
 
   // Generate delivery date based on delivery days: TUESDAY (2) and FRIDAY (5) only
-  // Uses delivery_date if available, otherwise calculates next delivery day
+  // RULE: If order is placed on a delivery day BEFORE 10:00 AM, deliver SAME DAY
+  //       Otherwise, calculate next delivery day
   const getDeliveryDate = (): string => {
     // If order has explicit delivery_date, use it
     if ((order as any).delivery_date) {
@@ -112,29 +113,40 @@ export function generateOrderSummary(order: Order): string {
       });
     }
 
-    // Calculate next delivery day (Tuesday = 2, Friday = 5)
-    // Orders are typically delivered on the next available delivery day
-    const orderDate = new Date(order.created_at);
-    const deliveryDate = new Date(orderDate);
-
     // Delivery days: Tuesday (2) and Friday (5)
-    const DELIVERY_DAYS = [2, 5]; // Tuesday, Friday
+    const DELIVERY_DAYS = [2, 5]; // Tuesday = 2, Friday = 5
+    const CUT_OFF_HOUR = 10; // 10:00 AM - orders before this can be delivered same day
 
-    // Get current day of week (0 = Sunday, 1 = Monday, etc.)
+    // Get order date and time
+    const orderDate = new Date(order.created_at);
+    const orderDayOfWeek = orderDate.getDay();
+    const orderHour = orderDate.getHours();
+
+    // Check if order was placed on a delivery day BEFORE cut-off time
+    const isDeliveryDay = DELIVERY_DAYS.includes(orderDayOfWeek);
+    const isBeforeCutOff = orderHour < CUT_OFF_HOUR;
+
+    // If it's a delivery day and before 10 AM, deliver TODAY (same day)
+    if (isDeliveryDay && isBeforeCutOff) {
+      return orderDate.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    // Otherwise, find the NEXT delivery day
+    const deliveryDate = new Date(orderDate);
     let currentDay = deliveryDate.getDay();
 
-    // Find the next delivery day
-    // We need at least 1 day for preparation, so we start from tomorrow
-    deliveryDate.setDate(deliveryDate.getDate() + 1);
-    currentDay = deliveryDate.getDay();
-
-    // Keep advancing until we hit a delivery day
+    // Advance to next day and keep going until we hit a delivery day
     let maxIterations = 7; // Safety limit
-    while (!DELIVERY_DAYS.includes(currentDay) && maxIterations > 0) {
+    do {
       deliveryDate.setDate(deliveryDate.getDate() + 1);
       currentDay = deliveryDate.getDay();
       maxIterations--;
-    }
+    } while (!DELIVERY_DAYS.includes(currentDay) && maxIterations > 0);
 
     return deliveryDate.toLocaleDateString('es-ES', {
       weekday: 'long',
