@@ -394,21 +394,33 @@ export default function ListaComprasPage() {
     let totalGeneral = 0;    // Total general
 
     selectedOrdersList.forEach(order => {
-      // Obtener subtotal de productos
-      const orderSubtotal = order.subtotal || 0;
-
       // Obtener costo de envío
-      const shippingCost = order.shipping_fee || order.shipping_cost || order.order_data?.shipping_cost || 0;
+      const shippingCost = order.shipping_fee || order.shipping_cost || order.order_data?.shipping_cost || order.order_data?.shippingFee || 0;
 
       // Obtener total del pedido
-      const orderTotal = order.total || order.total_amount || (orderSubtotal + shippingCost);
+      const orderTotal = order.total || order.total_amount || 0;
 
-      // Si no hay subtotal, intentar calcularlo restando el envío
-      const productAmount = orderSubtotal || (orderTotal - shippingCost);
+      // Calcular subtotal de productos
+      let productAmount = order.subtotal || 0;
+
+      // Si no hay subtotal explícito, calcularlo desde los items del pedido
+      if (!productAmount && orderTotal > 0) {
+        const items = extractItemsFromOrder(order);
+        if (items.length > 0) {
+          productAmount = items.reduce((sum, item) => {
+            const price = item.unit_price || item.price || 0;
+            return sum + (price * item.quantity);
+          }, 0);
+        } else {
+          // Como último recurso, restar el envío del total
+          productAmount = Math.max(0, orderTotal - shippingCost);
+        }
+      }
 
       totalProducts += productAmount;
       totalShipping += shippingCost;
-      totalGeneral += orderTotal;
+      // El total general es Productos + Envíos (para consistencia)
+      totalGeneral += productAmount + shippingCost;
     });
 
     return {
