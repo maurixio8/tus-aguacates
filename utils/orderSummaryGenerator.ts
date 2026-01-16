@@ -98,8 +98,8 @@ export function generateOrderSummary(order: Order): string {
   // Generate order number
   const orderNumber = order.order_number || `INV-${order.id.slice(-8)}`;
 
-  // Generate delivery date based on ORDER creation date (not current date)
-  // Uses delivery_date if available, otherwise calculates 2-3 business days from order creation
+  // Generate delivery date based on delivery days: TUESDAY (2) and FRIDAY (5) only
+  // Uses delivery_date if available, otherwise calculates next delivery day
   const getDeliveryDate = (): string => {
     // If order has explicit delivery_date, use it
     if ((order as any).delivery_date) {
@@ -112,19 +112,28 @@ export function generateOrderSummary(order: Order): string {
       });
     }
 
-    // Otherwise, calculate based on order creation date
+    // Calculate next delivery day (Tuesday = 2, Friday = 5)
+    // Orders are typically delivered on the next available delivery day
     const orderDate = new Date(order.created_at);
     const deliveryDate = new Date(orderDate);
 
-    // Add 2 business days (skip weekends)
-    let daysToAdd = 2;
-    while (daysToAdd > 0) {
+    // Delivery days: Tuesday (2) and Friday (5)
+    const DELIVERY_DAYS = [2, 5]; // Tuesday, Friday
+
+    // Get current day of week (0 = Sunday, 1 = Monday, etc.)
+    let currentDay = deliveryDate.getDay();
+
+    // Find the next delivery day
+    // We need at least 1 day for preparation, so we start from tomorrow
+    deliveryDate.setDate(deliveryDate.getDate() + 1);
+    currentDay = deliveryDate.getDay();
+
+    // Keep advancing until we hit a delivery day
+    let maxIterations = 7; // Safety limit
+    while (!DELIVERY_DAYS.includes(currentDay) && maxIterations > 0) {
       deliveryDate.setDate(deliveryDate.getDate() + 1);
-      const dayOfWeek = deliveryDate.getDay();
-      // Skip Saturday (6) and Sunday (0)
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysToAdd--;
-      }
+      currentDay = deliveryDate.getDay();
+      maxIterations--;
     }
 
     return deliveryDate.toLocaleDateString('es-ES', {
