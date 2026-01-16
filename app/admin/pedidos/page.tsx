@@ -205,21 +205,95 @@ export default function OrdersPage() {
     return parts.join(', ');
   };
 
-  // Generar resumen del pedido para copiar
+  // Generar resumen del pedido para REPARTIDOR (copiar al portapapeles)
+  // Formato optimizado para entrega: nombre grande, total visible, link WhatsApp, productos con precios
   const getOrderSummaryText = (order: Order, customerName: string, orderItems: any[]): string => {
-    const lines = [`Pedido para: ${customerName}`, ''];
+    // Formatear moneda
+    const formatMoney = (amount: number) => {
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0
+      }).format(amount);
+    };
 
-    orderItems.forEach(item => {
+    // Limpiar teléfono para WhatsApp
+    const getWhatsAppLink = (phone: string | undefined) => {
+      if (!phone) return '';
+      const cleanPhone = phone.replace(/\D/g, '');
+      const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+      return `https://wa.me/${fullPhone}`;
+    };
+
+    // Calcular totales
+    const totalProducts = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    const totalAmount = order.total || 0;
+
+    // Obtener teléfono
+    const customerPhone = order.customer_phone || '';
+    const whatsappLink = getWhatsAppLink(customerPhone);
+
+    // Construir resumen
+    const lines: string[] = [];
+
+    // ═══════════════════════════════════════
+    // HEADER - Información principal destacada
+    // ═══════════════════════════════════════
+    lines.push('═══════════════════════════════');
+    lines.push(`🚚 ENTREGA #${order.order_number || order.id.slice(-6).toUpperCase()}`);
+    lines.push('═══════════════════════════════');
+    lines.push('');
+
+    // Cliente en grande
+    lines.push(`👤 CLIENTE: ${customerName.toUpperCase()}`);
+    lines.push(`📞 Tel: ${customerPhone}`);
+    if (whatsappLink) {
+      lines.push(`💬 WhatsApp: ${whatsappLink}`);
+    }
+    lines.push('');
+
+    // Dirección destacada
+    const address = getAddressText(order);
+    lines.push('📍 DIRECCIÓN DE ENTREGA:');
+    lines.push(`   ${address || 'Sin dirección'}`);
+    lines.push('');
+
+    // ═══════════════════════════════════════
+    // PRODUCTOS
+    // ═══════════════════════════════════════
+    lines.push(`📦 PRODUCTOS (${totalProducts} ${totalProducts === 1 ? 'item' : 'items'}):`);
+    lines.push('───────────────────────────────');
+
+    orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
       const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
       const variantText = variant ? ` (${variant})` : '';
-      lines.push(`• ${item.quantity}x ${itemName}${variantText}`);
+      const price = item.unit_price || item.price || item.product_snapshot?.price || 0;
+      const subtotal = price * (item.quantity || 1);
+
+      lines.push(`   ${index + 1}. ${item.quantity}x ${itemName}${variantText}`);
+      lines.push(`      └─ ${formatMoney(subtotal)}`);
     });
 
-    const address = getAddressText(order);
-    if (address) {
-      lines.push('', `Dirección: ${address}`);
+    lines.push('───────────────────────────────');
+    lines.push('');
+
+    // ═══════════════════════════════════════
+    // TOTAL DESTACADO
+    // ═══════════════════════════════════════
+    lines.push('💰 TOTAL A COBRAR:');
+    lines.push(`   >>> ${formatMoney(totalAmount)} <<<`);
+    lines.push('');
+
+    // Notas si existen
+    const notes = order.delivery_notes || order.notes;
+    if (notes) {
+      lines.push('📝 NOTAS:');
+      lines.push(`   ${notes}`);
+      lines.push('');
     }
+
+    lines.push('═══════════════════════════════');
 
     return lines.join('\n');
   };
@@ -495,9 +569,9 @@ export default function OrdersPage() {
         return !customerInfo.phone;
       case 'incomplete':
         return !customerInfo.name ||
-               customerInfo.name === 'Cliente' ||
-               !customerInfo.email ||
-               !customerInfo.phone;
+          customerInfo.name === 'Cliente' ||
+          !customerInfo.email ||
+          !customerInfo.phone;
       default:
         return true;
     }
@@ -629,11 +703,10 @@ export default function OrdersPage() {
         {/* Total */}
         <button
           onClick={() => { setStatus(''); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === ''
+          className={`p-4 rounded-xl border-2 transition-all ${status === ''
               ? 'bg-gray-100 border-gray-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-gray-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-gray-900">{orderStats.total}</div>
           <div className="text-xs text-gray-600">Total</div>
@@ -642,11 +715,10 @@ export default function OrdersPage() {
         {/* Pending */}
         <button
           onClick={() => { setStatus('pending'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'pending'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'pending'
               ? 'bg-yellow-100 border-yellow-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-yellow-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-yellow-600">{orderStats.pending}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -657,11 +729,10 @@ export default function OrdersPage() {
         {/* Confirmed */}
         <button
           onClick={() => { setStatus('confirmed'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'confirmed'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'confirmed'
               ? 'bg-blue-100 border-blue-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-blue-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-blue-600">{orderStats.confirmed}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -672,11 +743,10 @@ export default function OrdersPage() {
         {/* Processing */}
         <button
           onClick={() => { setStatus('processing'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'processing'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'processing'
               ? 'bg-purple-100 border-purple-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-purple-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-purple-600">{orderStats.processing}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -687,11 +757,10 @@ export default function OrdersPage() {
         {/* Shipped */}
         <button
           onClick={() => { setStatus('shipped'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'shipped'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'shipped'
               ? 'bg-blue-100 border-blue-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-blue-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-blue-500">{orderStats.shipped}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -702,11 +771,10 @@ export default function OrdersPage() {
         {/* Delivered */}
         <button
           onClick={() => { setStatus('delivered'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'delivered'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'delivered'
               ? 'bg-green-100 border-green-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-green-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-green-600">{orderStats.delivered}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -717,11 +785,10 @@ export default function OrdersPage() {
         {/* Cancelled */}
         <button
           onClick={() => { setStatus('cancelled'); setPagination(prev => ({ ...prev, page: 1 })); }}
-          className={`p-4 rounded-xl border-2 transition-all ${
-            status === 'cancelled'
+          className={`p-4 rounded-xl border-2 transition-all ${status === 'cancelled'
               ? 'bg-red-100 border-red-400 shadow-md'
               : 'bg-white border-gray-200 hover:border-red-300'
-          }`}
+            }`}
         >
           <div className="text-2xl font-bold text-red-600">{orderStats.cancelled}</div>
           <div className="text-xs text-gray-600 flex items-center gap-1">
@@ -758,71 +825,64 @@ export default function OrdersPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => applyQuickFilter('today')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'today'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'today'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Hoy
             </button>
             <button
               onClick={() => applyQuickFilter('thisWeek')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'thisWeek'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'thisWeek'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Esta Semana
             </button>
             <button
               onClick={() => applyQuickFilter('lastWeek')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'lastWeek'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'lastWeek'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Semana Pasada
             </button>
             <button
               onClick={() => applyQuickFilter('last7Days')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'last7Days'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'last7Days'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Últimos 7 Días
             </button>
             <button
               onClick={() => applyQuickFilter('last30Days')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'last30Days'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'last30Days'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Últimos 30 Días
             </button>
             <button
               onClick={() => applyQuickFilter('thisMonth')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'thisMonth'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'thisMonth'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Este Mes
             </button>
             <button
               onClick={() => applyQuickFilter('lastMonth')}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                quickFilter === 'lastMonth'
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'lastMonth'
                   ? 'bg-green-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               Mes Pasado
             </button>
@@ -934,514 +994,512 @@ export default function OrdersPage() {
           ) : (
             <>
               {filteredOrders.map((order) => {
-              const statusInfo = statusConfig[order.status] || statusConfig.pending;
-              const StatusIcon = statusInfo.icon;
+                const statusInfo = statusConfig[order.status] || statusConfig.pending;
+                const StatusIcon = statusInfo.icon;
 
-              // Función para extraer items de order_data si no hay order_items
-              const extractItemsFromOrderData = (order: any) => {
-                // Primero intentar con order_items
-                if (order.order_items && order.order_items.length > 0) {
-                  return order.order_items;
-                }
+                // Función para extraer items de order_data si no hay order_items
+                const extractItemsFromOrderData = (order: any) => {
+                  // Primero intentar con order_items
+                  if (order.order_items && order.order_items.length > 0) {
+                    return order.order_items;
+                  }
 
-                // Luego con items
-                if (order.items && order.items.length > 0) {
-                  return order.items;
-                }
+                  // Luego con items
+                  if (order.items && order.items.length > 0) {
+                    return order.items;
+                  }
 
-                // Finalmente extraer desde order_data
-                if (order.order_data?.items) {
-                  return order.order_data.items.map((item: any, index: number) => ({
-                    id: `item-${index}`,
-                    product_id: item.productId,
-                    product_snapshot: {
-                      name: item.productName,
-                      price: item.price,
-                      main_image_url: null,
-                      unit: null
-                    },
+                  // Finalmente extraer desde order_data
+                  if (order.order_data?.items) {
+                    return order.order_data.items.map((item: any, index: number) => ({
+                      id: `item-${index}`,
+                      product_id: item.productId,
+                      product_snapshot: {
+                        name: item.productName,
+                        price: item.price,
+                        main_image_url: null,
+                        unit: null
+                      },
+                      quantity: item.quantity,
+                      unit_price: item.price,
+                      subtotal: item.quantity * item.price
+                    }));
+                  }
+
+                  return [];
+                };
+
+                const orderItems = extractItemsFromOrderData(order);
+                const customerInfo = getCustomerInfo(order);
+
+                // Debug log
+                console.log(`📦 [DEBUG] Pedido ${order.order_number}:`, {
+                  id: order.id,
+                  orderItemsCount: orderItems.length,
+                  orderItems: orderItems.map((item: any) => ({
+                    id: item.id,
+                    product_id: item.product_id,
                     quantity: item.quantity,
-                    unit_price: item.price,
-                    subtotal: item.quantity * item.price
-                  }));
-                }
+                    has_snapshot: !!item.product_snapshot,
+                    snapshot_name: item.product_snapshot?.name,
+                    has_products: !!item.products,
+                    products_name: item.products?.name,
+                    unit_price: item.unit_price,
+                    price: item.price
+                  }))
+                });
 
-                return [];
-              };
-
-              const orderItems = extractItemsFromOrderData(order);
-              const customerInfo = getCustomerInfo(order);
-
-              // Debug log
-              console.log(`📦 [DEBUG] Pedido ${order.order_number}:`, {
-                id: order.id,
-                orderItemsCount: orderItems.length,
-                orderItems: orderItems.map((item: any) => ({
-                  id: item.id,
-                  product_id: item.product_id,
-                  quantity: item.quantity,
-                  has_snapshot: !!item.product_snapshot,
-                  snapshot_name: item.product_snapshot?.name,
-                  has_products: !!item.products,
-                  products_name: item.products?.name,
-                  unit_price: item.unit_price,
-                  price: item.price
-                }))
-              });
-
-              return (
-                <div
-                  key={order.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
-                >
-                  <div className="p-4 lg:p-6">
-                    {/* Header del pedido */}
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-lg ${statusInfo.bgColor} border`}>
-                          <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-gray-900">
-                            Pedido #{order.order_number || order.id.substring(0, 8)}
-                          </h3>
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
-                            {statusInfo.label}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">
-                          {formatCurrency(order.total || order.total_amount || 0)}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(order.created_at)} - {formatTime(order.created_at)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Info del cliente */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div className="flex items-start gap-2">
-                        <User className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div>
-                          <p className="text-sm text-gray-500">Cliente</p>
-                          <p className="font-medium text-gray-900">{customerInfo.name}</p>
-                        </div>
-                      </div>
-                      {customerInfo.phone && (
-                        <div className="flex items-start gap-2">
-                          <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                return (
+                  <div
+                    key={order.id}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                  >
+                    <div className="p-4 lg:p-6">
+                      {/* Header del pedido */}
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-2 rounded-lg ${statusInfo.bgColor} border`}>
+                            <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
+                          </div>
                           <div>
-                            <p className="text-sm text-gray-500">Teléfono</p>
-                            <a
-                              href={`tel:${customerInfo.phone}`}
-                              className="font-medium text-green-600 hover:text-green-700"
-                            >
-                              {customerInfo.phone}
-                            </a>
+                            <h3 className="text-lg font-bold text-gray-900">
+                              Pedido #{order.order_number || order.id.substring(0, 8)}
+                            </h3>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
+                              {statusInfo.label}
+                            </span>
                           </div>
                         </div>
-                      )}
-                      {order.delivery_date && (
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-green-600">
+                            {formatCurrency(order.total || order.total_amount || 0)}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(order.created_at)} - {formatTime(order.created_at)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Info del cliente */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                         <div className="flex items-start gap-2">
-                          <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
+                          <User className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
-                            <p className="text-sm text-gray-500">Fecha de Entrega</p>
-                            <p className="font-medium text-gray-900">{formatDate(order.delivery_date)}</p>
+                            <p className="text-sm text-gray-500">Cliente</p>
+                            <p className="font-medium text-gray-900">{customerInfo.name}</p>
                           </div>
                         </div>
-                      )}
-                    </div>
-
-                    {/* Detalles expandibles */}
-                    {expandedOrder === order.id && (
-                      <div className="border-t border-gray-200 pt-4 mt-4 space-y-4">
-                        {/* Dirección */}
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm text-gray-500">Dirección de Entrega</p>
-                            {(() => {
-                              // Función auxiliar para formatear dirección (objeto o string)
-                              const formatAddress = (addr: any): React.ReactElement => {
-                                if (!addr) return <p className="text-gray-500">No hay dirección registrada</p>;
-
-                                // Si es un string, intentar parsearlo como JSON
-                                if (typeof addr === 'string') {
-                                  try {
-                                    const parsed = JSON.parse(addr);
-                                    return formatAddress(parsed); // Recursivamente formatear el objeto
-                                  } catch {
-                                    // Es un string simple, mostrarlo tal cual
-                                    return <p className="text-gray-900">{addr}</p>;
-                                  }
-                                }
-
-                                // Si es un objeto, extraer las propiedades
-                                if (typeof addr === 'object') {
-                                  const streetAddress = addr.street_address || addr.address || addr.street || '';
-                                  const city = addr.city || '';
-                                  const state = addr.state || addr.department || '';
-                                  const postalCode = addr.postal_code || '';
-                                  const additionalInfo = addr.additional_info || '';
-
-                                  // Si no hay datos útiles, mostrar mensaje vacío
-                                  if (!streetAddress && !city) {
-                                    return <p className="text-gray-500">No hay dirección registrada</p>;
-                                  }
-
-                                  return (
-                                    <div className="text-gray-900">
-                                      {streetAddress && <p>{streetAddress}</p>}
-                                      {(city || state) && <p>{[city, state].filter(Boolean).join(', ')}</p>}
-                                      {postalCode && <p>Código Postal: {postalCode}</p>}
-                                      {additionalInfo && <p className="text-sm text-gray-600">Info: {additionalInfo}</p>}
-                                    </div>
-                                  );
-                                }
-
-                                return <p className="text-gray-500">No hay dirección registrada</p>;
-                              };
-
-                              // Intentar con shipping_address primero, luego delivery_address
-                              if (order.shipping_address) {
-                                return formatAddress(order.shipping_address);
-                              }
-                              if (order.delivery_address) {
-                                return formatAddress(order.delivery_address);
-                              }
-                              return <p className="text-gray-500">No hay dirección registrada</p>;
-                            })()}
-                            {order.delivery_notes && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                <strong>Notas:</strong> {order.delivery_notes}
-                              </p>
-                            )}
-                            {order.notes && (
-                              <p className="text-sm text-gray-600 mt-1">
-                                <strong>Notas del pedido:</strong> {order.notes}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Productos */}
-                        {orderItems.length > 0 && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-700 mb-2">Productos del Pedido</p>
-                            <div className="space-y-2">
-                              {orderItems.map((item: any, index: number) => (
-                                <div
-                                  key={index}
-                                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                                >
-                                  <div>
-                                    <p className="font-medium text-gray-900">
-                                      {item.product_snapshot?.name ||
-                                        item.products?.name ||
-                                        item.product_name ||
-                                        item.productName ||
-                                        'Producto'}
-                                    </p>
-                                    {item.variantName && (
-                                      <p className="text-sm text-gray-600">{item.variantName}</p>
-                                    )}
-                                  </div>
-                                  <div className="text-right">
-                                    <p className="font-semibold text-gray-900">
-                                      {item.quantity} × {formatCurrency(item.unit_price || item.price || 0)}
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                      {formatCurrency(item.subtotal || ((item.price || 0) * item.quantity) || 0)}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
+                        {customerInfo.phone && (
+                          <div className="flex items-start gap-2">
+                            <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <p className="text-sm text-gray-500">Teléfono</p>
+                              <a
+                                href={`tel:${customerInfo.phone}`}
+                                className="font-medium text-green-600 hover:text-green-700"
+                              >
+                                {customerInfo.phone}
+                              </a>
                             </div>
                           </div>
                         )}
+                        {order.delivery_date && (
+                          <div className="flex items-start gap-2">
+                            <Calendar className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <p className="text-sm text-gray-500">Fecha de Entrega</p>
+                              <p className="font-medium text-gray-900">{formatDate(order.delivery_date)}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
-                        {/* Resumen Financiero Integrado */}
-                        {orderItems.length > 0 && (() => {
-                          const calculations = calculateOrderSummary(order, orderItems);
-                          return (
-                            <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
-                              <p className="text-sm font-medium text-gray-700 mb-3">Resumen del Pedido</p>
+                      {/* Detalles expandibles */}
+                      {expandedOrder === order.id && (
+                        <div className="border-t border-gray-200 pt-4 mt-4 space-y-4">
+                          {/* Dirección */}
+                          <div className="flex items-start gap-2">
+                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <p className="text-sm text-gray-500">Dirección de Entrega</p>
+                              {(() => {
+                                // Función auxiliar para formatear dirección (objeto o string)
+                                const formatAddress = (addr: any): React.ReactElement => {
+                                  if (!addr) return <p className="text-gray-500">No hay dirección registrada</p>;
 
-                              {/* Subtotal de productos */}
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Subtotal productos:</span>
-                                <span className="font-medium text-gray-900">
-                                  {formatCurrency(calculations.subtotal)}
-                                </span>
-                              </div>
+                                  // Si es un string, intentar parsearlo como JSON
+                                  if (typeof addr === 'string') {
+                                    try {
+                                      const parsed = JSON.parse(addr);
+                                      return formatAddress(parsed); // Recursivamente formatear el objeto
+                                    } catch {
+                                      // Es un string simple, mostrarlo tal cual
+                                      return <p className="text-gray-900">{addr}</p>;
+                                    }
+                                  }
 
-                              {/* Costo de envío */}
-                              <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-600">Envío:</span>
-                                <span className={`font-medium ${calculations.shippingFee > 0 ? 'text-gray-900' : 'text-green-600'}`}>
-                                  {calculations.shippingFee > 0 ? formatCurrency(calculations.shippingFee) : 'GRATIS'}
-                                </span>
-                              </div>
+                                  // Si es un objeto, extraer las propiedades
+                                  if (typeof addr === 'object') {
+                                    const streetAddress = addr.street_address || addr.address || addr.street || '';
+                                    const city = addr.city || '';
+                                    const state = addr.state || addr.department || '';
+                                    const postalCode = addr.postal_code || '';
+                                    const additionalInfo = addr.additional_info || '';
 
-                              {/* Descuentos (si aplica) */}
-                              {calculations.discount > 0 && (
-                                <div className="flex justify-between items-center text-sm">
-                                  <span className="text-gray-600">
-                                    Descuento{calculations.couponCode ? ` (${calculations.couponCode})` : ''}:
-                                  </span>
-                                  <span className="font-medium text-red-600">
-                                    -{formatCurrency(calculations.discount)}
-                                  </span>
-                                </div>
+                                    // Si no hay datos útiles, mostrar mensaje vacío
+                                    if (!streetAddress && !city) {
+                                      return <p className="text-gray-500">No hay dirección registrada</p>;
+                                    }
+
+                                    return (
+                                      <div className="text-gray-900">
+                                        {streetAddress && <p>{streetAddress}</p>}
+                                        {(city || state) && <p>{[city, state].filter(Boolean).join(', ')}</p>}
+                                        {postalCode && <p>Código Postal: {postalCode}</p>}
+                                        {additionalInfo && <p className="text-sm text-gray-600">Info: {additionalInfo}</p>}
+                                      </div>
+                                    );
+                                  }
+
+                                  return <p className="text-gray-500">No hay dirección registrada</p>;
+                                };
+
+                                // Intentar con shipping_address primero, luego delivery_address
+                                if (order.shipping_address) {
+                                  return formatAddress(order.shipping_address);
+                                }
+                                if (order.delivery_address) {
+                                  return formatAddress(order.delivery_address);
+                                }
+                                return <p className="text-gray-500">No hay dirección registrada</p>;
+                              })()}
+                              {order.delivery_notes && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  <strong>Notas:</strong> {order.delivery_notes}
+                                </p>
                               )}
-
-                              {/* Total final */}
-                              <div className="flex justify-between items-center pt-2 border-t border-gray-300">
-                                <span className="text-base font-semibold text-gray-900">Total a pagar:</span>
-                                <span className="text-lg font-bold text-green-600">
-                                  {formatCurrency(calculations.total)}
-                                </span>
-                              </div>
-
-                              {/* Indicadores especiales para el administrador */}
-                              {calculations.isEstimated && (
-                                <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                                  <strong>Nota:</strong> Valores calculados (pedido de invitado)
-                                </div>
-                              )}
-
-                              {calculations.hasDiscrepancy && (
-                                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
-                                  <strong>Advertencia:</strong> Hay una diferencia de {formatCurrency(Math.abs(calculations.calculatedTotal - calculations.total))} entre el total calculado y el guardado
-                                </div>
-                              )}
-
-                              {calculations.hasFreeShipping && calculations.subtotal > 0 && (
-                                <div className="flex justify-between items-center text-xs text-green-600 mt-1">
-                                  <span>Envío gratis aplicado</span>
-                                  <span>✓</span>
-                                </div>
+                              {order.notes && (
+                                <p className="text-sm text-gray-600 mt-1">
+                                  <strong>Notas del pedido:</strong> {order.notes}
+                                </p>
                               )}
                             </div>
-                          );
-                        })()}
-                      </div>
-                    )}
+                          </div>
 
-                    {/* Acciones */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 pt-4 border-t border-gray-200">
-                      <button
-                        onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                        className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm"
-                      >
-                        {expandedOrder === order.id ? 'Ocultar detalles' : 'Ver detalles'}
-                      </button>
+                          {/* Productos */}
+                          {orderItems.length > 0 && (
+                            <div>
+                              <p className="text-sm font-medium text-gray-700 mb-2">Productos del Pedido</p>
+                              <div className="space-y-2">
+                                {orderItems.map((item: any, index: number) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                                  >
+                                    <div>
+                                      <p className="font-medium text-gray-900">
+                                        {item.product_snapshot?.name ||
+                                          item.products?.name ||
+                                          item.product_name ||
+                                          item.productName ||
+                                          'Producto'}
+                                      </p>
+                                      {item.variantName && (
+                                        <p className="text-sm text-gray-600">{item.variantName}</p>
+                                      )}
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="font-semibold text-gray-900">
+                                        {item.quantity} × {formatCurrency(item.unit_price || item.price || 0)}
+                                      </p>
+                                      <p className="text-sm text-gray-600">
+                                        {formatCurrency(item.subtotal || ((item.price || 0) * item.quantity) || 0)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Quick action buttons based on current status */}
-                      {order.status === 'pending' && (
+                          {/* Resumen Financiero Integrado */}
+                          {orderItems.length > 0 && (() => {
+                            const calculations = calculateOrderSummary(order, orderItems);
+                            return (
+                              <div className="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                                <p className="text-sm font-medium text-gray-700 mb-3">Resumen del Pedido</p>
+
+                                {/* Subtotal de productos */}
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600">Subtotal productos:</span>
+                                  <span className="font-medium text-gray-900">
+                                    {formatCurrency(calculations.subtotal)}
+                                  </span>
+                                </div>
+
+                                {/* Costo de envío */}
+                                <div className="flex justify-between items-center text-sm">
+                                  <span className="text-gray-600">Envío:</span>
+                                  <span className={`font-medium ${calculations.shippingFee > 0 ? 'text-gray-900' : 'text-green-600'}`}>
+                                    {calculations.shippingFee > 0 ? formatCurrency(calculations.shippingFee) : 'GRATIS'}
+                                  </span>
+                                </div>
+
+                                {/* Descuentos (si aplica) */}
+                                {calculations.discount > 0 && (
+                                  <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">
+                                      Descuento{calculations.couponCode ? ` (${calculations.couponCode})` : ''}:
+                                    </span>
+                                    <span className="font-medium text-red-600">
+                                      -{formatCurrency(calculations.discount)}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {/* Total final */}
+                                <div className="flex justify-between items-center pt-2 border-t border-gray-300">
+                                  <span className="text-base font-semibold text-gray-900">Total a pagar:</span>
+                                  <span className="text-lg font-bold text-green-600">
+                                    {formatCurrency(calculations.total)}
+                                  </span>
+                                </div>
+
+                                {/* Indicadores especiales para el administrador */}
+                                {calculations.isEstimated && (
+                                  <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                                    <strong>Nota:</strong> Valores calculados (pedido de invitado)
+                                  </div>
+                                )}
+
+                                {calculations.hasDiscrepancy && (
+                                  <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-800">
+                                    <strong>Advertencia:</strong> Hay una diferencia de {formatCurrency(Math.abs(calculations.calculatedTotal - calculations.total))} entre el total calculado y el guardado
+                                  </div>
+                                )}
+
+                                {calculations.hasFreeShipping && calculations.subtotal > 0 && (
+                                  <div className="flex justify-between items-center text-xs text-green-600 mt-1">
+                                    <span>Envío gratis aplicado</span>
+                                    <span>✓</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      )}
+
+                      {/* Acciones */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mt-4 pt-4 border-t border-gray-200">
                         <button
-                          onClick={() => handleUpdateStatus(order.id, 'confirmed')}
-                          disabled={updatingOrder === order.id}
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                          onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
+                          className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm"
                         >
-                          <CheckCircle className="w-4 h-4" />
-                          Confirmar
+                          {expandedOrder === order.id ? 'Ocultar detalles' : 'Ver detalles'}
                         </button>
-                      )}
-                      {order.status === 'confirmed' && (
-                        <button
-                          onClick={() => handleUpdateStatus(order.id, 'processing')}
-                          disabled={updatingOrder === order.id}
-                          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-                        >
-                          <ChefHat className="w-4 h-4" />
-                          En Preparación
-                        </button>
-                      )}
-                      {order.status === 'processing' && (
-                        <button
-                          onClick={() => handleUpdateStatus(order.id, 'shipped')}
-                          disabled={updatingOrder === order.id}
-                          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-                        >
-                          <Truck className="w-4 h-4" />
-                          Enviar
-                        </button>
-                      )}
-                      {(order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped') && (
-                        <button
-                          onClick={() => handleUpdateStatus(order.id, 'delivered')}
-                          disabled={updatingOrder === order.id}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-                          title={order.status === 'shipped' ? 'Marcar como entregado' : 'Marcar como entregado (salta pasos)'}
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                          Marcar Entregado
-                        </button>
-                      )}
 
-                      <div className="flex-1 sm:flex-none">
-                        <select
-                          value={order.status || 'pending'}
-                          onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                          disabled={updatingOrder === order.id}
-                          className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:opacity-50"
-                        >
-                          <option value="pending">Pendiente</option>
-                          <option value="confirmed">Confirmado</option>
-                          <option value="processing">En Preparación</option>
-                          <option value="shipped">En Camino</option>
-                          <option value="delivered">Entregado</option>
-                          <option value="cancelled">Cancelado</option>
-                        </select>
-                      </div>
-
-                      {updatingOrder === order.id && (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
-                      )}
-
-                      {/* Copy buttons */}
-                      <div className="flex gap-2">
-                        {/* Copy Address button */}
-                        {getAddressText(order) && (
+                        {/* Quick action buttons based on current status */}
+                        {order.status === 'pending' && (
                           <button
-                            onClick={() => copyToClipboard(getAddressText(order), `addr-${order.id}`)}
-                            className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${
-                              copiedItems.has(`addr-${order.id}`)
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            }`}
-                            title="Copiar dirección"
+                            onClick={() => handleUpdateStatus(order.id, 'confirmed')}
+                            disabled={updatingOrder === order.id}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
                           >
-                            {copiedItems.has(`addr-${order.id}`) ? (
+                            <CheckCircle className="w-4 h-4" />
+                            Confirmar
+                          </button>
+                        )}
+                        {order.status === 'confirmed' && (
+                          <button
+                            onClick={() => handleUpdateStatus(order.id, 'processing')}
+                            disabled={updatingOrder === order.id}
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <ChefHat className="w-4 h-4" />
+                            En Preparación
+                          </button>
+                        )}
+                        {order.status === 'processing' && (
+                          <button
+                            onClick={() => handleUpdateStatus(order.id, 'shipped')}
+                            disabled={updatingOrder === order.id}
+                            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                          >
+                            <Truck className="w-4 h-4" />
+                            Enviar
+                          </button>
+                        )}
+                        {(order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped') && (
+                          <button
+                            onClick={() => handleUpdateStatus(order.id, 'delivered')}
+                            disabled={updatingOrder === order.id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
+                            title={order.status === 'shipped' ? 'Marcar como entregado' : 'Marcar como entregado (salta pasos)'}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Marcar Entregado
+                          </button>
+                        )}
+
+                        <div className="flex-1 sm:flex-none">
+                          <select
+                            value={order.status || 'pending'}
+                            onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
+                            disabled={updatingOrder === order.id}
+                            className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none disabled:opacity-50"
+                          >
+                            <option value="pending">Pendiente</option>
+                            <option value="confirmed">Confirmado</option>
+                            <option value="processing">En Preparación</option>
+                            <option value="shipped">En Camino</option>
+                            <option value="delivered">Entregado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </div>
+
+                        {updatingOrder === order.id && (
+                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                        )}
+
+                        {/* Copy buttons */}
+                        <div className="flex gap-2">
+                          {/* Copy Address button */}
+                          {getAddressText(order) && (
+                            <button
+                              onClick={() => copyToClipboard(getAddressText(order), `addr-${order.id}`)}
+                              className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${copiedItems.has(`addr-${order.id}`)
+                                  ? 'bg-green-100 text-green-700'
+                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                }`}
+                              title="Copiar dirección"
+                            >
+                              {copiedItems.has(`addr-${order.id}`) ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Copiado
+                                </>
+                              ) : (
+                                <>
+                                  <MapPin className="w-4 h-4" />
+                                  Dirección
+                                </>
+                              )}
+                            </button>
+                          )}
+
+                          {/* Copy Summary button */}
+                          <button
+                            onClick={() => copyToClipboard(getOrderSummaryText(order, customerInfo.name, orderItems), `sum-${order.id}`)}
+                            className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${copiedItems.has(`sum-${order.id}`)
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                              }`}
+                            title="Copiar resumen del pedido"
+                          >
+                            {copiedItems.has(`sum-${order.id}`) ? (
                               <>
                                 <Check className="w-4 h-4" />
                                 Copiado
                               </>
                             ) : (
                               <>
-                                <MapPin className="w-4 h-4" />
-                                Dirección
+                                <ClipboardList className="w-4 h-4" />
+                                Resumen
                               </>
                             )}
                           </button>
+                        </div>
+
+                        {/* WhatsApp buttons wrapper */}
+                        {customerInfo.phone && (
+                          <div className="flex gap-2">
+                            {/* Basic WhatsApp button */}
+                            <a
+                              href={(() => {
+                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                return `https://wa.me/${fullPhone}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`;
+                              })()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
+                            >
+                              WhatsApp
+                            </a>
+
+                            {/* Order Summary WhatsApp button */}
+                            <a
+                              href={generateWhatsAppURL(
+                                customerInfo.phone,
+                                generateOrderSummary({
+                                  ...order,
+                                  order_type: order.user_id ? 'registered' : 'guest',
+                                  customer_name: customerInfo.name,
+                                  customer_phone: customerInfo.phone
+                                })
+                              )}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm text-center flex items-center gap-2"
+                              title="Enviar resumen por WhatsApp"
+                            >
+                              <FileText className="w-4 h-4" />
+                              WA Resumen
+                            </a>
+                          </div>
                         )}
 
-                        {/* Copy Summary button */}
+                        {/* Edit button - for all orders */}
                         <button
-                          onClick={() => copyToClipboard(getOrderSummaryText(order, customerInfo.name, orderItems), `sum-${order.id}`)}
-                          className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${
-                            copiedItems.has(`sum-${order.id}`)
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                          }`}
-                          title="Copiar resumen del pedido"
+                          onClick={() => setEditingOrder(order)}
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
                         >
-                          {copiedItems.has(`sum-${order.id}`) ? (
-                            <>
-                              <Check className="w-4 h-4" />
-                              Copiado
-                            </>
-                          ) : (
-                            <>
-                              <ClipboardList className="w-4 h-4" />
-                              Resumen
-                            </>
-                          )}
+                          <Edit className="w-4 h-4" />
+                          Editar
+                        </button>
+
+                        {/* Delete button */}
+                        <button
+                          onClick={() => deleteOrder(order.id, order.id.substring(0, 8))}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Eliminar
                         </button>
                       </div>
+                    </div>
+                  </div>
+                );
+              })}
 
-                      {/* WhatsApp buttons wrapper */}
-                      {customerInfo.phone && (
-                        <div className="flex gap-2">
-                          {/* Basic WhatsApp button */}
-                          <a
-                            href={(() => {
-                              const cleanPhone = customerInfo.phone.replace(/\D/g, '');
-                              const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                              return `https://wa.me/${fullPhone}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`;
-                            })()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
-                          >
-                            WhatsApp
-                          </a>
-
-                          {/* Order Summary WhatsApp button */}
-                          <a
-                            href={generateWhatsAppURL(
-                              customerInfo.phone,
-                              generateOrderSummary({
-                                ...order,
-                                order_type: order.user_id ? 'registered' : 'guest',
-                                customer_name: customerInfo.name,
-                                customer_phone: customerInfo.phone
-                              })
-                            )}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm text-center flex items-center gap-2"
-                            title="Enviar resumen por WhatsApp"
-                          >
-                            <FileText className="w-4 h-4" />
-                            WA Resumen
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Edit button - for all orders */}
+              {/* Paginación */}
+              {pagination.totalPages > 1 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-700">
+                      Página {pagination.page} de {pagination.totalPages} | Total: {pagination.total} pedidos
+                    </div>
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => setEditingOrder(order)}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                        disabled={pagination.page === 1}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Edit className="w-4 h-4" />
-                        Editar
+                        <ChevronLeft className="w-5 h-5" />
                       </button>
-
-                      {/* Delete button */}
                       <button
-                        onClick={() => deleteOrder(order.id, order.id.substring(0, 8))}
-                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                        onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                        disabled={pagination.page === pagination.totalPages}
+                        className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Trash2 className="w-4 h-4" />
-                        Eliminar
+                        <ChevronRight className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-
-            {/* Paginación */}
-            {pagination.totalPages > 1 && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-700">
-                    Página {pagination.page} de {pagination.totalPages} | Total: {pagination.total} pedidos
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
-                      disabled={pagination.page === 1}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
-                      disabled={pagination.page === pagination.totalPages}
-                      className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+              )}
+            </>
           );
         })()}
       </div>
