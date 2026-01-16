@@ -109,6 +109,12 @@ export default function CreateOrderPage() {
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
+  // Estado para búsqueda global de productos
+  const [globalProductSearch, setGlobalProductSearch] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] = useState<Product[]>([]);
+  const [loadingGlobalSearch, setLoadingGlobalSearch] = useState(false);
+  const [showGlobalSearchResults, setShowGlobalSearchResults] = useState(false);
+
   useEffect(() => {
     loadCategories();
   }, []);
@@ -162,6 +168,104 @@ export default function CreateOrderPage() {
       setLoading(false);
     }
   };
+
+  // Función para normalizar texto (quitar acentos, lowercase)
+  const normalizeText = (text: string): string => {
+    if (!text) return '';
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim();
+  };
+
+  // Búsqueda global de productos (todas las categorías)
+  const searchProductsGlobal = async (query: string) => {
+    if (query.length < 2) {
+      setGlobalSearchResults([]);
+      setShowGlobalSearchResults(false);
+      return;
+    }
+
+    setLoadingGlobalSearch(true);
+    try {
+      // Buscar en todas las categorías sin filtro de categoría
+      const params = new URLSearchParams();
+      params.set('status', 'active');
+      params.set('limit', '50'); // Más resultados para filtrar localmente
+      params.set('search', query);
+
+      const response = await fetch(`/api/admin/products/?${params}`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        const activeProducts = (data.data || []).filter((p: Product) => p.is_active);
+
+        // Aplicar scoring local para ordenar por relevancia
+        const searchTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+        const scoredProducts = activeProducts.map((product: Product) => {
+          let score = 0;
+          const productName = normalizeText(product.name);
+
+          for (const term of searchTerms) {
+            const normalizedTerm = normalizeText(term);
+
+            // Coincidencia exacta del nombre
+            if (productName === normalizedTerm) {
+              score += 100;
+            }
+            // Nombre empieza con el término
+            else if (productName.startsWith(normalizedTerm)) {
+              score += 80;
+            }
+            // Alguna palabra del nombre coincide
+            else {
+              const words = productName.split(' ');
+              for (const word of words) {
+                if (word === normalizedTerm) {
+                  score += 70;
+                } else if (word.startsWith(normalizedTerm)) {
+                  score += 50;
+                } else if (word.includes(normalizedTerm) && normalizedTerm.length >= 2) {
+                  score += 30;
+                }
+              }
+            }
+          }
+
+          return { ...product, searchScore: score };
+        });
+
+        // Filtrar y ordenar por score
+        const filteredProducts = scoredProducts
+          .filter((p: Product & { searchScore: number }) => p.searchScore > 0)
+          .sort((a: Product & { searchScore: number }, b: Product & { searchScore: number }) => b.searchScore - a.searchScore)
+          .slice(0, 15); // Limitar a 15 resultados
+
+        setGlobalSearchResults(filteredProducts);
+        setShowGlobalSearchResults(true);
+      }
+    } catch (error) {
+      console.error('Error en búsqueda global de productos:', error);
+    } finally {
+      setLoadingGlobalSearch(false);
+    }
+  };
+
+  // Efecto para búsqueda global de productos con debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (globalProductSearch) {
+        searchProductsGlobal(globalProductSearch);
+      } else {
+        setGlobalSearchResults([]);
+        setShowGlobalSearchResults(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [globalProductSearch]);
 
   // Buscar clientes para autocompletado (búsqueda inteligente)
   const searchCustomers = async (query: string) => {
@@ -539,10 +643,116 @@ export default function CreateOrderPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Columna izquierda: Selección de productos */}
         <div className="space-y-4">
+          {/* 🔍 BÚSQUEDA GLOBAL DE PRODUCTOS (Nueva) */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              🔍 Búsqueda rápida de productos
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar cualquier producto (ej: aguacate, fresa, combo...)"
+                value={globalProductSearch}
+                onChange={(e) => setGlobalProductSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
+              />
+              {loadingGlobalSearch && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+            </div>
+
+            {/* Resultados de búsqueda global */}
+            {showGlobalSearchResults && globalSearchResults.length > 0 && (
+              <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
+                <div className="bg-blue-50 p-2 border-b border-gray-200">
+                  <p className="text-sm text-blue-800 font-medium">
+                    ✨ {globalSearchResults.length} resultado{globalSearchResults.length !== 1 ? 's' : ''} encontrado{globalSearchResults.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto divide-y divide-gray-100">
+                  {globalSearchResults.map((product) => (
+                    <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center gap-3">
+                        {product.main_image_url ? (
+                          <img
+                            src={product.main_image_url}
+                            alt={product.name}
+                            className="w-12 h-12 rounded-lg object-cover flex-shrink-0"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-5 h-5 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 text-sm">{product.name}</p>
+                          <p className="text-green-600 font-medium text-sm">{formatCurrency(product.price)}</p>
+                          {product.categories && (
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                              {product.categories.name}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <button
+                            onClick={() => {
+                              addToOrder(product);
+                              setGlobalProductSearch('');
+                              setShowGlobalSearchResults(false);
+                            }}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
+                          >
+                            <Plus className="w-3 h-3" />
+                            Agregar
+                          </button>
+                        </div>
+                      </div>
+                      {/* Mostrar variantes si existen */}
+                      {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
+                        <div className="mt-2 ml-15 flex flex-wrap gap-1">
+                          {(product.variants || product.product_variants || [])
+                            .filter((v) => v.is_active)
+                            .slice(0, 3)
+                            .map((variant) => (
+                              <button
+                                key={variant.id}
+                                onClick={() => {
+                                  addToOrder(product, variant);
+                                  setGlobalProductSearch('');
+                                  setShowGlobalSearchResults(false);
+                                }}
+                                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                              >
+                                {variant.variant_value} - {formatCurrency(variant.price_adjustment || product.price)}
+                              </button>
+                            ))}
+                          {((product.variants?.length || 0) + (product.product_variants?.length || 0)) > 3 && (
+                            <span className="text-xs text-gray-500 px-2 py-1">+más</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Sin resultados */}
+            {showGlobalSearchResults && globalSearchResults.length === 0 && globalProductSearch.length >= 2 && !loadingGlobalSearch && (
+              <div className="mt-3 p-4 bg-gray-50 rounded-lg text-center">
+                <p className="text-gray-500 text-sm">No se encontraron productos para "{globalProductSearch}"</p>
+                <p className="text-xs text-gray-400 mt-1">Intenta con otro término o busca por categoría</p>
+              </div>
+            )}
+          </div>
+
           {/* Selector de Categoría */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              1. Selecciona una categoría
+              📂 O selecciona una categoría
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {loadingCategories ? (
@@ -556,10 +766,12 @@ export default function CreateOrderPage() {
                     onClick={() => {
                       setSelectedCategory(category.id);
                       setSearch('');
+                      setGlobalProductSearch(''); // Limpiar búsqueda global
+                      setShowGlobalSearchResults(false);
                     }}
                     className={`p-3 rounded-lg border text-sm font-medium transition-all ${selectedCategory === category.id
-                        ? 'bg-green-600 text-white border-green-600'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-green-500 hover:bg-green-50'
+                      ? 'bg-green-600 text-white border-green-600'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-green-500 hover:bg-green-50'
                       }`}
                   >
                     {category.name}
