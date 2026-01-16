@@ -13,7 +13,9 @@ import {
   Copy,
   MapPin,
   ClipboardList,
-  Check
+  Check,
+  DollarSign,
+  Truck
 } from 'lucide-react';
 
 interface OrderItem {
@@ -54,6 +56,12 @@ interface Order {
   items?: OrderItem[];
   order_type?: 'registered' | 'guest';
   order_data?: any;
+  // Campos de totales
+  total?: number;
+  total_amount?: number;
+  subtotal?: number;
+  shipping_fee?: number;
+  shipping_cost?: number;
 }
 
 // Desglose de un producto por cliente
@@ -377,6 +385,40 @@ export default function ListaComprasPage() {
     );
   }, [orders, selectedOrders]);
 
+  // Calcular resumen de ventas de pedidos seleccionados
+  const salesSummary = useMemo(() => {
+    const selectedOrdersList = orders.filter(order => selectedOrders.has(order.id));
+
+    let totalProducts = 0;   // Total en productos (subtotal)
+    let totalShipping = 0;   // Total en domicilios
+    let totalGeneral = 0;    // Total general
+
+    selectedOrdersList.forEach(order => {
+      // Obtener subtotal de productos
+      const orderSubtotal = order.subtotal || 0;
+
+      // Obtener costo de envío
+      const shippingCost = order.shipping_fee || order.shipping_cost || order.order_data?.shipping_cost || 0;
+
+      // Obtener total del pedido
+      const orderTotal = order.total || order.total_amount || (orderSubtotal + shippingCost);
+
+      // Si no hay subtotal, intentar calcularlo restando el envío
+      const productAmount = orderSubtotal || (orderTotal - shippingCost);
+
+      totalProducts += productAmount;
+      totalShipping += shippingCost;
+      totalGeneral += orderTotal;
+    });
+
+    return {
+      productTotal: totalProducts,
+      shippingTotal: totalShipping,
+      grandTotal: totalGeneral,
+      ordersCount: selectedOrdersList.length
+    };
+  }, [orders, selectedOrders]);
+
   // Toggle selección individual
   const toggleOrderSelection = (orderId: string) => {
     const newSelected = new Set(selectedOrders);
@@ -598,6 +640,42 @@ export default function ListaComprasPage() {
               <p className="text-2xl font-bold text-blue-600">{groupedProducts.length}</p>
             </div>
           </div>
+
+          {/* Resumen de Ventas de Pedidos Seleccionados */}
+          {selectedOrders.size > 0 && (
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                <h3 className="font-semibold text-green-800">Resumen de Ventas ({salesSummary.ordersCount} pedidos)</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Total en Productos */}
+                <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Package className="w-4 h-4 text-green-600" />
+                    <p className="text-sm text-gray-600">Venta en Productos</p>
+                  </div>
+                  <p className="text-xl font-bold text-green-700">{formatPrice(salesSummary.productTotal)}</p>
+                </div>
+                {/* Total en Domicilios */}
+                <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Truck className="w-4 h-4 text-blue-600" />
+                    <p className="text-sm text-gray-600">Recaudado en Domicilios</p>
+                  </div>
+                  <p className="text-xl font-bold text-blue-700">{formatPrice(salesSummary.shippingTotal)}</p>
+                </div>
+                {/* Total General */}
+                <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
+                  <div className="flex items-center gap-2 mb-1">
+                    <DollarSign className="w-4 h-4 text-purple-600" />
+                    <p className="text-sm text-gray-600">Total General</p>
+                  </div>
+                  <p className="text-xl font-bold text-purple-700">{formatPrice(salesSummary.grandTotal)}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Lista de Pedidos con Checkbox */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -821,11 +899,10 @@ export default function ListaComprasPage() {
                                           e.stopPropagation();
                                           copyToClipboard(customer.customer_address!, addressCopyId);
                                         }}
-                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
-                                          copiedItems.has(addressCopyId)
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                        }`}
+                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(addressCopyId)
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                          }`}
                                       >
                                         {copiedItems.has(addressCopyId) ? (
                                           <>
@@ -846,11 +923,10 @@ export default function ListaComprasPage() {
                                           e.stopPropagation();
                                           copyToClipboard(generateOrderSummary(customer), summaryCopyId);
                                         }}
-                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${
-                                          copiedItems.has(summaryCopyId)
-                                            ? 'bg-green-100 text-green-700'
-                                            : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                        }`}
+                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(summaryCopyId)
+                                          ? 'bg-green-100 text-green-700'
+                                          : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                          }`}
                                       >
                                         {copiedItems.has(summaryCopyId) ? (
                                           <>
