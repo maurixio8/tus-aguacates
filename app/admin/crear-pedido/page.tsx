@@ -163,7 +163,7 @@ export default function CreateOrderPage() {
     }
   };
 
-  // Buscar clientes para autocompletado
+  // Buscar clientes para autocompletado (búsqueda inteligente)
   const searchCustomers = async (query: string) => {
     if (query.length < 2) {
       setCustomerSuggestions([]);
@@ -173,7 +173,8 @@ export default function CreateOrderPage() {
 
     setLoadingCustomers(true);
     try {
-      const response = await fetch(`/api/admin/customers?search=${encodeURIComponent(query)}&limit=5`, {
+      // Límite aumentado a 10 para busqueda más completa
+      const response = await fetch(`/api/admin/customers?search=${encodeURIComponent(query)}&limit=10`, {
         credentials: 'include',
       });
       const data = await response.json();
@@ -556,11 +557,10 @@ export default function CreateOrderPage() {
                       setSelectedCategory(category.id);
                       setSearch('');
                     }}
-                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${
-                      selectedCategory === category.id
+                    className={`p-3 rounded-lg border text-sm font-medium transition-all ${selectedCategory === category.id
                         ? 'bg-green-600 text-white border-green-600'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-green-500 hover:bg-green-50'
-                    }`}
+                      }`}
                   >
                     {category.name}
                   </button>
@@ -628,9 +628,8 @@ export default function CreateOrderPage() {
                                 <Layers className="w-3 h-3" />
                                 {(product.variants?.length || product.product_variants?.length || 0)} variante(s)
                                 <ChevronRight
-                                  className={`w-3 h-3 transition-transform ${
-                                    expandedProduct === product.id ? 'rotate-90' : ''
-                                  }`}
+                                  className={`w-3 h-3 transition-transform ${expandedProduct === product.id ? 'rotate-90' : ''
+                                    }`}
                                 />
                               </button>
                             )}
@@ -673,10 +672,10 @@ export default function CreateOrderPage() {
                               ))}
                             {(product.variants || product.product_variants || []).filter((v) => v.is_active === true && (v.stock_quantity === undefined || v.stock_quantity > 0))
                               .length === 0 && (
-                              <p className="text-sm text-gray-500 p-2">
-                                No hay variantes disponibles con stock
-                              </p>
-                            )}
+                                <p className="text-sm text-gray-500 p-2">
+                                  No hay variantes disponibles con stock
+                                </p>
+                              )}
                           </div>
                         )}
                       </div>

@@ -16,6 +16,98 @@ const normalizePhone = (phone: string): string => {
   return digits.startsWith('57') ? digits : '57' + digits;
 };
 
+// Normalizar texto para búsqueda (quitar acentos, espacios extra, etc)
+const normalizeText = (text: string): string => {
+  if (!text) return '';
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
+// Calcular score de relevancia para búsqueda inteligente
+interface CustomerForSearch {
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+}
+
+const calculateSearchScore = (customer: CustomerForSearch, searchTerms: string[]): number => {
+  let score = 0;
+
+  const name = normalizeText(customer.name || '');
+  const phone = (customer.phone || '').replace(/\D/g, '');
+  const email = normalizeText(customer.email || '');
+  const address = normalizeText(customer.address || '');
+
+  for (const term of searchTerms) {
+    const normalizedTerm = normalizeText(term);
+    const digitsTerm = term.replace(/\D/g, '');
+
+    // ===== BÚSQUEDA POR NOMBRE =====
+    // Coincidencia exacta del nombre completo (máximo score)
+    if (name === normalizedTerm) {
+      score += 100;
+    }
+    // Nombre empieza con el término (ej: "Juan" empieza con "Jua")
+    else if (name.startsWith(normalizedTerm)) {
+      score += 80;
+    }
+    // Alguna palabra del nombre empieza con el término
+    else {
+      const nameWords = name.split(' ');
+      for (const word of nameWords) {
+        if (word === normalizedTerm) {
+          score += 70; // Palabra exacta
+        } else if (word.startsWith(normalizedTerm)) {
+          score += 50; // Palabra empieza con término
+        } else if (word.includes(normalizedTerm) && normalizedTerm.length >= 3) {
+          score += 30; // Contiene término (mínimo 3 caracteres)
+        }
+      }
+    }
+
+    // ===== BÚSQUEDA POR TELÉFONO =====
+    if (digitsTerm.length >= 3) {
+      // Teléfono exacto
+      if (phone === digitsTerm || phone.endsWith(digitsTerm)) {
+        score += 100;
+      }
+      // Últimos dígitos coinciden (útil para buscar por los últimos 4 o más números)
+      else if (phone.includes(digitsTerm)) {
+        score += 70;
+      }
+      // Los dígitos están en el teléfono normalizado
+      else {
+        const phoneWithoutCountry = phone.startsWith('57') ? phone.slice(2) : phone;
+        if (phoneWithoutCountry.startsWith(digitsTerm) || phoneWithoutCountry.includes(digitsTerm)) {
+          score += 60;
+        }
+      }
+    }
+
+    // ===== BÚSQUEDA POR EMAIL =====
+    if (email && normalizedTerm.length >= 3) {
+      if (email.includes(normalizedTerm)) {
+        score += 40;
+      }
+    }
+
+    // ===== BÚSQUEDA POR DIRECCIÓN =====
+    if (address && normalizedTerm.length >= 3) {
+      if (address.includes(normalizedTerm)) {
+        score += 20;
+      }
+    }
+  }
+
+  return score;
+};
+
+
 // GET - Listar clientes con búsqueda y paginación
 // Ahora lee de TODAS las fuentes: customers, profiles, y guest_orders
 export async function GET(request: NextRequest) {
@@ -241,38 +333,47 @@ export async function GET(request: NextRequest) {
     }
 
     // ========================================
-    // 4. FILTRAR Y ORDENAR
+    // 4. FILTRAR Y ORDENAR (BÚSQUEDA INTELIGENTE)
     // ========================================
 
-    // Aplicar búsqueda adicional si es necesario
+    // Aplicar búsqueda inteligente con scoring
     if (search) {
-      const searchLower = search.toLowerCase();
-      allCustomers = allCustomers.filter(c =>
-        c.name?.toLowerCase().includes(searchLower) ||
-        c.phone?.toLowerCase().includes(searchLower) ||
-        c.email?.toLowerCase().includes(searchLower)
-      );
+      // Dividir la búsqueda en términos (permite buscar "Garcia Juan" para encontrar "Juan Garcia")
+      const searchTerms = search.trim().split(/\s+/).filter(t => t.length > 0);
+
+      // Calcular score para cada cliente
+      const scoredCustomers = allCustomers.map(customer => ({
+        ...customer,
+        searchScore: calculateSearchScore(customer, searchTerms)
+      }));
+
+      // Filtrar solo los que tienen algún match (score > 0)
+      allCustomers = scoredCustomers
+        .filter(c => c.searchScore > 0)
+        .sort((a, b) => b.searchScore - a.searchScore); // Ordenar por relevancia
+
+      console.log(`🔍 Búsqueda "${search}": ${allCustomers.length} resultados con score > 0`);
+    } else {
+      // Sin búsqueda, ordenar por el campo especificado
+      allCustomers.sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+
+        if (sortBy === 'total_spent' || sortBy === 'total_orders') {
+          aVal = parseFloat(aVal) || 0;
+          bVal = parseFloat(bVal) || 0;
+        }
+
+        if (aVal === null || aVal === undefined) aVal = '';
+        if (bVal === null || bVal === undefined) bVal = '';
+
+        if (sortOrder === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
     }
-
-    // Ordenar
-    allCustomers.sort((a, b) => {
-      let aVal = a[sortBy];
-      let bVal = b[sortBy];
-
-      if (sortBy === 'total_spent' || sortBy === 'total_orders') {
-        aVal = parseFloat(aVal) || 0;
-        bVal = parseFloat(bVal) || 0;
-      }
-
-      if (aVal === null || aVal === undefined) aVal = '';
-      if (bVal === null || bVal === undefined) bVal = '';
-
-      if (sortOrder === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
 
     // Total antes de paginar
     const total = allCustomers.length;
