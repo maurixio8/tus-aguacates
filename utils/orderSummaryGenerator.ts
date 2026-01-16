@@ -98,14 +98,44 @@ export function generateOrderSummary(order: Order): string {
   // Generate order number
   const orderNumber = order.order_number || `INV-${order.id.slice(-8)}`;
 
-  // Generate delivery date (2-3 business days from now)
-  const deliveryDate = new Date();
-  deliveryDate.setDate(deliveryDate.getDate() + 3);
-  const formattedDeliveryDate = deliveryDate.toLocaleDateString('es-ES', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  });
+  // Generate delivery date based on ORDER creation date (not current date)
+  // Uses delivery_date if available, otherwise calculates 2-3 business days from order creation
+  const getDeliveryDate = (): string => {
+    // If order has explicit delivery_date, use it
+    if ((order as any).delivery_date) {
+      const deliveryDate = new Date((order as any).delivery_date);
+      return deliveryDate.toLocaleDateString('es-ES', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    // Otherwise, calculate based on order creation date
+    const orderDate = new Date(order.created_at);
+    const deliveryDate = new Date(orderDate);
+
+    // Add 2 business days (skip weekends)
+    let daysToAdd = 2;
+    while (daysToAdd > 0) {
+      deliveryDate.setDate(deliveryDate.getDate() + 1);
+      const dayOfWeek = deliveryDate.getDay();
+      // Skip Saturday (6) and Sunday (0)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysToAdd--;
+      }
+    }
+
+    return deliveryDate.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  };
+
+  const formattedDeliveryDate = getDeliveryDate();
 
   // Get first name only from customer name
   const getFirstName = (fullName: string | undefined): string => {
@@ -133,35 +163,38 @@ export function generateOrderSummary(order: Order): string {
   const firstName = getFirstName(order.customer_name);
   const greeting = getGreeting();
 
-  // Build product list
+  // Build product list with checkmark emojis
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = item.variantName || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
 
-    // Format: "• 2x Zanahoria (1 kg) - $10,000" or "• 1x Cebolla - $3,000"
+    // Format: "✅ 2x Zanahoria (1 kg) - $10,000" or "✅ 1x Cebolla - $3,000"
     const productDisplay = variantName
-      ? `• ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
-      : `• ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
+      ? `✅ ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
+      : `✅ ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
 
     return productDisplay;
   }).join('\n');
+
+  // Total items count
+  const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   // Build financial summary based on whether there's a discount
   let financialSummary = '';
 
   if (hasDiscount && discountAmount > 0) {
     financialSummary = `💰 *Resumen:*
-• Subtotal: ${formatCurrency(subtotal)}
-• Envío: ${formatCurrency(expectedShipping)}
-• Descuento: -${formatCurrency(discountAmount)}
-💚 *Total:* ${formatCurrency(total)}`;
+✅ Subtotal: ${formatCurrency(subtotal)}
+✅ Envío: ${formatCurrency(expectedShipping)}
+🎁 Descuento: -${formatCurrency(discountAmount)}
+💚 *TOTAL:* ${formatCurrency(total)}`;
   } else {
     const shippingText = shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost);
     financialSummary = `💰 *Resumen:*
-• Subtotal: ${formatCurrency(subtotal)}
-• Envío: ${shippingText}
-💚 *Total:* ${formatCurrency(total)}`;
+✅ Subtotal: ${formatCurrency(subtotal)}
+✅ Envío: ${shippingText}
+💚 *TOTAL:* ${formatCurrency(total)}`;
   }
 
   // Generate delivery address
@@ -191,7 +224,7 @@ ${greeting}, ${firstName}! 👋
 
 Gracias por confiar en nosotros. Aquí está el resumen de tu pedido:
 
-📋 *Pedido #${orderNumber}*
+📋 *Pedido #${orderNumber}* (${totalItemsCount} producto${totalItemsCount !== 1 ? 's' : ''})
 
 📦 *Productos:*
 ${productList}
