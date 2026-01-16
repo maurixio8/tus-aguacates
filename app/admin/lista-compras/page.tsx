@@ -15,7 +15,9 @@ import {
   ClipboardList,
   Check,
   DollarSign,
-  Truck
+  Truck,
+  CheckCircle,
+  RotateCcw
 } from 'lucide-react';
 
 interface OrderItem {
@@ -117,6 +119,52 @@ export default function ListaComprasPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+  const [purchasedProducts, setPurchasedProducts] = useState<Set<string>>(new Set());
+
+  // Mapeo de combos a sus componentes reales
+  // Basado en información del usuario:
+  // - Combo Ahorro #1: 1kg fresas premium
+  // - Combo Ahorro #2: Caja 24 aguacates + Arándanos 250g
+  // - Combo Ahorro #3: Fresas económica 500g + Arándanos 250g + Paquete 4 aguacates injerto
+  // - Combo Mercado Semanal: Caja 24 aguacates, Fresa económica, Banano 1kg, Tomate 500g, Cebolla 500g, etc.
+  const COMBO_COMPONENTS: Record<string, Array<{ name: string; quantity: number; unit: string; variant?: string }>> = {
+    'combo ahorro #1': [
+      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' }
+    ],
+    'combo ahorro #2': [
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
+    ],
+    'combo ahorro #3': [
+      { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500grs' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' },
+      { name: 'Paquete 4 Unidades injerto', quantity: 1, unit: 'paq', variant: '4 unidades' }
+    ],
+    'nuevo combo 4': [
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' },
+      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' },
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' }
+    ],
+    'combo mercado semanal completo': [
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
+      { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500grs' },
+      { name: 'Banano criollo', quantity: 1, unit: 'kg', variant: '1 Kilo' },
+      { name: 'Tomate chonto', quantity: 1, unit: 'lb', variant: '500 gr' },
+      { name: 'Cebolla cabezona', quantity: 1, unit: 'lb', variant: '500 gr' },
+      { name: 'Papa Sabanera', quantity: 1, unit: 'lb', variant: 'X 500 grs' },
+      { name: 'Zanahoria', quantity: 1, unit: 'lb', variant: '500 gr' },
+      { name: 'Pasta de Ajo', quantity: 1, unit: 'unidad', variant: 'x100 gr' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X125grs' },
+      { name: 'Uva isabelina', quantity: 1, unit: 'bandeja', variant: '400grs' },
+      { name: 'Duraznos', quantity: 1, unit: 'lb', variant: '500 gr' },
+      { name: 'Limón Tahiti', quantity: 1, unit: 'kg', variant: '1000 gr' }
+    ],
+    'combo navideño premium': [
+      { name: 'Caja de 12 unidades Premium', quantity: 1, unit: 'caja', variant: '12 unidades' },
+      { name: 'Uva chilena importada', quantity: 1, unit: 'paq', variant: '500 grs' },
+      { name: 'Cerezas', quantity: 1, unit: 'paq', variant: '125 grs' }
+    ]
+  };
 
   // Inicializar con últimos 10 días
   useEffect(() => {
@@ -304,78 +352,119 @@ export default function ListaComprasPage() {
           item.productName ||
           'Producto sin nombre';
 
-        // Extraer variante si existe
-        const variantName = item.product_snapshot?.variant_name || null;
-        const variantValue = item.product_snapshot?.variant_value || null;
-        const variantDisplay = variantName || variantValue || null;
+        // Verificar si es un combo y obtener sus componentes
+        const comboKey = productName.toLowerCase();
+        const comboComponents = COMBO_COMPONENTS[comboKey] ||
+          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
 
-        // Precio unitario de venta
-        const unitPrice = item.unit_price || item.price || 0;
+        if (comboComponents) {
+          // Es un combo - desglosar en sus componentes
+          comboComponents.forEach(component => {
+            const componentKey = `${component.name}|${component.variant || 'Sin variante'}|COMBO`;
 
-        // Extraer peso de la variante (si existe)
-        const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
+            // Info del cliente para este componente (del combo)
+            const customerInfo: CustomerBreakdown = {
+              customer_name: customerName,
+              customer_address: customerAddress,
+              order_id: order.id,
+              variant_name: component.variant,
+              quantity: component.quantity * item.quantity,
+              order_items: orderSummaries.get(order.id)
+            };
 
-        // Crear clave de agrupación: producto + variante + precio
-        const variantKey = variantDisplay || 'Sin variante';
-        const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
-
-        // Calcular peso para este item
-        const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
-        const itemWeightDisplay = itemWeightGrams ? formatWeight(itemWeightGrams) : undefined;
-
-        // Info del cliente para este item
-        const customerInfo: CustomerBreakdown = {
-          customer_name: customerName,
-          customer_address: customerAddress,
-          order_id: order.id,
-          variant_name: variantDisplay || undefined,
-          quantity: item.quantity,
-          weight_grams: itemWeightGrams,
-          weight_display: itemWeightDisplay,
-          order_items: orderSummaries.get(order.id)
-        };
-
-        // Verificar si ya existe este grupo
-        if (productMap.has(groupingKey)) {
-          const existing = productMap.get(groupingKey)!;
-          existing.total_quantity += item.quantity;
-          existing.orders_count += 1;
-
-          // Agregar desglose por cliente
-          existing.customer_breakdown.push(customerInfo);
-
-          // Recalcular peso total si hay peso por unidad
-          if (existing.weight_per_unit_grams && itemWeightGrams) {
-            existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
-            existing.total_weight_display = formatWeight(existing.total_weight_grams);
-          }
-        } else {
-          // Crear nombre a mostrar
-          let displayName = productName;
-
-          // Si hay variante separada, agregarla
-          if (variantDisplay) {
-            displayName = `${productName} (${variantDisplay})`;
-          }
-
-          // Calcular peso total inicial
-          const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
-          const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
-
-          productMap.set(groupingKey, {
-            grouping_key: groupingKey,
-            product_name: productName,
-            variant_name: variantDisplay || undefined,
-            variant_value: variantValue || undefined,
-            display_name: displayName,
-            unit_price: unitPrice,
-            total_quantity: item.quantity,
-            weight_per_unit_grams: weightPerUnitGrams,
-            total_weight_grams: initialWeightGrams,
-            total_weight_display: weightDisplay,
-            orders_count: 1,
-            customer_breakdown: [customerInfo]
+            if (productMap.has(componentKey)) {
+              const existing = productMap.get(componentKey)!;
+              existing.total_quantity += component.quantity * item.quantity;
+              existing.orders_count += 1;
+              existing.customer_breakdown.push(customerInfo);
+            } else {
+              productMap.set(componentKey, {
+                grouping_key: componentKey,
+                product_name: component.name,
+                variant_name: component.variant,
+                display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
+                unit_price: 0, // No tiene precio individual
+                total_quantity: component.quantity * item.quantity,
+                orders_count: 1,
+                customer_breakdown: [customerInfo]
+              });
+            }
           });
+        } else {
+          // Producto normal (no es combo)
+          // Extraer variante si existe
+          const variantName = item.product_snapshot?.variant_name || null;
+          const variantValue = item.product_snapshot?.variant_value || null;
+          const variantDisplay = variantName || variantValue || null;
+
+          // Precio unitario de venta
+          const unitPrice = item.unit_price || item.price || 0;
+
+          // Extraer peso de la variante (si existe)
+          const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
+
+          // Crear clave de agrupación: producto + variante + precio
+          const variantKey = variantDisplay || 'Sin variante';
+          const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
+
+          // Calcular peso para este item
+          const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+          const itemWeightDisplay = itemWeightGrams ? formatWeight(itemWeightGrams) : undefined;
+
+          // Info del cliente para este item
+          const customerInfo: CustomerBreakdown = {
+            customer_name: customerName,
+            customer_address: customerAddress,
+            order_id: order.id,
+            variant_name: variantDisplay || undefined,
+            quantity: item.quantity,
+            weight_grams: itemWeightGrams,
+            weight_display: itemWeightDisplay,
+            order_items: orderSummaries.get(order.id)
+          };
+
+          // Verificar si ya existe este grupo
+          if (productMap.has(groupingKey)) {
+            const existing = productMap.get(groupingKey)!;
+            existing.total_quantity += item.quantity;
+            existing.orders_count += 1;
+
+            // Agregar desglose por cliente
+            existing.customer_breakdown.push(customerInfo);
+
+            // Recalcular peso total si hay peso por unidad
+            if (existing.weight_per_unit_grams && itemWeightGrams) {
+              existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
+              existing.total_weight_display = formatWeight(existing.total_weight_grams);
+            }
+          } else {
+            // Crear nombre a mostrar
+            let displayName = productName;
+
+            // Si hay variante separada, agregarla
+            if (variantDisplay) {
+              displayName = `${productName} (${variantDisplay})`;
+            }
+
+            // Calcular peso total inicial
+            const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+            const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
+
+            productMap.set(groupingKey, {
+              grouping_key: groupingKey,
+              product_name: productName,
+              variant_name: variantDisplay || undefined,
+              variant_value: variantValue || undefined,
+              display_name: displayName,
+              unit_price: unitPrice,
+              total_quantity: item.quantity,
+              weight_per_unit_grams: weightPerUnitGrams,
+              total_weight_grams: initialWeightGrams,
+              total_weight_display: weightDisplay,
+              orders_count: 1,
+              customer_breakdown: [customerInfo]
+            });
+          }
         }
       });
     });
@@ -479,6 +568,38 @@ export default function ListaComprasPage() {
     } else {
       setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
     }
+  };
+
+  // Toggle marcar producto como comprado
+  const togglePurchased = (groupingKey: string) => {
+    const newPurchased = new Set(purchasedProducts);
+    if (newPurchased.has(groupingKey)) {
+      newPurchased.delete(groupingKey);
+    } else {
+      newPurchased.add(groupingKey);
+    }
+    setPurchasedProducts(newPurchased);
+  };
+
+  // Limpiar todos los productos marcados como comprados
+  const clearAllPurchased = () => {
+    setPurchasedProducts(new Set());
+  };
+
+  // Verificar si un producto es un combo
+  const isCombo = (productName: string): boolean => {
+    return productName.toLowerCase().includes('combo');
+  };
+
+  // Obtener componentes de un combo
+  const getComboComponents = (productName: string) => {
+    const key = productName.toLowerCase();
+    for (const [comboKey, components] of Object.entries(COMBO_COMPONENTS)) {
+      if (key.includes(comboKey) || comboKey.includes(key.replace('combo ', ''))) {
+        return components;
+      }
+    }
+    return null;
   };
 
   // Copiar al portapapeles con feedback visual
@@ -759,7 +880,16 @@ export default function ListaComprasPage() {
                       Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
                     </p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    {purchasedProducts.size > 0 && (
+                      <button
+                        onClick={clearAllPurchased}
+                        className="px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Limpiar Marcados ({purchasedProducts.size})
+                      </button>
+                    )}
                     <button
                       onClick={toggleExpandAll}
                       className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1"
@@ -789,17 +919,42 @@ export default function ListaComprasPage() {
               <div className="divide-y divide-gray-200">
                 {groupedProducts.map(product => {
                   const isExpanded = expandedProducts.has(product.grouping_key);
+                  const isPurchased = purchasedProducts.has(product.grouping_key);
                   return (
-                    <div key={product.grouping_key}>
+                    <div key={product.grouping_key} className={isPurchased ? 'bg-purple-50' : ''}>
                       {/* Fila principal del producto */}
                       <div
-                        className="p-4 hover:bg-gray-50 transition-colors cursor-pointer"
-                        onClick={() => toggleProductExpanded(product.grouping_key)}
+                        className={`p-4 transition-colors cursor-pointer ${isPurchased ? 'hover:bg-purple-100' : 'hover:bg-gray-50'}`}
                       >
                         <div className="flex items-start justify-between gap-4">
                           {/* Info del producto */}
                           <div className="flex items-start gap-3 flex-1 min-w-0">
-                            <button className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 hover:bg-green-200 transition-colors">
+                            {/* Checkbox para marcar como comprado */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePurchased(product.grouping_key);
+                              }}
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 transition-colors ${isPurchased
+                                  ? 'bg-purple-600 hover:bg-purple-700'
+                                  : 'bg-purple-100 hover:bg-purple-200'
+                                }`}
+                              title={isPurchased ? 'Desmarcar como comprado' : 'Marcar como comprado'}
+                            >
+                              {isPurchased ? (
+                                <CheckCircle className="w-6 h-6 text-white" />
+                              ) : (
+                                <div className="w-5 h-5 border-2 border-purple-400 rounded-md" />
+                              )}
+                            </button>
+                            {/* Botón expandir */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleProductExpanded(product.grouping_key);
+                              }}
+                              className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 hover:bg-green-200 transition-colors"
+                            >
                               {isExpanded ? (
                                 <ChevronUp className="w-5 h-5 text-green-600" />
                               ) : (
@@ -808,16 +963,18 @@ export default function ListaComprasPage() {
                             </button>
                             <div className="min-w-0 flex-1">
                               {/* Nombre del producto con variante */}
-                              <p className="font-medium text-gray-900 text-base">
+                              <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                                 {product.display_name}
                               </p>
 
                               {/* Precio unitario y cantidad */}
                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                                <p className="text-sm text-green-700 font-semibold">
-                                  {formatPrice(product.unit_price)} c/u
-                                </p>
-                                <p className="text-sm text-gray-500">
+                                {product.unit_price > 0 && (
+                                  <p className={`text-sm font-semibold ${isPurchased ? 'text-gray-400' : 'text-green-700'}`}>
+                                    {formatPrice(product.unit_price)} c/u
+                                  </p>
+                                )}
+                                <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
                                 </p>
                               </div>
