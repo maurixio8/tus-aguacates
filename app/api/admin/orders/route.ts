@@ -881,74 +881,110 @@ export async function PATCH(request: NextRequest) {
 
     // If updating items
     if (items && Array.isArray(items)) {
-      console.log('📝 API: Updating order items for order:', orderId);
+      console.log('📝 API: Updating order items for order:', orderId, 'isGuest:', isGuestOrder);
 
-      // Delete existing items
-      const { error: deleteError } = await supabase
-        .from('order_items')
-        .delete()
-        .eq('order_id', orderId);
+      if (isGuestOrder) {
+        // Para pedidos guest, actualizar el campo 'items' como JSON en guest_orders
+        const guestItems = items.map((item: any) => ({
+          product_id: item.product_id,
+          productName: item.product_name || 'Producto',
+          variantName: item.variant_name || null,
+          quantity: item.quantity,
+          price: item.unit_price
+        }));
 
-      if (deleteError) {
-        console.error('❌ API: Error deleting old items:', deleteError);
-        return NextResponse.json(
-          { error: 'Error al eliminar items anteriores' },
-          { status: 500, headers: corsHeaders }
-        );
+        const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
+
+        const { error: guestUpdateError } = await supabase
+          .from('guest_orders')
+          .update({
+            items: guestItems,
+            subtotal: subtotal,
+            total_amount: total || subtotal,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', orderId);
+
+        if (guestUpdateError) {
+          console.error('❌ API: Error updating guest order items:', guestUpdateError);
+          return NextResponse.json(
+            { error: 'Error al actualizar items del pedido invitado', details: guestUpdateError.message },
+            { status: 500, headers: corsHeaders }
+          );
+        }
+
+        console.log('✅ API: Guest order items updated successfully');
+        return NextResponse.json({
+          success: true,
+          message: 'Items del pedido invitado actualizados exitosamente'
+        }, { headers: corsHeaders });
+
+      } else {
+        // Para pedidos registrados, usar order_items
+        // Delete existing items
+        const { error: deleteError } = await supabase
+          .from('order_items')
+          .delete()
+          .eq('order_id', orderId);
+
+        if (deleteError) {
+          console.error('❌ API: Error deleting old items:', deleteError);
+          // No es crítico si no había items previos, continuar
+        }
+
+        // Insert new items
+        const newItems = items.map((item: any) => ({
+          order_id: orderId,
+          product_id: item.product_id,
+          quantity: item.quantity,
+          unit_price: item.unit_price,
+          subtotal: item.unit_price * item.quantity,
+          product_snapshot: {
+            name: item.product_name || 'Producto',
+            variant_name: item.variant_name || null,
+            variant_value: item.variant_value || null
+          },
+          created_at: new Date().toISOString()
+        }));
+
+        const { error: insertError } = await supabase
+          .from('order_items')
+          .insert(newItems);
+
+        if (insertError) {
+          console.error('❌ API: Error inserting new items:', insertError);
+          return NextResponse.json(
+            { error: 'Error al insertar nuevos items', details: insertError.message },
+            { status: 500, headers: corsHeaders }
+          );
+        }
+
+        // Update order total
+        const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
+        const { error: updateError } = await supabase
+          .from('orders')
+          .update({
+            subtotal: subtotal,
+            total: total || subtotal,
+            total_amount: total || subtotal,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', orderId);
+
+        if (updateError) {
+          console.error('❌ API: Error updating order total:', updateError);
+          return NextResponse.json(
+            { error: 'Error al actualizar total del pedido', details: updateError.message },
+            { status: 500, headers: corsHeaders }
+          );
+        }
+
+        console.log('✅ API: Order items updated successfully');
+        return NextResponse.json({
+          success: true,
+          message: 'Items del pedido actualizados exitosamente'
+        }, { headers: corsHeaders });
       }
-
-      // Insert new items
-      const newItems = items.map((item: any) => ({
-        order_id: orderId,
-        product_id: item.product_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        subtotal: item.unit_price * item.quantity,
-        product_snapshot: {
-          name: item.product_name || 'Producto',
-          variant_name: item.variant_name || null,
-          variant_value: item.variant_value || null
-        },
-        created_at: new Date().toISOString()
-      }));
-
-      const { error: insertError } = await supabase
-        .from('order_items')
-        .insert(newItems);
-
-      if (insertError) {
-        console.error('❌ API: Error inserting new items:', insertError);
-        return NextResponse.json(
-          { error: 'Error al insertar nuevos items' },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-
-      // Update order total
-      const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
-      const { error: updateError } = await supabase
-        .from('orders')
-        .update({
-          subtotal: subtotal,
-          total: total || subtotal,
-          total_amount: total || subtotal,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (updateError) {
-        console.error('❌ API: Error updating order total:', updateError);
-        return NextResponse.json(
-          { error: 'Error al actualizar total del pedido' },
-          { status: 500, headers: corsHeaders }
-        );
-      }
-
-      console.log('✅ API: Order items updated successfully');
-      return NextResponse.json({
-        success: true,
-        message: 'Items del pedido actualizados exitosamente'
-      }, { headers: corsHeaders });
     }
 
     // If updating status only
