@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import HomeContent from './HomeContent';
 
 export const metadata: Metadata = {
   title: 'Tus Aguacates | Aguacates Frescos a Domicilio en Bogotá',
@@ -46,7 +45,3 @@ export const metadata: Metadata = {
     google: 'google-site-verification-code',
   },
 };
-
-export default function Home() {
-  return <HomeContent />;
-}
