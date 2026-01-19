@@ -83,7 +83,12 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
     }
 
     // Verify the JWT token
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('❌ [SECURITY] JWT_SECRET not configured in environment variables');
+      return { success: false, error: 'Error de configuración del servidor' };
+    }
+
     let decoded;
     try {
       decoded = jwt.verify(token, jwtSecret) as any;

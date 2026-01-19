@@ -1,6 +1,6 @@
 /**
  * API Route: Bold Webhook Handler
- * 
+ *
  * Recibe notificaciones de Bold sobre el estado de las transacciones.
  * Configurar en: Panel Bold → Integraciones → Webhooks
  * URL: https://tus-aguacates.vercel.app/api/webhooks/bold
@@ -8,6 +8,45 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createHash } from 'crypto';
+
+/**
+ * Verify webhook signature from Bold
+ * Bold signs webhooks using HMAC-SHA256
+ */
+function verifyWebhookSignature(payload: string, signature?: string): boolean {
+  const signingSecret = process.env.BOLD_SIGNING_SECRET;
+
+  if (!signingSecret) {
+    console.warn('[Bold Webhook] ⚠️ BOLD_SIGNING_SECRET not configured - skipping signature verification');
+    return false;
+  }
+
+  if (!signature) {
+    console.warn('[Bold Webhook] ⚠️ No signature header found');
+    return false;
+  }
+
+  try {
+    const hmac = createHash('sha256');
+    hmac.update(signingSecret + payload);
+    const expectedSignature = hmac.digest('hex');
+
+    const isValid = signature === expectedSignature;
+
+    if (!isValid) {
+      console.error('[Bold Webhook] ❌ Invalid signature', {
+        received: signature.substring(0, 20) + '...',
+        expected: expectedSignature.substring(0, 20) + '...'
+      });
+    }
+
+    return isValid;
+  } catch (error) {
+    console.error('[Bold Webhook] ❌ Error verifying signature:', error);
+    return false;
+  }
+}
 
 // Cliente de Supabase con service role para operaciones del servidor
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -39,8 +78,23 @@ interface BoldWebhookPayload {
 
 export async function POST(request: NextRequest) {
     try {
-        const payload: BoldWebhookPayload = await request.json();
+        // Get raw body for signature verification
+        const rawBody = await request.text();
+        const payload: BoldWebhookPayload = JSON.parse(rawBody);
 
+        // Get signature from header (Bold uses x-signature or similar)
+        const signature = request.headers.get('x-signature') || request.headers.get('x-bold-signature') || request.headers.get('bold-signature');
+
+        // Verify webhook signature
+        if (!verifyWebhookSignature(rawBody, signature)) {
+            console.error('[Bold Webhook] ❌ Signature verification failed');
+            return NextResponse.json(
+                { error: 'Invalid signature' },
+                { status: 401 }
+            );
+        }
+
+        console.log('[Bold Webhook] ✅ Signature verified');
         console.log('[Bold Webhook] Received event:', payload.event_type, payload.event_id);
         console.log('[Bold Webhook] Order ID:', payload.payment.order_id);
 
