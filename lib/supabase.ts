@@ -5,8 +5,12 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Faltan variables de entorno de Supabase. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY');
+if (!supabaseUrl) {
+  throw new Error('Faltan variables de entorno de Supabase. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL');
+}
+
+if (!supabaseAnonKey) {
+  throw new Error('Faltan variables de entorno de Supabase. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_ANON_KEY');
 }
 
 // Cliente público para el frontend (sujeto a RLS)
@@ -20,15 +24,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   }
 });
 
-// Cliente admin para el backend (bypasa RLS) - Solo usar en server-side!
-export const supabaseAdmin = supabaseServiceRoleKey
-  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
-  })
-  : supabase; // Fallback al cliente público si no hay service role key
+/**
+ * Cliente admin para el backend (BYPASS RLS)
+ * SOLO usar en server-side (API routes, Server Actions, Edge Functions)
+ * Lanza error si SUPABASE_SERVICE_ROLE_KEY no está configurado
+ */
+export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey!, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 // Función para configurar persistencia extendida cuando "Recordarme" está activado
 export function configureExtendedSession(rememberMe: boolean = false) {

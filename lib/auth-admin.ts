@@ -22,39 +22,32 @@ export interface AuthResult {
   error?: string;
 }
 
-// Cliente de Supabase para server-side
+// Cliente de Supabase para server-side (ADMIN - BYPASS RLS)
 export function createSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   console.log('🔍 [AUTH-ADMIN] Environment variables check:', {
     hasUrl: !!supabaseUrl,
-    hasServiceKey: !!serviceRoleKey,
-    hasAnonKey: !!anonKey,
-    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 20) + '...' : 'null',
-    serviceKeyPrefix: serviceRoleKey ? serviceRoleKey.substring(0, 20) + '...' : 'null',
-    anonKeyPrefix: anonKey ? anonKey.substring(0, 20) + '...' : 'null'
+    hasServiceRoleKey: !!serviceRoleKey,
+    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 20) + '...' : 'null'
   });
 
-  // Priorizar service role key si está disponible, sino usar anon key
-  const keyToUse = serviceRoleKey || anonKey;
-  const keyType = serviceRoleKey ? 'service_role' : 'anon';
-
-  if (!supabaseUrl || !keyToUse) {
-    console.error('❌ Missing Supabase credentials:', {
-      hasUrl: !!supabaseUrl,
-      hasServiceKey: !!serviceRoleKey,
-      hasAnonKey: !!anonKey
-    });
-    throw new Error('Missing Supabase configuration');
+  if (!supabaseUrl) {
+    console.error('❌ [AUTH-ADMIN] NEXT_PUBLIC_SUPABASE_URL not configured');
+    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
   }
 
-  console.log(`✅ [AUTH-ADMIN] Creating Supabase client with ${keyType} key`);
+  if (!serviceRoleKey) {
+    console.error('❌ [AUTH-ADMIN] SUPABASE_SERVICE_ROLE_KEY not configured');
+    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable. This is required for admin operations. Please configure it in Vercel or .env.local');
+  }
+
+  console.log('✅ [AUTH-ADMIN] Creating Supabase client with service_role key (bypass RLS)');
 
   return createClient(
     supabaseUrl,
-    keyToUse,
+    serviceRoleKey,
     {
       auth: {
         autoRefreshToken: false,
@@ -247,7 +240,11 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
       return null;
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
+      throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');
+    }
     const decoded = jwt.verify(token, jwtSecret) as any;
 
     if (decoded.type !== 'admin') {
@@ -295,7 +292,11 @@ export async function verifyAdminAuth(request: NextRequest): Promise<{ success: 
       return { success: false, error: 'No autenticado - falta token' };
     }
 
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
+      throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');
+    }
     const decoded = jwt.verify(token, jwtSecret) as any;
 
     if (decoded.type !== 'admin') {
