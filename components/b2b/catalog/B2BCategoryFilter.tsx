@@ -7,12 +7,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase } from '@/lib/supabase';
 
 interface Category {
   id: string;
@@ -76,11 +71,10 @@ export function B2BCategoryFilter({ selectedCategory }: B2BCategoryFilterProps) 
         {/* Todas las categorías */}
         <Link
           href="/empresas/catalogo"
-          className={`block py-2 px-3 rounded-lg transition ${
-            !selectedCategory
+          className={`block py-2 px-3 rounded-lg transition ${!selectedCategory
               ? 'bg-green-600 text-white font-semibold'
               : 'text-gray-700 hover:bg-gray-100'
-          }`}
+            }`}
         >
           Todas las categorías
         </Link>
@@ -90,11 +84,10 @@ export function B2BCategoryFilter({ selectedCategory }: B2BCategoryFilterProps) 
           <Link
             key={category.id}
             href={`/empresas/catalogo?category=${category.id}`}
-            className={`block py-2 px-3 rounded-lg transition ${
-              selectedCategory === category.id
+            className={`block py-2 px-3 rounded-lg transition ${selectedCategory === category.id
                 ? 'bg-green-600 text-white font-semibold'
                 : 'text-gray-700 hover:bg-gray-100'
-            }`}
+              }`}
           >
             {category.name}
           </Link>
