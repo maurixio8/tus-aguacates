@@ -301,12 +301,19 @@ export default function OrdersPage() {
   // Funciones helper para calcular rangos de fechas
   const getDateRanges = () => {
     const today = new Date();
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+    // Usar fecha LOCAL (no UTC) para evitar problemas de timezone
+    // Cuando son las 8PM en Colombia (UTC-5), UTC es 1AM del día siguiente
+    const formatDateLocal = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
 
     // Hoy
     const todayRange = {
-      from: formatDate(today),
-      to: formatDate(today)
+      from: formatDateLocal(today),
+      to: formatDateLocal(today)
     };
 
     // Esta semana (lunes a domingo)
@@ -318,8 +325,8 @@ export default function OrdersPage() {
     sunday.setDate(monday.getDate() + 6);
 
     const thisWeekRange = {
-      from: formatDate(monday),
-      to: formatDate(sunday)
+      from: formatDateLocal(monday),
+      to: formatDateLocal(sunday)
     };
 
     // Semana pasada
@@ -329,8 +336,8 @@ export default function OrdersPage() {
     lastSunday.setDate(lastMonday.getDate() + 6);
 
     const lastWeekRange = {
-      from: formatDate(lastMonday),
-      to: formatDate(lastSunday)
+      from: formatDateLocal(lastMonday),
+      to: formatDateLocal(lastSunday)
     };
 
     // Últimos 7 días
@@ -338,8 +345,8 @@ export default function OrdersPage() {
     last7Days.setDate(today.getDate() - 6);
 
     const last7DaysRange = {
-      from: formatDate(last7Days),
-      to: formatDate(today)
+      from: formatDateLocal(last7Days),
+      to: formatDateLocal(today)
     };
 
     // Últimos 30 días
@@ -347,8 +354,8 @@ export default function OrdersPage() {
     last30Days.setDate(today.getDate() - 29);
 
     const last30DaysRange = {
-      from: formatDate(last30Days),
-      to: formatDate(today)
+      from: formatDateLocal(last30Days),
+      to: formatDateLocal(today)
     };
 
     // Este mes
@@ -356,8 +363,8 @@ export default function OrdersPage() {
     const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
 
     const thisMonthRange = {
-      from: formatDate(firstDayOfMonth),
-      to: formatDate(lastDayOfMonth)
+      from: formatDateLocal(firstDayOfMonth),
+      to: formatDateLocal(lastDayOfMonth)
     };
 
     // Mes pasado
@@ -365,8 +372,8 @@ export default function OrdersPage() {
     const lastDayOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
 
     const lastMonthRange = {
-      from: formatDate(firstDayOfLastMonth),
-      to: formatDate(lastDayOfLastMonth)
+      from: formatDateLocal(firstDayOfLastMonth),
+      to: formatDateLocal(lastDayOfLastMonth)
     };
 
     return {
@@ -513,6 +520,7 @@ export default function OrdersPage() {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      timeZone: 'America/Bogota' // Forzar timezone de Colombia
     });
   };
 
@@ -520,6 +528,7 @@ export default function OrdersPage() {
     return new Date(dateString).toLocaleTimeString('es-CO', {
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/Bogota' // Forzar timezone de Colombia
     });
   };
 
@@ -704,8 +713,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus(''); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === ''
-              ? 'bg-gray-100 border-gray-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-gray-300'
+            ? 'bg-gray-100 border-gray-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-gray-300'
             }`}
         >
           <div className="text-2xl font-bold text-gray-900">{orderStats.total}</div>
@@ -716,8 +725,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('pending'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'pending'
-              ? 'bg-yellow-100 border-yellow-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-yellow-300'
+            ? 'bg-yellow-100 border-yellow-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-yellow-300'
             }`}
         >
           <div className="text-2xl font-bold text-yellow-600">{orderStats.pending}</div>
@@ -730,8 +739,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('confirmed'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'confirmed'
-              ? 'bg-blue-100 border-blue-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-blue-300'
+            ? 'bg-blue-100 border-blue-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-blue-300'
             }`}
         >
           <div className="text-2xl font-bold text-blue-600">{orderStats.confirmed}</div>
@@ -744,8 +753,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('processing'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'processing'
-              ? 'bg-purple-100 border-purple-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-purple-300'
+            ? 'bg-purple-100 border-purple-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-purple-300'
             }`}
         >
           <div className="text-2xl font-bold text-purple-600">{orderStats.processing}</div>
@@ -758,8 +767,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('shipped'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'shipped'
-              ? 'bg-blue-100 border-blue-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-blue-300'
+            ? 'bg-blue-100 border-blue-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-blue-300'
             }`}
         >
           <div className="text-2xl font-bold text-blue-500">{orderStats.shipped}</div>
@@ -772,8 +781,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('delivered'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'delivered'
-              ? 'bg-green-100 border-green-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-green-300'
+            ? 'bg-green-100 border-green-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-green-300'
             }`}
         >
           <div className="text-2xl font-bold text-green-600">{orderStats.delivered}</div>
@@ -786,8 +795,8 @@ export default function OrdersPage() {
         <button
           onClick={() => { setStatus('cancelled'); setPagination(prev => ({ ...prev, page: 1 })); }}
           className={`p-4 rounded-xl border-2 transition-all ${status === 'cancelled'
-              ? 'bg-red-100 border-red-400 shadow-md'
-              : 'bg-white border-gray-200 hover:border-red-300'
+            ? 'bg-red-100 border-red-400 shadow-md'
+            : 'bg-white border-gray-200 hover:border-red-300'
             }`}
         >
           <div className="text-2xl font-bold text-red-600">{orderStats.cancelled}</div>
@@ -826,8 +835,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('today')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'today'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Hoy
@@ -835,8 +844,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('thisWeek')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'thisWeek'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Esta Semana
@@ -844,8 +853,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('lastWeek')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'lastWeek'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Semana Pasada
@@ -853,8 +862,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('last7Days')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'last7Days'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Últimos 7 Días
@@ -862,8 +871,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('last30Days')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'last30Days'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Últimos 30 Días
@@ -871,8 +880,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('thisMonth')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'thisMonth'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Este Mes
@@ -880,8 +889,8 @@ export default function OrdersPage() {
             <button
               onClick={() => applyQuickFilter('lastMonth')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'lastMonth'
-                  ? 'bg-green-600 text-white shadow-md'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-green-600 text-white shadow-md'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               Mes Pasado
@@ -1369,8 +1378,8 @@ export default function OrdersPage() {
                             <button
                               onClick={() => copyToClipboard(getAddressText(order), `addr-${order.id}`)}
                               className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${copiedItems.has(`addr-${order.id}`)
-                                  ? 'bg-green-100 text-green-700'
-                                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
                               title="Copiar dirección"
                             >
@@ -1392,8 +1401,8 @@ export default function OrdersPage() {
                           <button
                             onClick={() => copyToClipboard(getOrderSummaryText(order, customerInfo.name, orderItems), `sum-${order.id}`)}
                             className={`px-3 py-2 rounded-lg transition-colors text-sm flex items-center gap-1 ${copiedItems.has(`sum-${order.id}`)
-                                ? 'bg-green-100 text-green-700'
-                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
                               }`}
                             title="Copiar resumen del pedido"
                           >
