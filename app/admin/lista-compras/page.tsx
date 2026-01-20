@@ -119,7 +119,28 @@ export default function ListaComprasPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
-  const [purchasedProducts, setPurchasedProducts] = useState<Set<string>>(new Set());
+
+  // Cargar productos comprados desde localStorage
+  const [purchasedProducts, setPurchasedProducts] = useState<Set<string>>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('shopping-list-purchased');
+      if (saved) {
+        try {
+          return new Set(JSON.parse(saved));
+        } catch (e) {
+          console.error('Error loading purchased from localStorage:', e);
+        }
+      }
+    }
+    return new Set();
+  });
+
+  // Guardar productos comprados en localStorage cuando cambian
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('shopping-list-purchased', JSON.stringify([...purchasedProducts]));
+    }
+  }, [purchasedProducts]);
 
   // Mapeo de combos a sus componentes reales
   // Basado en información del usuario:
@@ -326,26 +347,23 @@ export default function ListaComprasPage() {
   };
 
   // Normalizar nombre del producto para consolidar entradas duplicadas
-  // Elimina variantes repetidas en el nombre (ej: "Caja 24 hass (24 unidades)" → "Caja 24 hass")
+  // Elimina variantes o números repetidos al final del nombre
   const normalizeProductName = (name: string, variant?: string | null): string => {
     if (!name) return 'Producto sin nombre';
     let normalized = name.trim();
 
-    // Si hay variante y el nombre termina con algo entre paréntesis, verificar si es duplicado
-    if (variant) {
-      const parenMatch = normalized.match(/\s*\([^)]+\)\s*$/);
-      if (parenMatch) {
-        const parenContent = parenMatch[0].toLowerCase();
-        const variantLower = variant.toLowerCase();
-        // Si el número en paréntesis coincide con el de la variante, remover
-        const parenNum = parenContent.match(/\d+/);
-        const variantNum = variantLower.match(/\d+/);
-        if (parenNum && variantNum && parenNum[0] === variantNum[0]) {
-          normalized = normalized.replace(/\s*\([^)]+\)\s*$/, '').trim();
-        }
-      }
+    // SIEMPRE remover contenido final entre paréntesis si solo contiene números/unidades
+    // Ej: "Caja 24 (24)" → "Caja 24"
+    // Ej: "Caja 24 unidades (24 unidades)" → "Caja 24 unidades"
+    const parenMatch = normalized.match(/\s*\([^)]*\d+[^)]*\)\s*$/);
+    if (parenMatch) {
+      normalized = normalized.replace(/\s*\([^)]*\d+[^)]*\)\s*$/, '').trim();
     }
-    return normalized.replace(/\s+/g, ' ');
+
+    // Normalizar espacios múltiples
+    normalized = normalized.replace(/\s+/g, ' ');
+
+    return normalized;
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
