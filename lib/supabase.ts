@@ -5,16 +5,28 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-if (!supabaseUrl) {
-  throw new Error('Faltan variables de entorno de Supabase. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_URL');
+// Debug: Log environment variable status (solo en desarrollo o build)
+if (typeof window !== 'undefined') {
+  console.log('[Supabase] Checking environment variables...');
+  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
+  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing');
 }
 
-if (!supabaseAnonKey) {
-  throw new Error('Faltan variables de entorno de Supabase. Asegúrate de configurar NEXT_PUBLIC_SUPABASE_ANON_KEY');
+// Validación con mensajes claros
+if (!supabaseUrl || supabaseUrl.trim() === '') {
+  const errorMsg = `[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured. Current value: "${supabaseUrl}"`;
+  console.error(errorMsg);
+  throw new Error(errorMsg);
+}
+
+if (!supabaseAnonKey || supabaseAnonKey.trim() === '') {
+  const errorMsg = `[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured. Current value length: ${supabaseAnonKey?.length || 0}`;
+  console.error(errorMsg);
+  throw new Error(errorMsg);
 }
 
 // Cliente público para el frontend (sujeto a RLS)
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient(supabaseUrl.trim(), supabaseAnonKey.trim(), {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
