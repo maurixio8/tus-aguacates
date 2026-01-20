@@ -387,15 +387,61 @@ export default function OrdersPage() {
     };
   };
 
+  // Calcular fecha del ciclo de entrega (viernes o martes 10AM hacia ahora)
+  const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
+    const now = new Date();
+    const today = new Date();
+    const targetDay = deliveryDay === 'friday' ? 5 : 2; // 5=viernes, 2=martes
+    const currentDay = today.getDay();
+
+    // Calcular cuántos días retroceder para llegar al último día de entrega
+    let daysBack = currentDay - targetDay;
+    if (daysBack < 0) daysBack += 7;
+    if (daysBack === 0 && now.getHours() < 10) {
+      // Si es hoy pero antes de las 10AM, usar el de la semana pasada
+      daysBack = 7;
+    }
+
+    const deliveryDate = new Date(today);
+    deliveryDate.setDate(today.getDate() - daysBack);
+    deliveryDate.setHours(10, 0, 0, 0); // 10:00 AM
+
+    // Formato YYYY-MM-DD
+    const year = deliveryDate.getFullYear();
+    const month = String(deliveryDate.getMonth() + 1).padStart(2, '0');
+    const day = String(deliveryDate.getDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  };
+
   // Aplicar filtro rápido
   const applyQuickFilter = (filterType: string) => {
     const ranges = getDateRanges();
     setQuickFilter(filterType);
 
+    // Formato fecha de hoy para "hasta"
+    const formatToday = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
     switch (filterType) {
       case 'today':
         setDateFrom(ranges.today.from);
         setDateTo(ranges.today.to);
+        break;
+      case 'sinceLastFriday':
+        // Desde el viernes 10AM hasta ahora (pedidos para entregar el martes)
+        setDateFrom(getDeliveryCycleDate('friday'));
+        setDateTo(formatToday());
+        break;
+      case 'sinceLastTuesday':
+        // Desde el martes 10AM hasta ahora (pedidos para entregar el viernes)
+        setDateFrom(getDeliveryCycleDate('tuesday'));
+        setDateTo(formatToday());
         break;
       case 'thisWeek':
         setDateFrom(ranges.thisWeek.from);
@@ -840,6 +886,26 @@ export default function OrdersPage() {
                 }`}
             >
               Hoy
+            </button>
+            <button
+              onClick={() => applyQuickFilter('sinceLastFriday')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'sinceLastFriday'
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-300'
+                }`}
+              title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
+            >
+              🚚 Entrega Martes
+            </button>
+            <button
+              onClick={() => applyQuickFilter('sinceLastTuesday')}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${quickFilter === 'sinceLastTuesday'
+                ? 'bg-purple-600 text-white shadow-md'
+                : 'bg-purple-100 text-purple-700 hover:bg-purple-200 border border-purple-300'
+                }`}
+              title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
+            >
+              🚚 Entrega Viernes
             </button>
             <button
               onClick={() => applyQuickFilter('thisWeek')}

@@ -379,12 +379,25 @@ export async function GET(request: NextRequest) {
       allOrders = allOrders.filter(order => order.status === status);
     }
 
-    // Apply date filters
-    if (dateFrom) {
-      allOrders = allOrders.filter(order => order.created_at >= dateFrom);
-    }
-    if (dateTo) {
-      allOrders = allOrders.filter(order => order.created_at <= dateTo + 'T23:59:59');
+    // Apply date filters - usar comparación de fechas real, no strings
+    if (dateFrom || dateTo) {
+      allOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.created_at);
+
+        if (dateFrom) {
+          // dateFrom es YYYY-MM-DD, crear fecha al inicio del día en Colombia (UTC-5)
+          const fromDate = new Date(dateFrom + 'T00:00:00-05:00');
+          if (orderDate < fromDate) return false;
+        }
+
+        if (dateTo) {
+          // dateTo es YYYY-MM-DD, crear fecha al final del día en Colombia
+          const toDate = new Date(dateTo + 'T23:59:59-05:00');
+          if (orderDate > toDate) return false;
+        }
+
+        return true;
+      });
     }
 
     // Re-calcular paginación después de filtrar
