@@ -40,13 +40,43 @@ export const supabase = createClient(supabaseUrl.trim(), supabaseAnonKey.trim(),
  * Cliente admin para el backend (BYPASS RLS)
  * SOLO usar en server-side (API routes, Server Actions, Edge Functions)
  * Lanza error si SUPABASE_SERVICE_ROLE_KEY no está configurado
+ * 
+ * NOTA: Usamos una función getter para evitar inicialización en cliente
  */
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
+
+export function getSupabaseAdmin() {
+  // Prevent client-side usage
+  if (typeof window !== 'undefined') {
+    throw new Error('supabaseAdmin cannot be used on the client side. Use the regular supabase client instead.');
   }
-});
+
+  // Lazy initialization
+  if (!_supabaseAdmin) {
+    if (!supabaseServiceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured. This is required for admin operations.');
+    }
+
+    _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+  }
+
+  return _supabaseAdmin;
+}
+
+// Legacy export for backwards compatibility (will throw on client-side)
+export const supabaseAdmin = typeof window === 'undefined' && supabaseServiceRoleKey
+  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+  : (null as any); // Null on client-side, will error if used
 
 // Función para configurar persistencia extendida cuando "Recordarme" está activado
 export function configureExtendedSession(rememberMe: boolean = false) {
