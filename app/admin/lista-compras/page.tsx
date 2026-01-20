@@ -166,15 +166,40 @@ export default function ListaComprasPage() {
     ]
   };
 
+  // Helper para formatear fecha LOCAL (no UTC)
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Calcular fecha del ciclo de entrega (viernes o martes 10AM hacia ahora)
+  const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
+    const now = new Date();
+    const today = new Date();
+    const targetDay = deliveryDay === 'friday' ? 5 : 2;
+    const currentDay = today.getDay();
+
+    let daysBack = currentDay - targetDay;
+    if (daysBack < 0) daysBack += 7;
+    if (daysBack === 0 && now.getHours() < 10) {
+      daysBack = 7;
+    }
+
+    const deliveryDate = new Date(today);
+    deliveryDate.setDate(today.getDate() - daysBack);
+    return formatLocalDate(deliveryDate);
+  };
+
   // Inicializar con últimos 10 días
   useEffect(() => {
     const today = new Date();
     const tenDaysAgo = new Date(today);
     tenDaysAgo.setDate(today.getDate() - 9);
 
-    const formatDate = (date: Date) => date.toISOString().split('T')[0];
-    setDateTo(formatDate(today));
-    setDateFrom(formatDate(tenDaysAgo));
+    setDateTo(formatLocalDate(today));
+    setDateFrom(formatLocalDate(tenDaysAgo));
   }, []);
 
   // Cargar pedidos cuando cambian las fechas
@@ -730,18 +755,38 @@ export default function ListaComprasPage() {
               className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
                 const today = new Date();
                 const tenDaysAgo = new Date(today);
                 tenDaysAgo.setDate(today.getDate() - 9);
-                setDateFrom(tenDaysAgo.toISOString().split('T')[0]);
-                setDateTo(today.toISOString().split('T')[0]);
+                setDateFrom(formatLocalDate(tenDaysAgo));
+                setDateTo(formatLocalDate(today));
               }}
-              className="px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               Últimos 10 días
+            </button>
+            <button
+              onClick={() => {
+                setDateFrom(getDeliveryCycleDate('friday'));
+                setDateTo(formatLocalDate(new Date()));
+              }}
+              className="px-4 py-2.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300"
+              title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
+            >
+              🚚 Entrega Martes
+            </button>
+            <button
+              onClick={() => {
+                setDateFrom(getDeliveryCycleDate('tuesday'));
+                setDateTo(formatLocalDate(new Date()));
+              }}
+              className="px-4 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
+              title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
+            >
+              🚚 Entrega Viernes
             </button>
           </div>
         </div>
@@ -936,8 +981,8 @@ export default function ListaComprasPage() {
                                 togglePurchased(product.grouping_key);
                               }}
                               className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 transition-colors ${isPurchased
-                                  ? 'bg-purple-600 hover:bg-purple-700'
-                                  : 'bg-purple-100 hover:bg-purple-200'
+                                ? 'bg-purple-600 hover:bg-purple-700'
+                                : 'bg-purple-100 hover:bg-purple-200'
                                 }`}
                               title={isPurchased ? 'Desmarcar como comprado' : 'Marcar como comprado'}
                             >
