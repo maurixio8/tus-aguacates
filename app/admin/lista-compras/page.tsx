@@ -428,9 +428,9 @@ export default function ListaComprasPage() {
           // Extraer peso de la variante (si existe)
           const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
 
-          // Crear clave de agrupación: producto + variante + precio
+          // Crear clave de agrupación: producto + variante (SIN precio para consolidar mejor)
           const variantKey = variantDisplay || 'Sin variante';
-          const groupingKey = `${productName}|${variantKey}|${unitPrice}`;
+          const groupingKey = `${productName}|${variantKey}`;
 
           // Calcular peso para este item
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
