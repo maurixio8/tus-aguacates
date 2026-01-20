@@ -325,6 +325,29 @@ export default function ListaComprasPage() {
     return `${grams} gr`;
   };
 
+  // Normalizar nombre del producto para consolidar entradas duplicadas
+  // Elimina variantes repetidas en el nombre (ej: "Caja 24 hass (24 unidades)" → "Caja 24 hass")
+  const normalizeProductName = (name: string, variant?: string | null): string => {
+    if (!name) return 'Producto sin nombre';
+    let normalized = name.trim();
+
+    // Si hay variante y el nombre termina con algo entre paréntesis, verificar si es duplicado
+    if (variant) {
+      const parenMatch = normalized.match(/\s*\([^)]+\)\s*$/);
+      if (parenMatch) {
+        const parenContent = parenMatch[0].toLowerCase();
+        const variantLower = variant.toLowerCase();
+        // Si el número en paréntesis coincide con el de la variante, remover
+        const parenNum = parenContent.match(/\d+/);
+        const variantNum = variantLower.match(/\d+/);
+        if (parenNum && variantNum && parenNum[0] === variantNum[0]) {
+          normalized = normalized.replace(/\s*\([^)]+\)\s*$/, '').trim();
+        }
+      }
+    }
+    return normalized.replace(/\s+/g, ' ');
+  };
+
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
     const summaries = new Map<string, Array<{
@@ -428,9 +451,10 @@ export default function ListaComprasPage() {
           // Extraer peso de la variante (si existe)
           const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
 
-          // Crear clave de agrupación: producto + variante (SIN precio para consolidar mejor)
+          // Crear clave de agrupación: producto normalizado + variante (SIN precio)
+          const normalizedName = normalizeProductName(productName, variantDisplay);
           const variantKey = variantDisplay || 'Sin variante';
-          const groupingKey = `${productName}|${variantKey}`;
+          const groupingKey = `${normalizedName}|${variantKey}`;
 
           // Calcular peso para este item
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
@@ -463,12 +487,12 @@ export default function ListaComprasPage() {
               existing.total_weight_display = formatWeight(existing.total_weight_grams);
             }
           } else {
-            // Crear nombre a mostrar
-            let displayName = productName;
+            // Crear nombre a mostrar (usando nombre normalizado)
+            let displayName = normalizedName;
 
             // Si hay variante separada, agregarla
             if (variantDisplay) {
-              displayName = `${productName} (${variantDisplay})`;
+              displayName = `${normalizedName} (${variantDisplay})`;
             }
 
             // Calcular peso total inicial
@@ -477,7 +501,7 @@ export default function ListaComprasPage() {
 
             productMap.set(groupingKey, {
               grouping_key: groupingKey,
-              product_name: productName,
+              product_name: normalizedName,
               variant_name: variantDisplay || undefined,
               variant_value: variantValue || undefined,
               display_name: displayName,
