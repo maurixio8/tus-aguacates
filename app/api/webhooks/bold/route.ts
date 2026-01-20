@@ -15,37 +15,37 @@ import { createHash } from 'crypto';
  * Bold signs webhooks using HMAC-SHA256
  */
 function verifyWebhookSignature(payload: string, signature?: string): boolean {
-  const signingSecret = process.env.BOLD_SIGNING_SECRET;
+    const signingSecret = process.env.BOLD_SIGNING_SECRET;
 
-  if (!signingSecret) {
-    console.warn('[Bold Webhook] ⚠️ BOLD_SIGNING_SECRET not configured - skipping signature verification');
-    return false;
-  }
-
-  if (!signature) {
-    console.warn('[Bold Webhook] ⚠️ No signature header found');
-    return false;
-  }
-
-  try {
-    const hmac = createHash('sha256');
-    hmac.update(signingSecret + payload);
-    const expectedSignature = hmac.digest('hex');
-
-    const isValid = signature === expectedSignature;
-
-    if (!isValid) {
-      console.error('[Bold Webhook] ❌ Invalid signature', {
-        received: signature.substring(0, 20) + '...',
-        expected: expectedSignature.substring(0, 20) + '...'
-      });
+    if (!signingSecret) {
+        console.warn('[Bold Webhook] ⚠️ BOLD_SIGNING_SECRET not configured - skipping signature verification');
+        return false;
     }
 
-    return isValid;
-  } catch (error) {
-    console.error('[Bold Webhook] ❌ Error verifying signature:', error);
-    return false;
-  }
+    if (!signature) {
+        console.warn('[Bold Webhook] ⚠️ No signature header found');
+        return false;
+    }
+
+    try {
+        const hmac = createHash('sha256');
+        hmac.update(signingSecret + payload);
+        const expectedSignature = hmac.digest('hex');
+
+        const isValid = signature === expectedSignature;
+
+        if (!isValid) {
+            console.error('[Bold Webhook] ❌ Invalid signature', {
+                received: signature.substring(0, 20) + '...',
+                expected: expectedSignature.substring(0, 20) + '...'
+            });
+        }
+
+        return isValid;
+    } catch (error) {
+        console.error('[Bold Webhook] ❌ Error verifying signature:', error);
+        return false;
+    }
 }
 
 // Cliente de Supabase con service role para operaciones del servidor
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         const signature = request.headers.get('x-signature') || request.headers.get('x-bold-signature') || request.headers.get('bold-signature');
 
         // Verify webhook signature
-        if (!verifyWebhookSignature(rawBody, signature)) {
+        if (!verifyWebhookSignature(rawBody, signature ?? undefined)) {
             console.error('[Bold Webhook] ❌ Signature verification failed');
             return NextResponse.json(
                 { error: 'Invalid signature' },
