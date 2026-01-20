@@ -57,7 +57,7 @@ export function getSupabaseAdmin() {
       throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured. This is required for admin operations.');
     }
 
-    _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+    _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey!, {
       auth: {
         autoRefreshToken: false,
         persistSession: false
