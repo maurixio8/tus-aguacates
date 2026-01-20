@@ -1,0 +1,718 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e13]:
+            - text: Tus Aguacates
+            - paragraph [ref=e14]: Panel de Administración
+        - navigation [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e17]
+            - text: Dashboard
+          - link "Productos" [ref=e22] [cursor=pointer]:
+            - /url: /admin/productos
+            - img [ref=e23]
+            - text: Productos
+          - link "Categorías" [ref=e27] [cursor=pointer]:
+            - /url: /admin/categorias
+            - img [ref=e28]
+            - text: Categorías
+          - link "Pedidos" [ref=e32] [cursor=pointer]:
+            - /url: /admin/pedidos
+            - img [ref=e33]
+            - text: Pedidos
+          - link "Clientes" [ref=e37] [cursor=pointer]:
+            - /url: /admin/clientes
+            - img [ref=e38]
+            - text: Clientes
+          - link "Cupones" [ref=e43] [cursor=pointer]:
+            - /url: /admin/cupones
+            - img [ref=e44]
+            - text: Cupones
+          - link "Slides" [ref=e46] [cursor=pointer]:
+            - /url: /admin/promociones
+            - img [ref=e47]
+            - text: Slides
+          - link "Banner Mensajes" [ref=e51] [cursor=pointer]:
+            - /url: /admin/banner-mensajes
+            - img [ref=e52]
+            - text: Banner Mensajes
+          - link "Crear Pedido" [ref=e54] [cursor=pointer]:
+            - /url: /admin/crear-pedido
+            - img [ref=e55]
+            - text: Crear Pedido
+          - link "Reportes" [ref=e57] [cursor=pointer]:
+            - /url: /admin/reportes
+            - img [ref=e58]
+            - text: Reportes
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Empresas B2B
+            - link "Dashboard B2B" [ref=e62] [cursor=pointer]:
+              - /url: /admin/empresas
+              - img [ref=e63]
+              - text: Dashboard B2B
+            - link "Clientes B2B" [ref=e68] [cursor=pointer]:
+              - /url: /admin/empresas/clientes
+              - img [ref=e69]
+              - text: Clientes B2B
+            - link "Pedidos B2B" [ref=e74] [cursor=pointer]:
+              - /url: /admin/empresas/pedidos
+              - img [ref=e75]
+              - text: Pedidos B2B
+            - link "Productos B2B" [ref=e79] [cursor=pointer]:
+              - /url: /admin/empresas/productos
+              - img [ref=e80]
+              - text: Productos B2B
+            - link "Reportes B2B" [ref=e84] [cursor=pointer]:
+              - /url: /admin/empresas/reportes
+              - img [ref=e85]
+              - text: Reportes B2B
+            - link "Ver Portal" [ref=e87] [cursor=pointer]:
+              - /url: /empresas
+              - img [ref=e88]
+              - text: Ver Portal
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e95]: A
+            - generic [ref=e96]:
+              - paragraph [ref=e97]: Administrador
+              - paragraph [ref=e98]: admin@tusaguacates.com
+          - button "Cerrar Sesión" [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - text: Cerrar Sesión
+      - main [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - heading "Gestión de Clientes" [level=1] [ref=e108]
+              - paragraph [ref=e109]: Administra tu base de clientes
+            - button "Nuevo Cliente" [ref=e110] [cursor=pointer]:
+              - img [ref=e111]
+              - text: Nuevo Cliente
+          - generic [ref=e112]:
+            - generic [ref=e114]:
+              - img [ref=e116]
+              - generic [ref=e121]:
+                - paragraph [ref=e122]: "2556"
+                - paragraph [ref=e123]: Total Clientes
+            - generic [ref=e125]:
+              - img [ref=e127]
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: "2479"
+                - paragraph [ref=e133]: Registrados
+                - paragraph [ref=e134]: 77 invitados
+            - generic [ref=e136]:
+              - img [ref=e138]
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: "445"
+                - paragraph [ref=e142]: Recurrentes
+                - paragraph [ref=e143]: (2+ pedidos)
+            - generic [ref=e145]:
+              - img [ref=e147]
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: $ 6.713.880
+                - paragraph [ref=e151]: Total Ventas
+            - generic [ref=e153]:
+              - img [ref=e155]
+              - generic [ref=e158]:
+                - paragraph [ref=e159]: $ 2.535,45
+                - paragraph [ref=e160]: Ticket Promedio
+          - generic [ref=e161]:
+            - heading "Filtros de Calidad de Datos" [level=3] [ref=e163]
+            - generic [ref=e164]:
+              - 'button "Con email: 78 (3%)" [ref=e165] [cursor=pointer]':
+                - img [ref=e166]
+                - generic [ref=e169]: "Con email:"
+                - generic [ref=e170]: "78"
+                - generic [ref=e171]: (3%)
+              - 'button "Sin email: 2478" [ref=e172] [cursor=pointer]':
+                - img [ref=e173]
+                - generic [ref=e176]: "Sin email:"
+                - generic [ref=e177]: "2478"
+              - 'button "Con dirección: 1808 (71%)" [ref=e178] [cursor=pointer]':
+                - img [ref=e179]
+                - generic [ref=e182]: "Con dirección:"
+                - generic [ref=e183]: "1808"
+                - generic [ref=e184]: (71%)
+              - 'button "Sin dirección: 748" [ref=e185] [cursor=pointer]':
+                - img [ref=e186]
+                - generic [ref=e189]: "Sin dirección:"
+                - generic [ref=e190]: "748"
+              - 'button "Con nombre: 1785 (70%)" [ref=e191] [cursor=pointer]':
+                - img [ref=e192]
+                - generic [ref=e195]: "Con nombre:"
+                - generic [ref=e196]: "1785"
+                - generic [ref=e197]: (70%)
+              - 'button "⚠️ Sin nombre: 771 Prioridad" [ref=e198] [cursor=pointer]':
+                - img [ref=e199]
+                - generic [ref=e201]: "⚠️ Sin nombre:"
+                - generic [ref=e202]: "771"
+                - generic [ref=e203]: Prioridad
+              - 'button "Datos Incompletos: 2492" [ref=e204] [cursor=pointer]':
+                - img [ref=e205]
+                - generic [ref=e207]: "Datos Incompletos:"
+                - generic [ref=e208]: "2492"
+            - generic [ref=e209]:
+              - generic [ref=e210]: "Fuentes de datos:"
+              - generic [ref=e211]: "Tabla Customers: 2465"
+              - generic [ref=e212]: "Usuarios Registrados: 14"
+              - generic [ref=e213]: "Pedidos Invitados: 77"
+          - generic [ref=e215]:
+            - img [ref=e216]
+            - textbox "Buscar por nombre, teléfono o email..." [ref=e219]
+          - generic [ref=e221]:
+            - img [ref=e224]
+            - generic [ref=e227]:
+              - heading "¡Tienes 2 clientes VIP sin cuenta!" [level=3] [ref=e228]
+              - paragraph [ref=e229]: "Estos clientes han hecho 3 o más pedidos sin registrarse. Convertirlos en clientes registrados te permitirá:"
+              - list [ref=e230]:
+                - listitem [ref=e231]:
+                  - img [ref=e232]
+                  - text: Seguimiento completo de sus pedidos
+                - listitem [ref=e235]:
+                  - img [ref=e236]
+                  - text: Enviarles promociones y descuentos personalizados
+                - listitem [ref=e239]:
+                  - img [ref=e240]
+                  - text: Mejor experiencia de compra para ellos
+              - paragraph [ref=e243]:
+                - text: 💡
+                - strong [ref=e244]: "Consejo:"
+                - text: Busca clientes con el badge morado "¡Convertir!" y haz clic en Editar para crearles una cuenta.
+          - generic [ref=e245]:
+            - table [ref=e247]:
+              - rowgroup [ref=e248]:
+                - row "Cliente Contacto Dirección Pedidos Total Gastado Acciones" [ref=e249]:
+                  - cell "Cliente" [ref=e250]
+                  - cell "Contacto" [ref=e251]
+                  - cell "Dirección" [ref=e252]
+                  - cell "Pedidos" [ref=e253]
+                  - cell "Total Gastado" [ref=e254]
+                  - cell "Acciones" [ref=e255]
+              - rowgroup [ref=e256]:
+                - 'row "Sandra Milena Velasco Vargas Recurrente Último pedido: 10 de ene de 2026 573005075721 sandrita4060@gmail.com CRA 67 # 57 V09 sur Reserva de Madelena Torre 4 apto 2128 2 $ 137.000 WhatsApp Editar Eliminar" [ref=e257]':
+                  - 'cell "Sandra Milena Velasco Vargas Recurrente Último pedido: 10 de ene de 2026" [ref=e258]':
+                    - generic [ref=e259]:
+                      - paragraph [ref=e260]: Sandra Milena Velasco Vargas
+                      - generic [ref=e261]:
+                        - img [ref=e262]
+                        - text: Recurrente
+                    - paragraph [ref=e264]:
+                      - img [ref=e265]
+                      - text: "Último pedido: 10 de ene de 2026"
+                  - cell "573005075721 sandrita4060@gmail.com" [ref=e267]:
+                    - paragraph [ref=e268]:
+                      - img [ref=e269]
+                      - text: "573005075721"
+                    - paragraph [ref=e271]:
+                      - img [ref=e272]
+                      - text: sandrita4060@gmail.com
+                  - 'cell "CRA 67 # 57 V09 sur Reserva de Madelena Torre 4 apto 2128" [ref=e275]':
+                    - paragraph [ref=e276]: "CRA 67 # 57 V09 sur Reserva de Madelena Torre 4 apto 2128"
+                  - cell "2" [ref=e277]:
+                    - generic [ref=e278]:
+                      - img [ref=e279]
+                      - text: "2"
+                  - cell "$ 137.000" [ref=e282]
+                  - cell "WhatsApp Editar Eliminar" [ref=e283]:
+                    - generic [ref=e284]:
+                      - link "WhatsApp" [ref=e285] [cursor=pointer]:
+                        - /url: https://wa.me/57573005075721?text=Hola Sandra Milena Velasco Vargas , te escribimos de Tus Aguacates
+                        - img [ref=e286]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e288] [cursor=pointer]
+                      - button "Eliminar" [ref=e289] [cursor=pointer]
+                - 'row "Ximena Rincón Último pedido: 10 de ene de 2026 573209014298 ximenarinconch@gmail.com Cra 53 #134A-10. Apto 108. Edificio Almería Real. Barrio Spring. Bogotá. 1 $ 98.500 WhatsApp Editar Eliminar" [ref=e290]':
+                  - 'cell "Ximena Rincón Último pedido: 10 de ene de 2026" [ref=e291]':
+                    - paragraph [ref=e293]: Ximena Rincón
+                    - paragraph [ref=e294]:
+                      - img [ref=e295]
+                      - text: "Último pedido: 10 de ene de 2026"
+                  - cell "573209014298 ximenarinconch@gmail.com" [ref=e297]:
+                    - paragraph [ref=e298]:
+                      - img [ref=e299]
+                      - text: "573209014298"
+                    - paragraph [ref=e301]:
+                      - img [ref=e302]
+                      - text: ximenarinconch@gmail.com
+                  - 'cell "Cra 53 #134A-10. Apto 108. Edificio Almería Real. Barrio Spring. Bogotá." [ref=e305]':
+                    - paragraph [ref=e306]: "Cra 53 #134A-10. Apto 108. Edificio Almería Real. Barrio Spring. Bogotá."
+                  - cell "1" [ref=e307]:
+                    - generic [ref=e308]:
+                      - img [ref=e309]
+                      - text: "1"
+                  - cell "$ 98.500" [ref=e312]
+                  - cell "WhatsApp Editar Eliminar" [ref=e313]:
+                    - generic [ref=e314]:
+                      - link "WhatsApp" [ref=e315] [cursor=pointer]:
+                        - /url: https://wa.me/57573209014298?text=Hola Ximena Rincón, te escribimos de Tus Aguacates
+                        - img [ref=e316]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e318] [cursor=pointer]
+                      - button "Eliminar" [ref=e319] [cursor=pointer]
+                - row "Shirley Arrauth Sin teléfono darrauth@gmail.com Sin dirección 0 $ 0 Editar Eliminar" [ref=e320]:
+                  - cell "Shirley Arrauth" [ref=e321]:
+                    - paragraph [ref=e323]: Shirley Arrauth
+                  - cell "Sin teléfono darrauth@gmail.com" [ref=e324]:
+                    - paragraph [ref=e325]:
+                      - img [ref=e326]
+                      - text: Sin teléfono
+                    - paragraph [ref=e328]:
+                      - img [ref=e329]
+                      - text: darrauth@gmail.com
+                  - cell "Sin dirección" [ref=e332]
+                  - cell "0" [ref=e333]:
+                    - generic [ref=e334]:
+                      - img [ref=e335]
+                      - text: "0"
+                  - cell "$ 0" [ref=e338]
+                  - cell "Editar Eliminar" [ref=e339]:
+                    - generic [ref=e340]:
+                      - button "Editar" [ref=e341] [cursor=pointer]
+                      - button "Eliminar" [ref=e342] [cursor=pointer]
+                - 'row "Shirley Arrauth Recurrente ¡Convertir! Último pedido: 09 de ene de 2026 573134853715 darrauth@gmail.com Calle 128C # 47-70 apto 909 entrada 2 edificio Prado 128 3 $ 212.100 WhatsApp Editar Eliminar" [ref=e343]':
+                  - 'cell "Shirley Arrauth Recurrente ¡Convertir! Último pedido: 09 de ene de 2026" [ref=e344]':
+                    - generic [ref=e345]:
+                      - paragraph [ref=e346]: Shirley Arrauth
+                      - generic [ref=e347]:
+                        - img [ref=e348]
+                        - text: Recurrente
+                      - generic [ref=e350]:
+                        - img [ref=e351]
+                        - text: ¡Convertir!
+                    - paragraph [ref=e354]:
+                      - img [ref=e355]
+                      - text: "Último pedido: 09 de ene de 2026"
+                  - cell "573134853715 darrauth@gmail.com" [ref=e357]:
+                    - paragraph [ref=e358]:
+                      - img [ref=e359]
+                      - text: "573134853715"
+                    - paragraph [ref=e361]:
+                      - img [ref=e362]
+                      - text: darrauth@gmail.com
+                  - 'cell "Calle 128C # 47-70 apto 909 entrada 2 edificio Prado 128" [ref=e365]':
+                    - paragraph [ref=e366]: "Calle 128C # 47-70 apto 909 entrada 2 edificio Prado 128"
+                  - cell "3" [ref=e367]:
+                    - generic [ref=e368]:
+                      - img [ref=e369]
+                      - text: "3"
+                  - cell "$ 212.100" [ref=e372]
+                  - cell "WhatsApp Editar Eliminar" [ref=e373]:
+                    - generic [ref=e374]:
+                      - link "WhatsApp" [ref=e375] [cursor=pointer]:
+                        - /url: https://wa.me/57573134853715?text=Hola Shirley Arrauth, te escribimos de Tus Aguacates
+                        - img [ref=e376]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e378] [cursor=pointer]
+                      - button "Eliminar" [ref=e379] [cursor=pointer]
+                - row "Cliente WhatsApp +573156637532 Sin dirección 0 $ 0 WhatsApp Editar Eliminar" [ref=e380]:
+                  - cell "Cliente WhatsApp" [ref=e381]:
+                    - paragraph [ref=e383]: Cliente WhatsApp
+                  - cell "+573156637532" [ref=e384]:
+                    - paragraph [ref=e385]:
+                      - img [ref=e386]
+                      - text: "+573156637532"
+                  - cell "Sin dirección" [ref=e388]
+                  - cell "0" [ref=e389]:
+                    - generic [ref=e390]:
+                      - img [ref=e391]
+                      - text: "0"
+                  - cell "$ 0" [ref=e394]
+                  - cell "WhatsApp Editar Eliminar" [ref=e395]:
+                    - generic [ref=e396]:
+                      - link "WhatsApp" [ref=e397] [cursor=pointer]:
+                        - /url: https://wa.me/57573156637532?text=Hola Cliente WhatsApp, te escribimos de Tus Aguacates
+                        - img [ref=e398]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e400] [cursor=pointer]
+                      - button "Eliminar" [ref=e401] [cursor=pointer]
+                - 'row "Camilo Beltran Último pedido: 09 de ene de 2026 573225951998 cbeltranp2@gmail.com Carrera 111 # 152 F 30 1 $ 47.900 WhatsApp Editar Eliminar" [ref=e402]':
+                  - 'cell "Camilo Beltran Último pedido: 09 de ene de 2026" [ref=e403]':
+                    - paragraph [ref=e405]: Camilo Beltran
+                    - paragraph [ref=e406]:
+                      - img [ref=e407]
+                      - text: "Último pedido: 09 de ene de 2026"
+                  - cell "573225951998 cbeltranp2@gmail.com" [ref=e409]:
+                    - paragraph [ref=e410]:
+                      - img [ref=e411]
+                      - text: "573225951998"
+                    - paragraph [ref=e413]:
+                      - img [ref=e414]
+                      - text: cbeltranp2@gmail.com
+                  - 'cell "Carrera 111 # 152 F 30" [ref=e417]':
+                    - paragraph [ref=e418]: "Carrera 111 # 152 F 30"
+                  - cell "1" [ref=e419]:
+                    - generic [ref=e420]:
+                      - img [ref=e421]
+                      - text: "1"
+                  - cell "$ 47.900" [ref=e424]
+                  - cell "WhatsApp Editar Eliminar" [ref=e425]:
+                    - generic [ref=e426]:
+                      - link "WhatsApp" [ref=e427] [cursor=pointer]:
+                        - /url: https://wa.me/57573225951998?text=Hola Camilo Beltran, te escribimos de Tus Aguacates
+                        - img [ref=e428]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e430] [cursor=pointer]
+                      - button "Eliminar" [ref=e431] [cursor=pointer]
+                - row "Cliente WhatsApp +573157175030 Sin dirección 0 $ 0 WhatsApp Editar Eliminar" [ref=e432]:
+                  - cell "Cliente WhatsApp" [ref=e433]:
+                    - paragraph [ref=e435]: Cliente WhatsApp
+                  - cell "+573157175030" [ref=e436]:
+                    - paragraph [ref=e437]:
+                      - img [ref=e438]
+                      - text: "+573157175030"
+                  - cell "Sin dirección" [ref=e440]
+                  - cell "0" [ref=e441]:
+                    - generic [ref=e442]:
+                      - img [ref=e443]
+                      - text: "0"
+                  - cell "$ 0" [ref=e446]
+                  - cell "WhatsApp Editar Eliminar" [ref=e447]:
+                    - generic [ref=e448]:
+                      - link "WhatsApp" [ref=e449] [cursor=pointer]:
+                        - /url: https://wa.me/57573157175030?text=Hola Cliente WhatsApp, te escribimos de Tus Aguacates
+                        - img [ref=e450]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e452] [cursor=pointer]
+                      - button "Eliminar" [ref=e453] [cursor=pointer]
+                - row "Cliente WhatsApp +573005114519 [\"calle, número, barrio\"] 0 $ 0 WhatsApp Editar Eliminar" [ref=e454]:
+                  - cell "Cliente WhatsApp" [ref=e455]:
+                    - paragraph [ref=e457]: Cliente WhatsApp
+                  - cell "+573005114519" [ref=e458]:
+                    - paragraph [ref=e459]:
+                      - img [ref=e460]
+                      - text: "+573005114519"
+                  - cell "[\"calle, número, barrio\"]" [ref=e462]:
+                    - paragraph [ref=e463]: "[\"calle, número, barrio\"]"
+                  - cell "0" [ref=e464]:
+                    - generic [ref=e465]:
+                      - img [ref=e466]
+                      - text: "0"
+                  - cell "$ 0" [ref=e469]
+                  - cell "WhatsApp Editar Eliminar" [ref=e470]:
+                    - generic [ref=e471]:
+                      - link "WhatsApp" [ref=e472] [cursor=pointer]:
+                        - /url: https://wa.me/57573005114519?text=Hola Cliente WhatsApp, te escribimos de Tus Aguacates
+                        - img [ref=e473]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e475] [cursor=pointer]
+                      - button "Eliminar" [ref=e476] [cursor=pointer]
+                - row "Gloria Castro Sin teléfono goyaccg@gmail.com Sin dirección 0 $ 0 Editar Eliminar" [ref=e477]:
+                  - cell "Gloria Castro" [ref=e478]:
+                    - paragraph [ref=e480]: Gloria Castro
+                  - cell "Sin teléfono goyaccg@gmail.com" [ref=e481]:
+                    - paragraph [ref=e482]:
+                      - img [ref=e483]
+                      - text: Sin teléfono
+                    - paragraph [ref=e485]:
+                      - img [ref=e486]
+                      - text: goyaccg@gmail.com
+                  - cell "Sin dirección" [ref=e489]
+                  - cell "0" [ref=e490]:
+                    - generic [ref=e491]:
+                      - img [ref=e492]
+                      - text: "0"
+                  - cell "$ 0" [ref=e495]
+                  - cell "Editar Eliminar" [ref=e496]:
+                    - generic [ref=e497]:
+                      - button "Editar" [ref=e498] [cursor=pointer]
+                      - button "Eliminar" [ref=e499] [cursor=pointer]
+                - row "Cliente WhatsApp +573132753034 Sin dirección 0 $ 0 WhatsApp Editar Eliminar" [ref=e500]:
+                  - cell "Cliente WhatsApp" [ref=e501]:
+                    - paragraph [ref=e503]: Cliente WhatsApp
+                  - cell "+573132753034" [ref=e504]:
+                    - paragraph [ref=e505]:
+                      - img [ref=e506]
+                      - text: "+573132753034"
+                  - cell "Sin dirección" [ref=e508]
+                  - cell "0" [ref=e509]:
+                    - generic [ref=e510]:
+                      - img [ref=e511]
+                      - text: "0"
+                  - cell "$ 0" [ref=e514]
+                  - cell "WhatsApp Editar Eliminar" [ref=e515]:
+                    - generic [ref=e516]:
+                      - link "WhatsApp" [ref=e517] [cursor=pointer]:
+                        - /url: https://wa.me/57573132753034?text=Hola Cliente WhatsApp, te escribimos de Tus Aguacates
+                        - img [ref=e518]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e520] [cursor=pointer]
+                      - button "Eliminar" [ref=e521] [cursor=pointer]
+                - row "Patricia Niño Sin teléfono janetiss@hotmail.com Sin dirección 0 $ 0 Editar Eliminar" [ref=e522]:
+                  - cell "Patricia Niño" [ref=e523]:
+                    - paragraph [ref=e525]: Patricia Niño
+                  - cell "Sin teléfono janetiss@hotmail.com" [ref=e526]:
+                    - paragraph [ref=e527]:
+                      - img [ref=e528]
+                      - text: Sin teléfono
+                    - paragraph [ref=e530]:
+                      - img [ref=e531]
+                      - text: janetiss@hotmail.com
+                  - cell "Sin dirección" [ref=e534]
+                  - cell "0" [ref=e535]:
+                    - generic [ref=e536]:
+                      - img [ref=e537]
+                      - text: "0"
+                  - cell "$ 0" [ref=e540]
+                  - cell "Editar Eliminar" [ref=e541]:
+                    - generic [ref=e542]:
+                      - button "Editar" [ref=e543] [cursor=pointer]
+                      - button "Eliminar" [ref=e544] [cursor=pointer]
+                - 'row "Patricia Niño Último pedido: 08 de ene de 2026 573012255462 janetiss@hotmail.com Calle 166 # 8d-44 int 5 apto 803 conjunto altos de tierra Santa 1 $ 24.000 WhatsApp Editar Eliminar" [ref=e545]':
+                  - 'cell "Patricia Niño Último pedido: 08 de ene de 2026" [ref=e546]':
+                    - paragraph [ref=e548]: Patricia Niño
+                    - paragraph [ref=e549]:
+                      - img [ref=e550]
+                      - text: "Último pedido: 08 de ene de 2026"
+                  - cell "573012255462 janetiss@hotmail.com" [ref=e552]:
+                    - paragraph [ref=e553]:
+                      - img [ref=e554]
+                      - text: "573012255462"
+                    - paragraph [ref=e556]:
+                      - img [ref=e557]
+                      - text: janetiss@hotmail.com
+                  - 'cell "Calle 166 # 8d-44 int 5 apto 803 conjunto altos de tierra Santa" [ref=e560]':
+                    - paragraph [ref=e561]: "Calle 166 # 8d-44 int 5 apto 803 conjunto altos de tierra Santa"
+                  - cell "1" [ref=e562]:
+                    - generic [ref=e563]:
+                      - img [ref=e564]
+                      - text: "1"
+                  - cell "$ 24.000" [ref=e567]
+                  - cell "WhatsApp Editar Eliminar" [ref=e568]:
+                    - generic [ref=e569]:
+                      - link "WhatsApp" [ref=e570] [cursor=pointer]:
+                        - /url: https://wa.me/57573012255462?text=Hola Patricia Niño, te escribimos de Tus Aguacates
+                        - img [ref=e571]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e573] [cursor=pointer]
+                      - button "Eliminar" [ref=e574] [cursor=pointer]
+                - 'row "Sandra Alvarez Último pedido: 08 de ene de 2026 573124783110 alvasacla@hotmail.es Cl 127A 53A 48 Ap 504 1 $ 174.100 WhatsApp Editar Eliminar" [ref=e575]':
+                  - 'cell "Sandra Alvarez Último pedido: 08 de ene de 2026" [ref=e576]':
+                    - paragraph [ref=e578]: Sandra Alvarez
+                    - paragraph [ref=e579]:
+                      - img [ref=e580]
+                      - text: "Último pedido: 08 de ene de 2026"
+                  - cell "573124783110 alvasacla@hotmail.es" [ref=e582]:
+                    - paragraph [ref=e583]:
+                      - img [ref=e584]
+                      - text: "573124783110"
+                    - paragraph [ref=e586]:
+                      - img [ref=e587]
+                      - text: alvasacla@hotmail.es
+                  - cell "Cl 127A 53A 48 Ap 504" [ref=e590]:
+                    - paragraph [ref=e591]: Cl 127A 53A 48 Ap 504
+                  - cell "1" [ref=e592]:
+                    - generic [ref=e593]:
+                      - img [ref=e594]
+                      - text: "1"
+                  - cell "$ 174.100" [ref=e597]
+                  - cell "WhatsApp Editar Eliminar" [ref=e598]:
+                    - generic [ref=e599]:
+                      - link "WhatsApp" [ref=e600] [cursor=pointer]:
+                        - /url: https://wa.me/57573124783110?text=Hola Sandra Alvarez, te escribimos de Tus Aguacates
+                        - img [ref=e601]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e603] [cursor=pointer]
+                      - button "Eliminar" [ref=e604] [cursor=pointer]
+                - row "claudia.leon.rodriguez@hotmail.com Sin teléfono claudia.leon.rodriguez@hotmail.com Sin dirección 0 $ 0 Editar Eliminar" [ref=e605]:
+                  - cell "claudia.leon.rodriguez@hotmail.com" [ref=e606]:
+                    - paragraph [ref=e608]: claudia.leon.rodriguez@hotmail.com
+                  - cell "Sin teléfono claudia.leon.rodriguez@hotmail.com" [ref=e609]:
+                    - paragraph [ref=e610]:
+                      - img [ref=e611]
+                      - text: Sin teléfono
+                    - paragraph [ref=e613]:
+                      - img [ref=e614]
+                      - text: claudia.leon.rodriguez@hotmail.com
+                  - cell "Sin dirección" [ref=e617]
+                  - cell "0" [ref=e618]:
+                    - generic [ref=e619]:
+                      - img [ref=e620]
+                      - text: "0"
+                  - cell "$ 0" [ref=e623]
+                  - cell "Editar Eliminar" [ref=e624]:
+                    - generic [ref=e625]:
+                      - button "Editar" [ref=e626] [cursor=pointer]
+                      - button "Eliminar" [ref=e627] [cursor=pointer]
+                - 'row "claudia.leon.rodriguez@hotmail.com Último pedido: 07 de ene de 2026 573013662499 claudia.leon.rodriguez@hotmail.com Carrera 89 #19a-50, Bogotá, 110921, Colombia interio 2 apartamento 611 conjunto prados de capellanía 1 $ 24.000 WhatsApp Editar Eliminar" [ref=e628]':
+                  - 'cell "claudia.leon.rodriguez@hotmail.com Último pedido: 07 de ene de 2026" [ref=e629]':
+                    - paragraph [ref=e631]: claudia.leon.rodriguez@hotmail.com
+                    - paragraph [ref=e632]:
+                      - img [ref=e633]
+                      - text: "Último pedido: 07 de ene de 2026"
+                  - cell "573013662499 claudia.leon.rodriguez@hotmail.com" [ref=e635]:
+                    - paragraph [ref=e636]:
+                      - img [ref=e637]
+                      - text: "573013662499"
+                    - paragraph [ref=e639]:
+                      - img [ref=e640]
+                      - text: claudia.leon.rodriguez@hotmail.com
+                  - 'cell "Carrera 89 #19a-50, Bogotá, 110921, Colombia interio 2 apartamento 611 conjunto prados de capellanía" [ref=e643]':
+                    - paragraph [ref=e644]: "Carrera 89 #19a-50, Bogotá, 110921, Colombia interio 2 apartamento 611 conjunto prados de capellanía"
+                  - cell "1" [ref=e645]:
+                    - generic [ref=e646]:
+                      - img [ref=e647]
+                      - text: "1"
+                  - cell "$ 24.000" [ref=e650]
+                  - cell "WhatsApp Editar Eliminar" [ref=e651]:
+                    - generic [ref=e652]:
+                      - link "WhatsApp" [ref=e653] [cursor=pointer]:
+                        - /url: https://wa.me/57573013662499?text=Hola claudia.leon.rodriguez@hotmail.com, te escribimos de Tus Aguacates
+                        - img [ref=e654]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e656] [cursor=pointer]
+                      - button "Eliminar" [ref=e657] [cursor=pointer]
+                - 'row "María Natalia Méndez Recurrente ¡Convertir! Último pedido: 07 de ene de 2026 573203386989 manamego@gmail.com Calle 66 c #60-65 Conjunto Salitre Living Torre 2 apto 1007 6 $ 308.820 WhatsApp Editar Eliminar" [ref=e658]':
+                  - 'cell "María Natalia Méndez Recurrente ¡Convertir! Último pedido: 07 de ene de 2026" [ref=e659]':
+                    - generic [ref=e660]:
+                      - paragraph [ref=e661]: María Natalia Méndez
+                      - generic [ref=e662]:
+                        - img [ref=e663]
+                        - text: Recurrente
+                      - generic [ref=e665]:
+                        - img [ref=e666]
+                        - text: ¡Convertir!
+                    - paragraph [ref=e669]:
+                      - img [ref=e670]
+                      - text: "Último pedido: 07 de ene de 2026"
+                  - cell "573203386989 manamego@gmail.com" [ref=e672]:
+                    - paragraph [ref=e673]:
+                      - img [ref=e674]
+                      - text: "573203386989"
+                    - paragraph [ref=e676]:
+                      - img [ref=e677]
+                      - text: manamego@gmail.com
+                  - 'cell "Calle 66 c #60-65 Conjunto Salitre Living Torre 2 apto 1007" [ref=e680]':
+                    - paragraph [ref=e681]: "Calle 66 c #60-65 Conjunto Salitre Living Torre 2 apto 1007"
+                  - cell "6" [ref=e682]:
+                    - generic [ref=e683]:
+                      - img [ref=e684]
+                      - text: "6"
+                  - cell "$ 308.820" [ref=e687]
+                  - cell "WhatsApp Editar Eliminar" [ref=e688]:
+                    - generic [ref=e689]:
+                      - link "WhatsApp" [ref=e690] [cursor=pointer]:
+                        - /url: https://wa.me/57573203386989?text=Hola María Natalia Méndez , te escribimos de Tus Aguacates
+                        - img [ref=e691]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e693] [cursor=pointer]
+                      - button "Eliminar" [ref=e694] [cursor=pointer]
+                - 'row "Adriana Prieto Último pedido: 07 de ene de 2026 3115276342 nanapri81@gmail.com Calle 41 bis sur 78 K 35 1 $ 82.500 WhatsApp Editar Eliminar" [ref=e695]':
+                  - 'cell "Adriana Prieto Último pedido: 07 de ene de 2026" [ref=e696]':
+                    - paragraph [ref=e698]: Adriana Prieto
+                    - paragraph [ref=e699]:
+                      - img [ref=e700]
+                      - text: "Último pedido: 07 de ene de 2026"
+                  - cell "3115276342 nanapri81@gmail.com" [ref=e702]:
+                    - paragraph [ref=e703]:
+                      - img [ref=e704]
+                      - text: "3115276342"
+                    - paragraph [ref=e706]:
+                      - img [ref=e707]
+                      - text: nanapri81@gmail.com
+                  - cell "Calle 41 bis sur 78 K 35" [ref=e710]:
+                    - paragraph [ref=e711]: Calle 41 bis sur 78 K 35
+                  - cell "1" [ref=e712]:
+                    - generic [ref=e713]:
+                      - img [ref=e714]
+                      - text: "1"
+                  - cell "$ 82.500" [ref=e717]
+                  - cell "WhatsApp Editar Eliminar" [ref=e718]:
+                    - generic [ref=e719]:
+                      - link "WhatsApp" [ref=e720] [cursor=pointer]:
+                        - /url: https://wa.me/573115276342?text=Hola Adriana Prieto , te escribimos de Tus Aguacates
+                        - img [ref=e721]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e723] [cursor=pointer]
+                      - button "Eliminar" [ref=e724] [cursor=pointer]
+                - 'row "Adriana Prieto Último pedido: 07 de ene de 2026 3194973187 nanapri81@gmail.com Calle 41 bis sur 78 K 35 1 $ 76.300 WhatsApp Editar Eliminar" [ref=e725]':
+                  - 'cell "Adriana Prieto Último pedido: 07 de ene de 2026" [ref=e726]':
+                    - paragraph [ref=e728]: Adriana Prieto
+                    - paragraph [ref=e729]:
+                      - img [ref=e730]
+                      - text: "Último pedido: 07 de ene de 2026"
+                  - cell "3194973187 nanapri81@gmail.com" [ref=e732]:
+                    - paragraph [ref=e733]:
+                      - img [ref=e734]
+                      - text: "3194973187"
+                    - paragraph [ref=e736]:
+                      - img [ref=e737]
+                      - text: nanapri81@gmail.com
+                  - cell "Calle 41 bis sur 78 K 35" [ref=e740]:
+                    - paragraph [ref=e741]: Calle 41 bis sur 78 K 35
+                  - cell "1" [ref=e742]:
+                    - generic [ref=e743]:
+                      - img [ref=e744]
+                      - text: "1"
+                  - cell "$ 76.300" [ref=e747]
+                  - cell "WhatsApp Editar Eliminar" [ref=e748]:
+                    - generic [ref=e749]:
+                      - link "WhatsApp" [ref=e750] [cursor=pointer]:
+                        - /url: https://wa.me/573194973187?text=Hola Adriana Prieto , te escribimos de Tus Aguacates
+                        - img [ref=e751]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e753] [cursor=pointer]
+                      - button "Eliminar" [ref=e754] [cursor=pointer]
+                - row "Marlene Moreno Sin teléfono mar_mo63@hotmail.com Sin dirección 0 $ 0 Editar Eliminar" [ref=e755]:
+                  - cell "Marlene Moreno" [ref=e756]:
+                    - paragraph [ref=e758]: Marlene Moreno
+                  - cell "Sin teléfono mar_mo63@hotmail.com" [ref=e759]:
+                    - paragraph [ref=e760]:
+                      - img [ref=e761]
+                      - text: Sin teléfono
+                    - paragraph [ref=e763]:
+                      - img [ref=e764]
+                      - text: mar_mo63@hotmail.com
+                  - cell "Sin dirección" [ref=e767]
+                  - cell "0" [ref=e768]:
+                    - generic [ref=e769]:
+                      - img [ref=e770]
+                      - text: "0"
+                  - cell "$ 0" [ref=e773]
+                  - cell "Editar Eliminar" [ref=e774]:
+                    - generic [ref=e775]:
+                      - button "Editar" [ref=e776] [cursor=pointer]
+                      - button "Eliminar" [ref=e777] [cursor=pointer]
+                - 'row "Marlene Moreno Último pedido: 06 de ene de 2026 3164597450 mar_mo63@hotmail.com Calle 6a #89-42 in 10 ap 304, Kennedy, Bogotá, 110811, Colombia 1 $ 122.100 WhatsApp Editar Eliminar" [ref=e778]':
+                  - 'cell "Marlene Moreno Último pedido: 06 de ene de 2026" [ref=e779]':
+                    - paragraph [ref=e781]: Marlene Moreno
+                    - paragraph [ref=e782]:
+                      - img [ref=e783]
+                      - text: "Último pedido: 06 de ene de 2026"
+                  - cell "3164597450 mar_mo63@hotmail.com" [ref=e785]:
+                    - paragraph [ref=e786]:
+                      - img [ref=e787]
+                      - text: "3164597450"
+                    - paragraph [ref=e789]:
+                      - img [ref=e790]
+                      - text: mar_mo63@hotmail.com
+                  - 'cell "Calle 6a #89-42 in 10 ap 304, Kennedy, Bogotá, 110811, Colombia" [ref=e793]':
+                    - paragraph [ref=e794]: "Calle 6a #89-42 in 10 ap 304, Kennedy, Bogotá, 110811, Colombia"
+                  - cell "1" [ref=e795]:
+                    - generic [ref=e796]:
+                      - img [ref=e797]
+                      - text: "1"
+                  - cell "$ 122.100" [ref=e800]
+                  - cell "WhatsApp Editar Eliminar" [ref=e801]:
+                    - generic [ref=e802]:
+                      - link "WhatsApp" [ref=e803] [cursor=pointer]:
+                        - /url: https://wa.me/573164597450?text=Hola Marlene Moreno, te escribimos de Tus Aguacates
+                        - img [ref=e804]
+                        - text: WhatsApp
+                      - button "Editar" [ref=e806] [cursor=pointer]
+                      - button "Eliminar" [ref=e807] [cursor=pointer]
+            - generic [ref=e808]:
+              - paragraph [ref=e809]: Mostrando 1 - 20 de 2619
+              - generic [ref=e810]:
+                - button [disabled] [ref=e811]:
+                  - img [ref=e812]
+                - button [ref=e814] [cursor=pointer]:
+                  - img [ref=e815]
+  - alert [ref=e817]
+```

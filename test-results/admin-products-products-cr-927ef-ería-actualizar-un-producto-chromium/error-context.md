@@ -1,0 +1,183 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e13]:
+            - text: Tus Aguacates
+            - paragraph [ref=e14]: Panel de Administración
+        - navigation [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e17]
+            - text: Dashboard
+          - link "Productos" [ref=e22] [cursor=pointer]:
+            - /url: /admin/productos
+            - img [ref=e23]
+            - text: Productos
+          - link "Categorías" [ref=e27] [cursor=pointer]:
+            - /url: /admin/categorias
+            - img [ref=e28]
+            - text: Categorías
+          - link "Pedidos" [ref=e32] [cursor=pointer]:
+            - /url: /admin/pedidos
+            - img [ref=e33]
+            - text: Pedidos
+          - link "Clientes" [ref=e37] [cursor=pointer]:
+            - /url: /admin/clientes
+            - img [ref=e38]
+            - text: Clientes
+          - link "Cupones" [ref=e43] [cursor=pointer]:
+            - /url: /admin/cupones
+            - img [ref=e44]
+            - text: Cupones
+          - link "Slides" [ref=e46] [cursor=pointer]:
+            - /url: /admin/promociones
+            - img [ref=e47]
+            - text: Slides
+          - link "Banner Mensajes" [ref=e51] [cursor=pointer]:
+            - /url: /admin/banner-mensajes
+            - img [ref=e52]
+            - text: Banner Mensajes
+          - link "Crear Pedido" [ref=e54] [cursor=pointer]:
+            - /url: /admin/crear-pedido
+            - img [ref=e55]
+            - text: Crear Pedido
+          - link "Reportes" [ref=e57] [cursor=pointer]:
+            - /url: /admin/reportes
+            - img [ref=e58]
+            - text: Reportes
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Empresas B2B
+            - link "Dashboard B2B" [ref=e62] [cursor=pointer]:
+              - /url: /admin/empresas
+              - img [ref=e63]
+              - text: Dashboard B2B
+            - link "Clientes B2B" [ref=e68] [cursor=pointer]:
+              - /url: /admin/empresas/clientes
+              - img [ref=e69]
+              - text: Clientes B2B
+            - link "Pedidos B2B" [ref=e74] [cursor=pointer]:
+              - /url: /admin/empresas/pedidos
+              - img [ref=e75]
+              - text: Pedidos B2B
+            - link "Productos B2B" [ref=e79] [cursor=pointer]:
+              - /url: /admin/empresas/productos
+              - img [ref=e80]
+              - text: Productos B2B
+            - link "Reportes B2B" [ref=e84] [cursor=pointer]:
+              - /url: /admin/empresas/reportes
+              - img [ref=e85]
+              - text: Reportes B2B
+            - link "Ver Portal" [ref=e87] [cursor=pointer]:
+              - /url: /empresas
+              - img [ref=e88]
+              - text: Ver Portal
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e95]: A
+            - generic [ref=e96]:
+              - paragraph [ref=e97]: Administrador
+              - paragraph [ref=e98]: admin@tusaguacates.com
+          - button "Cerrar Sesión" [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - text: Cerrar Sesión
+      - main [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - heading "Dashboard" [level=1] [ref=e107]
+            - paragraph [ref=e108]: Resumen ejecutivo de Tus Aguacates
+          - generic [ref=e109]:
+            - generic [ref=e111]:
+              - generic [ref=e112]:
+                - paragraph [ref=e113]: Ventas Hoy
+                - paragraph [ref=e114]: $ 0
+                - paragraph [ref=e115]: 0 pedidos
+              - img [ref=e117]
+            - generic [ref=e121]:
+              - generic [ref=e122]:
+                - paragraph [ref=e123]: Pedidos Pendientes
+                - paragraph [ref=e124]: "39"
+                - paragraph [ref=e125]: Requieren atención
+              - img [ref=e127]
+            - generic [ref=e131]:
+              - generic [ref=e132]:
+                - paragraph [ref=e133]: Entregas Mañana
+                - paragraph [ref=e134]: "10"
+                - paragraph [ref=e135]: Pedidos programados
+              - img [ref=e137]
+            - generic [ref=e142]:
+              - generic [ref=e143]:
+                - paragraph [ref=e144]: Ventas Semana
+                - paragraph [ref=e145]: $ 177.200
+                - paragraph [ref=e146]: 6 pedidos
+              - img [ref=e148]
+          - generic [ref=e150]:
+            - generic [ref=e151]:
+              - generic [ref=e152]:
+                - img [ref=e153]
+                - heading "Productos Más Vendidos Hoy" [level=2] [ref=e156]
+              - paragraph [ref=e157]: No hay ventas hoy
+            - generic [ref=e158]:
+              - generic [ref=e159]:
+                - img [ref=e160]
+                - heading "Entregas para Mañana" [level=2] [ref=e164]
+              - generic [ref=e165]:
+                - generic [ref=e166]:
+                  - paragraph [ref=e167]: Caja de 24 unidades hass mediano
+                  - paragraph [ref=e168]: 6 unidades
+                - generic [ref=e169]:
+                  - paragraph [ref=e170]: Caja de 12 unidades Premium
+                  - paragraph [ref=e171]: 3 unidades
+                - generic [ref=e172]:
+                  - paragraph [ref=e173]: Pimienta Cayena
+                  - paragraph [ref=e174]: 2 unidades
+                - generic [ref=e175]:
+                  - paragraph [ref=e176]: Nueva Maya paquete x 7 premium
+                  - paragraph [ref=e177]: 1 unidades
+                - generic [ref=e178]:
+                  - paragraph [ref=e179]: Manzana verde Bandeja
+                  - paragraph [ref=e180]: 1 unidades
+                - generic [ref=e181]:
+                  - paragraph [ref=e182]: Sandía Baby
+                  - paragraph [ref=e183]: 1 unidades
+                - generic [ref=e184]:
+                  - paragraph [ref=e185]: Tomate chonto tamaño mixto
+                  - paragraph [ref=e186]: 1 unidades
+                - generic [ref=e187]:
+                  - paragraph [ref=e188]: Caja de 7 unidades injerto
+                  - paragraph [ref=e189]: 1 unidades
+          - generic [ref=e190]:
+            - heading "Ventas por Categoría (Últimos 7 días)" [level=2] [ref=e191]
+            - generic [ref=e193]:
+              - paragraph [ref=e194]: General
+              - paragraph [ref=e195]: $ 132.800
+          - generic [ref=e196]:
+            - heading "Acciones Rápidas" [level=2] [ref=e197]
+            - generic [ref=e198]:
+              - link "Nuevo Pedido" [ref=e199] [cursor=pointer]:
+                - /url: /admin/crear-pedido
+                - img [ref=e200]
+                - generic [ref=e203]: Nuevo Pedido
+              - link "Ver Pendientes" [ref=e204] [cursor=pointer]:
+                - /url: /admin/pedidos?status=pendiente
+                - img [ref=e205]
+                - generic [ref=e208]: Ver Pendientes
+              - link "Productos" [ref=e209] [cursor=pointer]:
+                - /url: /admin/productos
+                - img [ref=e210]
+                - generic [ref=e214]: Productos
+              - link "Cat. Recetas" [ref=e215] [cursor=pointer]:
+                - /url: /admin/recetas/categorias
+                - img [ref=e216]
+                - generic [ref=e218]: Cat. Recetas
+              - link "Reportes" [ref=e219] [cursor=pointer]:
+                - /url: /admin/reportes
+                - img [ref=e220]
+                - generic [ref=e223]: Reportes
+  - alert [ref=e224]
+```

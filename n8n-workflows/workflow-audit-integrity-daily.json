@@ -1,0 +1,372 @@
+{
+    "name": "🛡️ Auditoría Diaria de Integridad",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "cronExpression",
+                            "cronExpression": "0 6 * * *"
+                        }
+                    ]
+                }
+            },
+            "id": "schedule-6am",
+            "name": "⏰ Cada día 6:00 AM",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [
+                0,
+                200
+            ]
+        },
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "audit-integrity",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "manual-trigger",
+            "name": "🔗 Webhook Manual",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 2,
+            "position": [
+                0,
+                400
+            ],
+            "webhookId": "audit-integrity"
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  (SELECT COUNT(*) FROM clientes) as clientes_local,\n  (SELECT COUNT(*) FROM productos_tienda) as productos_local,\n  (SELECT COUNT(*) FROM variantes_productos) as variantes_local;",
+                "options": {}
+            },
+            "id": "count-local",
+            "name": "📊 Contar Registros Local",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [
+                280,
+                200
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "customers",
+                "limit": 1,
+                "options": {
+                    "headersUi": {
+                        "headerValues": [
+                            {
+                                "key": "Prefer",
+                                "value": "count=exact"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "count-supabase-customers",
+            "name": "📊 Contar Clientes Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                280,
+                400
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "getAll",
+                "tableId": "products",
+                "limit": 1,
+                "options": {
+                    "headersUi": {
+                        "headerValues": [
+                            {
+                                "key": "Prefer",
+                                "value": "count=exact"
+                            }
+                        ]
+                    }
+                }
+            },
+            "id": "count-supabase-products",
+            "name": "📊 Contar Productos Supabase",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                280,
+                600
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "oFlOZEZmGLS2kaKr",
+                    "name": "Supabase account 2"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "mode": "combine",
+                "combinationMode": "mergeByPosition",
+                "options": {}
+            },
+            "id": "merge-counts",
+            "name": "🔗 Combinar Conteos",
+            "type": "n8n-nodes-base.merge",
+            "typeVersion": 3,
+            "position": [
+                560,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Obtener datos de los inputs\nconst localData = $input.all()[0]?.json || {};\nconst now = new Date().toISOString();\n\n// Conteos locales\nconst clientesLocal = parseInt(localData.clientes_local) || 0;\nconst productosLocal = parseInt(localData.productos_local) || 0;\nconst variantesLocal = parseInt(localData.variantes_local) || 0;\n\n// Conteos Supabase (aproximados desde el merge)\nconst clientesSupabase = $input.all().length > 1 ? $input.all()[1]?.json?.id ? 'OK' : 0 : 'N/A';\nconst productosSupabase = $input.all().length > 2 ? $input.all()[2]?.json?.id ? 'OK' : 0 : 'N/A';\n\n// Detectar problemas\nconst problemas = [];\n\nif (clientesLocal === 0) {\n    problemas.push('⚠️ ALERTA: 0 clientes en PostgreSQL local');\n}\nif (productosLocal === 0) {\n    problemas.push('⚠️ ALERTA: 0 productos en PostgreSQL local');\n}\nif (variantesLocal === 0) {\n    problemas.push('⚠️ ALERTA: 0 variantes en PostgreSQL local');\n}\n\n// Generar reporte\nconst reporte = {\n    timestamp: now,\n    fecha: new Date().toLocaleDateString('es-CO'),\n    hora: new Date().toLocaleTimeString('es-CO'),\n    estado: problemas.length === 0 ? '✅ SALUDABLE' : '⚠️ REQUIERE ATENCIÓN',\n    conteos: {\n        local: {\n            clientes: clientesLocal,\n            productos: productosLocal,\n            variantes: variantesLocal\n        }\n    },\n    problemas: problemas,\n    mensaje: problemas.length === 0 \n        ? `✅ Auditoría OK - ${clientesLocal} clientes, ${productosLocal} productos, ${variantesLocal} variantes`\n        : `⚠️ ${problemas.length} problema(s) detectado(s)`\n};\n\nreturn [{ json: reporte }];"
+            },
+            "id": "analyze-integrity",
+            "name": "🔍 Analizar Integridad",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                800,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict"
+                    },
+                    "conditions": [
+                        {
+                            "leftValue": "={{ $json.problemas.length }}",
+                            "rightValue": "0",
+                            "operator": {
+                                "type": "number",
+                                "operation": "gt"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "check-problems",
+            "name": "🔀 ¿Hay Problemas?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2,
+            "position": [
+                1040,
+                400
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Enviar alerta (aquí puedes integrar WhatsApp, Email, etc)\nconst reporte = $input.first().json;\n\nreturn [{\n    json: {\n        alerta: true,\n        mensaje: `🚨 ALERTA DE INTEGRIDAD\\n\\nFecha: ${reporte.fecha} ${reporte.hora}\\n\\nProblemas:\\n${reporte.problemas.join('\\n')}\\n\\nConteos:\\n- Clientes: ${reporte.conteos.local.clientes}\\n- Productos: ${reporte.conteos.local.productos}\\n- Variantes: ${reporte.conteos.local.variantes}`,\n        timestamp: reporte.timestamp\n    }\n}];"
+            },
+            "id": "send-alert",
+            "name": "🚨 Preparar Alerta",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1280,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Todo OK, solo log\nconst reporte = $input.first().json;\n\nreturn [{\n    json: {\n        success: true,\n        mensaje: reporte.mensaje,\n        timestamp: reporte.timestamp\n    }\n}];"
+            },
+            "id": "log-ok",
+            "name": "✅ Log OK",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1280,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "respondWith": "json",
+                "responseBody": "={{ $json }}",
+                "options": {}
+            },
+            "id": "respond-webhook",
+            "name": "📤 Respuesta",
+            "type": "n8n-nodes-base.respondToWebhook",
+            "typeVersion": 1.1,
+            "position": [
+                1520,
+                400
+            ]
+        }
+    ],
+    "connections": {
+        "⏰ Cada día 6:00 AM": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Contar Registros Local",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📊 Contar Clientes Supabase",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📊 Contar Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔗 Webhook Manual": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Contar Registros Local",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📊 Contar Clientes Supabase",
+                        "type": "main",
+                        "index": 0
+                    },
+                    {
+                        "node": "📊 Contar Productos Supabase",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📊 Contar Registros Local": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Combinar Conteos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📊 Contar Clientes Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Combinar Conteos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "📊 Contar Productos Supabase": {
+            "main": [
+                [
+                    {
+                        "node": "🔗 Combinar Conteos",
+                        "type": "main",
+                        "index": 1
+                    }
+                ]
+            ]
+        },
+        "🔗 Combinar Conteos": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Analizar Integridad",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Analizar Integridad": {
+            "main": [
+                [
+                    {
+                        "node": "🔀 ¿Hay Problemas?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔀 ¿Hay Problemas?": {
+            "main": [
+                [
+                    {
+                        "node": "🚨 Preparar Alerta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "✅ Log OK",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🚨 Preparar Alerta": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Log OK": {
+            "main": [
+                [
+                    {
+                        "node": "📤 Respuesta",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1",
+        "availableInMCP": true
+    },
+    "meta": {
+        "templateCredsSetupCompleted": true
+    }
+}

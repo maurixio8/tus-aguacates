@@ -1,0 +1,169 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e13]:
+            - text: Tus Aguacates
+            - paragraph [ref=e14]: Panel de Administración
+        - navigation [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e17]
+            - text: Dashboard
+          - link "Productos" [ref=e22] [cursor=pointer]:
+            - /url: /admin/productos
+            - img [ref=e23]
+            - text: Productos
+          - link "Categorías" [ref=e27] [cursor=pointer]:
+            - /url: /admin/categorias
+            - img [ref=e28]
+            - text: Categorías
+          - link "Pedidos" [ref=e32] [cursor=pointer]:
+            - /url: /admin/pedidos
+            - img [ref=e33]
+            - text: Pedidos
+          - link "Clientes" [ref=e37] [cursor=pointer]:
+            - /url: /admin/clientes
+            - img [ref=e38]
+            - text: Clientes
+          - link "Cupones" [ref=e43] [cursor=pointer]:
+            - /url: /admin/cupones
+            - img [ref=e44]
+            - text: Cupones
+          - link "Slides" [ref=e46] [cursor=pointer]:
+            - /url: /admin/promociones
+            - img [ref=e47]
+            - text: Slides
+          - link "Banner Mensajes" [ref=e51] [cursor=pointer]:
+            - /url: /admin/banner-mensajes
+            - img [ref=e52]
+            - text: Banner Mensajes
+          - link "Crear Pedido" [ref=e54] [cursor=pointer]:
+            - /url: /admin/crear-pedido
+            - img [ref=e55]
+            - text: Crear Pedido
+          - link "Reportes" [ref=e57] [cursor=pointer]:
+            - /url: /admin/reportes
+            - img [ref=e58]
+            - text: Reportes
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Empresas B2B
+            - link "Dashboard B2B" [ref=e62] [cursor=pointer]:
+              - /url: /admin/empresas
+              - img [ref=e63]
+              - text: Dashboard B2B
+            - link "Clientes B2B" [ref=e68] [cursor=pointer]:
+              - /url: /admin/empresas/clientes
+              - img [ref=e69]
+              - text: Clientes B2B
+            - link "Pedidos B2B" [ref=e74] [cursor=pointer]:
+              - /url: /admin/empresas/pedidos
+              - img [ref=e75]
+              - text: Pedidos B2B
+            - link "Productos B2B" [ref=e79] [cursor=pointer]:
+              - /url: /admin/empresas/productos
+              - img [ref=e80]
+              - text: Productos B2B
+            - link "Reportes B2B" [ref=e84] [cursor=pointer]:
+              - /url: /admin/empresas/reportes
+              - img [ref=e85]
+              - text: Reportes B2B
+            - link "Ver Portal" [ref=e87] [cursor=pointer]:
+              - /url: /empresas
+              - img [ref=e88]
+              - text: Ver Portal
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e95]: A
+            - generic [ref=e96]:
+              - paragraph [ref=e97]: Administrador
+              - paragraph [ref=e98]: admin@tusaguacates.com
+          - button "Cerrar Sesión" [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - text: Cerrar Sesión
+      - main [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - heading "Gestión de Clientes" [level=1] [ref=e108]
+              - paragraph [ref=e109]: Administra tu base de clientes
+            - button "Nuevo Cliente" [ref=e110] [cursor=pointer]:
+              - img [ref=e111]
+              - text: Nuevo Cliente
+          - generic [ref=e112]:
+            - generic [ref=e114]:
+              - img [ref=e116]
+              - generic [ref=e121]:
+                - paragraph [ref=e122]: "0"
+                - paragraph [ref=e123]: Total Clientes
+            - generic [ref=e125]:
+              - img [ref=e127]
+              - generic [ref=e131]:
+                - paragraph [ref=e132]: "0"
+                - paragraph [ref=e133]: Registrados
+                - paragraph [ref=e134]: 0 invitados
+            - generic [ref=e136]:
+              - img [ref=e138]
+              - generic [ref=e140]:
+                - paragraph [ref=e141]: "0"
+                - paragraph [ref=e142]: Recurrentes
+                - paragraph [ref=e143]: (2+ pedidos)
+            - generic [ref=e145]:
+              - img [ref=e147]
+              - generic [ref=e149]:
+                - paragraph [ref=e150]: $ 0
+                - paragraph [ref=e151]: Total Ventas
+            - generic [ref=e153]:
+              - img [ref=e155]
+              - generic [ref=e158]:
+                - paragraph [ref=e159]: $ 0
+                - paragraph [ref=e160]: Ticket Promedio
+          - generic [ref=e161]:
+            - heading "Filtros de Calidad de Datos" [level=3] [ref=e163]
+            - generic [ref=e164]:
+              - 'button "Con email: 0 (0%)" [ref=e165] [cursor=pointer]':
+                - img [ref=e166]
+                - generic [ref=e169]: "Con email:"
+                - generic [ref=e170]: "0"
+                - generic [ref=e171]: (0%)
+              - 'button "Sin email: 0" [ref=e172] [cursor=pointer]':
+                - img [ref=e173]
+                - generic [ref=e176]: "Sin email:"
+                - generic [ref=e177]: "0"
+              - 'button "Con dirección: 0 (0%)" [ref=e178] [cursor=pointer]':
+                - img [ref=e179]
+                - generic [ref=e182]: "Con dirección:"
+                - generic [ref=e183]: "0"
+                - generic [ref=e184]: (0%)
+              - 'button "Sin dirección: 0" [ref=e185] [cursor=pointer]':
+                - img [ref=e186]
+                - generic [ref=e189]: "Sin dirección:"
+                - generic [ref=e190]: "0"
+              - 'button "Con nombre: 0 (0%)" [ref=e191] [cursor=pointer]':
+                - img [ref=e192]
+                - generic [ref=e195]: "Con nombre:"
+                - generic [ref=e196]: "0"
+                - generic [ref=e197]: (0%)
+              - 'button "⚠️ Sin nombre: 0" [ref=e198] [cursor=pointer]':
+                - img [ref=e199]
+                - generic [ref=e201]: "⚠️ Sin nombre:"
+                - generic [ref=e202]: "0"
+              - 'button "Datos Incompletos: 0" [ref=e203] [cursor=pointer]':
+                - img [ref=e204]
+                - generic [ref=e206]: "Datos Incompletos:"
+                - generic [ref=e207]: "0"
+            - generic [ref=e208]:
+              - generic [ref=e209]: "Fuentes de datos:"
+              - generic [ref=e210]: "Tabla Customers: 0"
+              - generic [ref=e211]: "Usuarios Registrados: 0"
+              - generic [ref=e212]: "Pedidos Invitados: 0"
+          - generic [ref=e214]:
+            - img [ref=e215]
+            - textbox "Buscar por nombre, teléfono o email..." [ref=e218]
+  - alert [ref=e222]
+```

@@ -1,37 +1,35 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Obtener variables de entorno
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const _supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const _supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const _supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Debug: Log environment variable status (solo en desarrollo o build)
+// Debug: Log environment variable status (solo en cliente)
 if (typeof window !== 'undefined') {
   console.log('[Supabase] Checking environment variables...');
-  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✓ Set' : '✗ Missing');
-  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✓ Set' : '✗ Missing');
+  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_URL:', _supabaseUrl ? '✓ Set' : '✗ Missing');
+  console.log('[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY:', _supabaseAnonKey ? '✓ Set' : '✗ Missing');
 }
 
-// Validación con mensajes claros
-if (!supabaseUrl || supabaseUrl.trim() === '') {
-  const errorMsg = `[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured. Current value: "${supabaseUrl}"`;
-  console.error(errorMsg);
-  throw new Error(errorMsg);
+// Validar y tipar las variables públicas (requeridas)
+if (!_supabaseUrl || _supabaseUrl.trim() === '') {
+  throw new Error('[Supabase] NEXT_PUBLIC_SUPABASE_URL is not configured');
+}
+if (!_supabaseAnonKey || _supabaseAnonKey.trim() === '') {
+  throw new Error('[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured');
 }
 
-if (!supabaseAnonKey || supabaseAnonKey.trim() === '') {
-  const errorMsg = `[Supabase] NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured. Current value length: ${supabaseAnonKey?.length || 0}`;
-  console.error(errorMsg);
-  throw new Error(errorMsg);
-}
+// Variables validadas con tipos correctos
+const supabaseUrl: string = _supabaseUrl.trim();
+const supabaseAnonKey: string = _supabaseAnonKey.trim();
 
 // Cliente público para el frontend (sujeto a RLS)
-export const supabase = createClient(supabaseUrl.trim(), supabaseAnonKey.trim(), {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    // Configurar flujo de PKCE para mayor seguridad
     flowType: 'pkce',
   }
 });
@@ -39,44 +37,32 @@ export const supabase = createClient(supabaseUrl.trim(), supabaseAnonKey.trim(),
 /**
  * Cliente admin para el backend (BYPASS RLS)
  * SOLO usar en server-side (API routes, Server Actions, Edge Functions)
- * Lanza error si SUPABASE_SERVICE_ROLE_KEY no está configurado
- * 
- * NOTA: Usamos una función getter para evitar inicialización en cliente
  */
 let _supabaseAdmin: ReturnType<typeof createClient> | null = null;
 
 export function getSupabaseAdmin() {
-  // Prevent client-side usage
   if (typeof window !== 'undefined') {
-    throw new Error('supabaseAdmin cannot be used on the client side. Use the regular supabase client instead.');
+    throw new Error('supabaseAdmin cannot be used on the client side');
   }
 
-  // Lazy initialization
   if (!_supabaseAdmin) {
-    if (!supabaseServiceRoleKey) {
-      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured. This is required for admin operations.');
+    if (!_supabaseServiceRoleKey) {
+      throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured');
     }
-
-    _supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey!, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    _supabaseAdmin = createClient(supabaseUrl, _supabaseServiceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
     });
   }
 
   return _supabaseAdmin;
 }
 
-// Legacy export for backwards compatibility (will throw on client-side)
-export const supabaseAdmin = typeof window === 'undefined' && supabaseServiceRoleKey
-  ? createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    }
+// Legacy export - solo funciona en servidor
+export const supabaseAdmin = typeof window === 'undefined' && _supabaseServiceRoleKey
+  ? createClient(supabaseUrl, _supabaseServiceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
   })
-  : (null as any); // Null on client-side, will error if used
+  : (null as any);
 
 // Función para configurar persistencia extendida cuando "Recordarme" está activado
 export function configureExtendedSession(rememberMe: boolean = false) {

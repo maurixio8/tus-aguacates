@@ -1,0 +1,964 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e5]:
+        - generic [ref=e7]:
+          - img [ref=e9]
+          - generic [ref=e13]:
+            - text: Tus Aguacates
+            - paragraph [ref=e14]: Panel de Administración
+        - navigation [ref=e15]:
+          - link "Dashboard" [ref=e16] [cursor=pointer]:
+            - /url: /admin
+            - img [ref=e17]
+            - text: Dashboard
+          - link "Productos" [ref=e22] [cursor=pointer]:
+            - /url: /admin/productos
+            - img [ref=e23]
+            - text: Productos
+          - link "Categorías" [ref=e27] [cursor=pointer]:
+            - /url: /admin/categorias
+            - img [ref=e28]
+            - text: Categorías
+          - link "Pedidos" [ref=e32] [cursor=pointer]:
+            - /url: /admin/pedidos
+            - img [ref=e33]
+            - text: Pedidos
+          - link "Clientes" [ref=e37] [cursor=pointer]:
+            - /url: /admin/clientes
+            - img [ref=e38]
+            - text: Clientes
+          - link "Cupones" [ref=e43] [cursor=pointer]:
+            - /url: /admin/cupones
+            - img [ref=e44]
+            - text: Cupones
+          - link "Slides" [ref=e46] [cursor=pointer]:
+            - /url: /admin/promociones
+            - img [ref=e47]
+            - text: Slides
+          - link "Banner Mensajes" [ref=e51] [cursor=pointer]:
+            - /url: /admin/banner-mensajes
+            - img [ref=e52]
+            - text: Banner Mensajes
+          - link "Crear Pedido" [ref=e54] [cursor=pointer]:
+            - /url: /admin/crear-pedido
+            - img [ref=e55]
+            - text: Crear Pedido
+          - link "Reportes" [ref=e57] [cursor=pointer]:
+            - /url: /admin/reportes
+            - img [ref=e58]
+            - text: Reportes
+          - generic [ref=e60]:
+            - paragraph [ref=e61]: Empresas B2B
+            - link "Dashboard B2B" [ref=e62] [cursor=pointer]:
+              - /url: /admin/empresas
+              - img [ref=e63]
+              - text: Dashboard B2B
+            - link "Clientes B2B" [ref=e68] [cursor=pointer]:
+              - /url: /admin/empresas/clientes
+              - img [ref=e69]
+              - text: Clientes B2B
+            - link "Pedidos B2B" [ref=e74] [cursor=pointer]:
+              - /url: /admin/empresas/pedidos
+              - img [ref=e75]
+              - text: Pedidos B2B
+            - link "Productos B2B" [ref=e79] [cursor=pointer]:
+              - /url: /admin/empresas/productos
+              - img [ref=e80]
+              - text: Productos B2B
+            - link "Reportes B2B" [ref=e84] [cursor=pointer]:
+              - /url: /admin/empresas/reportes
+              - img [ref=e85]
+              - text: Reportes B2B
+            - link "Ver Portal" [ref=e87] [cursor=pointer]:
+              - /url: /empresas
+              - img [ref=e88]
+              - text: Ver Portal
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e95]: A
+            - generic [ref=e96]:
+              - paragraph [ref=e97]: Administrador
+              - paragraph [ref=e98]: admin@tusaguacates.com
+          - button "Cerrar Sesión" [ref=e99] [cursor=pointer]:
+            - img [ref=e100]
+            - text: Cerrar Sesión
+      - main [ref=e104]:
+        - generic [ref=e105]:
+          - generic [ref=e106]:
+            - heading "Gestión de Productos" [level=1] [ref=e107]
+            - paragraph [ref=e108]: Administra tu catálogo de productos
+          - generic [ref=e110]:
+            - generic [ref=e112]:
+              - img [ref=e113]
+              - textbox "Buscar productos..." [ref=e116]
+            - generic [ref=e118]:
+              - img [ref=e119]
+              - combobox [ref=e123]:
+                - option "Todas las categorías" [selected]
+                - option "Aguacates"
+                - option "Frutas Tropicales"
+                - option "Gourmet"
+                - option "Ofertas y Combos"
+                - option "Frutas Rojas"
+                - option "Aromáticas"
+                - option "Saludables"
+                - option "Especias"
+                - option "Desgranados"
+            - combobox [ref=e125]:
+              - option "Todos los estados" [selected]
+              - option "Activos"
+              - option "Inactivos"
+              - option "Destacados"
+            - button "Limpiar" [ref=e126] [cursor=pointer]:
+              - img [ref=e127]
+              - text: Limpiar
+          - generic [ref=e129]:
+            - table [ref=e131]:
+              - rowgroup [ref=e132]:
+                - row "Producto Categoría Precio Stock Estado Acciones" [ref=e133]:
+                  - cell "Producto" [ref=e134]
+                  - cell "Categoría" [ref=e135]
+                  - cell "Precio" [ref=e136]
+                  - cell "Stock" [ref=e137]
+                  - cell "Estado" [ref=e138]
+                  - cell "Acciones" [ref=e139]
+              - rowgroup [ref=e140]:
+                - row "Ajonjolí tostado Ajonjolí tostado 1 variante(s) Aromáticas $ 20.000 100 Activo" [ref=e141]:
+                  - cell "Ajonjolí tostado Ajonjolí tostado 1 variante(s)" [ref=e142]:
+                    - generic [ref=e143]:
+                      - button "Ver variantes" [ref=e144] [cursor=pointer]:
+                        - img [ref=e145]
+                      - generic [ref=e147]:
+                        - img "Ajonjolí tostado" [ref=e148]
+                        - button "Subir foto" [ref=e149] [cursor=pointer]:
+                          - img [ref=e150]
+                      - generic [ref=e153]:
+                        - paragraph [ref=e154]: Ajonjolí tostado
+                        - paragraph [ref=e155]:
+                          - img [ref=e156]
+                          - text: 1 variante(s)
+                  - cell "Aromáticas" [ref=e160]:
+                    - combobox [ref=e161] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas" [selected]
+                      - option "Saludables"
+                      - option "Especias"
+                      - option "Desgranados"
+                  - cell "$ 20.000" [ref=e162]:
+                    - generic [ref=e163]: $ 20.000
+                  - cell "100" [ref=e164]
+                  - cell "Activo" [ref=e165]:
+                    - button "Activo" [ref=e166] [cursor=pointer]:
+                      - img [ref=e167]
+                      - text: Activo
+                  - cell [ref=e170]:
+                    - generic [ref=e171]:
+                      - button "Editar" [active] [ref=e172] [cursor=pointer]:
+                        - img [ref=e173]
+                      - button "Eliminar" [ref=e176] [cursor=pointer]:
+                        - img [ref=e177]
+                - row "Guasca seca Guasca seca 1 variante(s) Especias $ 2.000 100 Activo" [ref=e180]:
+                  - cell "Guasca seca Guasca seca 1 variante(s)" [ref=e181]:
+                    - generic [ref=e182]:
+                      - button "Ver variantes" [ref=e183] [cursor=pointer]:
+                        - img [ref=e184]
+                      - generic [ref=e186]:
+                        - img "Guasca seca" [ref=e187]
+                        - button "Subir foto" [ref=e188] [cursor=pointer]:
+                          - img [ref=e189]
+                      - generic [ref=e192]:
+                        - paragraph [ref=e193]: Guasca seca
+                        - paragraph [ref=e194]:
+                          - img [ref=e195]
+                          - text: 1 variante(s)
+                  - cell "Especias" [ref=e199]:
+                    - combobox [ref=e200] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 2.000" [ref=e201]:
+                    - generic [ref=e202]: $ 2.000
+                  - cell "100" [ref=e203]
+                  - cell "Activo" [ref=e204]:
+                    - button "Activo" [ref=e205] [cursor=pointer]:
+                      - img [ref=e206]
+                      - text: Activo
+                  - cell [ref=e209]:
+                    - generic [ref=e210]:
+                      - button "Editar" [ref=e211] [cursor=pointer]:
+                        - img [ref=e212]
+                      - button "Eliminar" [ref=e215] [cursor=pointer]:
+                        - img [ref=e216]
+                - row "Ajo pelado importado Ajo pelado importado 1 variante(s) Especias $ 2.000 100 Activo" [ref=e219]:
+                  - cell "Ajo pelado importado Ajo pelado importado 1 variante(s)" [ref=e220]:
+                    - generic [ref=e221]:
+                      - button "Ver variantes" [ref=e222] [cursor=pointer]:
+                        - img [ref=e223]
+                      - generic [ref=e225]:
+                        - img "Ajo pelado importado" [ref=e226]
+                        - button "Subir foto" [ref=e227] [cursor=pointer]:
+                          - img [ref=e228]
+                      - generic [ref=e231]:
+                        - paragraph [ref=e232]: Ajo pelado importado
+                        - paragraph [ref=e233]:
+                          - img [ref=e234]
+                          - text: 1 variante(s)
+                  - cell "Especias" [ref=e238]:
+                    - combobox [ref=e239] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 2.000" [ref=e240]:
+                    - generic [ref=e241]: $ 2.000
+                  - cell "100" [ref=e242]
+                  - cell "Activo" [ref=e243]:
+                    - button "Activo" [ref=e244] [cursor=pointer]:
+                      - img [ref=e245]
+                      - text: Activo
+                  - cell [ref=e248]:
+                    - generic [ref=e249]:
+                      - button "Editar" [ref=e250] [cursor=pointer]:
+                        - img [ref=e251]
+                      - button "Eliminar" [ref=e254] [cursor=pointer]:
+                        - img [ref=e255]
+                - row "Comino pepa Comino pepa 1 variante(s) Especias $ 2.000 100 Activo" [ref=e258]:
+                  - cell "Comino pepa Comino pepa 1 variante(s)" [ref=e259]:
+                    - generic [ref=e260]:
+                      - button "Ver variantes" [ref=e261] [cursor=pointer]:
+                        - img [ref=e262]
+                      - generic [ref=e264]:
+                        - img "Comino pepa" [ref=e265]
+                        - button "Subir foto" [ref=e266] [cursor=pointer]:
+                          - img [ref=e267]
+                      - generic [ref=e270]:
+                        - paragraph [ref=e271]: Comino pepa
+                        - paragraph [ref=e272]:
+                          - img [ref=e273]
+                          - text: 1 variante(s)
+                  - cell "Especias" [ref=e277]:
+                    - combobox [ref=e278] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 2.000" [ref=e279]:
+                    - generic [ref=e280]: $ 2.000
+                  - cell "100" [ref=e281]
+                  - cell "Activo" [ref=e282]:
+                    - button "Activo" [ref=e283] [cursor=pointer]:
+                      - img [ref=e284]
+                      - text: Activo
+                  - cell [ref=e287]:
+                    - generic [ref=e288]:
+                      - button "Editar" [ref=e289] [cursor=pointer]:
+                        - img [ref=e290]
+                      - button "Eliminar" [ref=e293] [cursor=pointer]:
+                        - img [ref=e294]
+                - row "Pimienta Cayena Pimienta Cayena 2 variante(s) Especias $ 3.600 100 Activo" [ref=e297]:
+                  - cell "Pimienta Cayena Pimienta Cayena 2 variante(s)" [ref=e298]:
+                    - generic [ref=e299]:
+                      - button "Ver variantes" [ref=e300] [cursor=pointer]:
+                        - img [ref=e301]
+                      - generic [ref=e303]:
+                        - img "Pimienta Cayena" [ref=e304]
+                        - button "Subir foto" [ref=e305] [cursor=pointer]:
+                          - img [ref=e306]
+                      - generic [ref=e309]:
+                        - paragraph [ref=e310]: Pimienta Cayena
+                        - paragraph [ref=e311]:
+                          - img [ref=e312]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e316]:
+                    - combobox [ref=e317] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.600" [ref=e318]:
+                    - generic [ref=e319]: $ 3.600
+                  - cell "100" [ref=e320]
+                  - cell "Activo" [ref=e321]:
+                    - button "Activo" [ref=e322] [cursor=pointer]:
+                      - img [ref=e323]
+                      - text: Activo
+                  - cell [ref=e326]:
+                    - generic [ref=e327]:
+                      - button "Editar" [ref=e328] [cursor=pointer]:
+                        - img [ref=e329]
+                      - button "Eliminar" [ref=e332] [cursor=pointer]:
+                        - img [ref=e333]
+                - row "Paprika Paprika 1 variante(s) Especias $ 2.000 100 Activo" [ref=e336]:
+                  - cell "Paprika Paprika 1 variante(s)" [ref=e337]:
+                    - generic [ref=e338]:
+                      - button "Ver variantes" [ref=e339] [cursor=pointer]:
+                        - img [ref=e340]
+                      - generic [ref=e342]:
+                        - img "Paprika" [ref=e343]
+                        - button "Subir foto" [ref=e344] [cursor=pointer]:
+                          - img [ref=e345]
+                      - generic [ref=e348]:
+                        - paragraph [ref=e349]: Paprika
+                        - paragraph [ref=e350]:
+                          - img [ref=e351]
+                          - text: 1 variante(s)
+                  - cell "Especias" [ref=e355]:
+                    - combobox [ref=e356] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 2.000" [ref=e357]:
+                    - generic [ref=e358]: $ 2.000
+                  - cell "100" [ref=e359]
+                  - cell "Activo" [ref=e360]:
+                    - button "Activo" [ref=e361] [cursor=pointer]:
+                      - img [ref=e362]
+                      - text: Activo
+                  - cell [ref=e365]:
+                    - generic [ref=e366]:
+                      - button "Editar" [ref=e367] [cursor=pointer]:
+                        - img [ref=e368]
+                      - button "Eliminar" [ref=e371] [cursor=pointer]:
+                        - img [ref=e372]
+                - row "Pimienta Pepas Pimienta Pepas 2 variante(s) Especias $ 3.200 100 Activo" [ref=e375]:
+                  - cell "Pimienta Pepas Pimienta Pepas 2 variante(s)" [ref=e376]:
+                    - generic [ref=e377]:
+                      - button "Ver variantes" [ref=e378] [cursor=pointer]:
+                        - img [ref=e379]
+                      - generic [ref=e381]:
+                        - img "Pimienta Pepas" [ref=e382]
+                        - button "Subir foto" [ref=e383] [cursor=pointer]:
+                          - img [ref=e384]
+                      - generic [ref=e387]:
+                        - paragraph [ref=e388]: Pimienta Pepas
+                        - paragraph [ref=e389]:
+                          - img [ref=e390]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e394]:
+                    - combobox [ref=e395] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e396]:
+                    - generic [ref=e397]: $ 3.200
+                  - cell "100" [ref=e398]
+                  - cell "Activo" [ref=e399]:
+                    - button "Activo" [ref=e400] [cursor=pointer]:
+                      - img [ref=e401]
+                      - text: Activo
+                  - cell [ref=e404]:
+                    - generic [ref=e405]:
+                      - button "Editar" [ref=e406] [cursor=pointer]:
+                        - img [ref=e407]
+                      - button "Eliminar" [ref=e410] [cursor=pointer]:
+                        - img [ref=e411]
+                - row "Moringa Moringa 2 variante(s) Especias $ 3.200 100 Activo" [ref=e414]:
+                  - cell "Moringa Moringa 2 variante(s)" [ref=e415]:
+                    - generic [ref=e416]:
+                      - button "Ver variantes" [ref=e417] [cursor=pointer]:
+                        - img [ref=e418]
+                      - generic [ref=e420]:
+                        - img "Moringa" [ref=e421]
+                        - button "Subir foto" [ref=e422] [cursor=pointer]:
+                          - img [ref=e423]
+                      - generic [ref=e426]:
+                        - paragraph [ref=e427]: Moringa
+                        - paragraph [ref=e428]:
+                          - img [ref=e429]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e433]:
+                    - combobox [ref=e434] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e435]:
+                    - generic [ref=e436]: $ 3.200
+                  - cell "100" [ref=e437]
+                  - cell "Activo" [ref=e438]:
+                    - button "Activo" [ref=e439] [cursor=pointer]:
+                      - img [ref=e440]
+                      - text: Activo
+                  - cell [ref=e443]:
+                    - generic [ref=e444]:
+                      - button "Editar" [ref=e445] [cursor=pointer]:
+                        - img [ref=e446]
+                      - button "Eliminar" [ref=e449] [cursor=pointer]:
+                        - img [ref=e450]
+                - row "Stevia Hoja Stevia Hoja 2 variante(s) Especias $ 3.800 100 Activo" [ref=e453]:
+                  - cell "Stevia Hoja Stevia Hoja 2 variante(s)" [ref=e454]:
+                    - generic [ref=e455]:
+                      - button "Ver variantes" [ref=e456] [cursor=pointer]:
+                        - img [ref=e457]
+                      - generic [ref=e459]:
+                        - img "Stevia Hoja" [ref=e460]
+                        - button "Subir foto" [ref=e461] [cursor=pointer]:
+                          - img [ref=e462]
+                      - generic [ref=e465]:
+                        - paragraph [ref=e466]: Stevia Hoja
+                        - paragraph [ref=e467]:
+                          - img [ref=e468]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e472]:
+                    - combobox [ref=e473] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.800" [ref=e474]:
+                    - generic [ref=e475]: $ 3.800
+                  - cell "100" [ref=e476]
+                  - cell "Activo" [ref=e477]:
+                    - button "Activo" [ref=e478] [cursor=pointer]:
+                      - img [ref=e479]
+                      - text: Activo
+                  - cell [ref=e482]:
+                    - generic [ref=e483]:
+                      - button "Editar" [ref=e484] [cursor=pointer]:
+                        - img [ref=e485]
+                      - button "Eliminar" [ref=e488] [cursor=pointer]:
+                        - img [ref=e489]
+                - row "Jengibre Polvo Jengibre Polvo 2 variante(s) Especias $ 3.200 100 Activo" [ref=e492]:
+                  - cell "Jengibre Polvo Jengibre Polvo 2 variante(s)" [ref=e493]:
+                    - generic [ref=e494]:
+                      - button "Ver variantes" [ref=e495] [cursor=pointer]:
+                        - img [ref=e496]
+                      - generic [ref=e498]:
+                        - img "Jengibre Polvo" [ref=e499]
+                        - button "Subir foto" [ref=e500] [cursor=pointer]:
+                          - img [ref=e501]
+                      - generic [ref=e504]:
+                        - paragraph [ref=e505]: Jengibre Polvo
+                        - paragraph [ref=e506]:
+                          - img [ref=e507]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e511]:
+                    - combobox [ref=e512] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e513]:
+                    - generic [ref=e514]: $ 3.200
+                  - cell "100" [ref=e515]
+                  - cell "Activo" [ref=e516]:
+                    - button "Activo" [ref=e517] [cursor=pointer]:
+                      - img [ref=e518]
+                      - text: Activo
+                  - cell [ref=e521]:
+                    - generic [ref=e522]:
+                      - button "Editar" [ref=e523] [cursor=pointer]:
+                        - img [ref=e524]
+                      - button "Eliminar" [ref=e527] [cursor=pointer]:
+                        - img [ref=e528]
+                - row "Albahaca seca Albahaca seca 2 variante(s) Especias $ 3.200 100 Activo" [ref=e531]:
+                  - cell "Albahaca seca Albahaca seca 2 variante(s)" [ref=e532]:
+                    - generic [ref=e533]:
+                      - button "Ver variantes" [ref=e534] [cursor=pointer]:
+                        - img [ref=e535]
+                      - generic [ref=e537]:
+                        - img "Albahaca seca" [ref=e538]
+                        - button "Subir foto" [ref=e539] [cursor=pointer]:
+                          - img [ref=e540]
+                      - generic [ref=e543]:
+                        - paragraph [ref=e544]: Albahaca seca
+                        - paragraph [ref=e545]:
+                          - img [ref=e546]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e550]:
+                    - combobox [ref=e551] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e552]:
+                    - generic [ref=e553]: $ 3.200
+                  - cell "100" [ref=e554]
+                  - cell "Activo" [ref=e555]:
+                    - button "Activo" [ref=e556] [cursor=pointer]:
+                      - img [ref=e557]
+                      - text: Activo
+                  - cell [ref=e560]:
+                    - generic [ref=e561]:
+                      - button "Editar" [ref=e562] [cursor=pointer]:
+                        - img [ref=e563]
+                      - button "Eliminar" [ref=e566] [cursor=pointer]:
+                        - img [ref=e567]
+                - row "Laurel seco Laurel seco 2 variante(s) Especias $ 3.200 100 Activo" [ref=e570]:
+                  - cell "Laurel seco Laurel seco 2 variante(s)" [ref=e571]:
+                    - generic [ref=e572]:
+                      - button "Ver variantes" [ref=e573] [cursor=pointer]:
+                        - img [ref=e574]
+                      - generic [ref=e576]:
+                        - img "Laurel seco" [ref=e577]
+                        - button "Subir foto" [ref=e578] [cursor=pointer]:
+                          - img [ref=e579]
+                      - generic [ref=e582]:
+                        - paragraph [ref=e583]: Laurel seco
+                        - paragraph [ref=e584]:
+                          - img [ref=e585]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e589]:
+                    - combobox [ref=e590] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e591]:
+                    - generic [ref=e592]: $ 3.200
+                  - cell "100" [ref=e593]
+                  - cell "Activo" [ref=e594]:
+                    - button "Activo" [ref=e595] [cursor=pointer]:
+                      - img [ref=e596]
+                      - text: Activo
+                  - cell [ref=e599]:
+                    - generic [ref=e600]:
+                      - button "Editar" [ref=e601] [cursor=pointer]:
+                        - img [ref=e602]
+                      - button "Eliminar" [ref=e605] [cursor=pointer]:
+                        - img [ref=e606]
+                - row "Tomillo Seco Tomillo Seco 2 variante(s) Especias $ 3.200 100 Activo" [ref=e609]:
+                  - cell "Tomillo Seco Tomillo Seco 2 variante(s)" [ref=e610]:
+                    - generic [ref=e611]:
+                      - button "Ver variantes" [ref=e612] [cursor=pointer]:
+                        - img [ref=e613]
+                      - generic [ref=e615]:
+                        - img "Tomillo Seco" [ref=e616]
+                        - button "Subir foto" [ref=e617] [cursor=pointer]:
+                          - img [ref=e618]
+                      - generic [ref=e621]:
+                        - paragraph [ref=e622]: Tomillo Seco
+                        - paragraph [ref=e623]:
+                          - img [ref=e624]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e628]:
+                    - combobox [ref=e629] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e630]:
+                    - generic [ref=e631]: $ 3.200
+                  - cell "100" [ref=e632]
+                  - cell "Activo" [ref=e633]:
+                    - button "Activo" [ref=e634] [cursor=pointer]:
+                      - img [ref=e635]
+                      - text: Activo
+                  - cell [ref=e638]:
+                    - generic [ref=e639]:
+                      - button "Editar" [ref=e640] [cursor=pointer]:
+                        - img [ref=e641]
+                      - button "Eliminar" [ref=e644] [cursor=pointer]:
+                        - img [ref=e645]
+                - row "Achiote polvo Achiote polvo 2 variante(s) Especias $ 3.200 100 Activo" [ref=e648]:
+                  - cell "Achiote polvo Achiote polvo 2 variante(s)" [ref=e649]:
+                    - generic [ref=e650]:
+                      - button "Ver variantes" [ref=e651] [cursor=pointer]:
+                        - img [ref=e652]
+                      - generic [ref=e654]:
+                        - img "Achiote polvo" [ref=e655]
+                        - button "Subir foto" [ref=e656] [cursor=pointer]:
+                          - img [ref=e657]
+                      - generic [ref=e660]:
+                        - paragraph [ref=e661]: Achiote polvo
+                        - paragraph [ref=e662]:
+                          - img [ref=e663]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e667]:
+                    - combobox [ref=e668] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e669]:
+                    - generic [ref=e670]: $ 3.200
+                  - cell "100" [ref=e671]
+                  - cell "Activo" [ref=e672]:
+                    - button "Activo" [ref=e673] [cursor=pointer]:
+                      - img [ref=e674]
+                      - text: Activo
+                  - cell [ref=e677]:
+                    - generic [ref=e678]:
+                      - button "Editar" [ref=e679] [cursor=pointer]:
+                        - img [ref=e680]
+                      - button "Eliminar" [ref=e683] [cursor=pointer]:
+                        - img [ref=e684]
+                - row "Bicarbonato Bicarbonato 2 variante(s) Especias $ 3.200 100 Activo" [ref=e687]:
+                  - cell "Bicarbonato Bicarbonato 2 variante(s)" [ref=e688]:
+                    - generic [ref=e689]:
+                      - button "Ver variantes" [ref=e690] [cursor=pointer]:
+                        - img [ref=e691]
+                      - generic [ref=e693]:
+                        - img "Bicarbonato" [ref=e694]
+                        - button "Subir foto" [ref=e695] [cursor=pointer]:
+                          - img [ref=e696]
+                      - generic [ref=e699]:
+                        - paragraph [ref=e700]: Bicarbonato
+                        - paragraph [ref=e701]:
+                          - img [ref=e702]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e706]:
+                    - combobox [ref=e707] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.200" [ref=e708]:
+                    - generic [ref=e709]: $ 3.200
+                  - cell "100" [ref=e710]
+                  - cell "Activo" [ref=e711]:
+                    - button "Activo" [ref=e712] [cursor=pointer]:
+                      - img [ref=e713]
+                      - text: Activo
+                  - cell [ref=e716]:
+                    - generic [ref=e717]:
+                      - button "Editar" [ref=e718] [cursor=pointer]:
+                        - img [ref=e719]
+                      - button "Eliminar" [ref=e722] [cursor=pointer]:
+                        - img [ref=e723]
+                - row "Ajo Polvo Ajo Polvo 2 variante(s) Especias $ 3.100 100 Activo" [ref=e726]:
+                  - cell "Ajo Polvo Ajo Polvo 2 variante(s)" [ref=e727]:
+                    - generic [ref=e728]:
+                      - button "Ver variantes" [ref=e729] [cursor=pointer]:
+                        - img [ref=e730]
+                      - generic [ref=e732]:
+                        - img "Ajo Polvo" [ref=e733]
+                        - button "Subir foto" [ref=e734] [cursor=pointer]:
+                          - img [ref=e735]
+                      - generic [ref=e738]:
+                        - paragraph [ref=e739]: Ajo Polvo
+                        - paragraph [ref=e740]:
+                          - img [ref=e741]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e745]:
+                    - combobox [ref=e746] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.100" [ref=e747]:
+                    - generic [ref=e748]: $ 3.100
+                  - cell "100" [ref=e749]
+                  - cell "Activo" [ref=e750]:
+                    - button "Activo" [ref=e751] [cursor=pointer]:
+                      - img [ref=e752]
+                      - text: Activo
+                  - cell [ref=e755]:
+                    - generic [ref=e756]:
+                      - button "Editar" [ref=e757] [cursor=pointer]:
+                        - img [ref=e758]
+                      - button "Eliminar" [ref=e761] [cursor=pointer]:
+                        - img [ref=e762]
+                - row "Canela Polvo Canela Polvo 2 variante(s) Especias $ 3.400 100 Activo" [ref=e765]:
+                  - cell "Canela Polvo Canela Polvo 2 variante(s)" [ref=e766]:
+                    - generic [ref=e767]:
+                      - button "Ver variantes" [ref=e768] [cursor=pointer]:
+                        - img [ref=e769]
+                      - generic [ref=e771]:
+                        - img "Canela Polvo" [ref=e772]
+                        - button "Subir foto" [ref=e773] [cursor=pointer]:
+                          - img [ref=e774]
+                      - generic [ref=e777]:
+                        - paragraph [ref=e778]: Canela Polvo
+                        - paragraph [ref=e779]:
+                          - img [ref=e780]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e784]:
+                    - combobox [ref=e785] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.400" [ref=e786]:
+                    - generic [ref=e787]: $ 3.400
+                  - cell "100" [ref=e788]
+                  - cell "Activo" [ref=e789]:
+                    - button "Activo" [ref=e790] [cursor=pointer]:
+                      - img [ref=e791]
+                      - text: Activo
+                  - cell [ref=e794]:
+                    - generic [ref=e795]:
+                      - button "Editar" [ref=e796] [cursor=pointer]:
+                        - img [ref=e797]
+                      - button "Eliminar" [ref=e800] [cursor=pointer]:
+                        - img [ref=e801]
+                - row "Canela Canela 2 variante(s) Especias $ 3.300 100 Activo" [ref=e804]:
+                  - cell "Canela Canela 2 variante(s)" [ref=e805]:
+                    - generic [ref=e806]:
+                      - button "Ver variantes" [ref=e807] [cursor=pointer]:
+                        - img [ref=e808]
+                      - generic [ref=e810]:
+                        - img "Canela" [ref=e811]
+                        - button "Subir foto" [ref=e812] [cursor=pointer]:
+                          - img [ref=e813]
+                      - generic [ref=e816]:
+                        - paragraph [ref=e817]: Canela
+                        - paragraph [ref=e818]:
+                          - img [ref=e819]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e823]:
+                    - combobox [ref=e824] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.300" [ref=e825]:
+                    - generic [ref=e826]: $ 3.300
+                  - cell "100" [ref=e827]
+                  - cell "Activo" [ref=e828]:
+                    - button "Activo" [ref=e829] [cursor=pointer]:
+                      - img [ref=e830]
+                      - text: Activo
+                  - cell [ref=e833]:
+                    - generic [ref=e834]:
+                      - button "Editar" [ref=e835] [cursor=pointer]:
+                        - img [ref=e836]
+                      - button "Eliminar" [ref=e839] [cursor=pointer]:
+                        - img [ref=e840]
+                - row "Curcuma Curcuma 4 variante(s) Especias $ 3.000 100 Activo" [ref=e843]:
+                  - cell "Curcuma Curcuma 4 variante(s)" [ref=e844]:
+                    - generic [ref=e845]:
+                      - button "Ver variantes" [ref=e846] [cursor=pointer]:
+                        - img [ref=e847]
+                      - generic [ref=e849]:
+                        - img "Curcuma" [ref=e850]
+                        - button "Subir foto" [ref=e851] [cursor=pointer]:
+                          - img [ref=e852]
+                      - generic [ref=e855]:
+                        - paragraph [ref=e856]: Curcuma
+                        - paragraph [ref=e857]:
+                          - img [ref=e858]
+                          - text: 4 variante(s)
+                  - cell "Especias" [ref=e862]:
+                    - combobox [ref=e863] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.000" [ref=e864]:
+                    - generic [ref=e865]: $ 3.000
+                  - cell "100" [ref=e866]
+                  - cell "Activo" [ref=e867]:
+                    - button "Activo" [ref=e868] [cursor=pointer]:
+                      - img [ref=e869]
+                      - text: Activo
+                  - cell [ref=e872]:
+                    - generic [ref=e873]:
+                      - button "Editar" [ref=e874] [cursor=pointer]:
+                        - img [ref=e875]
+                      - button "Eliminar" [ref=e878] [cursor=pointer]:
+                        - img [ref=e879]
+                - row "Finas Hierbas Finas Hierbas 2 variante(s) Especias $ 3.000 100 Activo" [ref=e882]:
+                  - cell "Finas Hierbas Finas Hierbas 2 variante(s)" [ref=e883]:
+                    - generic [ref=e884]:
+                      - button "Ver variantes" [ref=e885] [cursor=pointer]:
+                        - img [ref=e886]
+                      - generic [ref=e888]:
+                        - img "Finas Hierbas" [ref=e889]
+                        - button "Subir foto" [ref=e890] [cursor=pointer]:
+                          - img [ref=e891]
+                      - generic [ref=e894]:
+                        - paragraph [ref=e895]: Finas Hierbas
+                        - paragraph [ref=e896]:
+                          - img [ref=e897]
+                          - text: 2 variante(s)
+                  - cell "Especias" [ref=e901]:
+                    - combobox [ref=e902] [cursor=pointer]:
+                      - option "Aguacates"
+                      - option "Frutas Tropicales"
+                      - option "Gourmet"
+                      - option "Ofertas y Combos"
+                      - option "Frutas Rojas"
+                      - option "Aromáticas"
+                      - option "Saludables"
+                      - option "Especias" [selected]
+                      - option "Desgranados"
+                  - cell "$ 3.000" [ref=e903]:
+                    - generic [ref=e904]: $ 3.000
+                  - cell "100" [ref=e905]
+                  - cell "Activo" [ref=e906]:
+                    - button "Activo" [ref=e907] [cursor=pointer]:
+                      - img [ref=e908]
+                      - text: Activo
+                  - cell [ref=e911]:
+                    - generic [ref=e912]:
+                      - button "Editar" [ref=e913] [cursor=pointer]:
+                        - img [ref=e914]
+                      - button "Eliminar" [ref=e917] [cursor=pointer]:
+                        - img [ref=e918]
+            - generic [ref=e921]:
+              - paragraph [ref=e922]: Mostrando 1 a 20 de 201 productos
+              - generic [ref=e923]:
+                - button "Anterior" [disabled] [ref=e924]
+                - button "Siguiente" [ref=e925] [cursor=pointer]
+          - generic [ref=e927]:
+            - generic [ref=e928]:
+              - heading "Editar Producto" [level=3] [ref=e929]
+              - button [ref=e930] [cursor=pointer]:
+                - img [ref=e931]
+            - generic [ref=e934]:
+              - generic [ref=e935]:
+                - generic [ref=e936]: Nombre del Producto *
+                - textbox [ref=e937]: Ajonjolí tostado
+              - generic [ref=e938]:
+                - generic [ref=e939]: Descripción
+                - textbox [ref=e940]: Ajonjolí tostado de categoría Especias
+              - generic [ref=e941]:
+                - generic [ref=e942]:
+                  - generic [ref=e943]: Precio Regular *
+                  - spinbutton [ref=e944]: "20000"
+                - generic [ref=e945]:
+                  - generic [ref=e946]: Precio Oferta
+                  - spinbutton [ref=e947]
+              - generic [ref=e948]:
+                - generic [ref=e949]: Stock *
+                - spinbutton [ref=e950]: "100"
+              - generic [ref=e951]:
+                - generic [ref=e952]: Categoría *
+                - combobox [ref=e953]:
+                  - option "Selecciona una categoría"
+                  - option "Aguacates"
+                  - option "Frutas Tropicales"
+                  - option "Gourmet"
+                  - option "Ofertas y Combos"
+                  - option "Frutas Rojas"
+                  - option "Aromáticas" [selected]
+                  - option "Saludables"
+                  - option "Especias"
+                  - option "Desgranados"
+              - generic [ref=e954]:
+                - generic [ref=e955] [cursor=pointer]:
+                  - checkbox "Producto Activo" [checked] [ref=e956]
+                  - generic [ref=e957]: Producto Activo
+                - generic [ref=e958] [cursor=pointer]:
+                  - checkbox "Producto Destacado" [ref=e959]
+                  - generic [ref=e960]: Producto Destacado
+              - generic [ref=e961]:
+                - heading "Variantes del Producto" [level=4] [ref=e962]:
+                  - img [ref=e963]
+                  - text: Variantes del Producto
+                - paragraph [ref=e967]: Edita el precio, stock y estado de cada variante individualmente. Los cambios se aplicarán globalmente.
+                - generic [ref=e970]:
+                  - generic [ref=e971]:
+                    - generic [ref=e972]: Variante
+                    - paragraph [ref=e973]: 20grs
+                  - generic [ref=e974]:
+                    - generic [ref=e975]: Precio *
+                    - paragraph [ref=e976]: $ 20.000
+                  - generic [ref=e977]:
+                    - generic [ref=e978]: Stock *
+                    - paragraph [ref=e979]: "100"
+                  - button "Editar" [ref=e981] [cursor=pointer]:
+                    - img [ref=e982]
+                    - text: Editar
+                - paragraph [ref=e986]:
+                  - strong [ref=e987]: "Nota:"
+                  - text: Los cambios en las variantes se aplicarán globalmente en toda la tienda.
+            - generic [ref=e988]:
+              - button "Cancelar" [ref=e989] [cursor=pointer]
+              - button "Guardar Cambios" [ref=e990] [cursor=pointer]:
+                - img [ref=e991]
+                - text: Guardar Cambios
+  - alert [ref=e995]
+```
