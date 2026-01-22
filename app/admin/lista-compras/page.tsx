@@ -591,19 +591,27 @@ export default function ListaComprasPage() {
             // Agregar desglose por cliente
             existing.customer_breakdown.push(customerInfo);
 
-            // Calcular unidades físicas para este item
+            // Calcular unidades físicas para este item (SIEMPRE, no solo con multiplicador > 1)
             const multiplier = extractMultiplierFromVariant(variantDisplay);
-            if (multiplier > 1) {
-              const itemPhysicalUnits = item.quantity * multiplier;
-              existing.total_physical_units = (existing.total_physical_units || existing.total_quantity - item.quantity) + itemPhysicalUnits;
+            const itemPhysicalUnits = item.quantity * multiplier;
 
-              // Detectar nombre de unidad física si no existe
-              if (!existing.physical_unit_name && variantDisplay) {
-                const lower = variantDisplay.toLowerCase();
-                if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
-                else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
-                else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
-              }
+            // Inicializar total_physical_units si no existe
+            if (existing.total_physical_units === undefined) {
+              // Recalcular desde cero sumando todos los items anteriores
+              existing.total_physical_units = 0;
+              existing.customer_breakdown.slice(0, -1).forEach(cb => {
+                const prevMultiplier = extractMultiplierFromVariant(cb.variant_name || null);
+                existing.total_physical_units! += cb.quantity * prevMultiplier;
+              });
+            }
+            existing.total_physical_units += itemPhysicalUnits;
+
+            // Detectar nombre de unidad física si no existe
+            if (!existing.physical_unit_name && variantDisplay) {
+              const lower = variantDisplay.toLowerCase();
+              if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
+              else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
+              else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
             }
 
             // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
@@ -662,7 +670,8 @@ export default function ListaComprasPage() {
               display_name: displayName,
               unit_price: unitPrice,
               total_quantity: item.quantity,
-              total_physical_units: multiplier > 1 ? physicalUnits : undefined,
+              // Siempre guardar unidades físicas si hay nombre de unidad (bandeja, etc.)
+              total_physical_units: physicalUnitName ? physicalUnits : undefined,
               physical_unit_name: physicalUnitName,
               weight_per_unit_grams: weightPerUnitGrams,
               total_weight_grams: initialWeightGrams,
