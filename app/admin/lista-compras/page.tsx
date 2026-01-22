@@ -104,6 +104,12 @@ interface ProductGrouped {
   total_weight_grams?: number;
   // Texto del peso total formateado (ej: "2.5 kg", "500 gr")
   total_weight_display?: string;
+  // Peso de la unidad más pequeña encontrada (en gramos)
+  smallest_weight_grams?: number;
+  // Total convertido a unidades de la presentación más pequeña
+  total_in_smallest_units?: number;
+  // Indica si hay clientes sin variante definida
+  has_missing_variants: boolean;
   // En cuántos pedidos aparece
   orders_count: number;
   // Desglose por cliente
@@ -456,6 +462,7 @@ export default function ListaComprasPage() {
                 display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
                 unit_price: 0, // No tiene precio individual
                 total_quantity: component.quantity * item.quantity,
+                has_missing_variants: false, // Combos siempre tienen variante definida
                 orders_count: 1,
                 customer_breakdown: [customerInfo]
               });
@@ -504,10 +511,25 @@ export default function ListaComprasPage() {
             // Agregar desglose por cliente
             existing.customer_breakdown.push(customerInfo);
 
+            // Detectar si este cliente no tiene variante
+            if (!variantDisplay) {
+              existing.has_missing_variants = true;
+            }
+
             // Recalcular peso total si hay peso por unidad
-            if (existing.weight_per_unit_grams && itemWeightGrams) {
+            if (itemWeightGrams) {
               existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
               existing.total_weight_display = formatWeight(existing.total_weight_grams);
+
+              // Actualizar peso mínimo si este es menor
+              if (weightPerUnitGrams && (!existing.smallest_weight_grams || weightPerUnitGrams < existing.smallest_weight_grams)) {
+                existing.smallest_weight_grams = weightPerUnitGrams;
+              }
+
+              // Recalcular unidades equivalentes en la presentación más pequeña
+              if (existing.smallest_weight_grams && existing.total_weight_grams) {
+                existing.total_in_smallest_units = Math.ceil(existing.total_weight_grams / existing.smallest_weight_grams);
+              }
             }
           } else {
             // Crear nombre a mostrar (usando nombre normalizado)
@@ -533,6 +555,9 @@ export default function ListaComprasPage() {
               weight_per_unit_grams: weightPerUnitGrams,
               total_weight_grams: initialWeightGrams,
               total_weight_display: weightDisplay,
+              smallest_weight_grams: weightPerUnitGrams, // Inicializar con el peso de esta variante
+              total_in_smallest_units: item.quantity, // Inicializar con la cantidad actual
+              has_missing_variants: !variantDisplay, // True si no hay variante definida
               orders_count: 1,
               customer_breakdown: [customerInfo]
             });
@@ -1069,6 +1094,12 @@ export default function ListaComprasPage() {
                                 <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
                                 </p>
+                                {/* Alerta si hay clientes sin variante definida */}
+                                {product.has_missing_variants && (
+                                  <p className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">
+                                    ⚠️ Hay pedidos sin variante
+                                  </p>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1081,9 +1112,12 @@ export default function ListaComprasPage() {
                                 <p className="text-2xl font-bold text-green-600">
                                   {product.total_weight_display}
                                 </p>
-                                <p className="text-sm text-gray-500">
-                                  ({product.total_quantity} unidad{product.total_quantity === 1 ? '' : 'es'})
-                                </p>
+                                {/* Mostrar unidades equivalentes en presentación mínima si es diferente */}
+                                {product.total_in_smallest_units && product.smallest_weight_grams && (
+                                  <p className="text-sm text-gray-600 font-medium">
+                                    ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
+                                  </p>
+                                )}
                               </>
                             ) : (
                               <>
@@ -1141,13 +1175,26 @@ export default function ListaComprasPage() {
 
                                     {/* Cantidad a entregar con variante */}
                                     <div className="text-right flex-shrink-0">
-                                      <p className="font-bold text-gray-900 text-lg">
-                                        {customer.quantity}x {customer.variant_name || (customer.weight_display ? customer.weight_display : 'unidad')}
-                                      </p>
-                                      {customer.weight_display && customer.variant_name && (
-                                        <p className="text-xs text-gray-500">
-                                          ({customer.weight_display})
-                                        </p>
+                                      {customer.variant_name || customer.weight_display ? (
+                                        <>
+                                          <p className="font-bold text-gray-900 text-lg">
+                                            {customer.quantity}x {customer.variant_name || customer.weight_display}
+                                          </p>
+                                          {customer.weight_display && customer.variant_name && (
+                                            <p className="text-xs text-gray-500">
+                                              ({customer.weight_display})
+                                            </p>
+                                          )}
+                                        </>
+                                      ) : (
+                                        <>
+                                          <p className="font-bold text-amber-600 text-lg">
+                                            {customer.quantity}x ⚠️ Sin dato
+                                          </p>
+                                          <p className="text-xs text-amber-500">
+                                            Verificar pedido
+                                          </p>
+                                        </>
                                       )}
                                     </div>
                                   </div>
