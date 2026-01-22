@@ -370,11 +370,13 @@ export default function ListaComprasPage() {
     const normalizedName = normalizeProductName(productName, variant);
 
     // Extraer números del nombre del producto
-    const nameNumbers = normalizedName.match(/\d+/g) || [];
+    const nameNumbersMatch = normalizedName.match(/\d+/g);
+    const nameNumbers: string[] = nameNumbersMatch ? Array.from(nameNumbersMatch) : [];
 
     // Si hay variante, extraer sus números
     if (variant) {
-      const variantNumbers = variant.match(/\d+/g) || [];
+      const variantNumbersMatch = variant.match(/\d+/g);
+      const variantNumbers: string[] = variantNumbersMatch ? Array.from(variantNumbersMatch) : [];
 
       // Si el número principal de la variante ya está en el nombre, no incluir variante
       // Ej: "Caja de 24 unidades hass" con variante "24 unidades" → solo usar nombre
