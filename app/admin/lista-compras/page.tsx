@@ -17,7 +17,8 @@ import {
   DollarSign,
   Truck,
   CheckCircle,
-  RotateCcw
+  RotateCcw,
+  ExternalLink
 } from 'lucide-react';
 
 interface OrderItem {
@@ -313,6 +314,39 @@ export default function ListaComprasPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Detectar categoría del producto basándose en palabras clave del nombre
+  // Devuelve un objeto con clases de estilo CSS para diferenciar visualmente
+  const getCategoryStyle = (productName: string): { bg: string; border: string; label: string; color: string } => {
+    const name = productName.toLowerCase();
+
+    // Combos y Cajas (primero para tener prioridad)
+    if (name.includes('combo') || name.includes('caja')) {
+      return { bg: 'bg-purple-50', border: 'border-l-4 border-l-purple-500', label: 'Combo/Caja', color: 'text-purple-700' };
+    }
+
+    // Frutas
+    const frutas = ['manzana', 'fresa', 'arándano', 'arandano', 'naranja', 'limón', 'limon', 'mandarina',
+      'mango', 'piña', 'pina', 'papaya', 'banano', 'banana', 'uva', 'ciruela', 'durazno',
+      'mora', 'granadilla', 'maracuyá', 'maracuya', 'guayaba', 'aguacate', 'pera', 'sandía',
+      'sandia', 'melón', 'melon', 'cereza', 'kiwi', 'coco', 'pitiahaya', 'pitaya', 'lulo', 'tomate de árbol'];
+    if (frutas.some(f => name.includes(f))) {
+      return { bg: 'bg-orange-50', border: 'border-l-4 border-l-orange-400', label: 'Fruta', color: 'text-orange-700' };
+    }
+
+    // Verduras y Hierbas
+    const verduras = ['lechuga', 'espinaca', 'kale', 'rúgula', 'rugula', 'acelga', 'apio', 'brócoli',
+      'brocoli', 'coliflor', 'zanahoria', 'pepino', 'tomate', 'cebolla', 'ajo', 'cilantro',
+      'perejil', 'albahaca', 'hierbabuena', 'menta', 'romero', 'tomillo', 'orégano', 'oregano',
+      'papa', 'yuca', 'plátano', 'platano', 'maíz', 'maiz', 'arveja', 'habichuela',
+      'calabacín', 'calabacin', 'berenjena', 'pimentón', 'pimenton', 'champiñón', 'champiñon'];
+    if (verduras.some(v => name.includes(v))) {
+      return { bg: 'bg-green-50', border: 'border-l-4 border-l-green-500', label: 'Verdura', color: 'text-green-700' };
+    }
+
+    // Default - sin categoría específica
+    return { bg: 'bg-white', border: 'border-l-4 border-l-gray-300', label: '', color: 'text-gray-600' };
   };
 
   // Extraer peso en gramos desde la variante
@@ -1159,8 +1193,12 @@ export default function ListaComprasPage() {
                 {groupedProducts.map(product => {
                   const isExpanded = expandedProducts.has(product.grouping_key);
                   const isPurchased = purchasedProducts.has(product.grouping_key);
+                  const categoryStyle = getCategoryStyle(product.product_name);
                   return (
-                    <div key={product.grouping_key} className={isPurchased ? 'bg-purple-50' : ''}>
+                    <div
+                      key={product.grouping_key}
+                      className={`${isPurchased ? 'bg-purple-50' : categoryStyle.bg} ${categoryStyle.border}`}
+                    >
                       {/* Fila principal del producto */}
                       <div
                         className={`p-4 transition-colors cursor-pointer ${isPurchased ? 'hover:bg-purple-100' : 'hover:bg-gray-50'}`}
@@ -1241,6 +1279,19 @@ export default function ListaComprasPage() {
                                   </p>
                                 )}
                               </>
+                            ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
+                              /* Mostrar unidades físicas como número principal cuando son diferentes */
+                              <>
+                                <p className="text-2xl font-bold text-green-600">
+                                  {product.total_physical_units}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
+                                </p>
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  ({product.total_quantity} pedido{product.total_quantity === 1 ? '' : 's'})
+                                </p>
+                              </>
                             ) : (
                               <>
                                 <p className="text-2xl font-bold text-green-600">
@@ -1249,12 +1300,6 @@ export default function ListaComprasPage() {
                                 <p className="text-sm text-gray-500">
                                   unidad{product.total_quantity === 1 ? '' : 'es'}
                                 </p>
-                                {/* Mostrar unidades físicas si son diferentes (ej: 6 Bandejas) */}
-                                {product.total_physical_units && product.total_physical_units > product.total_quantity && (
-                                  <p className="text-sm text-green-700 font-medium mt-1">
-                                    = {product.total_physical_units} {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
-                                  </p>
-                                )}
                               </>
                             )}
                           </div>
@@ -1377,6 +1422,17 @@ export default function ListaComprasPage() {
                                         )}
                                       </button>
                                     )}
+                                    {/* Botón para ver el pedido completo */}
+                                    <a
+                                      href={`/admin/pedidos?id=${customer.order_id}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors bg-purple-100 text-purple-600 hover:bg-purple-200"
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                      Ver pedido
+                                    </a>
                                   </div>
                                 </div>
                               );
