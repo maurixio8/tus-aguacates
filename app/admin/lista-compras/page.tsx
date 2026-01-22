@@ -363,29 +363,12 @@ export default function ListaComprasPage() {
   };
 
   // Crear clave de agrupación inteligente
-  // Agrupa productos por su nombre normalizado - ignora variantes cuando ya están en el nombre
+  // SIEMPRE agrupa por nombre normalizado solamente - ignora variantes para evitar duplicados
+  // Esto consolida: "Fresas premium" + "Fresas premium (500 gr)" = mismo producto
   const createGroupingKey = (productName: string, variant: string | null): string => {
-    const normalizedName = normalizeProductName(productName, variant);
-
-    // Extraer números del nombre del producto normalizado
-    const nameNumbersMatch = normalizedName.match(/\d+/g);
-    const nameNumbers: string[] = nameNumbersMatch ? Array.from(nameNumbersMatch) : [];
-
-    // Si el nombre ya contiene números (como "Caja de 12 unidades"), usar solo el nombre
-    // Esto evita duplicados cuando la variante repite info del nombre
-    if (nameNumbers.length > 0) {
-      return normalizedName;
-    }
-
-    // Para productos sin números en el nombre, incluir variante normalizada
-    // Ej: "Fresas" con variante "500gr" vs "Fresas" con variante "1kg"
-    if (variant) {
-      // Normalizar la variante también (remover paréntesis si los tiene)
-      const normalizedVariant = variant.replace(/[()]/g, '').trim();
-      return `${normalizedName}|${normalizedVariant}`;
-    }
-
-    return normalizedName;
+    // Usar SOLO el nombre normalizado como clave de agrupación
+    // Esto garantiza que todas las variantes del mismo producto se agrupen
+    return normalizeProductName(productName, variant);
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
