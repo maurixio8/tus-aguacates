@@ -352,9 +352,7 @@ export default function ListaComprasPage() {
     if (!name) return 'Producto sin nombre';
     let normalized = name.trim();
 
-    // SIEMPRE remover contenido final entre paréntesis si solo contiene números/unidades
-    // Ej: "Caja 24 (24)" → "Caja 24"
-    // Ej: "Caja 24 unidades (24 unidades)" → "Caja 24 unidades"
+    // SIEMPRE remover contenido final entre paréntesis si contiene números/unidades
     const parenMatch = normalized.match(/\s*\([^)]*\d+[^)]*\)\s*$/);
     if (parenMatch) {
       normalized = normalized.replace(/\s*\([^)]*\d+[^)]*\)\s*$/, '').trim();
@@ -364,6 +362,30 @@ export default function ListaComprasPage() {
     normalized = normalized.replace(/\s+/g, ' ');
 
     return normalized;
+  };
+
+  // Crear clave de agrupación inteligente
+  // Si el nombre del producto ya contiene la info de la variante, ignorar la variante
+  const createGroupingKey = (productName: string, variant: string | null): string => {
+    const normalizedName = normalizeProductName(productName, variant);
+
+    // Extraer números del nombre del producto
+    const nameNumbers = normalizedName.match(/\d+/g) || [];
+
+    // Si hay variante, extraer sus números
+    if (variant) {
+      const variantNumbers = variant.match(/\d+/g) || [];
+
+      // Si el número principal de la variante ya está en el nombre, no incluir variante
+      // Ej: "Caja de 24 unidades hass" con variante "24 unidades" → solo usar nombre
+      if (variantNumbers.length > 0 && nameNumbers.includes(variantNumbers[0])) {
+        return normalizedName;
+      }
+    }
+
+    // Si no hay variante o no está en el nombre, incluirla en la clave
+    const variantKey = variant || 'Sin variante';
+    return `${normalizedName}|${variantKey}`;
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
@@ -469,10 +491,9 @@ export default function ListaComprasPage() {
           // Extraer peso de la variante (si existe)
           const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
 
-          // Crear clave de agrupación: producto normalizado + variante (SIN precio)
+          // Crear clave de agrupación inteligente (detecta si variante ya está en el nombre)
+          const groupingKey = createGroupingKey(productName, variantDisplay);
           const normalizedName = normalizeProductName(productName, variantDisplay);
-          const variantKey = variantDisplay || 'Sin variante';
-          const groupingKey = `${normalizedName}|${variantKey}`;
 
           // Calcular peso para este item
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
