@@ -352,11 +352,9 @@ export default function ListaComprasPage() {
     if (!name) return 'Producto sin nombre';
     let normalized = name.trim();
 
-    // SIEMPRE remover contenido final entre paréntesis si contiene números/unidades
-    const parenMatch = normalized.match(/\s*\([^)]*\d+[^)]*\)\s*$/);
-    if (parenMatch) {
-      normalized = normalized.replace(/\s*\([^)]*\d+[^)]*\)\s*$/, '').trim();
-    }
+    // SIEMPRE remover CUALQUIER contenido final entre paréntesis
+    // Esto agrupa productos como "Caja de 12 unidades Premium (12 unidades)" con "Caja de 12 unidades Premium"
+    normalized = normalized.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
@@ -365,29 +363,29 @@ export default function ListaComprasPage() {
   };
 
   // Crear clave de agrupación inteligente
-  // Si el nombre del producto ya contiene la info de la variante, ignorar la variante
+  // Agrupa productos por su nombre normalizado - ignora variantes cuando ya están en el nombre
   const createGroupingKey = (productName: string, variant: string | null): string => {
     const normalizedName = normalizeProductName(productName, variant);
 
-    // Extraer números del nombre del producto
+    // Extraer números del nombre del producto normalizado
     const nameNumbersMatch = normalizedName.match(/\d+/g);
     const nameNumbers: string[] = nameNumbersMatch ? Array.from(nameNumbersMatch) : [];
 
-    // Si hay variante, extraer sus números
-    if (variant) {
-      const variantNumbersMatch = variant.match(/\d+/g);
-      const variantNumbers: string[] = variantNumbersMatch ? Array.from(variantNumbersMatch) : [];
-
-      // Si el número principal de la variante ya está en el nombre, no incluir variante
-      // Ej: "Caja de 24 unidades hass" con variante "24 unidades" → solo usar nombre
-      if (variantNumbers.length > 0 && nameNumbers.includes(variantNumbers[0])) {
-        return normalizedName;
-      }
+    // Si el nombre ya contiene números (como "Caja de 12 unidades"), usar solo el nombre
+    // Esto evita duplicados cuando la variante repite info del nombre
+    if (nameNumbers.length > 0) {
+      return normalizedName;
     }
 
-    // Si no hay variante o no está en el nombre, incluirla en la clave
-    const variantKey = variant || 'Sin variante';
-    return `${normalizedName}|${variantKey}`;
+    // Para productos sin números en el nombre, incluir variante normalizada
+    // Ej: "Fresas" con variante "500gr" vs "Fresas" con variante "1kg"
+    if (variant) {
+      // Normalizar la variante también (remover paréntesis si los tiene)
+      const normalizedVariant = variant.replace(/[()]/g, '').trim();
+      return `${normalizedName}|${normalizedVariant}`;
+    }
+
+    return normalizedName;
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
