@@ -18,7 +18,8 @@ import {
   Truck,
   CheckCircle,
   RotateCcw,
-  ExternalLink
+  ExternalLink,
+  Edit
 } from 'lucide-react';
 
 interface OrderItem {
@@ -1247,9 +1248,21 @@ export default function ListaComprasPage() {
                               {/* Precio unitario y cantidad */}
                               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                                 {product.unit_price > 0 && (
-                                  <p className={`text-sm font-semibold ${isPurchased ? 'text-gray-400' : 'text-green-700'}`}>
-                                    {formatPrice(product.unit_price)} c/u
-                                  </p>
+                                  <div className="flex items-center gap-1">
+                                    <p className={`text-sm font-semibold ${isPurchased ? 'text-gray-400' : 'text-green-700'}`}>
+                                      {formatPrice(product.unit_price)} c/u
+                                    </p>
+                                    <a
+                                      href={`/admin/productos?search=${encodeURIComponent(product.product_name)}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                      title="Editar precio del producto"
+                                    >
+                                      <Edit className="w-3 h-3" />
+                                    </a>
+                                  </div>
                                 )}
                                 <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500'}`}>
                                   {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}

@@ -483,6 +483,28 @@ export default function OrdersPage() {
     loadOrderStats();
   }, []);
 
+  // Manejar parámetro ?id= para abrir un pedido específico automáticamente
+  useEffect(() => {
+    const orderId = searchParams.get('id');
+    if (orderId && orders.length > 0) {
+      // Expandir el pedido solicitado
+      setExpandedOrder(orderId);
+
+      // Hacer scroll al pedido después de un pequeño delay para que se renderice
+      setTimeout(() => {
+        const orderElement = document.getElementById(`order-${orderId}`);
+        if (orderElement) {
+          orderElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Agregar un efecto visual temporalmente
+          orderElement.classList.add('ring-4', 'ring-green-500', 'ring-opacity-50');
+          setTimeout(() => {
+            orderElement.classList.remove('ring-4', 'ring-green-500', 'ring-opacity-50');
+          }, 3000);
+        }
+      }, 300);
+    }
+  }, [orders, searchParams]);
+
   const loadOrderStats = async () => {
     try {
       const response = await fetch('/api/admin/orders/stats', {
@@ -1127,7 +1149,8 @@ export default function OrdersPage() {
                 return (
                   <div
                     key={order.id}
-                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+                    id={`order-${order.id}`}
+                    className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all"
                   >
                     <div className="p-4 lg:p-6">
                       {/* Header del pedido */}
