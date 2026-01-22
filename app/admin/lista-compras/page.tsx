@@ -462,11 +462,12 @@ export default function ListaComprasPage() {
             }
           });
         } else {
-          // Producto normal (no es combo)
-          // Extraer variante si existe
+          // Extraer variante si existe - PRIORIZAR variant_value sobre variant_name
+          // variant_value contiene el valor específico (ej: "X125grs", "X250grs")
+          // variant_name contiene el tipo genérico (ej: "Presentación", "Tamaño")
           const variantName = item.product_snapshot?.variant_name || null;
           const variantValue = item.product_snapshot?.variant_value || null;
-          const variantDisplay = variantName || variantValue || null;
+          const variantDisplay = variantValue || variantName || null;
 
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
