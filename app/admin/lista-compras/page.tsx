@@ -96,8 +96,13 @@ interface ProductGrouped {
   display_name: string;
   // Precio unitario de venta
   unit_price: number;
-  // Cantidad total (unidades)
+  // Cantidad total (unidades vendidas)
   total_quantity: number;
+  // Unidades físicas totales (considerando multiplicadores de variante)
+  // Ej: 1x "2 Bandejas" + 4x "1 Bandeja" = 5 unidades vendidas pero 6 bandejas físicas
+  total_physical_units?: number;
+  // Nombre de la unidad física (ej: "Bandeja", "unidad")
+  physical_unit_name?: string;
   // Peso de la variante por unidad (en gramos)
   weight_per_unit_grams?: number;
   // Peso total (en gramos)
@@ -414,6 +419,34 @@ export default function ListaComprasPage() {
     return null;
   };
 
+  // Extraer multiplicador de la variante para calcular unidades físicas
+  // Ej: "2 Bandejas" -> 2, "3 unidades" -> 3, "X2" -> 2
+  // Esto permite calcular que 1 pedido de "2 Bandejas" = 2 bandejas físicas
+  const extractMultiplierFromVariant = (variant: string | null): number => {
+    if (!variant) return 1;
+
+    const text = variant.toLowerCase().trim();
+
+    // Patrones para encontrar multiplicadores
+    // "2 Bandejas", "2 bandejas"
+    const bandejaMatch = text.match(/^(\d+)\s*bandeja/i);
+    if (bandejaMatch) return parseInt(bandejaMatch[1], 10);
+
+    // "X2", "x 2"
+    const xMatch = text.match(/^x\s*(\d+)/i);
+    if (xMatch) return parseInt(xMatch[1], 10);
+
+    // "2 unidades" al inicio
+    const unitsMatch = text.match(/^(\d+)\s*unidad/i);
+    if (unitsMatch) return parseInt(unitsMatch[1], 10);
+
+    // "2X" al inicio
+    const numXMatch = text.match(/^(\d+)\s*x/i);
+    if (numXMatch) return parseInt(numXMatch[1], 10);
+
+    return 1; // Sin multiplicador detectado
+  };
+
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
     const summaries = new Map<string, Array<{
@@ -558,6 +591,21 @@ export default function ListaComprasPage() {
             // Agregar desglose por cliente
             existing.customer_breakdown.push(customerInfo);
 
+            // Calcular unidades físicas para este item
+            const multiplier = extractMultiplierFromVariant(variantDisplay);
+            if (multiplier > 1) {
+              const itemPhysicalUnits = item.quantity * multiplier;
+              existing.total_physical_units = (existing.total_physical_units || existing.total_quantity - item.quantity) + itemPhysicalUnits;
+
+              // Detectar nombre de unidad física si no existe
+              if (!existing.physical_unit_name && variantDisplay) {
+                const lower = variantDisplay.toLowerCase();
+                if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
+                else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
+                else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
+              }
+            }
+
             // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
             // (productos como "Caja de 12 unidades" no necesitan variante)
             if (!variantDisplay && !nameHasQuantity) {
@@ -592,6 +640,20 @@ export default function ListaComprasPage() {
             const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
             const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
 
+            // Calcular unidades físicas (considerando multiplicador de variante)
+            // Ej: 1 pedido de "2 Bandejas" = 2 bandejas físicas
+            const multiplier = extractMultiplierFromVariant(variantDisplay);
+            const physicalUnits = item.quantity * multiplier;
+
+            // Detectar nombre de unidad física
+            let physicalUnitName: string | undefined = undefined;
+            if (variantDisplay) {
+              const lower = variantDisplay.toLowerCase();
+              if (lower.includes('bandeja')) physicalUnitName = 'Bandeja';
+              else if (lower.includes('unidad')) physicalUnitName = 'unidad';
+              else if (lower.includes('paquete')) physicalUnitName = 'paquete';
+            }
+
             productMap.set(groupingKey, {
               grouping_key: groupingKey,
               product_name: normalizedName,
@@ -600,6 +662,8 @@ export default function ListaComprasPage() {
               display_name: displayName,
               unit_price: unitPrice,
               total_quantity: item.quantity,
+              total_physical_units: multiplier > 1 ? physicalUnits : undefined,
+              physical_unit_name: physicalUnitName,
               weight_per_unit_grams: weightPerUnitGrams,
               total_weight_grams: initialWeightGrams,
               total_weight_display: weightDisplay,
@@ -1176,6 +1240,12 @@ export default function ListaComprasPage() {
                                 <p className="text-sm text-gray-500">
                                   unidad{product.total_quantity === 1 ? '' : 'es'}
                                 </p>
+                                {/* Mostrar unidades físicas si son diferentes (ej: 6 Bandejas) */}
+                                {product.total_physical_units && product.total_physical_units > product.total_quantity && (
+                                  <p className="text-sm text-green-700 font-medium mt-1">
+                                    = {product.total_physical_units} {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
+                                  </p>
+                                )}
                               </>
                             )}
                           </div>
