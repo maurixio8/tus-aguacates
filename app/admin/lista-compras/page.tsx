@@ -377,6 +377,43 @@ export default function ListaComprasPage() {
     return normalizeProductName(productName, variant);
   };
 
+  // Detectar si el nombre del producto ya contiene información de cantidad/tamaño
+  // Ej: "Caja de 12 unidades Premium" -> true
+  // Ej: "Arándanos Orgánicos" -> false
+  const productNameHasQuantityInfo = (productName: string): boolean => {
+    const name = productName.toLowerCase();
+    // Patrones que indican que el nombre ya tiene info de cantidad
+    const patterns = [
+      /\d+\s*unidad/,      // "12 unidades", "4 unidad"
+      /x\s*\d+/,           // "x4", "x 12"
+      /\d+\s*(gr|grs|kg|kilos|gramos)/,  // "500gr", "1 kg"
+      /paquete\s*x?\s*\d+/, // "paquete 4", "paquete x4"
+      /caja\s*de\s*\d+/,   // "caja de 12"
+      /\d+\s*kilo/,        // "1 kilo"
+    ];
+    return patterns.some(pattern => pattern.test(name));
+  };
+
+  // Extraer la info de cantidad del nombre del producto para mostrar
+  // Ej: "Caja de 12 unidades Premium" -> "12 unidades"
+  const extractQuantityFromName = (productName: string): string | null => {
+    const name = productName.toLowerCase();
+
+    // Buscar "X unidades" o "de X unidades"
+    const unitsMatch = productName.match(/(\d+)\s*unidad(es)?/i);
+    if (unitsMatch) {
+      return `${unitsMatch[1]} unidades`;
+    }
+
+    // Buscar peso en gramos o kilos
+    const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(gr|grs|kg|kilos?|gramos)/i);
+    if (weightMatch) {
+      return `${weightMatch[1]} ${weightMatch[2]}`;
+    }
+
+    return null;
+  };
+
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
     const summaries = new Map<string, Array<{
@@ -474,7 +511,17 @@ export default function ListaComprasPage() {
           // variant_name contiene el tipo genérico (ej: "Presentación", "Tamaño")
           const variantName = item.product_snapshot?.variant_name || null;
           const variantValue = item.product_snapshot?.variant_value || null;
-          const variantDisplay = variantValue || variantName || null;
+          let variantDisplay = variantValue || variantName || null;
+
+          // Si no hay variante pero el nombre tiene info de cantidad, usar esa info
+          // Ej: "Caja de 12 unidades Premium" -> variantDisplay = "12 unidades"
+          const quantityFromName = extractQuantityFromName(productName);
+          const nameHasQuantity = productNameHasQuantityInfo(productName);
+
+          // Si no hay variante guardada pero el nombre tiene la info, usarla
+          if (!variantDisplay && quantityFromName) {
+            variantDisplay = quantityFromName;
+          }
 
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
@@ -511,8 +558,9 @@ export default function ListaComprasPage() {
             // Agregar desglose por cliente
             existing.customer_breakdown.push(customerInfo);
 
-            // Detectar si este cliente no tiene variante
-            if (!variantDisplay) {
+            // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
+            // (productos como "Caja de 12 unidades" no necesitan variante)
+            if (!variantDisplay && !nameHasQuantity) {
               existing.has_missing_variants = true;
             }
 
@@ -557,7 +605,8 @@ export default function ListaComprasPage() {
               total_weight_display: weightDisplay,
               smallest_weight_grams: weightPerUnitGrams, // Inicializar con el peso de esta variante
               total_in_smallest_units: item.quantity, // Inicializar con la cantidad actual
-              has_missing_variants: !variantDisplay, // True si no hay variante definida
+              // Solo falta variante si NO hay variantDisplay Y el nombre NO tiene info de cantidad
+              has_missing_variants: !variantDisplay && !nameHasQuantity,
               orders_count: 1,
               customer_breakdown: [customerInfo]
             });
