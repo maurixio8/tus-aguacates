@@ -121,6 +121,8 @@ interface ProductGrouped {
   orders_count: number;
   // Desglose por cliente
   customer_breakdown: CustomerBreakdown[];
+  // Items originales para referencia (ej. obtener product_id)
+  items: OrderItem[];
 }
 
 export default function ListaComprasPage() {
@@ -242,6 +244,56 @@ export default function ListaComprasPage() {
       loadOrders();
     }
   }, [dateFrom, dateTo]);
+
+  // Detectar posibles clientes duplicados en los pedidos SELECCIONADOS
+  const duplicateWarnings = useMemo(() => {
+    if (selectedOrders.size === 0) return [];
+
+    const activeOrders = orders.filter(o => selectedOrders.has(o.id));
+    const warnings: string[] = [];
+    const processedIds = new Set<string>();
+
+    const normalize = (str: string) => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+    // 1. Agrupar por Teléfono (muy fuerte indicador)
+    const byPhone = new Map<string, Order[]>();
+    activeOrders.forEach(o => {
+      if (!o.customer_phone) return;
+      const phone = o.customer_phone.replace(/\D/g, '');
+      if (phone.length < 7) return;
+      if (!byPhone.has(phone)) byPhone.set(phone, []);
+      byPhone.get(phone)!.push(o);
+    });
+
+    byPhone.forEach((group, phone) => {
+      if (group.length > 1) {
+        const names = Array.from(new Set(group.map(o => o.customer_name || 'Sin Nombre'))).join(' / ');
+        warnings.push(`Mismo teléfono (${phone}): ${names} (${group.length} pedidos)`);
+        group.forEach(o => processedIds.add(o.id));
+      }
+    });
+
+    // 2. Agrupar por Nombre Normalizado (si no fueron capturados por teléfono)
+    const byName = new Map<string, Order[]>();
+    activeOrders.forEach(o => {
+      // Si ya fue procesado por teléfono, ignorar para evitar duplicar alertas
+      if (processedIds.has(o.id)) return;
+
+      const name = normalize(o.customer_name || '');
+      if (!name) return;
+      if (!byName.has(name)) byName.set(name, []);
+      byName.get(name)!.push(o);
+    });
+
+    byName.forEach((group, name) => {
+      if (group.length > 1) {
+        const displayNames = Array.from(new Set(group.map(o => o.customer_name))).join(' / ');
+        warnings.push(`Mismo nombre: ${displayNames} (${group.length} pedidos)`);
+      }
+    });
+
+    return warnings;
+  }, [selectedOrders, orders]);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -456,11 +508,22 @@ export default function ListaComprasPage() {
 
   // Extraer multiplicador de la variante para calcular unidades físicas
   // Ej: "2 Bandejas" -> 2, "3 unidades" -> 3, "X2" -> 2
-  // Esto permite calcular que 1 pedido de "2 Bandejas" = 2 bandejas físicas
-  const extractMultiplierFromVariant = (variant: string | null): number => {
+  // EXCEPCIÓN: Para productos tipo "Caja de X unidades", NO multiplicar porque
+  // la caja ya es la unidad de compra (queremos contar cajas, no aguacates)
+  const extractMultiplierFromVariant = (variant: string | null, productName?: string): number => {
     if (!variant) return 1;
 
     const text = variant.toLowerCase().trim();
+
+    // Si el PRODUCTO es una "Caja de X unidades", NO multiplicar
+    // La caja ya es la unidad de compra, las "12 unidades" son contenido interno
+    if (productName) {
+      const productLower = productName.toLowerCase();
+      if (productLower.includes('caja de') && productLower.includes('unidad')) {
+        // Es una caja, retornar 1 (contar cajas, no contenido interno)
+        return 1;
+      }
+    }
 
     // Patrones para encontrar multiplicadores
     // "2 Bandejas", "2 bandejas"
@@ -471,7 +534,7 @@ export default function ListaComprasPage() {
     const xMatch = text.match(/^x\s*(\d+)/i);
     if (xMatch) return parseInt(xMatch[1], 10);
 
-    // "2 unidades" al inicio
+    // "2 unidades" al inicio - pero solo si NO es variante derivada del nombre de caja
     const unitsMatch = text.match(/^(\d+)\s*unidad/i);
     if (unitsMatch) return parseInt(unitsMatch[1], 10);
 
@@ -559,6 +622,8 @@ export default function ListaComprasPage() {
               existing.total_quantity += component.quantity * item.quantity;
               existing.orders_count += 1;
               existing.customer_breakdown.push(customerInfo);
+              if (!existing.items) existing.items = [];
+              existing.items.push(item);
             } else {
               productMap.set(componentKey, {
                 grouping_key: componentKey,
@@ -569,7 +634,9 @@ export default function ListaComprasPage() {
                 total_quantity: component.quantity * item.quantity,
                 has_missing_variants: false, // Combos siempre tienen variante definida
                 orders_count: 1,
-                customer_breakdown: [customerInfo]
+                orders_count: 1,
+                customer_breakdown: [customerInfo],
+                items: [item]
               });
             }
           });
@@ -625,9 +692,11 @@ export default function ListaComprasPage() {
 
             // Agregar desglose por cliente
             existing.customer_breakdown.push(customerInfo);
+            if (!existing.items) existing.items = [];
+            existing.items.push(item);
 
             // Calcular unidades físicas para este item (SIEMPRE, no solo con multiplicador > 1)
-            const multiplier = extractMultiplierFromVariant(variantDisplay);
+            const multiplier = extractMultiplierFromVariant(variantDisplay, normalizedName);
             const itemPhysicalUnits = item.quantity * multiplier;
 
             // Inicializar total_physical_units si no existe
@@ -635,842 +704,865 @@ export default function ListaComprasPage() {
               // Recalcular desde cero sumando todos los items anteriores
               existing.total_physical_units = 0;
               existing.customer_breakdown.slice(0, -1).forEach(cb => {
-                const prevMultiplier = extractMultiplierFromVariant(cb.variant_name || null);
+                const prevMultiplier = extractMultiplierFromVariant(cb.variant_name || null, normalizedName);
                 existing.total_physical_units! += cb.quantity * prevMultiplier;
               });
             }
             existing.total_physical_units += itemPhysicalUnits;
 
             // Detectar nombre de unidad física si no existe
-            if (!existing.physical_unit_name && variantDisplay) {
-              const lower = variantDisplay.toLowerCase();
-              if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
-              else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
-              else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
-            }
-
-            // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
-            // (productos como "Caja de 12 unidades" no necesitan variante)
-            if (!variantDisplay && !nameHasQuantity) {
-              existing.has_missing_variants = true;
-            }
-
-            // Recalcular peso total si hay peso por unidad
-            if (itemWeightGrams) {
-              existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
-              existing.total_weight_display = formatWeight(existing.total_weight_grams);
-
-              // Actualizar peso mínimo si este es menor
-              if (weightPerUnitGrams && (!existing.smallest_weight_grams || weightPerUnitGrams < existing.smallest_weight_grams)) {
-                existing.smallest_weight_grams = weightPerUnitGrams;
-              }
-
-              // Recalcular unidades equivalentes en la presentación más pequeña
-              if (existing.smallest_weight_grams && existing.total_weight_grams) {
-                existing.total_in_smallest_units = Math.ceil(existing.total_weight_grams / existing.smallest_weight_grams);
-              }
-            }
-          } else {
-            // Crear nombre a mostrar (usando nombre normalizado)
-            let displayName = normalizedName;
-
-            // Si hay variante separada, agregarla
-            if (variantDisplay) {
-              displayName = `${normalizedName} (${variantDisplay})`;
-            }
-
-            // Calcular peso total inicial
-            const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
-            const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
-
-            // Calcular unidades físicas (considerando multiplicador de variante)
-            // Ej: 1 pedido de "2 Bandejas" = 2 bandejas físicas
-            const multiplier = extractMultiplierFromVariant(variantDisplay);
-            const physicalUnits = item.quantity * multiplier;
-
-            // Detectar nombre de unidad física
-            let physicalUnitName: string | undefined = undefined;
-            if (variantDisplay) {
-              const lower = variantDisplay.toLowerCase();
-              if (lower.includes('bandeja')) physicalUnitName = 'Bandeja';
-              else if (lower.includes('unidad')) physicalUnitName = 'unidad';
-              else if (lower.includes('paquete')) physicalUnitName = 'paquete';
-            }
-
-            productMap.set(groupingKey, {
-              grouping_key: groupingKey,
-              product_name: normalizedName,
-              variant_name: variantDisplay || undefined,
-              variant_value: variantValue || undefined,
-              display_name: displayName,
-              unit_price: unitPrice,
-              total_quantity: item.quantity,
-              // Siempre guardar unidades físicas si hay nombre de unidad (bandeja, etc.)
-              total_physical_units: physicalUnitName ? physicalUnits : undefined,
-              physical_unit_name: physicalUnitName,
-              weight_per_unit_grams: weightPerUnitGrams,
-              total_weight_grams: initialWeightGrams,
-              total_weight_display: weightDisplay,
-              smallest_weight_grams: weightPerUnitGrams, // Inicializar con el peso de esta variante
-              total_in_smallest_units: item.quantity, // Inicializar con la cantidad actual
-              // Solo falta variante si NO hay variantDisplay Y el nombre NO tiene info de cantidad
-              has_missing_variants: !variantDisplay && !nameHasQuantity,
-              orders_count: 1,
-              customer_breakdown: [customerInfo]
-            });
+            const lower = variantDisplay.toLowerCase();
+            if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
+            else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
+            else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
+            else if (productName.toLowerCase().includes('caja')) existing.physical_unit_name = 'Caja';
           }
-        }
-      });
-    });
 
-    return Array.from(productMap.values()).sort(
-      (a, b) => b.total_quantity - a.total_quantity
-    );
-  }, [orders, selectedOrders]);
+          // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
+          // (productos como "Caja de 12 unidades" no necesitan variante)
+          if (!variantDisplay && !nameHasQuantity) {
+            existing.has_missing_variants = true;
+          }
 
-  // Calcular resumen de ventas de pedidos seleccionados
-  const salesSummary = useMemo(() => {
-    const selectedOrdersList = orders.filter(order => selectedOrders.has(order.id));
+          // Recalcular peso total si hay peso por unidad
+          if (itemWeightGrams) {
+            existing.total_weight_grams = (existing.total_weight_grams || 0) + itemWeightGrams;
+            existing.total_weight_display = formatWeight(existing.total_weight_grams);
 
-    let totalProducts = 0;   // Total en productos (subtotal)
-    let totalShipping = 0;   // Total en domicilios
-    let totalGeneral = 0;    // Total general
+            // Actualizar peso mínimo si este es menor
+            if (weightPerUnitGrams && (!existing.smallest_weight_grams || weightPerUnitGrams < existing.smallest_weight_grams)) {
+              existing.smallest_weight_grams = weightPerUnitGrams;
+            }
 
-    selectedOrdersList.forEach(order => {
-      // Obtener costo de envío
-      const shippingCost = order.shipping_fee || order.shipping_cost || order.order_data?.shipping_cost || order.order_data?.shippingFee || 0;
-
-      // Obtener total del pedido
-      const orderTotal = order.total || order.total_amount || 0;
-
-      // Calcular subtotal de productos
-      let productAmount = order.subtotal || 0;
-
-      // Si no hay subtotal explícito, calcularlo desde los items del pedido
-      if (!productAmount && orderTotal > 0) {
-        const items = extractItemsFromOrder(order);
-        if (items.length > 0) {
-          productAmount = items.reduce((sum, item) => {
-            const price = item.unit_price || item.price || 0;
-            return sum + (price * item.quantity);
-          }, 0);
+            // Recalcular unidades equivalentes en la presentación más pequeña
+            if (existing.smallest_weight_grams && existing.total_weight_grams) {
+              existing.total_in_smallest_units = Math.ceil(existing.total_weight_grams / existing.smallest_weight_grams);
+            }
+          }
         } else {
-          // Como último recurso, restar el envío del total
-          productAmount = Math.max(0, orderTotal - shippingCost);
+          // Crear nombre a mostrar (usando nombre normalizado)
+          let displayName = normalizedName;
+
+          // Si hay variante separada, agregarla
+          if (variantDisplay) {
+            displayName = `${normalizedName} (${variantDisplay})`;
+          }
+
+          // Calcular peso total inicial
+          const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
+          const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
+
+          // Calcular unidades físicas (considerando multiplicador de variante)
+          // Ej: 1 pedido de "2 Bandejas" = 2 bandejas físicas
+          const multiplier = extractMultiplierFromVariant(variantDisplay, normalizedName);
+          const physicalUnits = item.quantity * multiplier;
+
+          let physicalUnitName: string | undefined = undefined;
+          if (productName.toLowerCase().includes('caja')) {
+            physicalUnitName = 'Caja';
+          } else if (variantDisplay) {
+            const lower = variantDisplay.toLowerCase();
+            if (lower.includes('bandeja')) physicalUnitName = 'Bandeja';
+            else if (lower.includes('unidad')) physicalUnitName = 'unidad';
+            else if (lower.includes('paquete')) physicalUnitName = 'paquete';
+          }
+
+          productMap.set(groupingKey, {
+            grouping_key: groupingKey,
+            product_name: normalizedName,
+            variant_name: variantDisplay || undefined,
+            variant_value: variantValue || undefined,
+            display_name: displayName,
+            unit_price: unitPrice,
+            total_quantity: item.quantity,
+            // Siempre guardar unidades físicas si hay nombre de unidad (bandeja, etc.)
+            total_physical_units: physicalUnitName ? physicalUnits : undefined,
+            physical_unit_name: physicalUnitName,
+            weight_per_unit_grams: weightPerUnitGrams,
+            total_weight_grams: initialWeightGrams,
+            total_weight_display: weightDisplay,
+            smallest_weight_grams: weightPerUnitGrams, // Inicializar con el peso de esta variante
+            total_in_smallest_units: item.quantity, // Inicializar con la cantidad actual
+            // Solo falta variante si NO hay variantDisplay Y el nombre NO tiene info de cantidad
+            has_missing_variants: !variantDisplay && !nameHasQuantity,
+            orders_count: 1,
+            has_missing_variants: !variantDisplay && !nameHasQuantity,
+            orders_count: 1,
+            customer_breakdown: [customerInfo],
+            items: [item]
+          });
         }
       }
+      });
+  });
 
-      totalProducts += productAmount;
-      totalShipping += shippingCost;
-      // El total general es Productos + Envíos (para consistencia)
-      totalGeneral += productAmount + shippingCost;
-    });
+  return Array.from(productMap.values()).sort(
+    (a, b) => b.total_quantity - a.total_quantity
+  );
+}, [orders, selectedOrders]);
 
-    return {
-      productTotal: totalProducts,
-      shippingTotal: totalShipping,
-      grandTotal: totalGeneral,
-      ordersCount: selectedOrdersList.length
-    };
-  }, [orders, selectedOrders]);
+// Calcular resumen de ventas de pedidos seleccionados
+const salesSummary = useMemo(() => {
+  const selectedOrdersList = orders.filter(order => selectedOrders.has(order.id));
 
-  // Toggle selección individual
-  const toggleOrderSelection = (orderId: string) => {
-    const newSelected = new Set(selectedOrders);
-    if (newSelected.has(orderId)) {
-      newSelected.delete(orderId);
-    } else {
-      newSelected.add(orderId);
-    }
-    setSelectedOrders(newSelected);
+  let totalProducts = 0;   // Total en productos (subtotal)
+  let totalShipping = 0;   // Total en domicilios
+  let totalGeneral = 0;    // Total general
 
-    // Actualizar estado de selectAll
-    setSelectAll(newSelected.size === orders.length && orders.length > 0);
-  };
+  selectedOrdersList.forEach(order => {
+    // Obtener costo de envío
+    const shippingCost = order.shipping_fee || order.shipping_cost || order.order_data?.shipping_cost || order.order_data?.shippingFee || 0;
 
-  // Toggle seleccionar todos
-  const toggleSelectAll = () => {
-    if (selectAll) {
-      setSelectedOrders(new Set());
-    } else {
-      setSelectedOrders(new Set(orders.map(o => o.id)));
-    }
-    setSelectAll(!selectAll);
-  };
+    // Obtener total del pedido
+    const orderTotal = order.total || order.total_amount || 0;
 
-  // Calcular total de items en un pedido
-  const getOrderItemCount = (order: Order): number => {
-    const items = extractItemsFromOrder(order);
-    return items.reduce((sum, item) => sum + item.quantity, 0);
-  };
+    // Calcular subtotal de productos
+    let productAmount = order.subtotal || 0;
 
-  // Toggle expandir producto para ver desglose
-  const toggleProductExpanded = (groupingKey: string) => {
-    const newExpanded = new Set(expandedProducts);
-    if (newExpanded.has(groupingKey)) {
-      newExpanded.delete(groupingKey);
-    } else {
-      newExpanded.add(groupingKey);
-    }
-    setExpandedProducts(newExpanded);
-  };
-
-  // Expandir/colapsar todos los productos
-  const toggleExpandAll = () => {
-    if (expandedProducts.size === groupedProducts.length) {
-      setExpandedProducts(new Set());
-    } else {
-      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
-    }
-  };
-
-  // Toggle marcar producto como comprado
-  const togglePurchased = (groupingKey: string) => {
-    const newPurchased = new Set(purchasedProducts);
-    if (newPurchased.has(groupingKey)) {
-      newPurchased.delete(groupingKey);
-    } else {
-      newPurchased.add(groupingKey);
-    }
-    setPurchasedProducts(newPurchased);
-  };
-
-  // Limpiar todos los productos marcados como comprados
-  const clearAllPurchased = () => {
-    setPurchasedProducts(new Set());
-  };
-
-  // Verificar si un producto es un combo
-  const isCombo = (productName: string): boolean => {
-    return productName.toLowerCase().includes('combo');
-  };
-
-  // Obtener componentes de un combo
-  const getComboComponents = (productName: string) => {
-    const key = productName.toLowerCase();
-    for (const [comboKey, components] of Object.entries(COMBO_COMPONENTS)) {
-      if (key.includes(comboKey) || comboKey.includes(key.replace('combo ', ''))) {
-        return components;
+    // Si no hay subtotal explícito, calcularlo desde los items del pedido
+    if (!productAmount && orderTotal > 0) {
+      const items = extractItemsFromOrder(order);
+      if (items.length > 0) {
+        productAmount = items.reduce((sum, item) => {
+          const price = item.unit_price || item.price || 0;
+          return sum + (price * item.quantity);
+        }, 0);
+      } else {
+        // Como último recurso, restar el envío del total
+        productAmount = Math.max(0, orderTotal - shippingCost);
       }
     }
-    return null;
-  };
 
-  // Copiar al portapapeles con feedback visual
-  const copyToClipboard = async (text: string, itemId: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedItems(new Set([...copiedItems, itemId]));
-      // Remover el estado de copiado después de 2 segundos
-      setTimeout(() => {
-        setCopiedItems(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(itemId);
-          return newSet;
-        });
-      }, 2000);
-    } catch (err) {
-      console.error('Error copiando:', err);
+    totalProducts += productAmount;
+    totalShipping += shippingCost;
+    // El total general es Productos + Envíos (para consistencia)
+    totalGeneral += productAmount + shippingCost;
+  });
+
+  return {
+    productTotal: totalProducts,
+    shippingTotal: totalShipping,
+    grandTotal: totalGeneral,
+    ordersCount: selectedOrdersList.length
+  };
+}, [orders, selectedOrders]);
+
+// Toggle selección individual
+const toggleOrderSelection = (orderId: string) => {
+  const newSelected = new Set(selectedOrders);
+  if (newSelected.has(orderId)) {
+    newSelected.delete(orderId);
+  } else {
+    newSelected.add(orderId);
+  }
+  setSelectedOrders(newSelected);
+
+  // Actualizar estado de selectAll
+  setSelectAll(newSelected.size === orders.length && orders.length > 0);
+};
+
+// Toggle seleccionar todos
+const toggleSelectAll = () => {
+  if (selectAll) {
+    setSelectedOrders(new Set());
+  } else {
+    setSelectedOrders(new Set(orders.map(o => o.id)));
+  }
+  setSelectAll(!selectAll);
+};
+
+// Calcular total de items en un pedido
+const getOrderItemCount = (order: Order): number => {
+  const items = extractItemsFromOrder(order);
+  return items.reduce((sum, item) => sum + item.quantity, 0);
+};
+
+// Toggle expandir producto para ver desglose
+const toggleProductExpanded = (groupingKey: string) => {
+  const newExpanded = new Set(expandedProducts);
+  if (newExpanded.has(groupingKey)) {
+    newExpanded.delete(groupingKey);
+  } else {
+    newExpanded.add(groupingKey);
+  }
+  setExpandedProducts(newExpanded);
+};
+
+// Expandir/colapsar todos los productos
+const toggleExpandAll = () => {
+  if (expandedProducts.size === groupedProducts.length) {
+    setExpandedProducts(new Set());
+  } else {
+    setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
+  }
+};
+
+// Toggle marcar producto como comprado
+const togglePurchased = (groupingKey: string) => {
+  const newPurchased = new Set(purchasedProducts);
+  if (newPurchased.has(groupingKey)) {
+    newPurchased.delete(groupingKey);
+  } else {
+    newPurchased.add(groupingKey);
+  }
+  setPurchasedProducts(newPurchased);
+};
+
+// Limpiar todos los productos marcados como comprados
+const clearAllPurchased = () => {
+  setPurchasedProducts(new Set());
+};
+
+// Verificar si un producto es un combo
+const isCombo = (productName: string): boolean => {
+  return productName.toLowerCase().includes('combo');
+};
+
+// Obtener componentes de un combo
+const getComboComponents = (productName: string) => {
+  const key = productName.toLowerCase();
+  for (const [comboKey, components] of Object.entries(COMBO_COMPONENTS)) {
+    if (key.includes(comboKey) || comboKey.includes(key.replace('combo ', ''))) {
+      return components;
     }
-  };
+  }
+  return null;
+};
 
-  // Generar resumen del pedido como texto
-  const generateOrderSummary = (customer: CustomerBreakdown) => {
-    if (!customer.order_items || customer.order_items.length === 0) return '';
-
-    const lines = [`Pedido para: ${customer.customer_name}`, ''];
-    customer.order_items.forEach(item => {
-      const variant = item.variant_name ? ` (${item.variant_name})` : '';
-      const weight = item.weight_display ? ` - ${item.weight_display}` : '';
-      lines.push(`• ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
-    });
-
-    if (customer.customer_address) {
-      lines.push('', `Dirección: ${customer.customer_address}`);
-    }
-
-    return lines.join('\n');
-  };
-
-  // Exportar a Excel (CSV)
-  const exportToExcel = () => {
-    if (groupedProducts.length === 0) return;
-
-    // Crear CSV con BOM para Excel
-    const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
-
-    const rows: string[][] = [];
-
-    groupedProducts.forEach(product => {
-      // Primera fila con el total del producto
-      rows.push([
-        product.product_name,
-        product.variant_name || 'Sin variante',
-        product.total_quantity.toString(),
-        product.total_weight_display || '-',
-        '--- TOTAL ---',
-        '',
-        '',
-        ''
-      ]);
-
-      // Filas con el desglose por cliente
-      product.customer_breakdown.forEach(customer => {
-        rows.push([
-          '',
-          '',
-          '',
-          '',
-          customer.customer_name,
-          customer.customer_address || '-',
-          customer.quantity.toString(),
-          customer.weight_display || '-'
-        ]);
+// Copiar al portapapeles con feedback visual
+const copyToClipboard = async (text: string, itemId: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    setCopiedItems(new Set([...copiedItems, itemId]));
+    // Remover el estado de copiado después de 2 segundos
+    setTimeout(() => {
+      setCopiedItems(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(itemId);
+        return newSet;
       });
+    }, 2000);
+  } catch (err) {
+    console.error('Error copiando:', err);
+  }
+};
+
+// Generar resumen del pedido como texto
+const generateOrderSummary = (customer: CustomerBreakdown) => {
+  if (!customer.order_items || customer.order_items.length === 0) return '';
+
+  const lines = [`Pedido para: ${customer.customer_name}`, ''];
+  customer.order_items.forEach(item => {
+    const variant = item.variant_name ? ` (${item.variant_name})` : '';
+    const weight = item.weight_display ? ` - ${item.weight_display}` : '';
+    lines.push(`• ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
+  });
+
+  if (customer.customer_address) {
+    lines.push('', `Dirección: ${customer.customer_address}`);
+  }
+
+  return lines.join('\n');
+};
+
+// Exportar a Excel (CSV)
+const exportToExcel = () => {
+  if (groupedProducts.length === 0) return;
+
+  // Crear CSV con BOM para Excel
+  const BOM = '\uFEFF';
+  const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
+
+  const rows: string[][] = [];
+
+  groupedProducts.forEach(product => {
+    // Primera fila con el total del producto
+    rows.push([
+      product.product_name,
+      product.variant_name || 'Sin variante',
+      product.total_quantity.toString(),
+      product.total_weight_display || '-',
+      '--- TOTAL ---',
+      '',
+      '',
+      ''
+    ]);
+
+    // Filas con el desglose por cliente
+    product.customer_breakdown.forEach(customer => {
+      rows.push([
+        '',
+        '',
+        '',
+        '',
+        customer.customer_name,
+        customer.customer_address || '-',
+        customer.quantity.toString(),
+        customer.weight_display || '-'
+      ]);
     });
+  });
 
-    const csvContent = BOM + [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
+  const csvContent = BOM + [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n');
 
-    // Crear y descargar archivo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `lista-compras-${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // Crear y descargar archivo
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `lista-compras-${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
-          Lista de Compras
-        </h1>
-        <p className="text-gray-600 mt-1">
-          Genera una lista consolidada de productos para reabastecer inventario
-        </p>
-      </div>
+return (
+  <div className="space-y-6">
+    {/* Header */}
+    <div>
+      <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">
+        Lista de Compras
+      </h1>
+      <p className="text-gray-600 mt-1">
+        Genera una lista consolidada de productos para reabastecer inventario
+      </p>
+    </div>
 
-      {/* Filtros de Fecha */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Desde
-            </label>
-            <input
-              type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Hasta
-            </label>
-            <input
-              type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => {
-                const today = new Date();
-                const tenDaysAgo = new Date(today);
-                tenDaysAgo.setDate(today.getDate() - 9);
-                setDateFrom(formatLocalDate(tenDaysAgo));
-                setDateTo(formatLocalDate(today));
-              }}
-              className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Últimos 10 días
-            </button>
-            <button
-              onClick={() => {
-                setDateFrom(getDeliveryCycleDate('friday'));
-                setDateTo(formatLocalDate(new Date()));
-              }}
-              className="px-4 py-2.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300"
-              title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
-            >
-              🚚 Entrega Martes
-            </button>
-            <button
-              onClick={() => {
-                setDateFrom(getDeliveryCycleDate('tuesday'));
-                setDateTo(formatLocalDate(new Date()));
-              }}
-              className="px-4 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
-              title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
-            >
-              🚚 Entrega Viernes
-            </button>
-          </div>
+    {/* Filtros de Fecha */}
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="flex flex-col md:flex-row md:items-end gap-4">
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Desde
+          </label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Hasta
+          </label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => {
+              const today = new Date();
+              const tenDaysAgo = new Date(today);
+              tenDaysAgo.setDate(today.getDate() - 9);
+              setDateFrom(formatLocalDate(tenDaysAgo));
+              setDateTo(formatLocalDate(today));
+            }}
+            className="px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            Últimos 10 días
+          </button>
+          <button
+            onClick={() => {
+              setDateFrom(getDeliveryCycleDate('friday'));
+              setDateTo(formatLocalDate(new Date()));
+            }}
+            className="px-4 py-2.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300"
+            title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
+          >
+            🚚 Entrega Martes
+          </button>
+          <button
+            onClick={() => {
+              setDateFrom(getDeliveryCycleDate('tuesday'));
+              setDateTo(formatLocalDate(new Date()));
+            }}
+            className="px-4 py-2.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300"
+            title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
+          >
+            🚚 Entrega Viernes
+          </button>
         </div>
       </div>
+    </div>
 
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+    {loading ? (
+      <div className="flex items-center justify-center py-12">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    ) : orders.length === 0 ? (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+        <p className="text-gray-500">No se encontraron pedidos en este rango de fechas</p>
+      </div>
+    ) : (
+      <>
+        {/* Resumen */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p className="text-sm text-gray-600">Pedidos en el rango</p>
+            <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p className="text-sm text-gray-600">Pedidos seleccionados</p>
+            <p className="text-2xl font-bold text-green-600">{selectedOrders.size}</p>
+          </div>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p className="text-sm text-gray-600">Productos únicos</p>
+            <p className="text-2xl font-bold text-blue-600">{groupedProducts.length}</p>
+          </div>
         </div>
-      ) : orders.length === 0 ? (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">No se encontraron pedidos en este rango de fechas</p>
-        </div>
-      ) : (
-        <>
-          {/* Resumen */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <p className="text-sm text-gray-600">Pedidos en el rango</p>
-              <p className="text-2xl font-bold text-gray-900">{orders.length}</p>
+
+        {/* Resumen de Ventas de Pedidos Seleccionados */}
+        {selectedOrders.size > 0 && (
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-green-600" />
+              <h3 className="font-semibold text-green-800">Resumen de Ventas ({salesSummary.ordersCount} pedidos)</h3>
             </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <p className="text-sm text-gray-600">Pedidos seleccionados</p>
-              <p className="text-2xl font-bold text-green-600">{selectedOrders.size}</p>
-            </div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-              <p className="text-sm text-gray-600">Productos únicos</p>
-              <p className="text-2xl font-bold text-blue-600">{groupedProducts.length}</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Total en Productos */}
+              <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <Package className="w-4 h-4 text-green-600" />
+                  <p className="text-sm text-gray-600">Venta en Productos</p>
+                </div>
+                <p className="text-xl font-bold text-green-700">{formatPrice(salesSummary.productTotal)}</p>
+              </div>
+              {/* Total en Domicilios */}
+              <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <Truck className="w-4 h-4 text-blue-600" />
+                  <p className="text-sm text-gray-600">Recaudado en Domicilios</p>
+                </div>
+                <p className="text-xl font-bold text-blue-700">{formatPrice(salesSummary.shippingTotal)}</p>
+              </div>
+              {/* Total General */}
+              <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
+                <div className="flex items-center gap-2 mb-1">
+                  <DollarSign className="w-4 h-4 text-purple-600" />
+                  <p className="text-sm text-gray-600">Total General</p>
+                </div>
+                <p className="text-xl font-bold text-purple-700">{formatPrice(salesSummary.grandTotal)}</p>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Resumen de Ventas de Pedidos Seleccionados */}
-          {selectedOrders.size > 0 && (
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <DollarSign className="w-5 h-5 text-green-600" />
-                <h3 className="font-semibold text-green-800">Resumen de Ventas ({salesSummary.ordersCount} pedidos)</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Total en Productos */}
-                <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Package className="w-4 h-4 text-green-600" />
-                    <p className="text-sm text-gray-600">Venta en Productos</p>
+        {/* Lista de Pedidos con Checkbox */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900">Pedidos Disponibles</h2>
+            <button
+              onClick={toggleSelectAll}
+              className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
+            >
+              {selectAll ? 'Deseleccionar todos' : 'Seleccionar todos'}
+            </button>
+          </div>
+          <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+            {orders.map(order => {
+              const itemCount = getOrderItemCount(order);
+              return (
+                <div
+                  key={order.id}
+                  className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => toggleOrderSelection(order.id)}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOrderSelection(order.id);
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    {selectedOrders.has(order.id) ? (
+                      <CheckSquare className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Square className="w-5 h-5 text-gray-400" />
+                    )}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-gray-900 truncate">
+                      {order.customer_name || 'Cliente'}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {itemCount} productos
+                    </p>
                   </div>
-                  <p className="text-xl font-bold text-green-700">{formatPrice(salesSummary.productTotal)}</p>
                 </div>
-                {/* Total en Domicilios */}
-                <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Truck className="w-4 h-4 text-blue-600" />
-                    <p className="text-sm text-gray-600">Recaudado en Domicilios</p>
-                  </div>
-                  <p className="text-xl font-bold text-blue-700">{formatPrice(salesSummary.shippingTotal)}</p>
-                </div>
-                {/* Total General */}
-                <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
-                  <div className="flex items-center gap-2 mb-1">
-                    <DollarSign className="w-4 h-4 text-purple-600" />
-                    <p className="text-sm text-gray-600">Total General</p>
-                  </div>
-                  <p className="text-xl font-bold text-purple-700">{formatPrice(salesSummary.grandTotal)}</p>
-                </div>
-              </div>
-            </div>
-          )}
+              );
+            })}
+          </div>
+        </div>
 
-          {/* Lista de Pedidos con Checkbox */}
+        {/* Estado vacío cuando no hay selección */}
+        {selectedOrders.size === 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
+            <ShoppingCart className="w-12 h-12 text-blue-400 mx-auto mb-3" />
+            <p className="text-blue-800 font-medium">
+              Selecciona pedidos para generar la lista de compras
+            </p>
+          </div>
+        )}
+
+        {/* Lista Consolidada de Productos */}
+        {selectedOrders.size > 0 && groupedProducts.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900">Pedidos Disponibles</h2>
-              <button
-                onClick={toggleSelectAll}
-                className="text-sm text-green-600 hover:text-green-700 font-medium transition-colors"
-              >
-                {selectAll ? 'Deseleccionar todos' : 'Seleccionar todos'}
-              </button>
+            {/* Alerta de Duplicados */}
+            {duplicateWarnings.length > 0 && (
+              <div className="bg-amber-50 border-b border-amber-200 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 rounded-full flex-shrink-0">
+                    <User className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-800">Posibles Clientes Duplicados Detectados</h3>
+                    <p className="text-sm text-amber-700 mb-2">Revisa si estos pedidos pertenecen al mismo cliente para unificar el envío:</p>
+                    <ul className="list-disc list-inside text-sm text-amber-800 space-y-1">
+                      {duplicateWarnings.map((warning, idx) => (
+                        <li key={idx}>{warning}</li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    Lista de Compras
+                  </h2>
+                  <p className="text-sm text-gray-600">
+                    Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
+                  </p>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {purchasedProducts.size > 0 && (
+                    <button
+                      onClick={clearAllPurchased}
+                      className="px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Limpiar Marcados ({purchasedProducts.size})
+                    </button>
+                  )}
+                  <button
+                    onClick={toggleExpandAll}
+                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1"
+                  >
+                    {expandedProducts.size === groupedProducts.length ? (
+                      <>
+                        <ChevronUp className="w-4 h-4" />
+                        Colapsar
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="w-4 h-4" />
+                        Expandir todo
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={exportToExcel}
+                    className="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Descargar Excel
+                  </button>
+                </div>
+              </div>
             </div>
-            <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-              {orders.map(order => {
-                const itemCount = getOrderItemCount(order);
+            <div className="divide-y divide-gray-200">
+              {groupedProducts.map(product => {
+                const isExpanded = expandedProducts.has(product.grouping_key);
+                const isPurchased = purchasedProducts.has(product.grouping_key);
+                const categoryStyle = getCategoryStyle(product.product_name);
                 return (
                   <div
-                    key={order.id}
-                    className="p-4 flex items-center gap-3 hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => toggleOrderSelection(order.id)}
+                    key={product.grouping_key}
+                    className={`${isPurchased ? 'bg-purple-50' : categoryStyle.bg} ${categoryStyle.border}`}
                   >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleOrderSelection(order.id);
-                      }}
-                      className="flex-shrink-0"
+                    {/* Fila principal del producto */}
+                    <div
+                      className={`p-4 transition-colors cursor-pointer ${isPurchased ? 'hover:bg-purple-100' : 'hover:bg-gray-50'}`}
                     >
-                      {selectedOrders.has(order.id) ? (
-                        <CheckSquare className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-400" />
-                      )}
-                    </button>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {order.customer_name || 'Cliente'}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {itemCount} productos
-                      </p>
+                      <div className="flex items-start justify-between gap-4">
+                        {/* Info del producto */}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          {/* Checkbox para marcar como comprado */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              togglePurchased(product.grouping_key);
+                            }}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 transition-colors ${isPurchased
+                              ? 'bg-purple-600 hover:bg-purple-700'
+                              : 'bg-purple-100 hover:bg-purple-200'
+                              }`}
+                            title={isPurchased ? 'Desmarcar como comprado' : 'Marcar como comprado'}
+                          >
+                            {isPurchased ? (
+                              <CheckCircle className="w-6 h-6 text-white" />
+                            ) : (
+                              <div className="w-5 h-5 border-2 border-purple-400 rounded-md" />
+                            )}
+                          </button>
+                          {/* Botón expandir */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleProductExpanded(product.grouping_key);
+                            }}
+                            className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 hover:bg-green-200 transition-colors"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-5 h-5 text-green-600" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5 text-green-600" />
+                            )}
+                          </button>
+                          <div className="min-w-0 flex-1">
+                            {/* Nombre del producto con variante */}
+                            <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
+                              {product.display_name}
+                            </p>
+
+                            {/* Precio unitario y cantidad */}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
+                              {product.unit_price > 0 && (
+                                <div className="flex items-center gap-1">
+                                  <p className={`text-sm font-semibold ${isPurchased ? 'text-gray-400' : 'text-green-700'}`}>
+                                    {formatPrice(product.unit_price)} c/u
+                                  </p>
+                                  <a
+                                    href={`/admin/productos?search=${encodeURIComponent(product.product_name)}&edit=${product.items[0]?.product_id || ''}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                    title="Editar precio del producto"
+                                  >
+                                    <Edit className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              )}
+                              <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500'}`}>
+                                {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
+                              </p>
+                              {/* Alerta si hay clientes sin variante definida */}
+                              {product.has_missing_variants && (
+                                <p className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">
+                                  ⚠️ Hay pedidos sin variante
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Total destacado con peso */}
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm text-gray-500">Comprar</p>
+                          {product.total_weight_display ? (
+                            <>
+                              <p className="text-2xl font-bold text-green-600">
+                                {product.total_weight_display}
+                              </p>
+                              {/* Mostrar unidades equivalentes en presentación mínima si es diferente */}
+                              {product.total_in_smallest_units && product.smallest_weight_grams && (
+                                <p className="text-sm text-gray-600 font-medium">
+                                  ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
+                                </p>
+                              )}
+                            </>
+                          ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
+                            /* Mostrar unidades físicas como número principal cuando son diferentes */
+                            <>
+                              <p className="text-2xl font-bold text-green-600">
+                                {product.total_physical_units}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
+                              </p>
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                ({product.total_quantity} pedido{product.total_quantity === 1 ? '' : 's'})
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p className="text-2xl font-bold text-green-600">
+                                {product.total_quantity}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                unidad{product.total_quantity === 1 ? '' : 'es'}
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Desglose por cliente (expandible) */}
+                    {isExpanded && (
+                      <div className="bg-gray-50 border-t border-gray-200">
+                        <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
+                          <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                            Entregar a:
+                          </p>
+                        </div>
+                        <div className="divide-y divide-gray-200">
+                          {product.customer_breakdown.map((customer, idx) => {
+                            const addressCopyId = `addr-${customer.order_id}-${idx}`;
+                            const summaryCopyId = `sum-${customer.order_id}-${idx}`;
+
+                            return (
+                              <div
+                                key={`${customer.order_id}-${idx}`}
+                                className="px-4 py-3"
+                              >
+                                <div className="flex items-start justify-between gap-4">
+                                  {/* Info del cliente */}
+                                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                      <User className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="font-semibold text-gray-900 text-sm">
+                                        {customer.customer_name}
+                                      </p>
+                                      {/* Dirección si existe */}
+                                      {customer.customer_address && (
+                                        <div className="flex items-start gap-1 mt-1">
+                                          <MapPin className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
+                                          <p className="text-xs text-gray-600 break-words">
+                                            {customer.customer_address}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Cantidad a entregar con variante */}
+                                  <div className="text-right flex-shrink-0">
+                                    {customer.variant_name || customer.weight_display ? (
+                                      <>
+                                        <p className="font-bold text-gray-900 text-lg">
+                                          {customer.quantity}x {customer.variant_name || customer.weight_display}
+                                        </p>
+                                        {customer.weight_display && customer.variant_name && (
+                                          <p className="text-xs text-gray-500">
+                                            ({customer.weight_display})
+                                          </p>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p className="font-bold text-amber-600 text-lg">
+                                          {customer.quantity}x ⚠️ Sin dato
+                                        </p>
+                                        <p className="text-xs text-amber-500">
+                                          Verificar pedido
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Botones de copiar */}
+                                <div className="flex gap-2 mt-2 ml-11">
+                                  {customer.customer_address && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(customer.customer_address!, addressCopyId);
+                                      }}
+                                      className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(addressCopyId)
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                                        }`}
+                                    >
+                                      {copiedItems.has(addressCopyId) ? (
+                                        <>
+                                          <Check className="w-3 h-3" />
+                                          Copiado
+                                        </>
+                                      ) : (
+                                        <>
+                                          <Copy className="w-3 h-3" />
+                                          Copiar dirección
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                  {customer.order_items && customer.order_items.length > 0 && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        copyToClipboard(generateOrderSummary(customer), summaryCopyId);
+                                      }}
+                                      className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(summaryCopyId)
+                                        ? 'bg-green-100 text-green-700'
+                                        : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
+                                        }`}
+                                    >
+                                      {copiedItems.has(summaryCopyId) ? (
+                                        <>
+                                          <Check className="w-3 h-3" />
+                                          Copiado
+                                        </>
+                                      ) : (
+                                        <>
+                                          <ClipboardList className="w-3 h-3" />
+                                          Copiar resumen
+                                        </>
+                                      )}
+                                    </button>
+                                  )}
+                                  {/* Botón para ver el pedido completo */}
+                                  <a
+                                    href={`/admin/pedidos?id=${customer.order_id}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors bg-purple-100 text-purple-600 hover:bg-purple-200"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Ver pedido
+                                  </a>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
             </div>
           </div>
+        )}
 
-          {/* Estado vacío cuando no hay selección */}
-          {selectedOrders.size === 0 && (
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center">
-              <ShoppingCart className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-              <p className="text-blue-800 font-medium">
-                Selecciona pedidos para generar la lista de compras
-              </p>
-            </div>
-          )}
-
-          {/* Lista Consolidada de Productos */}
-          {selectedOrders.size > 0 && groupedProducts.length > 0 && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900">
-                      Lista de Compras
-                    </h2>
-                    <p className="text-sm text-gray-600">
-                      Productos a comprar para suplir {selectedOrders.size} pedido{selectedOrders.size === 1 ? '' : 's'} seleccionado{selectedOrders.size === 1 ? '' : 's'}
-                    </p>
-                  </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {purchasedProducts.size > 0 && (
-                      <button
-                        onClick={clearAllPurchased}
-                        className="px-3 py-2 text-sm bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        Limpiar Marcados ({purchasedProducts.size})
-                      </button>
-                    )}
-                    <button
-                      onClick={toggleExpandAll}
-                      className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-1"
-                    >
-                      {expandedProducts.size === groupedProducts.length ? (
-                        <>
-                          <ChevronUp className="w-4 h-4" />
-                          Colapsar
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="w-4 h-4" />
-                          Expandir todo
-                        </>
-                      )}
-                    </button>
-                    <button
-                      onClick={exportToExcel}
-                      className="px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-1"
-                    >
-                      <FileSpreadsheet className="w-4 h-4" />
-                      Descargar Excel
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="divide-y divide-gray-200">
-                {groupedProducts.map(product => {
-                  const isExpanded = expandedProducts.has(product.grouping_key);
-                  const isPurchased = purchasedProducts.has(product.grouping_key);
-                  const categoryStyle = getCategoryStyle(product.product_name);
-                  return (
-                    <div
-                      key={product.grouping_key}
-                      className={`${isPurchased ? 'bg-purple-50' : categoryStyle.bg} ${categoryStyle.border}`}
-                    >
-                      {/* Fila principal del producto */}
-                      <div
-                        className={`p-4 transition-colors cursor-pointer ${isPurchased ? 'hover:bg-purple-100' : 'hover:bg-gray-50'}`}
-                      >
-                        <div className="flex items-start justify-between gap-4">
-                          {/* Info del producto */}
-                          <div className="flex items-start gap-3 flex-1 min-w-0">
-                            {/* Checkbox para marcar como comprado */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                togglePurchased(product.grouping_key);
-                              }}
-                              className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 transition-colors ${isPurchased
-                                ? 'bg-purple-600 hover:bg-purple-700'
-                                : 'bg-purple-100 hover:bg-purple-200'
-                                }`}
-                              title={isPurchased ? 'Desmarcar como comprado' : 'Marcar como comprado'}
-                            >
-                              {isPurchased ? (
-                                <CheckCircle className="w-6 h-6 text-white" />
-                              ) : (
-                                <div className="w-5 h-5 border-2 border-purple-400 rounded-md" />
-                              )}
-                            </button>
-                            {/* Botón expandir */}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleProductExpanded(product.grouping_key);
-                              }}
-                              className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 hover:bg-green-200 transition-colors"
-                            >
-                              {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-green-600" />
-                              ) : (
-                                <ChevronDown className="w-5 h-5 text-green-600" />
-                              )}
-                            </button>
-                            <div className="min-w-0 flex-1">
-                              {/* Nombre del producto con variante */}
-                              <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
-                                {product.display_name}
-                              </p>
-
-                              {/* Precio unitario y cantidad */}
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
-                                {product.unit_price > 0 && (
-                                  <div className="flex items-center gap-1">
-                                    <p className={`text-sm font-semibold ${isPurchased ? 'text-gray-400' : 'text-green-700'}`}>
-                                      {formatPrice(product.unit_price)} c/u
-                                    </p>
-                                    <a
-                                      href={`/admin/productos?search=${encodeURIComponent(product.product_name)}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                      title="Editar precio del producto"
-                                    >
-                                      <Edit className="w-3 h-3" />
-                                    </a>
-                                  </div>
-                                )}
-                                <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500'}`}>
-                                  {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
-                                </p>
-                                {/* Alerta si hay clientes sin variante definida */}
-                                {product.has_missing_variants && (
-                                  <p className="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">
-                                    ⚠️ Hay pedidos sin variante
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Total destacado con peso */}
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-sm text-gray-500">Comprar</p>
-                            {product.total_weight_display ? (
-                              <>
-                                <p className="text-2xl font-bold text-green-600">
-                                  {product.total_weight_display}
-                                </p>
-                                {/* Mostrar unidades equivalentes en presentación mínima si es diferente */}
-                                {product.total_in_smallest_units && product.smallest_weight_grams && (
-                                  <p className="text-sm text-gray-600 font-medium">
-                                    ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
-                                  </p>
-                                )}
-                              </>
-                            ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
-                              /* Mostrar unidades físicas como número principal cuando son diferentes */
-                              <>
-                                <p className="text-2xl font-bold text-green-600">
-                                  {product.total_physical_units}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
-                                </p>
-                                <p className="text-xs text-gray-400 mt-0.5">
-                                  ({product.total_quantity} pedido{product.total_quantity === 1 ? '' : 's'})
-                                </p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="text-2xl font-bold text-green-600">
-                                  {product.total_quantity}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  unidad{product.total_quantity === 1 ? '' : 'es'}
-                                </p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Desglose por cliente (expandible) */}
-                      {isExpanded && (
-                        <div className="bg-gray-50 border-t border-gray-200">
-                          <div className="px-4 py-2 bg-gray-100 border-b border-gray-200">
-                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                              Entregar a:
-                            </p>
-                          </div>
-                          <div className="divide-y divide-gray-200">
-                            {product.customer_breakdown.map((customer, idx) => {
-                              const addressCopyId = `addr-${customer.order_id}-${idx}`;
-                              const summaryCopyId = `sum-${customer.order_id}-${idx}`;
-
-                              return (
-                                <div
-                                  key={`${customer.order_id}-${idx}`}
-                                  className="px-4 py-3"
-                                >
-                                  <div className="flex items-start justify-between gap-4">
-                                    {/* Info del cliente */}
-                                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <User className="w-4 h-4 text-blue-600" />
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-semibold text-gray-900 text-sm">
-                                          {customer.customer_name}
-                                        </p>
-                                        {/* Dirección si existe */}
-                                        {customer.customer_address && (
-                                          <div className="flex items-start gap-1 mt-1">
-                                            <MapPin className="w-3 h-3 text-gray-400 mt-0.5 flex-shrink-0" />
-                                            <p className="text-xs text-gray-600 break-words">
-                                              {customer.customer_address}
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Cantidad a entregar con variante */}
-                                    <div className="text-right flex-shrink-0">
-                                      {customer.variant_name || customer.weight_display ? (
-                                        <>
-                                          <p className="font-bold text-gray-900 text-lg">
-                                            {customer.quantity}x {customer.variant_name || customer.weight_display}
-                                          </p>
-                                          {customer.weight_display && customer.variant_name && (
-                                            <p className="text-xs text-gray-500">
-                                              ({customer.weight_display})
-                                            </p>
-                                          )}
-                                        </>
-                                      ) : (
-                                        <>
-                                          <p className="font-bold text-amber-600 text-lg">
-                                            {customer.quantity}x ⚠️ Sin dato
-                                          </p>
-                                          <p className="text-xs text-amber-500">
-                                            Verificar pedido
-                                          </p>
-                                        </>
-                                      )}
-                                    </div>
-                                  </div>
-
-                                  {/* Botones de copiar */}
-                                  <div className="flex gap-2 mt-2 ml-11">
-                                    {customer.customer_address && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(customer.customer_address!, addressCopyId);
-                                        }}
-                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(addressCopyId)
-                                          ? 'bg-green-100 text-green-700'
-                                          : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                                          }`}
-                                      >
-                                        {copiedItems.has(addressCopyId) ? (
-                                          <>
-                                            <Check className="w-3 h-3" />
-                                            Copiado
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Copy className="w-3 h-3" />
-                                            Copiar dirección
-                                          </>
-                                        )}
-                                      </button>
-                                    )}
-                                    {customer.order_items && customer.order_items.length > 0 && (
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          copyToClipboard(generateOrderSummary(customer), summaryCopyId);
-                                        }}
-                                        className={`px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors ${copiedItems.has(summaryCopyId)
-                                          ? 'bg-green-100 text-green-700'
-                                          : 'bg-blue-100 text-blue-600 hover:bg-blue-200'
-                                          }`}
-                                      >
-                                        {copiedItems.has(summaryCopyId) ? (
-                                          <>
-                                            <Check className="w-3 h-3" />
-                                            Copiado
-                                          </>
-                                        ) : (
-                                          <>
-                                            <ClipboardList className="w-3 h-3" />
-                                            Copiar resumen
-                                          </>
-                                        )}
-                                      </button>
-                                    )}
-                                    {/* Botón para ver el pedido completo */}
-                                    <a
-                                      href={`/admin/pedidos?id=${customer.order_id}`}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e) => e.stopPropagation()}
-                                      className="px-2 py-1 text-xs rounded flex items-center gap-1 transition-colors bg-purple-100 text-purple-600 hover:bg-purple-200"
-                                    >
-                                      <ExternalLink className="w-3 h-3" />
-                                      Ver pedido
-                                    </a>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Estado cuando hay pedidos seleccionados pero sin productos */}
-          {selectedOrders.size > 0 && groupedProducts.length === 0 && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-              <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-              <p className="text-yellow-800 font-medium">
-                Los pedidos seleccionados no contienen productos
-              </p>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
+        {/* Estado cuando hay pedidos seleccionados pero sin productos */}
+        {selectedOrders.size > 0 && groupedProducts.length === 0 && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+            <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
+            <p className="text-yellow-800 font-medium">
+              Los pedidos seleccionados no contienen productos
+            </p>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+);
 }

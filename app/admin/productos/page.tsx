@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Search,
   Edit,
@@ -68,6 +69,8 @@ interface Pagination {
 }
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams();
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +117,39 @@ export default function ProductsPage() {
     console.log('🚀 [ProductsPage] Component mounted, loading categories...');
     loadCategories();
   }, []);
+
+  // Manejar searchParams al cargar (deep linking)
+  useEffect(() => {
+    if (!searchParams || initialLoadDone) return;
+
+    const querySearch = searchParams.get('search');
+    const editId = searchParams.get('edit');
+
+    if (querySearch) {
+      setSearch(querySearch);
+    }
+
+    if (editId) {
+      console.log('🔗 [ProductsPage] Found edit ID:', editId);
+      // Fetch directo para editar
+      fetch(`/api/admin/products/${editId}?_t=${Date.now()}`, {
+        credentials: 'include',
+        headers: { 'Pragma': 'no-cache' }
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.data) {
+            setEditingProduct(data.data);
+            // También abrir el modal de edición si es necesario (el código de edición parece usar editingProduct para mostrar el modal)
+          } else {
+            showToast('No se pudo cargar el producto para editar', 'error');
+          }
+        })
+        .catch(err => console.error('Error fetching product for edit:', err));
+    }
+
+    setInitialLoadDone(true);
+  }, [searchParams, initialLoadDone]);
 
   // También cargar categorías cuando el componente se enfoca (para asegurar carga en cliente)
   useEffect(() => {
