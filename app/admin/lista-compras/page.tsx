@@ -798,7 +798,27 @@ export default function ListaComprasPage() {
     });
 
     return Array.from(productMap.values()).sort(
-      (a, b) => b.total_quantity - a.total_quantity
+      (a, b) => {
+        // Orden de prioridad de categorías (1: Combo/Caja, 2: Fruta, 3: Verdura, 4: Otro)
+        const getPriority = (name: string) => {
+          const style = getCategoryStyle(name);
+          if (style.label === 'Combo/Caja') return 1;
+          if (style.label === 'Fruta') return 2;
+          if (style.label === 'Verdura') return 3;
+          return 4;
+        };
+
+        const priorityA = getPriority(a.product_name);
+        const priorityB = getPriority(b.product_name);
+
+        // 1. Clasificar por Categoría
+        if (priorityA !== priorityB) {
+          return priorityA - priorityB;
+        }
+
+        // 2. Si es la misma categoría, ordenar Alfabéticamente por nombre
+        return a.product_name.localeCompare(b.product_name);
+      }
     );
   }, [orders, selectedOrders]);
 
