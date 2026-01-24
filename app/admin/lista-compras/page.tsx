@@ -301,13 +301,6 @@ export default function ListaComprasPage() {
     setDateTo(formatLocalDate(end));
   };
 
-  // Cargar pedidos cuando cambian las fechas
-  useEffect(() => {
-    if (dateFrom && dateTo) {
-      loadOrders();
-    }
-  }, [dateFrom, dateTo]);
-
   // Detectar posibles clientes duplicados en los pedidos SELECCIONADOS
   const duplicateWarnings = useMemo(() => {
     if (selectedOrders.size === 0) return [];
@@ -357,6 +350,8 @@ export default function ListaComprasPage() {
 
     return warnings;
   }, [selectedOrders, orders]);
+
+
 
   const loadOrders = async () => {
     setLoading(true);
@@ -1093,6 +1088,8 @@ export default function ListaComprasPage() {
     return lines.join('\n');
   };
 
+
+
   // Exportar a Excel (CSV)
   const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
@@ -1381,6 +1378,25 @@ export default function ListaComprasPage() {
 
             {/* Tabla Principal */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+              {/* Alerta de Duplicados */}
+              {duplicateWarnings.length > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700/50 p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-full flex-shrink-0">
+                      <User className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-amber-800 dark:text-amber-300">Posibles Clientes Duplicados Detectados</h3>
+                      <p className="text-sm text-amber-700 dark:text-amber-400/80 mb-2">Revisa si estos pedidos pertenecen al mismo cliente para unificar el envío:</p>
+                      <ul className="list-disc list-inside text-sm text-amber-800 dark:text-amber-300 space-y-1">
+                        {duplicateWarnings.map((warning, idx) => (
+                          <li key={idx}>{warning}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 dark:bg-gray-900">
                 <div className="flex gap-2">
                   <button
@@ -1538,6 +1554,21 @@ export default function ListaComprasPage() {
                                             >
                                               {copiedItems.has(addressCopyId) ? <Check size={10} /> : <Copy size={10} />}
                                               {copiedItems.has(addressCopyId) ? 'Copiado' : 'Dirección'}
+                                            </button>
+                                          )}
+                                          {customer.order_items && customer.order_items.length > 0 && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                copyToClipboard(generateOrderSummary(customer), summaryCopyId);
+                                              }}
+                                              className={`px-1.5 py-0.5 text-[10px] rounded flex items-center gap-1 transition-colors ${copiedItems.has(summaryCopyId)
+                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
+                                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-800/50'
+                                                }`}
+                                            >
+                                              {copiedItems.has(summaryCopyId) ? <Check size={10} /> : <ClipboardList size={10} />}
+                                              {copiedItems.has(summaryCopyId) ? 'Copiado' : 'Resumen'}
                                             </button>
                                           )}
                                           <a
