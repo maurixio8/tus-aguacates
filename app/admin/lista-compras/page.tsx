@@ -166,6 +166,32 @@ export default function ListaComprasPage() {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
+  // Helper para formatear fecha LOCAL (no UTC)
+  const formatLocalDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Calcular fecha del ciclo de entrega (viernes o martes 10AM hacia ahora)
+  const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
+    const now = new Date();
+    const today = new Date();
+    const targetDay = deliveryDay === 'friday' ? 5 : 2;
+    const currentDay = today.getDay();
+
+    let daysBack = currentDay - targetDay;
+    if (daysBack < 0) daysBack += 7;
+    if (daysBack === 0 && now.getHours() < 10) {
+      daysBack = 7;
+    }
+
+    const deliveryDate = new Date(today);
+    deliveryDate.setDate(today.getDate() - daysBack);
+    return formatLocalDate(deliveryDate);
+  };
+
 
 
   // Cargar productos comprados desde localStorage
@@ -235,31 +261,7 @@ export default function ListaComprasPage() {
     ]
   };
 
-  // Helper para formatear fecha LOCAL (no UTC)
-  const formatLocalDate = (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
 
-  // Calcular fecha del ciclo de entrega (viernes o martes 10AM hacia ahora)
-  const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
-    const now = new Date();
-    const today = new Date();
-    const targetDay = deliveryDay === 'friday' ? 5 : 2;
-    const currentDay = today.getDay();
-
-    let daysBack = currentDay - targetDay;
-    if (daysBack < 0) daysBack += 7;
-    if (daysBack === 0 && now.getHours() < 10) {
-      daysBack = 7;
-    }
-
-    const deliveryDate = new Date(today);
-    deliveryDate.setDate(today.getDate() - daysBack);
-    return formatLocalDate(deliveryDate);
-  };
 
   // Inicializar con últimos 7 días por defecto
   useEffect(() => {
@@ -1196,6 +1198,29 @@ export default function ListaComprasPage() {
           <span className="font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap mr-2">Rangos rápidos:</span>
           <button onClick={() => applyDatePreset('today')} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Hoy</button>
           <button onClick={() => applyDatePreset('tomorrow')} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Mañana</button>
+
+          <button
+            onClick={() => {
+              setDateFrom(getDeliveryCycleDate('friday'));
+              setDateTo(formatLocalDate(new Date()));
+            }}
+            className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300 whitespace-nowrap"
+            title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
+          >
+            🚚 Entrega Martes
+          </button>
+
+          <button
+            onClick={() => {
+              setDateFrom(getDeliveryCycleDate('tuesday'));
+              setDateTo(formatLocalDate(new Date()));
+            }}
+            className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300 whitespace-nowrap"
+            title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
+          >
+            🚚 Entrega Viernes
+          </button>
+
           <button onClick={() => applyDatePreset(7)} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Últimos 7 días</button>
           <button onClick={() => applyDatePreset(30)} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Últimos 30 días</button>
         </div>
@@ -1286,6 +1311,53 @@ export default function ListaComprasPage() {
                 </div>
               </div>
             )}
+
+            {/* Lista de Pedidos con Checkbox */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pedidos Disponibles</h2>
+                <button
+                  onClick={toggleSelectAll}
+                  className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors"
+                >
+                  {selectAll ? 'Deseleccionar todos' : 'Seleccionar todos'}
+                </button>
+              </div>
+              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
+                {orders.map(order => {
+                  const itemCount = extractItemsFromOrder(order).reduce((acc, item) => acc + item.quantity, 0);
+                  return (
+                    <div
+                      key={order.id}
+                      className="p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                      onClick={() => toggleOrderSelection(order.id)}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleOrderSelection(order.id);
+                        }}
+                        className="flex-shrink-0"
+                      >
+                        {selectedOrders.has(order.id) ? (
+                          <CheckSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">
+                          {order.customer_name || 'Cliente'}
+                        </p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {itemCount} productos
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
             {/* Tabla Principal */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
