@@ -166,29 +166,7 @@ export default function ListaComprasPage() {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
 
-  // Auto-expandir productos cuando cambian los datos agrupados
-  useEffect(() => {
-    if (groupedProducts.length > 0) {
-      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
-    }
-  }, [groupedProducts.length]); // Solo si cambia la cantidad de grupos
 
-  // Obtener etiqueta de entrega basada en la fecha
-  const getDeliveryLabel = () => {
-    if (!dateFrom) return '';
-    try {
-      const date = new Date(dateFrom);
-      // Ajustar por zona horaria si es necesario, o usar la fecha tal cual
-      // En este caso asumimos que el input trae la fecha local
-      // Si es martes (2) o miércoles (3) -> Viernes
-      // Si es viernes (5) o domingo (0) -> Martes (de la otra semana o cercano)
-      // Simplemente mostraremos el día de la semana de la fecha seleccionada
-      const dayName = format(date, 'EEEE', { locale: es });
-      return `Entregas ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}`;
-    } catch (e) {
-      return '';
-    }
-  };
 
   // Cargar productos comprados desde localStorage
   const [purchasedProducts, setPurchasedProducts] = useState<Set<string>>(() => {
@@ -927,6 +905,30 @@ export default function ListaComprasPage() {
       }
     );
   }, [orders, selectedOrders]);
+
+  // Auto-expandir productos cuando cambian los datos agrupados
+  useEffect(() => {
+    if (groupedProducts.length > 0) {
+      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
+    }
+  }, [groupedProducts.length]); // Solo si cambia la cantidad de grupos
+
+  // Obtener etiqueta de entrega basada en la fecha
+  const getDeliveryLabel = () => {
+    if (!dateFrom) return '';
+    try {
+      const date = new Date(dateFrom);
+      // Ajustar por zona horaria si es necesario, o usar la fecha tal cual
+      // En este caso asumimos que el input trae la fecha local
+      // Si es martes (2) o miércoles (3) -> Viernes
+      // Si es viernes (5) o domingo (0) -> Martes (de la otra semana o cercano)
+      // Simplemente mostraremos el día de la semana de la fecha seleccionada
+      const dayName = format(date, 'EEEE', { locale: es });
+      return `Entregas ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}`;
+    } catch (e) {
+      return '';
+    }
+  };
 
   // Calcular resumen de ventas de pedidos seleccionados
   const salesSummary = useMemo(() => {
