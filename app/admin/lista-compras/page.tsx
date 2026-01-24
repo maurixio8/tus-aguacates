@@ -908,12 +908,9 @@ export default function ListaComprasPage() {
     );
   }, [orders, selectedOrders]);
 
-  // Auto-expandir productos cuando cambian los datos agrupados
-  useEffect(() => {
-    if (groupedProducts.length > 0) {
-      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
-    }
-  }, [groupedProducts.length]); // Solo si cambia la cantidad de grupos
+  // Estados para controlar la visibilidad de secciones (Compact View)
+  const [showSalesSummary, setShowSalesSummary] = useState(false);
+  const [showOrdersList, setShowOrdersList] = useState(false);
 
   // Obtener etiqueta de entrega basada en la fecha
   const getDeliveryLabel = () => {
@@ -1225,22 +1222,21 @@ export default function ListaComprasPage() {
           <button onClick={() => applyDatePreset(30)} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Últimos 30 días</button>
         </div>
 
-        <div className="flex gap-3 items-center w-full md:w-auto bg-gray-50 dark:bg-gray-900 p-2 rounded-lg border border-gray-200 dark:border-gray-700">
-          <div className="relative group">
-            <label className="text-xs text-gray-500 dark:text-gray-400 absolute -top-2 left-2 bg-gray-50 dark:bg-gray-900 px-1">Desde</label>
+        <div className="flex items-center w-full md:w-auto bg-gray-50 dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden divide-x divide-gray-200 dark:divide-gray-700">
+          <div className="relative group flex-1">
+            <label className="text-[10px] text-gray-500 dark:text-gray-400 absolute top-0.5 left-2">Desde</label>
             <input
               type="date"
-              className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-32 cursor-pointer dark:[color-scheme:dark]"
+              className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-full pt-4 pb-1 px-2 cursor-pointer dark:[color-scheme:dark]"
               value={dateFrom}
               onChange={(e) => setDateFrom(e.target.value)}
             />
           </div>
-          <span className="text-gray-400">→</span>
-          <div className="relative group">
-            <label className="text-xs text-gray-500 dark:text-gray-400 absolute -top-2 left-2 bg-gray-50 dark:bg-gray-900 px-1">Hasta</label>
+          <div className="relative group flex-1">
+            <label className="text-[10px] text-gray-500 dark:text-gray-400 absolute top-0.5 left-2">Hasta</label>
             <input
               type="date"
-              className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-32 cursor-pointer dark:[color-scheme:dark]"
+              className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-full pt-4 pb-1 px-2 cursor-pointer dark:[color-scheme:dark]"
               value={dateTo}
               onChange={(e) => setDateTo(e.target.value)}
             />
@@ -1260,103 +1256,127 @@ export default function ListaComprasPage() {
           </div>
         ) : (
           <>
-            {/* Resumen */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Pedidos en el rango</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{orders.length}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Pedidos seleccionados</p>
-                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{selectedOrders.size}</p>
-              </div>
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-5">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Productos únicos</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{groupedProducts.length}</p>
-              </div>
-            </div>
 
-            {/* Resumen de Ventas de Pedidos Seleccionados */}
-            {selectedOrders.size > 0 && (
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800 p-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                  <h3 className="font-semibold text-green-800">Resumen de Ventas ({salesSummary.ordersCount} pedidos)</h3>
+            {/* Stats Compactos (Una sola fila) */}
+            {orders.length > 0 && (
+              <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Rango</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{orders.length}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Total en Productos */}
-                  <div className="bg-white rounded-lg p-4 border border-green-100 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Package className="w-4 h-4 text-green-600" />
-                      <p className="text-sm text-gray-600">Venta en Productos</p>
-                    </div>
-                    <p className="text-xl font-bold text-green-700">{formatPrice(salesSummary.productTotal)}</p>
-                  </div>
-                  {/* Total en Domicilios */}
-                  <div className="bg-white rounded-lg p-4 border border-blue-100 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Truck className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm text-gray-600">Recaudado en Domicilios</p>
-                    </div>
-                    <p className="text-xl font-bold text-blue-700">{formatPrice(salesSummary.shippingTotal)}</p>
-                  </div>
-                  {/* Total General */}
-                  <div className="bg-white rounded-lg p-4 border border-purple-100 shadow-sm">
-                    <div className="flex items-center gap-2 mb-1">
-                      <DollarSign className="w-4 h-4 text-purple-600" />
-                      <p className="text-sm text-gray-600">Total General</p>
-                    </div>
-                    <p className="text-xl font-bold text-purple-700">{formatPrice(salesSummary.grandTotal)}</p>
-                  </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Selec.</p>
+                  <p className="text-lg font-bold text-green-600 dark:text-green-400 leading-tight">{selectedOrders.size}</p>
+                </div>
+                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Prods.</p>
+                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400 leading-tight">{groupedProducts.length}</p>
                 </div>
               </div>
             )}
 
-            {/* Lista de Pedidos con Checkbox */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6">
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pedidos Disponibles</h2>
+            {/* Resumen de Ventas de Pedidos Seleccionados (Colapsable) */}
+            {selectedOrders.size > 0 && (
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-xl border border-green-200 dark:border-green-800 mb-6 transition-all">
+                <div
+                  className="p-4 flex items-center justify-between cursor-pointer"
+                  onClick={() => setShowSalesSummary(!showSalesSummary)}
+                >
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-5 h-5 text-green-600 dark:text-green-400" />
+                    <h3 className="font-semibold text-green-800 dark:text-green-300">Resumen de Ventas</h3>
+                  </div>
+                  {showSalesSummary ? <ChevronUp className="w-5 h-5 text-green-700 dark:text-green-400" /> : <ChevronDown className="w-5 h-5 text-green-700 dark:text-green-400" />}
+                </div>
+
+                {showSalesSummary && (
+                  <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fadeIn">
+                    {/* Total en Productos */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-green-100 dark:border-green-800/50 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Package className="w-4 h-4 text-green-600 dark:text-green-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Venta en Productos</p>
+                      </div>
+                      <p className="text-xl font-bold text-green-700 dark:text-green-400">{formatPrice(salesSummary.productTotal)}</p>
+                    </div>
+                    {/* Total en Domicilios */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-100 dark:border-blue-800/50 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Truck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Recaudado en Domicilios</p>
+                      </div>
+                      <p className="text-xl font-bold text-blue-700 dark:text-blue-400">{formatPrice(salesSummary.shippingTotal)}</p>
+                    </div>
+                    {/* Total General */}
+                    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-purple-100 dark:border-purple-800/50 shadow-sm">
+                      <div className="flex items-center gap-2 mb-1">
+                        <DollarSign className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">Total General</p>
+                      </div>
+                      <p className="text-xl font-bold text-purple-700 dark:text-purple-400">{formatPrice(salesSummary.grandTotal)}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Lista de Pedidos con Checkbox (Colapsable) */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden mb-6 transition-all">
+              <div
+                className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900 cursor-pointer"
+                onClick={() => setShowOrdersList(!showOrdersList)}
+              >
+                <div className="flex items-center gap-2">
+                  {showOrdersList ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Pedidos Disponibles ({orders.length})</h2>
+                </div>
                 <button
-                  onClick={toggleSelectAll}
-                  className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleSelectAll();
+                  }}
+                  className="text-sm text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300 font-medium transition-colors px-3 py-1 bg-green-50 dark:bg-green-900/30 rounded-lg"
                 >
                   {selectAll ? 'Deseleccionar todos' : 'Seleccionar todos'}
                 </button>
               </div>
-              <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto">
-                {orders.map(order => {
-                  const itemCount = extractItemsFromOrder(order).reduce((acc, item) => acc + item.quantity, 0);
-                  return (
-                    <div
-                      key={order.id}
-                      className="p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
-                      onClick={() => toggleOrderSelection(order.id)}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleOrderSelection(order.id);
-                        }}
-                        className="flex-shrink-0"
+
+              {showOrdersList && (
+                <div className="divide-y divide-gray-200 dark:divide-gray-700 max-h-96 overflow-y-auto animate-fadeIn">
+                  {orders.map(order => {
+                    const itemCount = extractItemsFromOrder(order).reduce((acc, item) => acc + item.quantity, 0);
+                    return (
+                      <div
+                        key={order.id}
+                        className="p-4 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+                        onClick={() => toggleOrderSelection(order.id)}
                       >
-                        {selectedOrders.has(order.id) ? (
-                          <CheckSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
-                        ) : (
-                          <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 dark:text-white truncate">
-                          {order.customer_name || 'Cliente'}
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {itemCount} productos
-                        </p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleOrderSelection(order.id);
+                          }}
+                          className="flex-shrink-0"
+                        >
+                          {selectedOrders.has(order.id) ? (
+                            <CheckSquare className="w-5 h-5 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Square className="w-5 h-5 text-gray-400 dark:text-gray-500" />
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-gray-900 dark:text-white truncate">
+                            {order.customer_name || 'Cliente'}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {itemCount} productos
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Tabla Principal */}

@@ -135,7 +135,7 @@ export default function AdminLayout({
   };
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
       {/* Sidebar móvil */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-900/80" onClick={() => setSidebarOpen(false)} />
