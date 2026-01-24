@@ -25,6 +25,8 @@ import {
   List,
   Download
 } from 'lucide-react';
+import { format, addDays } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface OrderItem {
   id: string;
@@ -163,6 +165,30 @@ export default function ListaComprasPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+
+  // Auto-expandir productos cuando cambian los datos agrupados
+  useEffect(() => {
+    if (groupedProducts.length > 0) {
+      setExpandedProducts(new Set(groupedProducts.map(p => p.grouping_key)));
+    }
+  }, [groupedProducts.length]); // Solo si cambia la cantidad de grupos
+
+  // Obtener etiqueta de entrega basada en la fecha
+  const getDeliveryLabel = () => {
+    if (!dateFrom) return '';
+    try {
+      const date = new Date(dateFrom);
+      // Ajustar por zona horaria si es necesario, o usar la fecha tal cual
+      // En este caso asumimos que el input trae la fecha local
+      // Si es martes (2) o miércoles (3) -> Viernes
+      // Si es viernes (5) o domingo (0) -> Martes (de la otra semana o cercano)
+      // Simplemente mostraremos el día de la semana de la fecha seleccionada
+      const dayName = format(date, 'EEEE', { locale: es });
+      return `Entregas ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}`;
+    } catch (e) {
+      return '';
+    }
+  };
 
   // Cargar productos comprados desde localStorage
   const [purchasedProducts, setPurchasedProducts] = useState<Set<string>>(() => {
@@ -1152,6 +1178,15 @@ export default function ListaComprasPage() {
           {darkMode ? <Sun size={20} /> : <Moon size={20} />}
         </button>
       </div>
+
+      {/* Banner de Entrega */}
+      {getDeliveryLabel() && (
+        <div className="bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500 p-4 mb-4 rounded-r-lg">
+          <p className="font-bold text-orange-800 dark:text-orange-300 text-lg">
+            📅 {getDeliveryLabel()}
+          </p>
+        </div>
+      )}
 
       {/* Filtros de Fecha Mejorados */}
       <div className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-orange-100 dark:border-gray-700 mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
