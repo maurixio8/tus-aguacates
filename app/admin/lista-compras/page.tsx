@@ -383,6 +383,17 @@ export default function ListaComprasPage() {
     }
   };
 
+  // Cargar pedidos cuando cambien las fechas
+  useEffect(() => {
+    // Solo cargar si tenemos ambas fechas
+    if (dateFrom && dateTo) {
+      loadOrders();
+      if (!initialLoadDone) {
+        setInitialLoadDone(true);
+      }
+    }
+  }, [dateFrom, dateTo]);
+
   // Extraer items de order_data si no hay order_items
   const extractItemsFromOrder = (order: Order): OrderItem[] => {
     // Primero intentar con order_items
