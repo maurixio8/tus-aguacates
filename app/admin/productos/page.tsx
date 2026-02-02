@@ -20,7 +20,8 @@ import {
   Camera,
   Upload,
   Loader2,
-  Trash2
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -339,10 +340,19 @@ export default function ProductsPage() {
     };
 
     console.log('📤 [SaveProduct] Sending payload:', payload);
+    console.log('📤 [SaveProduct] Product ID:', editingProduct.id);
 
     try {
-      const response = await fetch(`/api/admin/products/${editingProduct.id}`, {
-        method: 'PATCH',
+      // Determinar si es creación o actualización
+      const isEdit = !!editingProduct.id;
+      const endpoint = isEdit
+        ? `/api/admin/products/${editingProduct.id}`
+        : '/api/admin/products';
+
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const response = await fetch(endpoint, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(payload),
@@ -354,7 +364,9 @@ export default function ProductsPage() {
         ok: response.ok,
         success: data.success,
         data: data.data,
-        error: data.error
+        error: data.error,
+        method,
+        endpoint
       });
 
       if (data.success) {
@@ -363,7 +375,7 @@ export default function ProductsPage() {
           console.error('⚠️ [SaveProduct] PRICE MISMATCH! Sent:', payload.price, 'Received:', data.data.price);
           showToast('⚠️ El precio no se guardó correctamente', 'error');
         } else {
-          showToast('Producto actualizado correctamente', 'success');
+          showToast(isEdit ? 'Producto actualizado correctamente' : 'Producto creado correctamente', 'success');
         }
         setEditingProduct(null);
         loadProducts();
@@ -584,6 +596,25 @@ export default function ProductsPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  // Crear nuevo producto
+  const handleCreateProduct = () => {
+    setEditingProduct({
+      id: '',
+      name: '',
+      description: '',
+      price: 0,
+      discount_price: undefined,
+      stock: 0,
+      is_active: true,
+      is_featured: false,
+      main_image_url: '',
+      category_id: selectedCategory || '',
+      unit: 'kg',
+      variants: [],
+      hasVariants: false
+    });
   };
 
   const closeUploadModal = () => {
@@ -866,6 +897,15 @@ export default function ProductsPage() {
           >
             <Filter className="w-5 h-5" />
             Limpiar
+          </button>
+
+          {/* Crear Producto */}
+          <button
+            onClick={handleCreateProduct}
+            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center justify-center gap-2 font-medium shadow-sm hover:shadow-md"
+          >
+            <Plus className="w-5 h-5" />
+            Crear Producto
           </button>
         </div>
 
