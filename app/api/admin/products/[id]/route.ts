@@ -1,39 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import { revalidatePath } from 'next/cache';
-// Removed: import { createSupabaseClient } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
-// Helper para instanciar cliente con Service Role de forma explícita
-const getServiceSupabase = () => {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      },
-      global: {
-        headers: {
-          'Cache-Control': 'no-store'
-        }
-      }
+// Create Supabase client directly to avoid import issues
+function getSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Usar SUPABASE_SERVICE_ROLE_KEY si existe, si no usar ANON_KEY
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    console.error('❌ Missing Supabase environment variables:', {
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseKey
+    });
+    throw new Error('Missing Supabase configuration');
+  }
+
+  console.log('✅ Supabase client created with URL:', supabaseUrl.substring(0, 30) + '...');
+
+  return createClient(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
     }
-  );
-};
-
-// ... existing code ...
-
+  });
+}
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-admin-token',
+  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400',
 };
 
 // Manejar solicitudes OPTIONS para CORS
@@ -41,293 +43,144 @@ export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { headers: corsHeaders });
 }
 
-// Helper para verificar token de admin
-async function verifyAdminAuth(req: NextRequest) {
+// Helper function to verify admin authentication
+async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
+  // Generate a request ID for logging correlation
+  const requestId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const method = request.method;
+  const endpoint = new URL(request.url).pathname;
+
   try {
-    // 1. Verificar header específico
-    const headerToken = req.headers.get('x-admin-token');
+    // Get the admin-token cookie from the request
+    let token = request.cookies.get('admin-token')?.value;
 
-    // 2. Verificar cookie
-    const cookieToken = req.cookies.get('admin_token')?.value || req.cookies.get('admin-token')?.value;
-
-    const token = headerToken || cookieToken;
+    // Si no hay token en cookie, intentar obtenerlo del header Authorization
+    if (!token) {
+      const authHeader = request.headers.get('Authorization');
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7); // Remover 'Bearer ' prefix
+      }
+    }
 
     if (!token) {
-      return { success: false, error: 'No autorizado' };
+      // ❌ CASE 1: No cookie found - log all available cookies for debugging
+      const allCookies = request.cookies.getAll().map(c => c.name);
+      console.warn(`⚠️ [${requestId}] ❌ FALTA TOKEN (cookie o Authorization)`, {
+        endpoint,
+        method,
+        cookiesPresentes: allCookies.length > 0 ? allCookies.join(', ') : 'NINGUNA',
+        hasAuthHeader: !!request.headers.get('Authorization'),
+        timestamp: new Date().toISOString(),
+        causasPosibles: [
+          '1. Usuario no ha iniciado sesión (falta login en /admin/login)',
+          '2. Cookie expirada (maxAge es 24 horas)',
+          '3. Cookie no se envía (problema CORS o cross-origin)',
+          '4. Path de cookie incorrecto (debe ser path=/)',
+          '5. En producción: Domain no coincide con el dominio actual'
+        ]
+      });
+      return { success: false, error: 'No autenticado' };
     }
 
-    const JWT_SECRET = process.env.JWT_SECRET || 'tus-aguacates-secret-key';
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    // Verify the JWT token
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      console.error('❌ [SECURITY] JWT_SECRET not configured in environment variables');
+      return { success: false, error: 'Error de configuración del servidor' };
+    }
 
+    let decoded;
+    try {
+      decoded = jwt.verify(token, jwtSecret) as any;
+    } catch (jwtError) {
+      // ❌ CASE 2 & 3: Token JWT inválido o expirado - diferencia entre tipos de error
+      if (jwtError instanceof jwt.TokenExpiredError) {
+        console.warn(`⚠️ [${requestId}] ❌ TOKEN EXPIRADO`, {
+          endpoint,
+          method,
+          expiradoEn: new Date(jwtError.expiredAt).toISOString(),
+          ahora: new Date().toISOString(),
+          userId: (jwtError as any).decoded?.id || 'desconocido',
+          timestamp: new Date().toISOString(),
+          accion: '🔄 El usuario debe volver a iniciar sesión en /admin/login',
+          solucion: 'El token JWT tiene maxAge de 24 horas. Necesita re-login.'
+        });
+      } else if (jwtError instanceof jwt.JsonWebTokenError) {
+        console.error(`❌ [${requestId}] ❌ TOKEN JWT INVÁLIDO (firma/formato)`, {
+          endpoint,
+          method,
+          error: jwtError.message,
+          tokenLength: token.length,
+          timestamp: new Date().toISOString(),
+          causasPosibles: [
+            '1. JWT_SECRET no coincide entre login y verificación',
+            '2. Verificar .env.local tiene JWT_SECRET configurado',
+            '3. Token está corrupto o malformado',
+            '4. Token fue modificado después de su creación',
+            '5. En producción: JWT_SECRET no está configurado en variables de entorno'
+          ],
+          verificacion: 'Asegúrate que el token fue creado con jwt.sign() y mismo JWT_SECRET'
+        });
+      } else {
+        console.error(`❌ [${requestId}] ❌ ERROR DESCONOCIDO VERIFICANDO JWT`, {
+          endpoint,
+          method,
+          error: jwtError instanceof Error ? jwtError.message : String(jwtError),
+          errorType: jwtError?.constructor?.name,
+          timestamp: new Date().toISOString()
+        });
+      }
+      return { success: false, error: 'Token inválido' };
+    }
+
+    // ❌ CASE 4: Claims incorrectos - el token es válido pero no es de admin
     if (decoded.type !== 'admin') {
+      console.warn(`⚠️ [${requestId}] ❌ TOKEN VÁLIDO PERO SIN CLAIMS DE ADMIN`, {
+        endpoint,
+        method,
+        userId: decoded.id || 'desconocido',
+        email: decoded.email || 'desconocido',
+        claimType: decoded.type || 'FALTA CLAIM',
+        claimsPresentes: Object.keys(decoded)
+          .filter(k => !['iat', 'exp'].includes(k))
+          .reduce((acc, k) => ({ ...acc, [k]: decoded[k] }), {}),
+        timestamp: new Date().toISOString(),
+        claimEsperado: 'type: "admin"',
+        solucion: 'El endpoint /api/auth/admin/login debe crear JWT con claim type="admin". Verificar app/api/auth/admin/login/route.ts línea 43'
+      });
       return { success: false, error: 'Token no válido para administrador' };
     }
+
+    // ✅ Autenticación exitosa
+    console.log(`✅ [${requestId}] ✅ AUTENTICACIÓN EXITOSA`, {
+      endpoint,
+      method,
+      userId: decoded.id,
+      email: decoded.email,
+      role: decoded.role,
+      expiresAt: new Date(decoded.exp * 1000).toISOString(),
+      issueAt: new Date(decoded.iat * 1000).toISOString(),
+      timestamp: new Date().toISOString()
+    });
 
     return { success: true, adminId: decoded.id };
 
   } catch (error) {
-    console.error('❌ Error auth:', error);
-    return { success: false, error: 'Token inválido' };
+    // Catch-all for unexpected errors
+    console.error(`❌ [${requestId}] ❌ ERROR INESPERADO EN AUTENTICACIÓN`, {
+      endpoint,
+      method,
+      error: error instanceof Error ? error.message : String(error),
+      errorType: error?.constructor?.name,
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 3).join('\n') : undefined,
+      timestamp: new Date().toISOString()
+    });
+    return { success: false, error: 'Error de autenticación' };
   }
 }
 
-// GET - Get single product by ID
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // Check if request is from same origin (integrated dashboard) or has valid auth
-    const origin = request.headers.get('origin');
-    const referer = request.headers.get('referer');
-    const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
-
-    // Only verify auth for cross-origin requests
-    if (!isSameOrigin) {
-      const auth = await verifyAdminAuth(request);
-      if (!auth.success) {
-        return NextResponse.json(
-          { error: auth.error },
-          { status: 401, headers: corsHeaders }
-        );
-      }
-    }
-
-    const { id } = await params;
-    console.log('🔍 API: Fetching single product:', id);
-
-    const supabase = getServiceSupabase();
-
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        categories:category_id (
-          id,
-          name,
-          slug
-        )
-      `)
-      .eq('id', id)
-      .single();
-
-    console.log('📊 API: Single product response:', { data: !!data, error });
-
-    if (error) {
-      if (error.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Producto no encontrado' },
-          { status: 404, headers: corsHeaders }
-        );
-      }
-
-      console.error('❌ API: Error fetching product:', error);
-      return NextResponse.json(
-        { error: 'Error al cargar el producto' },
-        { status: 500, headers: corsHeaders }
-      );
-    }
-
-    // Transform data to include category_name
-    const product = {
-      ...data,
-      category_name: data.categories?.name || 'Sin categoría'
-    };
-
-    console.log('✅ API: Product fetched successfully');
-
-    return NextResponse.json({
-      success: true,
-      data: product
-    }, { headers: corsHeaders });
-
-  } catch (error) {
-    console.error('❌ API: Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
-    );
-  }
-}
-
-// PATCH - Update product by ID (partial update)
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    // Check if request is from same origin (integrated dashboard) or has valid auth
-    const origin = request.headers.get('origin');
-    const referer = request.headers.get('referer');
-    const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
-
-    // Only verify auth for cross-origin requests
-    if (!isSameOrigin) {
-      const auth = await verifyAdminAuth(request);
-      if (!auth.success) {
-        return NextResponse.json(
-          { error: auth.error },
-          { status: 401, headers: corsHeaders }
-        );
-      }
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-
-    console.log('📝 API: PATCH updating product:', { id, body });
-
-    const supabase = getServiceSupabase();
-
-    // First check if product exists
-    const { data: existingProduct, error: fetchError } = await supabase
-      .from('products')
-      .select('id, name, main_image_url')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !existingProduct) {
-      console.error('❌ API: Product not found:', { id, fetchError });
-      return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404, headers: corsHeaders }
-      );
-    }
-
-    console.log('📦 API: Existing product before update:', {
-      id: existingProduct.id,
-      name: existingProduct.name,
-      current_image: existingProduct.main_image_url
-    });
-
-    // Prepare update object
-    const updateData: any = {
-      updated_at: new Date().toISOString()
-    };
-
-    // Add fields from body
-    const allowedFields = [
-      'name', 'description', 'category_id', 'price', 'discount_price',
-      'unit', 'weight', 'min_quantity', 'main_image_url', 'images',
-      'stock', 'is_organic', 'is_featured', 'is_active', 'benefits'
-    ];
-
-    allowedFields.forEach(field => {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
-      }
-    });
-
-    console.log('💾 API: Executing Supabase update for ID:', id, 'with data:', updateData);
-
-    // Perform update with .single() to ensure we get the updated row
-    const { data, error } = await supabase
-      .from('products')
-      .update(updateData)
-      .eq('id', id)
-      .select()
-      .single();
-
-    console.log('📊 API: Supabase update response:', {
-      hasData: !!data,
-      error: error ? { message: error.message, code: error.code, hint: error.hint } : null
-    });
-
-    if (error) {
-      console.error('❌ API: Error updating product:', error);
-      return NextResponse.json(
-        {
-          error: 'Error al actualizar el producto',
-          details: error.message,
-          code: error.code,
-          hint: error.hint
-        },
-        { status: 500, headers: corsHeaders }
-      );
-    }
-
-    if (!data) {
-      console.error('❌ API: Update returned no data. This should not happen with .single()');
-      return NextResponse.json({
-        success: false,
-        error: 'No se pudo actualizar el producto (update no devolvió datos)',
-        data: null
-      }, { status: 500, headers: corsHeaders });
-    }
-
-    // Verify image URL was actually saved if it was part of the update
-    if (updateData.main_image_url !== undefined) {
-      console.log('🔍 API: Verifying image URL persistence:', {
-        sent: updateData.main_image_url,
-        saved: data.main_image_url,
-        match: data.main_image_url === updateData.main_image_url
-      });
-
-      if (data.main_image_url !== updateData.main_image_url) {
-        console.error('❌ API: CRITICAL IMAGE MISMATCH - DB returned different URL than sent!', {
-          sent: updateData.main_image_url,
-          received: data.main_image_url
-        });
-
-        // Return error instead of false success
-        return NextResponse.json({
-          success: false,
-          error: 'La imagen no se guardó correctamente en la base de datos',
-          data: data,
-          debug: {
-            sent: updateData.main_image_url,
-            received: data.main_image_url
-          }
-        }, { status: 500, headers: corsHeaders });
-      }
-    }
-
-    console.log('✅ API: Product updated successfully via PATCH:', {
-      id: data.id,
-      name: data.name,
-      main_image_url: data.main_image_url,
-      price: data.price,
-      discount_price: data.discount_price,
-      sentPrice: updateData.price,
-      sentDiscountPrice: updateData.discount_price
-    });
-
-    // Verify price was actually saved if it was part of the update
-    if (updateData.price !== undefined && data.price !== updateData.price) {
-      console.error('❌ API: CRITICAL PRICE MISMATCH!', {
-        sent: updateData.price,
-        received: data.price
-      });
-    }
-
-    // Force cache invalidation for both admin and frontend
-    revalidatePath('/admin/productos');
-    revalidatePath('/api/admin/products');
-    revalidatePath('/tienda');
-    revalidatePath('/tienda/productos-nuevos');
-    revalidatePath('/tienda/[categoria]');
-    revalidatePath('/productos');
-
-    return NextResponse.json({
-      success: true,
-      data: data,
-      message: 'Producto actualizado exitosamente'
-    }, { headers: corsHeaders });
-
-  } catch (error) {
-    console.error('❌ API: Unexpected error:', error);
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500, headers: corsHeaders }
-    );
-  }
-}
-
-// PUT - Update product by ID (full update)
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// PATCH - Update existing product
+export async function PATCH(request: NextRequest) {
   try {
     // Verify admin authentication
     const auth = await verifyAdminAuth(request);
@@ -338,78 +191,56 @@ export async function PUT(
       );
     }
 
-    const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
+
+    if (!productId) {
+      return NextResponse.json(
+        { error: 'ID del producto requerido' },
+        { status: 400, headers: corsHeaders }
+      );
+    }
+
     const body = await request.json();
+    console.log('📝 API: Updating product:', { productId, body });
 
-    console.log('📝 API: Updating product:', { id, body });
-
-    const supabase = getServiceSupabase();
-
-    // First check if product exists
-    const { data: existingProduct, error: fetchError } = await supabase
-      .from('products')
-      .select('id, name')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !existingProduct) {
+    // Validate that we're not trying to update the ID
+    if (body.id && body.id !== productId) {
       return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404, headers: corsHeaders }
-      );
-    }
-
-    // Validate data if provided
-    if (body.price !== undefined && (typeof body.price !== 'number' || body.price < 0)) {
-      return NextResponse.json(
-        { error: 'El precio debe ser un número válido' },
+        { error: 'No se puede cambiar el ID del producto' },
         { status: 400, headers: corsHeaders }
       );
     }
 
-    if (body.stock !== undefined && (typeof body.stock !== 'number' || body.stock < 0)) {
-      return NextResponse.json(
-        { error: 'El stock debe ser un número válido' },
-        { status: 400, headers: corsHeaders }
-      );
-    }
+    const supabase = getSupabaseClient();
 
-    // Prepare update object
+    // Prepare update payload (exclude ID and auth fields)
     const updateData: any = {
       updated_at: new Date().toISOString()
     };
 
-    // Update slug if name changed
-    if (body.name && body.name !== existingProduct.name) {
-      updateData.slug = body.name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-')
-        .trim('-');
-    }
+    // Only include fields that are actually provided
+    if (body.name !== undefined) updateData.name = body.name;
+    if (body.description !== undefined) updateData.description = body.description;
+    if (body.price !== undefined) updateData.price = body.price;
+    if (body.discount_price !== undefined) updateData.discount_price = body.discount_price;
+    if (body.stock !== undefined) updateData.stock = body.stock;
+    if (body.is_active !== undefined) updateData.is_active = body.is_active;
+    if (body.is_featured !== undefined) updateData.is_featured = body.is_featured;
+    if (body.main_image_url !== undefined) updateData.main_image_url = body.main_image_url;
+    if (body.category_id !== undefined) updateData.category_id = body.category_id;
 
-    // Add other fields
-    const allowedFields = [
-      'name', 'description', 'category_id', 'price', 'discount_price',
-      'unit', 'weight', 'min_quantity', 'main_image_url', 'images',
-      'stock', 'is_organic', 'is_featured', 'is_active', 'benefits'
-    ];
+    console.log('💾 API: Update payload:', updateData);
 
-    allowedFields.forEach(field => {
-      if (body[field] !== undefined) {
-        updateData[field] = body[field];
-      }
-    });
-
+    // Update the product
     const { data, error } = await supabase
       .from('products')
       .update(updateData)
-      .eq('id', id)
+      .eq('id', productId)
       .select()
       .single();
 
-    console.log('💾 API: Product update response:', { data, error });
+    console.log('💾 API: Update response:', { data, error });
 
     if (error) {
       console.error('❌ API: Error updating product:', error);
@@ -417,7 +248,7 @@ export async function PUT(
       // Handle specific database errors
       if (error.code === '23505') {
         return NextResponse.json(
-          { error: 'Ya existe un producto con ese SKU o slug' },
+          { error: 'Ya existe otro producto con ese SKU o slug' },
           { status: 409, headers: corsHeaders }
         );
       }
@@ -429,8 +260,15 @@ export async function PUT(
         );
       }
 
+      // Return more detailed error information for debugging
       return NextResponse.json(
-        { error: 'Error al actualizar el producto' },
+        {
+          error: 'Error al actualizar el producto',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          details_full: JSON.stringify(error)
+        },
         { status: 500, headers: corsHeaders }
       );
     }
@@ -446,17 +284,18 @@ export async function PUT(
   } catch (error) {
     console.error('❌ API: Unexpected error updating product:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      {
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500, headers: corsHeaders }
     );
   }
 }
 
-// DELETE - Delete product by ID
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+// DELETE - Delete a product
+export async function DELETE(request: NextRequest) {
   try {
     // Verify admin authentication
     const auth = await verifyAdminAuth(request);
@@ -467,64 +306,65 @@ export async function DELETE(
       );
     }
 
-    const { id } = await params;
-    console.log('🗑️ API: Deleting product:', id);
+    const { searchParams } = new URL(request.url);
+    const productId = searchParams.get('id');
 
-    const supabase = getServiceSupabase();
-
-    // First check if product exists
-    const { data: existingProduct, error: fetchError } = await supabase
-      .from('products')
-      .select('id, name')
-      .eq('id', id)
-      .single();
-
-    if (fetchError || !existingProduct) {
+    if (!productId) {
       return NextResponse.json(
-        { error: 'Producto no encontrado' },
-        { status: 404, headers: corsHeaders }
+        { error: 'ID del producto requerido' },
+        { status: 400, headers: corsHeaders }
       );
     }
 
-    // Delete the product (this will also cascade delete related records if properly configured)
-    const { data, error } = await supabase
+    console.log('🗑️ API: Deleting product:', productId);
+
+    const supabase = getSupabaseClient();
+
+    // Delete the product (with CASCADE will handle related records)
+    const { error } = await supabase
       .from('products')
       .delete()
-      .eq('id', id)
-      .select()
-      .single();
-
-    console.log('💾 API: Product delete response:', { data, error });
+      .eq('id', productId);
 
     if (error) {
       console.error('❌ API: Error deleting product:', error);
 
-      // Handle foreign key constraint errors
+      // Handle specific database errors
       if (error.code === '23503') {
         return NextResponse.json(
-          { error: 'No se puede eliminar el producto porque tiene registros relacionados (órdenes, variantes, etc.)' },
+          { error: 'No se puede eliminar este producto porque tiene registros relacionados' },
           { status: 400, headers: corsHeaders }
         );
       }
 
+      // Return more detailed error information for debugging
       return NextResponse.json(
-        { error: 'Error al eliminar el producto' },
+        {
+          error: 'Error al eliminar el producto',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          details_full: JSON.stringify(error)
+        },
         { status: 500, headers: corsHeaders }
       );
     }
 
-    console.log('✅ API: Product deleted successfully:', data);
+    console.log('✅ API: Product deleted successfully:', productId);
 
     return NextResponse.json({
       success: true,
-      data,
       message: 'Producto eliminado exitosamente'
     }, { headers: corsHeaders });
 
   } catch (error) {
     console.error('❌ API: Unexpected error deleting product:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor' },
+      {
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      },
       { status: 500, headers: corsHeaders }
     );
   }
