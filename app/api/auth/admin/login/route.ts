@@ -93,14 +93,32 @@ export async function POST(request: NextRequest) {
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
       const isProduction = process.env.NODE_ENV === 'production';
-      const domain = isProduction
-        ? 'tus-aguacates-57vp.vercel.app'
-        : undefined; // localhost no necesita domain
+      const requestUrl = new URL(request.url);
+      const hostname = requestUrl.hostname;
+
+      // Determinar dominio dinámicamente para producción
+      let domain: string | undefined = undefined;
+      if (isProduction) {
+        // Para Vercel, usar el dominio completo
+        if (hostname.includes('vercel.app')) {
+          domain = hostname;
+        }
+      }
+
+      console.log('🍪 [Login API] Cookie config:', {
+        isProduction,
+        hostname,
+        domain: domain || 'undefined (localhost)',
+        secure: isProduction,
+        httpOnly: true,
+        sameSite: 'strict',
+        path: '/'
+      });
 
       response.cookies.set('admin-token', token, {
         httpOnly: true, // No accesible desde JavaScript (seguridad XSS)
         secure: isProduction, // HTTPS only en producción
-        sameSite: 'lax', // Previene CSRF - 'lax' permite navegación top-level
+        sameSite: 'strict', // Previene CSRF - más estricto que 'lax'
         maxAge: 86400, // 24 horas en segundos
         path: '/', // ✅ Cookie disponible en toda la app
         domain: domain // ✅ Especificar dominio en producción
