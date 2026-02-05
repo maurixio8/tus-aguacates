@@ -24,8 +24,8 @@ export interface AuthResult {
 
 // Cliente de Supabase para server-side (ADMIN - BYPASS RLS)
 export function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
+  const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
 
   console.log('🔍 [AUTH-ADMIN] Environment variables check:', {
     hasUrl: !!supabaseUrl,
@@ -240,7 +240,7 @@ export async function getCurrentAdminUser(): Promise<AdminUser | null> {
       return null;
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = (process.env.JWT_SECRET || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
     if (!jwtSecret) {
       console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
       throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');
@@ -292,7 +292,7 @@ export async function verifyAdminAuth(request: NextRequest): Promise<{ success: 
       return { success: false, error: 'No autenticado - falta token' };
     }
 
-    const jwtSecret = process.env.JWT_SECRET;
+    const jwtSecret = (process.env.JWT_SECRET || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
     if (!jwtSecret) {
       console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
       throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');

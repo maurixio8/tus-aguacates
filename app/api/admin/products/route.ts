@@ -7,9 +7,10 @@ export const revalidate = 0;
 
 // Create Supabase client directly to avoid import issues
 function getSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
   // Usar SUPABASE_SERVICE_ROLE_KEY si existe, si no usar ANON_KEY
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const supabaseKey = rawKey.replace(/\\n/g, '').replace(/\\r/g, '').trim();
 
   if (!supabaseUrl || !supabaseKey) {
     console.error('❌ Missing Supabase environment variables:', {
@@ -83,7 +84,8 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
     }
 
     // Verify the JWT token
-    const jwtSecret = process.env.JWT_SECRET;
+    const secret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+    const jwtSecret = secret.replace(/\\n/g, '').replace(/\\r/g, '').trim();
     if (!jwtSecret) {
       console.error('❌ [SECURITY] JWT_SECRET not configured in environment variables');
       return { success: false, error: 'Error de configuración del servidor' };

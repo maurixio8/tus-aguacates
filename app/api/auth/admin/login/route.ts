@@ -56,7 +56,8 @@ export async function POST(request: NextRequest) {
       };
 
       // ✅ CREAR JWT CON CLAIMS CORRECTOS
-      const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+      const rawSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+      const jwtSecret = rawSecret.replace(/\\n/g, '').replace(/\\r/g, '').trim();
       const token = jwt.sign(
         {
           id: adminUser.id,
