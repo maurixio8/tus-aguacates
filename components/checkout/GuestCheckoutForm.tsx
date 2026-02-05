@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
-import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
 import dynamic from 'next/dynamic';
 import OrderSuccessModal from './OrderSuccessModal';
