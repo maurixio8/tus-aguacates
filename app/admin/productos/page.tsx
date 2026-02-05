@@ -338,7 +338,11 @@ export default function ProductsPage() {
       is_featured: editingProduct.is_featured,
       main_image_url: editingProduct.main_image_url,
       category_id: editingProduct.category_id,
+      variants: editingProduct.variants || editingProduct.product_variants || [],
+      unit: editingProduct.unit || 'unidad',
     };
+
+
 
     console.log('📤 [SaveProduct] Sending payload:', payload);
     console.log('📤 [SaveProduct] Product ID:', editingProduct.id);
@@ -454,6 +458,52 @@ export default function ProductsPage() {
       minimumFractionDigits: 0,
     }).format(value);
   };
+
+  // Funciones para gestionar variantes en el estado local de edición
+  const addVariantToProduct = () => {
+    if (!editingProduct) return;
+    const currentVariants = editingProduct.variants || editingProduct.product_variants || [];
+    const newVariant: ProductVariant = {
+      id: '',
+      variant_name: 'Presentación',
+      variant_value: '',
+      price: editingProduct.price,
+      stock_quantity: 0,
+      is_active: true,
+      sort_order: currentVariants.length
+    };
+
+    setEditingProduct({
+      ...editingProduct,
+      variants: [...currentVariants, newVariant],
+      product_variants: [...currentVariants, newVariant]
+    });
+  };
+
+  const removeVariantFromProduct = (index: number) => {
+    if (!editingProduct) return;
+    const currentVariants = [...(editingProduct.variants || editingProduct.product_variants || [])];
+    currentVariants.splice(index, 1);
+
+    setEditingProduct({
+      ...editingProduct,
+      variants: currentVariants,
+      product_variants: currentVariants
+    });
+  };
+
+  const updateVariantInProduct = (index: number, field: keyof ProductVariant, value: any) => {
+    if (!editingProduct) return;
+    const currentVariants = [...(editingProduct.variants || editingProduct.product_variants || [])];
+    currentVariants[index] = { ...currentVariants[index], [field]: value };
+
+    setEditingProduct({
+      ...editingProduct,
+      variants: currentVariants,
+      product_variants: currentVariants
+    });
+  };
+
 
   // 1. Abrir modal
   const handleQuickImageUpload = (productId: string) => {
@@ -1449,137 +1499,88 @@ export default function ProductsPage() {
               </div>
 
               {/* Variantes Section */}
-              {((editingProduct.variants && editingProduct.variants.length > 0) || (editingProduct.product_variants && editingProduct.product_variants.length > 0)) && (
-                <div className="border-t border-gray-200 pt-6 mt-6">
-                  <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Layers className="w-5 h-5 text-verde-aguacate" />
+              <div className="border-t border-gray-200 pt-6 mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-md font-bold text-gray-900 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-green-600" />
                     Variantes del Producto
                   </h4>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Edita el precio, stock y estado de cada variante individualmente. Los cambios se aplicarán globalmente.
-                  </p>
+                  <button
+                    onClick={addVariantToProduct}
+                    className="text-sm bg-green-50 text-green-700 px-3 py-1.5 rounded-lg border border-green-200 hover:bg-green-100 transition-colors flex items-center gap-1 font-medium"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Añadir Variante
+                  </button>
+                </div>
 
-                  <div className="space-y-3">
-                    {(editingProduct.variants || editingProduct.product_variants || []).map((variant) => {
-                      // Debug: Log variant data
-                      console.log('🔍 [Variant Debug]', {
-                        id: variant.id,
-                        variant_value: variant.variant_value,
-                        price: variant.price,
-                        stock_quantity: variant.stock_quantity,
-                        fullVariant: variant
-                      });
+                <p className="text-sm text-gray-600 mb-4">
+                  Define opciones como diferentes tamaños, pesos o presentaciones. Cada opción puede tener su propio precio y stock.
+                </p>
 
-                      const isEditingThisVariant = editingVariant?.variantId === variant.id;
-                      const editData = isEditingThisVariant ? editingVariant.data : variant;
-
-                      return (
-                        <div
-                          key={variant.id}
-                          className="bg-gray-50 rounded-lg border border-gray-200 p-4"
+                {((editingProduct.variants || editingProduct.product_variants || []).length === 0) ? (
+                  <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-8 text-center text-gray-500">
+                    <Layers className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    No hay variantes definidas. Pulsa "Añadir Variante" para crear la primera.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {(editingProduct.variants || editingProduct.product_variants || []).map((variant, index) => (
+                      <div
+                        key={variant.id || `new-${index}`}
+                        className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow relative"
+                      >
+                        <button
+                          onClick={() => removeVariantFromProduct(index)}
+                          className="absolute -top-2 -right-2 w-7 h-7 bg-red-100 text-red-600 rounded-full flex items-center justify-center hover:bg-red-200 transition-colors shadow-sm"
+                          title="Eliminar variante"
                         >
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                            {/* Variant Name */}
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1 font-medium">Variante</label>
-                              <p className="font-semibold text-gray-900 text-sm">{variant.variant_value}</p>
-                            </div>
+                          <X className="w-4 h-4" />
+                        </button>
 
-                            {/* Price */}
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1 font-medium">Precio *</label>
-                              {isEditingThisVariant ? (
-                                <input
-                                  type="number"
-                                  value={editData.price || 0}
-                                  onChange={(e) => setEditingVariant({
-                                    ...editingVariant,
-                                    data: { ...editData, price: parseFloat(e.target.value) || 0 }
-                                  })}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                  min="0"
-                                  step="100"
-                                />
-                              ) : (
-                                <p className="font-semibold text-gray-900 py-2">
-                                  {formatCurrency(variant.price || 0)}
-                                </p>
-                              )}
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Presentación (ej: Bolsa 500g) */}
+                          <div className="md:col-span-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Presentación</label>
+                            <input
+                              type="text"
+                              value={variant.variant_value}
+                              onChange={(e) => updateVariantInProduct(index, 'variant_value', e.target.value)}
+                              placeholder="Ej: 500g, Caja 12u"
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 font-medium"
+                            />
+                          </div>
 
-                            {/* Stock */}
-                            <div>
-                              <label className="text-xs text-gray-500 block mb-1 font-medium">Stock *</label>
-                              {isEditingThisVariant ? (
-                                <input
-                                  type="number"
-                                  value={editData.stock_quantity || 0}
-                                  onChange={(e) => setEditingVariant({
-                                    ...editingVariant,
-                                    data: { ...editData, stock_quantity: parseInt(e.target.value) || 0 }
-                                  })}
-                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                  min="0"
-                                />
-                              ) : (
-                                <p className={`font-medium py-2 ${(variant.stock_quantity || 0) < 10 ? 'text-red-600' : 'text-gray-900'}`}>
-                                  {variant.stock_quantity || 0}
-                                </p>
-                              )}
-                            </div>
+                          {/* Precio */}
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Precio ($)</label>
+                            <input
+                              type="number"
+                              value={variant.price || 0}
+                              onChange={(e) => updateVariantInProduct(index, 'price', parseFloat(e.target.value) || 0)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 font-bold text-gray-700"
+                              min="0"
+                            />
+                          </div>
 
-                            {/* Actions */}
-                            <div className="flex justify-end gap-2">
-                              {isEditingThisVariant ? (
-                                <>
-                                  <button
-                                    onClick={handleCancelVariantEdit}
-                                    className="px-3 py-2 text-xs text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
-                                    disabled={savingVariant}
-                                  >
-                                    Cancelar
-                                  </button>
-                                  <button
-                                    onClick={handleSaveVariant}
-                                    disabled={savingVariant}
-                                    className="px-3 py-2 text-xs bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50"
-                                  >
-                                    {savingVariant ? (
-                                      <>
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                        Guardando...
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Save className="w-3 h-3" />
-                                        Guardar
-                                      </>
-                                    )}
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => handleEditVariant(editingProduct.id, variant)}
-                                  className="px-3 py-2 text-xs text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-1 font-medium"
-                                >
-                                  <Edit className="w-3 h-3" />
-                                  Editar
-                                </button>
-                              )}
-                            </div>
+                          {/* Stock */}
+                          <div>
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 block">Stock</label>
+                            <input
+                              type="number"
+                              value={variant.stock_quantity || 0}
+                              onChange={(e) => updateVariantInProduct(index, 'stock_quantity', parseInt(e.target.value) || 0)}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 font-medium"
+                              min="0"
+                            />
                           </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
+                )}
+              </div>
 
-                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-xs text-blue-800">
-                      <strong>Nota:</strong> Los cambios en las variantes se aplicarán globalmente en toda la tienda.
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Footer */}

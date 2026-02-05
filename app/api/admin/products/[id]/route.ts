@@ -292,11 +292,81 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     console.log('✅ API: Product updated successfully:', data);
 
+    // Sync variants if provided
+    if (body.variants && Array.isArray(body.variants)) {
+      console.log(`📦 API: Syncing ${body.variants.length} variants for product ${productId}`);
+
+      // 1. Get current variants in DB
+      const { data: currentVariants } = await supabase
+        .from('product_variants')
+        .select('id')
+        .eq('product_id', productId);
+
+      const currentIds = currentVariants?.map(v => v.id) || [];
+      const incomingIds = body.variants.filter((v: any) => v.id).map((v: any) => v.id);
+
+      // 2. Identify variants to delete (those in DB but NOT in incoming list)
+      const toDelete = currentIds.filter(id => !incomingIds.includes(id));
+      if (toDelete.length > 0) {
+        console.log(`🗑️ API: Deleting ${toDelete.length} variants:`, toDelete);
+        await supabase.from('product_variants').delete().in('id', toDelete);
+      }
+
+      // 3. Prepare variants for upsert (creation or update)
+      const variantsToUpsert = body.variants.map((v: any, index: number) => ({
+        ...(v.id ? { id: v.id } : {}),
+        product_id: productId,
+        variant_name: v.variant_name || 'Presentación',
+        variant_value: v.variant_value || '',
+        price: Number(v.price) || body.price || data.price,
+        price_adjustment: Number(v.price_adjustment) || 0,
+        stock_quantity: Number(v.stock_quantity) || 0,
+        is_active: v.is_active !== false,
+        sku: v.sku || `${data.sku || 'PRD'}-V${index + 1}-${Date.now().toString(36).toUpperCase()}`,
+        sort_order: v.sort_order || index
+      }));
+
+      const { error: syncError } = await supabase
+        .from('product_variants')
+        .upsert(variantsToUpsert);
+
+      if (syncError) {
+        console.error('❌ API: Error syncing variants:', syncError);
+        return NextResponse.json({
+          success: true,
+          data,
+          warning: 'Producto actualizado pero hubo errores al sincronizar las variantes.',
+          syncError: syncError.message
+        }, { headers: corsHeaders });
+      }
+
+      console.log('✅ API: Variants synced successfully');
+
+      // Fetch full product with variants to return complete response
+      const { data: fullProduct } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_variants (*)
+        `)
+        .eq('id', productId)
+        .single();
+
+      if (fullProduct) {
+        return NextResponse.json({
+          success: true,
+          data: fullProduct,
+          message: 'Producto y variantes actualizados exitosamente'
+        }, { headers: corsHeaders });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data,
       message: 'Producto actualizado exitosamente'
     }, { headers: corsHeaders });
+
 
   } catch (error) {
     console.error('❌ API: Unexpected error updating product:', error);

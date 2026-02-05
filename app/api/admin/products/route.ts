@@ -526,11 +526,65 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ API: Product created successfully:', data);
 
+    // Create variants if provided
+    if (body.variants && Array.isArray(body.variants) && body.variants.length > 0) {
+      console.log(`📦 API: Creating ${body.variants.length} variants for product ${data.id}`);
+
+      const variantsToInsert = body.variants.map((v: any, index: number) => ({
+        product_id: data.id,
+        variant_name: v.variant_name || 'Presentación',
+        variant_value: v.variant_value || '',
+        price: Number(v.price) || body.price,
+        price_adjustment: Number(v.price_adjustment) || 0,
+        stock_quantity: Number(v.stock_quantity) || 0,
+        is_active: v.is_active !== false,
+        sku: v.sku || `${sku}-V${index + 1}`,
+        sort_order: v.sort_order || index
+      }));
+
+      const { error: variantsError } = await supabase
+        .from('product_variants')
+        .insert(variantsToInsert);
+
+      if (variantsError) {
+        console.error('❌ API: Error creating variants:', variantsError);
+        // We include a warning in the response
+        return NextResponse.json({
+          success: true,
+          data,
+          warning: 'Producto creado pero hubo errores al crear las variantes.',
+          variantsError: variantsError.message,
+          message: 'Producto creado exitosamente (con errores en variantes)'
+        }, { status: 201, headers: corsHeaders });
+      }
+
+      console.log('✅ API: Variants created successfully');
+
+      // Fetch the product again with variants to return complete data
+      const { data: fullProduct } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_variants (*)
+        `)
+        .eq('id', data.id)
+        .single();
+
+      if (fullProduct) {
+        return NextResponse.json({
+          success: true,
+          data: fullProduct,
+          message: 'Producto y variantes creados exitosamente'
+        }, { status: 201, headers: corsHeaders });
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data,
       message: 'Producto creado exitosamente'
     }, { status: 201, headers: corsHeaders });
+
 
   } catch (error) {
     console.error('❌ API: Unexpected error creating product:', error);
