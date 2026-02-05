@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { useCartStore } from '@/lib/cart-store';
 
 interface OrderSuccessModalProps {
     isOpen: boolean;
@@ -93,6 +94,8 @@ export default function OrderSuccessModal({
 
                             <Button
                                 onClick={() => {
+                                    // Limpiar carrito antes de ir a WhatsApp
+                                    useCartStore.getState().clearCart();
                                     window.location.href = whatsappUrl;
                                 }}
                                 className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white font-bold py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"

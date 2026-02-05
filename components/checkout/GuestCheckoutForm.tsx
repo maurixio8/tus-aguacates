@@ -370,8 +370,8 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         }
       }
 
-      // 7. Limpiar carrito inmediatamente (la redirección la hace el usuario desde el modal)
-      clearCart();
+      // 7. NO limpiar carrito todavía. Se limpia cuando el usuario cierra el modal o va a WhatsApp
+      // Si limpiamos aquí, el efecto del padre (CheckoutPage) redirige a /productos inmediatamente
 
     } catch (err: any) {
       console.error('Error al finalizar pedido:', err);
@@ -528,8 +528,8 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
       }
       // -------------------------------------------------
 
-      // 6. Limpiar carrito inmediatamente (la redirección la hace el usuario desde el modal)
-      clearCart();
+      // 6. NO limpiar carrito todavía. Se limpia cuando el usuario cierra el modal o va a WhatsApp
+      // Si limpiamos aquí, el efecto del padre (CheckoutPage) redirige a /productos inmediatamente
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
