@@ -182,8 +182,10 @@ async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean
 }
 
 // PATCH - Update existing product
-export async function PATCH(request: NextRequest) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: productId } = await params;
+
     // Verify admin authentication
     const auth = await verifyAdminAuth(request);
     if (!auth.success) {
@@ -192,9 +194,6 @@ export async function PATCH(request: NextRequest) {
         { status: 401, headers: corsHeaders }
       );
     }
-
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('id');
 
     if (!productId) {
       return NextResponse.json(
@@ -313,8 +312,10 @@ export async function PATCH(request: NextRequest) {
 }
 
 // DELETE - Delete a product
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id: productId } = await params;
+
     // Verify admin authentication
     const auth = await verifyAdminAuth(request);
     if (!auth.success) {
@@ -323,9 +324,6 @@ export async function DELETE(request: NextRequest) {
         { status: 401, headers: corsHeaders }
       );
     }
-
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('id');
 
     if (!productId) {
       return NextResponse.json(
