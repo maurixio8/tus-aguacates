@@ -370,11 +370,8 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         }
       }
 
-      // 7. Limpiar carrito y redirigir (con un pequeño retraso para que vea la confirmación)
-      setTimeout(() => {
-        clearCart();
-        onSuccess(orderId);
-      }, 1000);
+      // 7. Limpiar carrito inmediatamente (la redirección la hace el usuario desde el modal)
+      clearCart();
 
     } catch (err: any) {
       console.error('Error al finalizar pedido:', err);
@@ -531,11 +528,8 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
       }
       // -------------------------------------------------
 
-      // 6. Limpiar carrito y redirigir (con un pequeño retraso para que vea la confirmación)
-      setTimeout(() => {
-        clearCart();
-        onSuccess(guestOrder.id);
-      }, 1000);
+      // 6. Limpiar carrito inmediatamente (la redirección la hace el usuario desde el modal)
+      clearCart();
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
