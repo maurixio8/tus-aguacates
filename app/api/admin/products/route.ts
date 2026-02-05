@@ -390,8 +390,30 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📝 API: Creating product:', body);
 
-    // Validate required fields
-    const requiredFields = ['name', 'price', 'stock', 'category_id'];
+    const supabase = getSupabaseClient();
+
+    // Handle missing category_id with a default fallback
+    let categoryId = body.category_id;
+    if (!categoryId) {
+      console.log('⚠️ API: category_id missing, searching for a default category');
+      const { data: categories, error: catError } = await supabase
+        .from('categories')
+        .select('id')
+        .limit(1);
+
+      if (!catError && categories && categories.length > 0) {
+        categoryId = categories[0].id;
+        console.log('✅ API: Using default category_id:', categoryId);
+      } else {
+        return NextResponse.json(
+          { error: 'No se pudo encontrar una categoría por defecto y no se proporcionó una.' },
+          { status: 400, headers: corsHeaders }
+        );
+      }
+    }
+
+    // Validate required fields (excluding category_id since we handled it)
+    const requiredFields = ['name', 'price', 'stock'];
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -400,7 +422,6 @@ export async function POST(request: NextRequest) {
         );
       }
     }
-
     // Validate data types
     if (typeof body.price !== 'number' || body.price < 0) {
       return NextResponse.json(
@@ -419,15 +440,13 @@ export async function POST(request: NextRequest) {
     // Generate slug from name
     const slug = body.name
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim('-');
+      .replace(/-+/g, '-');
 
     // Generate SKU if not provided
     const sku = body.sku || `PRD-${Date.now().toString(36).toUpperCase()}`;
-
-    const supabase = getSupabaseClient();
 
     // Create the product
     const { data, error } = await supabase
@@ -435,10 +454,11 @@ export async function POST(request: NextRequest) {
       .insert({
         name: body.name,
         description: body.description || '',
-        category_id: body.category_id,
+        category_id: categoryId,
         price: body.price,
         discount_price: body.discount_price || null,
         unit: body.unit || 'unit',
+        available_for: body.available_for || 'both', // Enviar campo de disponibilidad
         weight: body.weight || null,
         min_quantity: body.min_quantity || 1,
         main_image_url: body.main_image_url || null,
@@ -453,7 +473,6 @@ export async function POST(request: NextRequest) {
         review_count: 0,
         slug,
         sku,
-        created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
       .select()
@@ -464,7 +483,18 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('❌ API: Error creating product:', error);
 
-      // Handle specific database errors
+      // Manejar errores específicos de la base de datos
+      if (error.code === '42501') {
+        return NextResponse.json(
+          {
+            error: 'Permiso denegado (RLS Violation)',
+            details: 'La base de datos denegó la operación. Esto suele ocurrir cuando la SUPABASE_SERVICE_ROLE_KEY es incorrecta.',
+            code: error.code
+          },
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Ya existe un producto con ese SKU o slug' },

@@ -1153,38 +1153,43 @@ export default function OrdersPage() {
                     className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all"
                   >
                     <div className="p-4 lg:p-6">
-                      {/* Header del pedido */}
-                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-                        <div className="flex items-start gap-4">
-                          <div className={`p-2 rounded-lg ${statusInfo.bgColor} border`}>
+                      {/* Header del pedido - Optimizado para móvil */}
+                      <div className="flex items-start justify-between gap-4 mb-4">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className={`p-2 rounded-lg ${statusInfo.bgColor} border flex-shrink-0`}>
                             <StatusIcon className={`w-5 h-5 ${statusInfo.color}`} />
                           </div>
-                          <div>
-                            <h3 className="text-lg font-bold text-gray-900">
-                              Pedido #{order.order_number || order.id.substring(0, 8)}
+                          <div className="min-w-0">
+                            <h3 className="text-sm lg:text-lg font-bold text-gray-900 truncate">
+                              {customerInfo.name}
                             </h3>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
-                              {statusInfo.label}
-                            </span>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
+                                #{order.order_number || order.id.substring(0, 8)}
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
+                                {statusInfo.label}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-green-600">
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-lg lg:text-2xl font-bold text-green-600 leading-tight">
                             {formatCurrency(order.total || order.total_amount || 0)}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {formatDate(order.created_at)} - {formatTime(order.created_at)}
+                          <p className="text-[10px] lg:text-sm text-gray-500 mt-1">
+                            {formatDate(order.created_at)}
                           </p>
                         </div>
                       </div>
 
-                      {/* Info del cliente */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="flex items-start gap-2">
+                      {/* Info del cliente - Vista compacta */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4 bg-gray-50/50 p-3 rounded-lg border border-gray-100">
+                        <div className="flex items-start gap-2 col-span-2 md:col-span-1">
                           <User className="w-4 h-4 text-gray-400 mt-0.5" />
-                          <div>
-                            <p className="text-sm text-gray-500">Cliente</p>
-                            <p className="font-medium text-gray-900">{customerInfo.name}</p>
+                          <div className="min-w-0">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Cliente</p>
+                            <p className="font-medium text-gray-900 truncate">{customerInfo.name}</p>
                           </div>
                         </div>
                         {customerInfo.phone && (

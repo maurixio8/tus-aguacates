@@ -45,6 +45,7 @@ interface ProductVariant {
 
 interface Product {
   id: string;
+  numeric_id?: number; // Nuevo ID secuencial
   name: string;
   description: string;
   price: number;
@@ -330,9 +331,9 @@ export default function ProductsPage() {
     const payload = {
       name: editingProduct.name,
       description: editingProduct.description,
-      price: editingProduct.price,
-      discount_price: editingProduct.discount_price || null,
-      stock: editingProduct.stock,
+      price: Number(editingProduct.price),
+      discount_price: editingProduct.discount_price ? Number(editingProduct.discount_price) : null,
+      stock: Number(editingProduct.stock),
       is_active: editingProduct.is_active,
       is_featured: editingProduct.is_featured,
       main_image_url: editingProduct.main_image_url,
@@ -600,6 +601,9 @@ export default function ProductsPage() {
 
   // Crear nuevo producto
   const handleCreateProduct = () => {
+    // Buscar una categoría por defecto (la primera disponible)
+    const defaultCategoryId = categories.length > 0 ? categories[0].id : '';
+
     setEditingProduct({
       id: '',
       name: '',
@@ -610,8 +614,8 @@ export default function ProductsPage() {
       is_active: true,
       is_featured: false,
       main_image_url: '',
-      category_id: selectedCategory || '',
-      unit: 'kg',
+      category_id: selectedCategory || defaultCategoryId, // Asignar categoría por defecto
+      unit: 'unidad',
       variants: [],
       hasVariants: false
     });
@@ -952,6 +956,9 @@ export default function ProductsPage() {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
+                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden sm:table-cell">
+                      ID
+                    </th>
                     <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
                       Producto
                     </th>
@@ -964,7 +971,7 @@ export default function ProductsPage() {
                     <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden lg:table-cell">
                       Stock
                     </th>
-                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase">
+                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden sm:table-cell">
                       Estado
                     </th>
                     <th className="px-4 lg:px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
@@ -981,6 +988,11 @@ export default function ProductsPage() {
                     return (
                       <>
                         <tr key={product.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 lg:px-6 py-4 hidden sm:table-cell">
+                            <span className="text-xs font-mono text-gray-500">
+                              #{product.numeric_id || product.id.substring(0, 4)}
+                            </span>
+                          </td>
                           <td className="px-4 lg:px-6 py-4">
                             <div className="flex items-center gap-3">
                               {/* Expand button for products with variants */}
@@ -998,15 +1010,15 @@ export default function ProductsPage() {
                                 </button>
                               )}
 
-                              <div className="relative group">
+                              <div className="relative group flex-shrink-0">
                                 {product.main_image_url ? (
                                   <img
                                     src={product.main_image_url}
                                     alt={product.name}
-                                    className="w-12 h-12 rounded-lg object-cover"
+                                    className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg object-cover"
                                   />
                                 ) : (
-                                  <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
+                                  <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-lg bg-gray-100 flex items-center justify-center">
                                     <ImageIcon className="w-6 h-6 text-gray-400" />
                                   </div>
                                 )}
@@ -1025,7 +1037,10 @@ export default function ProductsPage() {
                                 </button>
                               </div>
                               <div className="min-w-0">
-                                <p className="font-semibold text-gray-900 truncate">{product.name}</p>
+                                <p className="font-semibold text-gray-900 truncate text-sm lg:text-base">{product.name}</p>
+                                <p className="text-xs text-gray-500 lg:hidden truncate">
+                                  {categories.find(c => c.id === product.category_id)?.name}
+                                </p>
                                 {hasVariants && (
                                   <p className="text-xs text-blue-600 flex items-center gap-1">
                                     <Layers className="w-3 h-3" />
@@ -1075,7 +1090,7 @@ export default function ProductsPage() {
                               {product.stock}
                             </span>
                           </td>
-                          <td className="px-4 lg:px-6 py-4">
+                          <td className="px-4 lg:px-6 py-4 hidden sm:table-cell">
                             <button
                               onClick={() => handleToggleActive(product.id, product.is_active)}
                               className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${product.is_active

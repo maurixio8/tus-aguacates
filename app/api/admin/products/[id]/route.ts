@@ -229,6 +229,11 @@ export async function PATCH(request: NextRequest) {
     if (body.is_featured !== undefined) updateData.is_featured = body.is_featured;
     if (body.main_image_url !== undefined) updateData.main_image_url = body.main_image_url;
     if (body.category_id !== undefined) updateData.category_id = body.category_id;
+    if (body.available_for !== undefined) updateData.available_for = body.available_for;
+    if (body.unit !== undefined) updateData.unit = body.unit;
+    if (body.weight !== undefined) updateData.weight = body.weight;
+    if (body.min_quantity !== undefined) updateData.min_quantity = body.min_quantity;
+    if (body.is_organic !== undefined) updateData.is_organic = body.is_organic;
 
     console.log('💾 API: Update payload:', updateData);
 
@@ -245,7 +250,18 @@ export async function PATCH(request: NextRequest) {
     if (error) {
       console.error('❌ API: Error updating product:', error);
 
-      // Handle specific database errors
+      // Manejar errores específicos de la base de datos
+      if (error.code === '42501') {
+        return NextResponse.json(
+          {
+            error: 'Permiso denegado (RLS Violation)',
+            details: 'La base de datos denegó la operación. Esto suele ocurrir cuando la SUPABASE_SERVICE_ROLE_KEY es incorrecta.',
+            code: error.code
+          },
+          { status: 403, headers: corsHeaders }
+        );
+      }
+
       if (error.code === '23505') {
         return NextResponse.json(
           { error: 'Ya existe otro producto con ese SKU o slug' },

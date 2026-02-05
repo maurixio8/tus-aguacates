@@ -92,46 +92,37 @@ export async function POST(request: NextRequest) {
       }, { headers: corsHeaders });
 
       // ✅ CONFIGURAR COOKIE CON FLAGS CORRECTOS
-      const isProduction = process.env.NODE_ENV === 'production';
       const requestUrl = new URL(request.url);
-      const hostname = requestUrl.hostname;
+      const isProduction = process.env.NODE_ENV === 'production';
 
-      // Determinar dominio dinámicamente para producción
+      // Determinar dominio dinámicamente
       let domain: string | undefined = undefined;
       if (isProduction) {
         // Para Vercel, usar el dominio completo
-        if (hostname.includes('vercel.app')) {
-          domain = hostname;
-        }
+        // Usamos requestUrl.hostname para asegurar que coincide con el dominio de la petición
+        domain = requestUrl.hostname;
       }
 
       console.log('🍪 [Login API] Cookie config:', {
         isProduction,
-        hostname,
+        hostname: requestUrl.hostname,
+        pathname: requestUrl.pathname,
         domain: domain || 'undefined (localhost)',
+        origin: requestUrl.origin,
         secure: isProduction,
         httpOnly: true,
         sameSite: 'strict',
         path: '/'
       });
 
+      // Establecer la cookie con la configuración correcta
       response.cookies.set('admin-token', token, {
-        httpOnly: true, // No accesible desde JavaScript (seguridad XSS)
-        secure: isProduction, // HTTPS only en producción
-        sameSite: 'strict', // Previene CSRF - más estricto que 'lax'
-        maxAge: 86400, // 24 horas en segundos
-        path: '/', // ✅ Cookie disponible en toda la app
-        domain: domain // ✅ Especificar dominio en producción
-      });
-
-      console.log('🍪 [Login API] Cookie establecida:', {
-        secure: isProduction,
         httpOnly: true,
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: 'strict',
+        maxAge: 86400,
         path: '/',
-        domain: domain || 'localhost (sin domain)',
-        maxAge: '24 horas',
-        tokenLength: token.length
+        domain: domain
       });
 
       console.log('✅ [Login API] Login exitoso - Usuario:', {
