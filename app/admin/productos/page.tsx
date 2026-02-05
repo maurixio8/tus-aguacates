@@ -21,7 +21,8 @@ import {
   Upload,
   Loader2,
   Trash2,
-  Plus
+  Plus,
+  Star
 } from 'lucide-react';
 import { useRef } from 'react';
 
@@ -315,12 +316,44 @@ export default function ProductsPage() {
         body: JSON.stringify({ is_active: !currentStatus }),
       });
 
-      if (response.ok) {
-        loadProducts();
+      const data = await response.json();
+
+      if (data.success) {
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, is_active: !currentStatus } : p
+        ));
+        showToast(!currentStatus ? 'Producto activado' : 'Producto desactivado', 'success');
+      } else {
+        showToast(data.error || 'Error al actualizar', 'error');
       }
     } catch (error) {
-      console.error('Error actualizando producto:', error);
-      alert('Error al actualizar el producto');
+      console.error('Error actualizando estado:', error);
+      showToast('Error de conexión', 'error');
+    }
+  };
+
+  const handleToggleFeatured = async (productId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/products/${productId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ is_featured: !currentStatus }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setProducts(prev => prev.map(p =>
+          p.id === productId ? { ...p, is_featured: !currentStatus } : p
+        ));
+        showToast(!currentStatus ? 'Marcado como destacado' : 'Removido de destacados', 'success');
+      } else {
+        showToast(data.error || 'Error al actualizar destacado', 'error');
+      }
+    } catch (error) {
+      console.error('Error actualizando destacado:', error);
+      showToast('Error de conexión', 'error');
     }
   };
 
@@ -1024,6 +1057,9 @@ export default function ProductsPage() {
                     <th className="px-4 lg:px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase hidden sm:table-cell">
                       Estado
                     </th>
+                    <th className="px-4 lg:px-6 py-3 text-center text-xs font-semibold text-gray-700 uppercase">
+                      Destacado
+                    </th>
                     <th className="px-4 lg:px-6 py-3 text-right text-xs font-semibold text-gray-700 uppercase">
                       Acciones
                     </th>
@@ -1159,6 +1195,18 @@ export default function ProductsPage() {
                                   Inactivo
                                 </>
                               )}
+                            </button>
+                          </td>
+                          <td className="px-4 lg:px-6 py-4 text-center">
+                            <button
+                              onClick={() => handleToggleFeatured(product.id, product.is_featured)}
+                              className={`p-2 rounded-full transition-all duration-200 ${product.is_featured
+                                ? 'bg-yellow-100 text-yellow-500 hover:bg-yellow-200 shadow-sm'
+                                : 'bg-gray-50 text-gray-300 hover:text-gray-400 hover:bg-gray-100'
+                                }`}
+                              title={product.is_featured ? "Quitar de destacados" : "Marcar como destacado"}
+                            >
+                              <Star className={`w-5 h-5 ${product.is_featured ? 'fill-current' : ''}`} />
                             </button>
                           </td>
                           <td className="px-4 lg:px-6 py-4 text-right">

@@ -6,8 +6,11 @@ import Image from 'next/image';
 import { useCartStore } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
+import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
 import dynamic from 'next/dynamic';
+import OrderSuccessModal from './OrderSuccessModal';
+import DuplicateOrderModal from './DuplicateOrderModal';
 
 // Cargar BoldPayButton dinámicamente para evitar errores de SSR
 const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
@@ -46,6 +49,12 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Estados para Modales
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{ id: string, time: string } | null>(null);
+  const [whatsappUrlForSuccess, setWhatsappUrlForSuccess] = useState('');
 
   // Función mejorada para extraer mensaje de error de Supabase
   const extractErrorMessage = (error: any): string => {
@@ -121,7 +130,14 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           minute: '2-digit'
         });
 
-        throw new Error(`⚠️ Límite de pedidos alcanzado\n\nEste número de teléfono ya tiene un pedido hoy:\n\n📋 Pedido: #${order.id.toString().slice(-8)}\n🕐 Hora: ${orderTime}\n📊 Estado: ${order.status}\n\n💡 ¿Qué puedes hacer?\n• Esperar hasta mañana para hacer otro pedido\n• Registrarte con tu email para tener más beneficios\n• Contactarnos por WhatsApp si necesitas modificar tu pedido actual\n\n🔒 Por seguridad: Solo 1 pedido por día por teléfono`);
+        // Activar Modal de Duplicado en lugar de lanzar error
+        setDuplicateOrderInfo({
+          id: order.id,
+          time: orderTime
+        });
+        setShowDuplicateModal(true);
+        setLoading(false);
+        return; // DETENER EJECUCIÓN AQUÍ
       }
 
       // 1. Crear pedido de invitado (sin procesar pago aún)
@@ -266,25 +282,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 
       mensajeWhatsApp += `\n\n¡Quedo atento(a) a la confirmación! 🙏`;
 
-      // 3. MOSTRAR CONFIRMACIÓN MEJORADA (SIN datos de transferencia - esos van en WhatsApp)
-      const paymentLabel = formData.paymentMethod === 'efectivo'
-        ? 'Efectivo contra entrega'
-        : formData.paymentMethod === 'nequi'
-          ? 'Nequi'
-          : formData.paymentMethod === 'daviplata'
-            ? 'Daviplata'
-            : 'Tarjeta/PSE';
-
-      // Mensaje diferenciado: con transferencia vs ya pagado (Bold)
-      const confirmMessage = formData.paymentMethod === 'bold'
-        ? `✨ ¡Pago Recibido, ${firstName}!\n\n✅ Tu pedido #${orderId.toString().slice(-8)} está siendo preparado.\n\n📦 RESUMEN\n• Total: $${totals.total.toLocaleString('es-CO')} ✅ Pagado\n• Entrega: ${formData.address}\n• Teléfono: ${formData.phone}\n\n📲 Al dar "Aceptar" te llevaremos a WhatsApp para coordinar tu entrega.\n\n🎁 ¿Ya tienes cuenta?\nLos miembros obtienen descuentos exclusivos.\nRegístrate en tus-aguacates.vercel.app/registro`
-        : `✨ ¡Pedido Confirmado, ${firstName}!\n\n📦 RESUMEN\n• Total: $${totals.total.toLocaleString('es-CO')}\n• Entrega: ${formData.address}\n• Teléfono: ${formData.phone}\n• Método: ${paymentLabel}\n\n📲 Al dar "Aceptar" te llevaremos a WhatsApp.\nAhí te enviaremos los datos para completar tu pago.\n\n🎁 ¿Ya tienes cuenta?\nLos miembros obtienen descuentos exclusivos.\nRegístrate en tus-aguacates.vercel.app/registro`;
-
-      alert(confirmMessage);
-
-      // 4. Redirigir a WhatsApp (usamos location.href en lugar de window.open para evitar bloqueo de popups en móviles)
+      // 3. MOSTRAR MODAL DE ÉXITO (Reemplaza alert)
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
-      window.location.href = whatsappUrl;
+      setWhatsappUrlForSuccess(whatsappUrl);
+      setShowSuccessModal(true);
+
+      // No redirigimos automáticamente a WhatsApp, dejamos que el usuario lo haga desde el modal
+      // window.location.href = whatsappUrl;
 
       // 5. Actualizar estado del pedido con método de pago
       const paymentStatus = formData.paymentMethod === 'efectivo' ? 'pendiente_pago' : 'pagado';
@@ -299,6 +303,34 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
           whatsapp_sent: true
         })
         .eq('id', orderId);
+
+      // --- INTEGRACIÓN N8N (Invitado): Enviar pedido ---
+      try {
+        fetch('/api/webhooks/n8n-order-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderId,
+            orderData: orderData,
+            customer: {
+              name: formData.name,
+              phone: formData.phone,
+              address: formData.address,
+              email: formData.email,
+              isGuest: true
+            },
+            payment: {
+              method: formData.paymentMethod,
+              total: totals.total,
+              status: paymentStatus
+            },
+            formattedMessage: mensajeWhatsApp
+          })
+        }).catch(err => console.error('Error silencioso enviando a n8n:', err));
+      } catch (e) {
+        console.warn('No se pudo iniciar sync con n8n');
+      }
+      // -------------------------------------------------
 
       // 6. Opcional: crear cuenta si el usuario lo solicitó
       if (formData.createAccount && formData.password) {
@@ -452,12 +484,13 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
 
 ¡Quedo atenta a la confirmación! 🙏`;
 
-      // 3. MOSTRAR CONFIRMACIÓN INMEDIATA ANTES DE WHATSAPP
-      alert(`✅ ¡Pedido confirmado con éxito!\n\n📋 Número de pedido: #${guestOrder.id.toString().slice(-8)}\n👥 Cliente: ${formData.name}\n💰 Total: $${totals.total.toLocaleString('es-CO')}\n\n✅ Tu pedido ha sido guardado y aparecerá en nuestro sistema.\n📱 Ahora te abriremos WhatsApp para finalizar la confirmación.\n\n¡Gracias por tu compra! 🥑`);
-
-      // 4. Abrir WhatsApp con mensaje pre-completado
+      // 3. MOSTRAR MODAL DE ÉXITO (Reemplaza alert)
       const whatsappUrl = `https://wa.me/573042582777?text=${encodeURIComponent(mensajeWhatsApp)}`;
-      window.open(whatsappUrl, '_blank');
+      setWhatsappUrlForSuccess(whatsappUrl);
+      setShowSuccessModal(true);
+
+      // No abrimos WhatsApp automáticamente, el usuario debe dar click
+      // window.open(whatsappUrl, '_blank');
 
       // 5. Actualizar estado del pedido
       await supabase
@@ -470,6 +503,34 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
           whatsapp_sent: true
         })
         .eq('id', guestOrder.id);
+
+      // --- INTEGRACIÓN N8N (Efectivo): Enviar pedido ---
+      try {
+        fetch('/api/webhooks/n8n-order-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: guestOrder.id,
+            orderData: orderData,
+            customer: {
+              name: formData.name,
+              phone: formData.phone,
+              address: formData.address,
+              email: formData.email,
+              isGuest: true
+            },
+            payment: {
+              method: 'efectivo',
+              total: totals.total,
+              status: 'pendiente_pago'
+            },
+            formattedMessage: mensajeWhatsApp
+          })
+        }).catch(err => console.error('Error silencioso enviando a n8n:', err));
+      } catch (e) {
+        console.warn('No se pudo iniciar sync con n8n');
+      }
+      // -------------------------------------------------
 
       // 6. Limpiar carrito y redirigir (con un pequeño retraso para que vea la confirmación)
       setTimeout(() => {

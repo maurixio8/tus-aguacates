@@ -198,6 +198,34 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
         })
         .eq('id', createdOrderId);
 
+      // --- INTEGRACIÓN N8N: Enviar pedido para limpieza y notificación ---
+      try {
+        fetch('/api/webhooks/n8n-order-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: createdOrderId,
+            orderData: orderData,
+            customer: {
+              name: selectedAddress.full_name,
+              phone: selectedAddress.phone,
+              address: selectedAddress.street_address,
+              city: selectedAddress.city,
+              email: user.email
+            },
+            payment: {
+              method: paymentMethod,
+              total: totals.total,
+              status: paymentMethod === 'daviplata' ? 'pagado' : 'pendiente'
+            },
+            formattedMessage: mensajeWhatsApp
+          })
+        }).catch(err => console.error('Error silencioso enviando a n8n:', err));
+      } catch (e) {
+        console.warn('No se pudo iniciar sync con n8n');
+      }
+      // ------------------------------------------------------------------
+
       // 5. Limpiar carrito y redirigir
       clearCart();
       onSuccess(createdOrderId);
@@ -290,8 +318,8 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                 {/* Daviplata Option */}
                 <div
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'daviplata'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                   onClick={() => setPaymentMethod('daviplata')}
                 >
@@ -329,8 +357,8 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                 {/* Efectivo Option */}
                 <div
                   className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${paymentMethod === 'efectivo'
-                      ? 'border-primary bg-primary/5'
-                      : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-gray-300'
                     }`}
                   onClick={() => setPaymentMethod('efectivo')}
                 >

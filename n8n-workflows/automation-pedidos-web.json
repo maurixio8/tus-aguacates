@@ -1,0 +1,97 @@
+{
+    "name": "Automatización Pedidos Web y Limpieza de Datos",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "webhook-pedidos-web",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook Pedido Web",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                220,
+                300
+            ],
+            "webhookId": "webhook-pedidos-web"
+        },
+        {
+            "parameters": {
+                "model": "gpt-4o-mini",
+                "prompt": "Actúa como un experto en limpieza de datos para un e-commerce colombiano.\n\nRecibirás un objeto JSON con los datos de un pedido.\nTu tarea es generar un JSON limpio con la siguiente estructura:\n\n{\n  \"cliente_nombre_corregido\": \"Nombre en mayúscula inicial\",\n  \"direccion_formateada\": \"Dirección estandarizada\",\n  \"resumen_pedido_limpio\": \"Texto del pedido sin caracteres raros y con emojis correctos\",\n  \"alerta_posible_fraude\": false,\n  \"mensaje_equipo\": \"Mensaje corto para el equipo de despacho\"\n}\n\nREGLAS DE LIMPIEZA:\n1. Emojis: Asegúrate que los emojis de aguacates (🥑), frutas y vegetales se vean correctamente. Si llegan como  o códigos raros, arréglalos.\n2. Dirección: Corrige errores evidentes de escritura (ej: 'carrera' en vez de 'crra').\n3. Nombres: Capitaliza correctamente.\n",
+                "jsonOutput": true
+            },
+            "id": "ai-cleaning",
+            "name": "IA Limpieza Datos",
+            "type": "@n8n/n8n-nodes-langchain.chainLlm",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "message": "📦 *NUEVO PEDIDO WEB DETECTADO*\n\n👤 *Cliente:* {{ $json.cliente_nombre_corregido }}\n📍 *Dirección:* {{ $json.direccion_formateada }}\n\n🛒 *Pedido:*\n{{ $json.resumen_pedido_limpio }}\n\n📝 *Nota Equipo:* {{ $json.mensaje_equipo }}\n\n⚠️ *Alerta:* {{ $json.alerta_posible_fraude ? 'POSIBLE FRAUDE' : 'OK' }}"
+            },
+            "id": "format-notification",
+            "name": "Formatear Notificación",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 1,
+            "position": [
+                780,
+                300
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "notification-placeholder",
+            "name": "🔔 Enviar Notificación (Configurar)",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [
+                1000,
+                300
+            ],
+            "notesInFlow": true,
+            "notes": "Aquí debes conectar tu nodo de preferencia:\n- Slack\n- Telegram\n- WhatsApp\n- Email"
+        }
+    ],
+    "connections": {
+        "Webhook Pedido Web": {
+            "main": [
+                [
+                    {
+                        "node": "IA Limpieza Datos",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "IA Limpieza Datos": {
+            "main": [
+                [
+                    {
+                        "node": "Formatear Notificación",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Formatear Notificación": {
+            "main": [
+                [
+                    {
+                        "node": "🔔 Enviar Notificación (Configurar)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -1,4 +1,5 @@
 import { getProducts } from '@/lib/productStorage';
+import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Check, Shield, Truck } from 'lucide-react';
@@ -12,7 +13,31 @@ interface ProductPageProps {
   }>;
 }
 
+// Helper: detectar si es un UUID de Supabase
+const isUUID = (id: string): boolean => {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+};
+
 async function getProductById(id: string) {
+  // Si es un UUID, consultar directamente Supabase (más rápido y preciso)
+  if (isUUID(id)) {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      console.error('Product not found in Supabase:', id, error);
+      return null;
+    }
+
+    return data;
+  }
+
+  // Fallback: buscar en la lista completa (para IDs tipo 'product-1')
   const allProducts = await getProducts();
   return allProducts.find(p => p.id === id);
 }

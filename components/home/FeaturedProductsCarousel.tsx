@@ -69,11 +69,12 @@ export function FeaturedProductsCarousel({
           return;
         }
 
-        // Obtener productos ordenados por popularidad (rating y review_count)
+        // Obtener productos marcados como destacados
         const { data, error } = await supabase
           .from('products')
           .select('*')
           .eq('is_active', true)
+          .eq('is_featured', true)
           .order('rating', { ascending: false })
           .order('review_count', { ascending: false })
           .limit(maxProducts);
@@ -248,11 +249,10 @@ export function FeaturedProductsCarousel({
             <button
               key={index}
               onClick={() => goToSlide(index)}
-              className={`h-2 rounded-full transition-all duration-200 ${
-                index === currentIndex
+              className={`h-2 rounded-full transition-all duration-200 ${index === currentIndex
                   ? 'bg-verde-aguacate w-8'
                   : 'bg-gray-300 hover:bg-gray-400 w-2'
-              }`}
+                }`}
               aria-label={`Ir al grupo ${index + 1}`}
             />
           ))}
