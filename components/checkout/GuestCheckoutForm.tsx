@@ -988,6 +988,7 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
         <OrderSuccessModal
           isOpen={showSuccessModal}
           onClose={() => {
+            clearCart();
             setShowSuccessModal(false);
             window.location.href = '/tienda';
           }}
