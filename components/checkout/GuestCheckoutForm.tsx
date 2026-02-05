@@ -989,6 +989,20 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
             </div>
           </div>
         </div>
+
+        {/* Modal de Éxito - Visible incluso en processing */}
+        <OrderSuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => {
+            setShowSuccessModal(false);
+            window.location.href = '/tienda';
+          }}
+          orderId={orderId}
+          customerName={formData.name}
+          total={totals.total}
+          paymentMethod={formData.paymentMethod}
+          whatsappUrl={whatsappUrlForSuccess}
+        />
       </div>
     );
   }
