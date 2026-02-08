@@ -536,11 +536,14 @@ export default function ListaComprasPage() {
   // Normalizar nombre del producto para consolidar entradas duplicadas
   // Elimina variantes o números repetidos al final del nombre y normaliza acentos
   const normalizeProductName = (name: string, variant?: string | null): string => {
-    if (!name) return 'Producto sin nombre';
+    if (!name) return 'producto sin nombre';
     let normalized = name.trim();
 
     // Eliminar acentos/diacríticos
     normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // Convertir a minúsculas para agrupación insensible a mayúsculas
+    normalized = normalized.toLowerCase();
 
     // SIEMPRE remover CUALQUIER contenido final entre paréntesis
     // Esto agrupa productos como "Caja de 12 unidades Premium (12 unidades)" con "Caja de 12 unidades Premium"
@@ -552,13 +555,27 @@ export default function ListaComprasPage() {
     return normalized;
   };
 
+  // Normalizar variante para agrupación consistente
+  const normalizeVariant = (variant: string | null): string => {
+    if (!variant) return '';
+    let normalized = variant.trim();
+    // Eliminar acentos/diacríticos
+    normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // Convertir a minúsculas
+    normalized = normalized.toLowerCase();
+    // Normalizar espacios
+    normalized = normalized.replace(/\s+/g, ' ');
+    return normalized;
+  };
+
   // Crear clave de agrupación inteligente
-  // SIEMPRE agrupa por nombre normalizado solamente - ignora variantes para evitar duplicados
-  // Esto consolida: "Fresas premium" + "Fresas premium (500 gr)" = mismo producto
+  // Agrupa por nombre normalizado + variante normalizada
+  // Esto consolida: "Fresas premium (500gr)" + "fresas premium (500 gr)" = mismo grupo
   const createGroupingKey = (productName: string, variant: string | null): string => {
-    // Usar SOLO el nombre normalizado como clave de agrupación
-    // Esto garantiza que todas las variantes del mismo producto se agrupen
-    return normalizeProductName(productName, variant);
+    const normalizedName = normalizeProductName(productName, variant);
+    const normalizedVariant = normalizeVariant(variant);
+    // Incluir variante en la clave solo si existe
+    return normalizedVariant ? `${normalizedName}|${normalizedVariant}` : normalizedName;
   };
 
   // Detectar si el nombre del producto ya contiene información de cantidad/tamaño
