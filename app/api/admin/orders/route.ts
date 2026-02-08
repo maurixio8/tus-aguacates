@@ -925,17 +925,31 @@ export async function PATCH(request: NextRequest) {
 
         const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
 
+        let newTotal = 0;
+        let shippingCost = 0;
+
+        // Check if total is provided in the body (it should be from EditOrderModal)
+        // 'total' is destructured from body at the top of the function
+        if (total && total > 0) {
+          newTotal = total;
+          // Calculate implied shipping
+          // Total = Subtotal + Shipping - Discount
+          // Shipping = Total - Subtotal + Discount
+          const discount = orderData.discount || 0;
+          shippingCost = newTotal - subtotal + discount;
+        } else {
+          // Fallback to existing logic if no total provided
+          shippingCost = orderData.shipping_cost || orderData.shippingFee || 0;
+          const discount = orderData.discount || 0;
+          newTotal = subtotal + shippingCost - discount;
+        }
+
         // Actualizar datos dentro del objeto JSON
         orderData.items = guestItems;
         orderData.subtotal = subtotal;
-
-        // Recalcular total preservando costo de envío si existe
-        const shippingCost = orderData.shipping_cost || orderData.shippingFee || 0;
-        const discount = orderData.discount || 0;
-        const newTotal = subtotal + shippingCost - discount;
-
-        orderData.total_amount = newTotal;
+        orderData.shipping_cost = shippingCost;
         orderData.total = newTotal;
+        orderData.total_amount = newTotal;
 
         const { error: guestUpdateError } = await supabase
           .from('guest_orders')
