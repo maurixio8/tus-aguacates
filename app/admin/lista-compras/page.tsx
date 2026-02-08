@@ -569,12 +569,17 @@ export default function ListaComprasPage() {
   };
 
   // Crear clave de agrupación inteligente
-  // Agrupa SOLO por nombre normalizado - ignora variantes para agrupar todos los formatos
-  // Esto consolida: "Arándanos Orgánicos (X250grs)" + "arandanos organicos" = mismo grupo
+  // Agrupa por nombre normalizado Y variante normalizada para precisión
+  // Esto permite: "Arándanos Orgánicos (X250grs)" y "Arándanos Orgánicos (X125grs)" = diferentes grupos
   const createGroupingKey = (productName: string, variant: string | null): string => {
-    // Usar SOLO el nombre normalizado como clave
-    // La variante se mostrará en el desglose, pero no afecta la agrupación
-    return normalizeProductName(productName, variant);
+    const normalizedName = normalizeProductName(productName, variant);
+    const normalizedVariant = normalizeVariant(variant);
+
+    if (!normalizedVariant) {
+      return normalizedName;
+    }
+
+    return `${normalizedName}|${normalizedVariant}`;
   };
 
   // Detectar si el nombre del producto ya contiene información de cantidad/tamaño
@@ -584,12 +589,12 @@ export default function ListaComprasPage() {
     const name = productName.toLowerCase();
     // Patrones que indican que el nombre ya tiene info de cantidad
     const patterns = [
-      /\d+\s*unidad/,      // "12 unidades", "4 unidad"
-      /x\s*\d+/,           // "x4", "x 12"
-      /\d+\s*(gr|grs|kg|kilos|gramos)/,  // "500gr", "1 kg"
-      /paquete\s*x?\s*\d+/, // "paquete 4", "paquete x4"
-      /caja\s*de\s*\d+/,   // "caja de 12"
-      /\d+\s*kilo/,        // "1 kilo"
+      /\d+\s*unidad/i,      // "12 unidades", "4 unidad"
+      /x\s*\d+/i,           // "x4", "x 12"
+      /\d+\s*(gr|grs|kg|kilos|gramos)/i,  // "500gr", "1 kg"
+      /paquete\s*x?\s*\d+/i, // "paquete 4", "paquete x4"
+      /caja\s*de\s*\d+/i,   // "caja de 12"
+      /\d+\s*kilo/i,        // "1 kilo"
     ];
     return patterns.some(pattern => pattern.test(name));
   };
@@ -608,7 +613,8 @@ export default function ListaComprasPage() {
     // Buscar peso en gramos o kilos
     const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(gr|grs|kg|kilos?|gramos)/i);
     if (weightMatch) {
-      return `${weightMatch[1]} ${weightMatch[2]}`;
+      const unit = weightMatch[2].toLowerCase();
+      return `${weightMatch[1]} ${unit}`;
     }
 
     return null;
@@ -713,7 +719,9 @@ export default function ListaComprasPage() {
         if (comboComponents) {
           // Es un combo - desglosar en sus componentes
           comboComponents.forEach(component => {
-            const componentKey = `${component.name}|${component.variant || 'Sin variante'}|COMBO`;
+            // Usar createGroupingKey que incluye la variante para agrupación precisa
+            const componentKey = createGroupingKey(component.name, component.variant || null);
+            const normalizedName = normalizeProductName(component.name, component.variant || null);
 
             // Info del cliente para este componente (del combo)
             const customerInfo: CustomerBreakdown = {
@@ -735,9 +743,9 @@ export default function ListaComprasPage() {
             } else {
               productMap.set(componentKey, {
                 grouping_key: componentKey,
-                product_name: component.name,
+                product_name: normalizedName,
                 variant_name: component.variant,
-                display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
+                display_name: component.variant ? `${normalizedName} (${component.variant})` : normalizedName,
                 unit_price: 0, // No tiene precio individual
                 total_quantity: component.quantity * item.quantity,
                 has_missing_variants: false, // Combos siempre tienen variante definida
