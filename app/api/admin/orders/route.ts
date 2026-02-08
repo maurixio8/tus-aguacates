@@ -897,23 +897,51 @@ export async function PATCH(request: NextRequest) {
       console.log('📝 API: Updating order items for order:', orderId, 'isGuest:', isGuestOrder);
 
       if (isGuestOrder) {
-        // Para pedidos guest, actualizar el campo 'items' como JSON en guest_orders
+        // Para pedidos guest, actualizar el campo 'items' dentro del JSON order_data
+        // Primero obtener el order_data actual para no perder otros datos
+        const { data: currentGuestOrder } = await supabase
+          .from('guest_orders')
+          .select('order_data')
+          .eq('id', orderId)
+          .single();
+
+        let orderData = currentGuestOrder?.order_data || {};
+        if (typeof orderData === 'string') {
+          try {
+            orderData = JSON.parse(orderData);
+          } catch (e) {
+            orderData = {};
+          }
+        }
+
         const guestItems = items.map((item: any) => ({
           product_id: item.product_id,
           productName: item.product_name || 'Producto',
           variantName: item.variant_name || null,
           quantity: item.quantity,
-          price: item.unit_price
+          price: item.unit_price,
+          unit_price: item.unit_price
         }));
 
         const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
 
+        // Actualizar datos dentro del objeto JSON
+        orderData.items = guestItems;
+        orderData.subtotal = subtotal;
+
+        // Recalcular total preservando costo de envío si existe
+        const shippingCost = orderData.shipping_cost || orderData.shippingFee || 0;
+        const discount = orderData.discount || 0;
+        const newTotal = subtotal + shippingCost - discount;
+
+        orderData.total_amount = newTotal;
+        orderData.total = newTotal;
+
         const { error: guestUpdateError } = await supabase
           .from('guest_orders')
           .update({
-            items: guestItems,
-            subtotal: subtotal,
-            total_amount: total || subtotal,
+            order_data: orderData,
+            total_amount: newTotal,
             updated_at: new Date().toISOString()
           })
           .eq('id', orderId);
@@ -926,7 +954,7 @@ export async function PATCH(request: NextRequest) {
           );
         }
 
-        console.log('✅ API: Guest order items updated successfully');
+        console.log('✅ API: Guest order items updated successfully inside order_data');
         return NextResponse.json({
           success: true,
           message: 'Items del pedido invitado actualizados exitosamente'
