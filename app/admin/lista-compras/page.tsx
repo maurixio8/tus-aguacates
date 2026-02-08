@@ -261,6 +261,28 @@ export default function ListaComprasPage() {
     ]
   };
 
+  // Sistema de aliases para normalizar nombres de productos
+  // Permite agrupar productos con nombres similares
+  const PRODUCT_NAME_ALIASES: Record<string, string> = {
+    'arandano': 'Arándanos Orgánicos',
+    'arandanos': 'Arándanos Orgánicos',
+    'arándano': 'Arándanos Orgánicos',
+    'arándanos': 'Arándanos Orgánicos',
+    'arandanos organicos': 'Arándanos Orgánicos',
+    'arándanos orgánicos': 'Arándanos Orgánicos',
+    'arandanos organic': 'Arándanos Orgánicos',
+    'arándanos organic': 'Arándanos Orgánicos',
+    'arandanos organico': 'Arándanos Orgánicos',
+    'arándanos orgánico': 'Arándanos Orgánicos',
+    'fresa economica': 'Fresa Económica',
+    'fresas economicas': 'Fresa Económica',
+    'fresa económica': 'Fresa Económica',
+    'fresas económicas': 'Fresa Económica',
+    'fresa premium': 'Fresas Premium',
+    'fresas premium': 'Fresas Premium',
+  };
+
+
 
 
   // Inicializar con últimos 7 días por defecto
@@ -552,6 +574,12 @@ export default function ListaComprasPage() {
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
 
+    // Buscar alias y usar nombre canónico
+    const alias = PRODUCT_NAME_ALIASES[normalized];
+    if (alias) {
+      return alias.toLowerCase();
+    }
+
     return normalized;
   };
 
@@ -559,12 +587,32 @@ export default function ListaComprasPage() {
   const normalizeVariant = (variant: string | null): string => {
     if (!variant) return '';
     let normalized = variant.trim();
+
     // Eliminar acentos/diacríticos
     normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     // Convertir a minúsculas
     normalized = normalized.toLowerCase();
-    // Normalizar espacios
+
+    // Normalizar formatos de peso/tamaño
+    normalized = normalized
+      .replace(/\s*x\s*/g, 'x')           // "X 250" → "x250"
+      .replace(/\s+grs/g, 'grs')          // "250 grs" → "250grs"
+      .replace(/\s+gr\b/g, 'grs')         // "250 gr" → "250grs"
+      .replace(/\s+gramos/g, 'grs')       // "250 gramos" → "250grs"
+      .replace(/grs$/g, 'grs')           // Asegurar terminación
+      .replace(/gr\b/g, 'grs')           // "250gr" → "250grs"
+      .replace(/\s+kg\b/g, 'kg')          // "1 kg" → "1kg"
+      .replace(/\s+kilos/g, 'kg')         // "1 kilos" → "1kg"
+      .replace(/\s+kilo/g, 'kg')          // "1 kilo" → "1kg"
+      .replace(/\s+unidad/g, 'unidades')   // "1 unidad" → "1unidades"
+      .replace(/\s+unidades/g, 'unidades') // "1 unidades" → "1unidades"
+      .replace(/\s+bandeja/g, 'bandejas') // "1 bandeja" → "1bandejas"
+      .replace(/\s+bandejas/g, 'bandejas'); // "1 bandejas" → "1bandejas"
+
+    // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
+
     return normalized;
   };
 

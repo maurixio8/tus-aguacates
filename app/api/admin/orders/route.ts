@@ -330,12 +330,12 @@ export async function GET(request: NextRequest) {
               product_name: item.productName || item.product_name || 'Producto sin nombre',
               variantName: item.variantName || item.variant_name || null,
               variant_name: item.variantName || item.variant_name || null,
-              product_snapshot: {
-                name: item.productName || item.product_name || 'Producto',
-                price: item.price || item.unit_price || 0,
-                variant_name: item.variantName || item.variant_name || null,
-                variant_value: item.variantName || item.variant_name || null
-              }
+                product_snapshot: {
+                  name: item.productName || item.product_name || 'Producto',
+                  price: item.price || item.unit_price || 0,
+                  variant_name: null,
+                  variant_value: item.variantName || item.variant_name || null
+                }
             }));
 
             console.log(`✅ API: Mapped ${orderItems.length} items for guest order`);
