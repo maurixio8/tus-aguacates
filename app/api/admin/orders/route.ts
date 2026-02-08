@@ -944,6 +944,30 @@ export async function PATCH(request: NextRequest) {
           newTotal = subtotal + shippingCost - discount;
         }
 
+        // Validar costo de envío (Backend Safeguard)
+        // Regla: si subtotal < 68000 y no tiene envío gratis explícito, DEBE cobrar envío.
+        const SHIPPING_COST = 7400;
+        const FREE_SHIPPING_THRESHOLD = 68000;
+        const hasFreeShippingCoupon = orderData.coupon_code && (orderData.free_shipping || orderData.coupon?.free_shipping);
+
+        if (!hasFreeShippingCoupon && subtotal < FREE_SHIPPING_THRESHOLD) {
+          // Si el frontend calculó 0 de envío erróneamente, lo corregimos aquí
+          if (shippingCost === 0) {
+            console.log('⚠️ API: Correcting shipping cost. Subtotal below threshold and no free shipping coupon.');
+            shippingCost = SHIPPING_COST;
+            // Recalculate total
+            const discount = orderData.discount || 0;
+            newTotal = subtotal + shippingCost - discount;
+          }
+        } else if (subtotal >= FREE_SHIPPING_THRESHOLD) {
+          // Ensure shipping is 0 if above threshold (unless specific surcharge exists, but standard is free)
+          if (shippingCost === SHIPPING_COST) {
+            shippingCost = 0;
+            const discount = orderData.discount || 0;
+            newTotal = subtotal + shippingCost - discount;
+          }
+        }
+
         // Actualizar datos dentro del objeto JSON
         orderData.items = guestItems;
         orderData.subtotal = subtotal;
