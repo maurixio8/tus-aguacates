@@ -569,13 +569,12 @@ export default function ListaComprasPage() {
   };
 
   // Crear clave de agrupación inteligente
-  // Agrupa por nombre normalizado + variante normalizada
-  // Esto consolida: "Fresas premium (500gr)" + "fresas premium (500 gr)" = mismo grupo
+  // Agrupa SOLO por nombre normalizado - ignora variantes para agrupar todos los formatos
+  // Esto consolida: "Arándanos Orgánicos (X250grs)" + "arandanos organicos" = mismo grupo
   const createGroupingKey = (productName: string, variant: string | null): string => {
-    const normalizedName = normalizeProductName(productName, variant);
-    const normalizedVariant = normalizeVariant(variant);
-    // Incluir variante en la clave solo si existe
-    return normalizedVariant ? `${normalizedName}|${normalizedVariant}` : normalizedName;
+    // Usar SOLO el nombre normalizado como clave
+    // La variante se mostrará en el desglose, pero no afecta la agrupación
+    return normalizeProductName(productName, variant);
   };
 
   // Detectar si el nombre del producto ya contiene información de cantidad/tamaño
