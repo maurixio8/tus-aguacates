@@ -228,13 +228,21 @@ export default function ListaComprasPage() {
       { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' }
     ],
     'combo ahorro #2': [
-      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
-      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
+      { name: 'Botella de aceite', quantity: 1, unit: 'unidad', variant: '250 ml' },
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' }
     ],
     'combo ahorro #3': [
       { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500grs' },
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' },
       { name: 'Paquete 4 Unidades injerto', quantity: 1, unit: 'paq', variant: '4 unidades' }
+    ],
+    'combo aceite y caja de aguacate': [
+      { name: 'Botella de aceite', quantity: 1, unit: 'unidad', variant: '250 ml' },
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' }
+    ],
+    'combo premium': [
+      { name: 'Botella de aceite', quantity: 1, unit: 'unidad', variant: '250 ml' },
+      { name: 'Caja de 12 unidades Premium', quantity: 1, unit: 'caja', variant: '12 unidades' }
     ],
     'nuevo combo 4': [
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' },
