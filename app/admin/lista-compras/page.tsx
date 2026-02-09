@@ -225,11 +225,12 @@ export default function ListaComprasPage() {
   // - Combo Mercado Semanal: Caja 24 aguacates, Fresa económica, Banano 1kg, Tomate 500g, Cebolla 500g, etc.
   const COMBO_COMPONENTS: Record<string, Array<{ name: string; quantity: number; unit: string; variant?: string }>> = {
     'combo ahorro #1': [
-      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' }
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
     ],
     'combo ahorro #2': [
-      { name: 'Botella de aceite', quantity: 1, unit: 'unidad', variant: '250 ml' },
-      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' }
+      { name: 'Kiwi', quantity: 2, unit: 'bandeja', variant: '400grs' },
+      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' }
     ],
     'combo ahorro #3': [
       { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500grs' },
