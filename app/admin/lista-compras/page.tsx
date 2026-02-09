@@ -165,6 +165,7 @@ export default function ListaComprasPage() {
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
+  const [hidePurchased, setHidePurchased] = useState(false);
 
   // Helper para formatear fecha LOCAL (no UTC)
   const formatLocalDate = (date: Date) => {
@@ -380,31 +381,142 @@ export default function ListaComprasPage() {
 
     'uva chilena': 'Uva chilena importada',
     'uva importada': 'Uva chilena importada',
-
-    'limon tahiti': 'Limón Tahiti',
-    'limón tahití': 'Limón Tahiti',
-    'limon tahití': 'Limón Tahiti',
-    'limón tahiti': 'Limón Tahiti',
-
-    'zanahoria': 'Zanahoria',
-    'zanahoria 500 gr': 'Zanahoria',
-    'zanahoria 500gr': 'Zanahoria',
-
-    'cebolla cabezona': 'Cebolla cabezona',
-    'cebolla': 'Cebolla cabezona',
-    'cebolla 500 gr': 'Cebolla cabezona',
-
-    'papa sabanera': 'Papa Sabanera',
-    'papa': 'Papa Sabanera',
-    'papa 500 gr': 'Papa Sabanera',
-
-    'durazno': 'Duraznos',
-    'duraznos': 'Duraznos',
-    'durazno 500 gr': 'Duraznos',
   };
 
+  // Emoticones para cada producto
+  const PRODUCT_EMOJIS: Record<string, string> = {
+    'aguacate': '🥑',
+    'aguacates': '🥑',
+    'aguacate hass': '🥑',
+    'aguacates hass': '🥑',
+    'aguacate injerto': '🥑',
+    'caja de 24 unidades': '🥑',
+    'caja de 12 unidades': '🥑',
+    'caja de 7 unidades': '🥑',
+    'caja de 35 unidades': '🥑',
+    'paquete 4 unidades': '🥑',
+    'paquete x 8 unidades': '🥑',
+    'paquete x 12 unidades': '🥑',
 
+    'arandano': '🫐',
+    'arandanos': '🫐',
+    'arándanos': '🫐',
+    'arandanos organicos': '🫐',
+    'arándanos orgánicos': '🫐',
 
+    'fresa': '🍓',
+    'fresas': '🍓',
+    'fresa economica': '🍓',
+    'fresa económica': '🍓',
+    'fresas economicas': '🍓',
+    'fresas económicas': '🍓',
+    'fresa premium': '🍓',
+    'fresas premium': '🍓',
+
+    'banano': '🍌',
+    'banana': '🍌',
+    'banano criollo': '🍌',
+    'banana criollo': '🍌',
+    'banano bocadillo': '🍌',
+    'banana bocadillo': '🍌',
+
+    'tomate': '🍅',
+    'tomate chonto': '🍅',
+    'tomate cherry': '🍅',
+    'tomate de arbol': '🍅',
+    'tomate de árbol': '🍅',
+    'tomate larga vida': '🍅',
+    'tomate uvalina': '🍅',
+    'tomate uvilla': '🍅',
+
+    'cebolla': '🧅',
+    'cebolla cabezona': '🧅',
+
+    'pasta de ajo': '🧄',
+    'pasta ajo': '🧄',
+    'ajo': '🧄',
+
+    'zanahoria': '🥕',
+    'papa': '🥔',
+    'papa sabanera': '🥔',
+
+    'apio': '🥬',
+
+    'berenjena': '🍆',
+    'champinones': '🍄',
+
+    'cilantro': '🌿',
+    'hierbabuena': '🌿',
+    'laurel': '🌿',
+    'perejil': '🌿',
+
+    'lechuga': '🥬',
+    'lechuga romana': '🥬',
+
+    'pepino': '🥒',
+
+    'pimenton': '🫑',
+
+    'mandarina': '🍊',
+    'naranja': '🍊',
+
+    'limon': '🍋',
+    'limon tahiti': '🍋',
+
+    'uva': '🍇',
+    'uva isabelina': '🍇',
+    'uva chilena': '🍇',
+
+    'mango': '🥭',
+
+    'durazno': '🍑',
+    'duraznos': '🍑',
+
+    'manzana': '🍎',
+
+    'pera': '🍐',
+
+    'sandia': '🍉',
+    'sandia baby': '🍉',
+
+    'melocoton': '🍑',
+
+    'cereza': '🍒',
+
+    'piña': '🍍',
+    'pina': '🍍',
+
+    'papaya': '🍈',
+
+    'ciruela': '🍑',
+
+    'gulupa': '🍈',
+
+    'pitaya': '🌵',
+
+    'mazorca': '🌽',
+    'mazorca baby': '🌽',
+
+    'zucchini': '🍆',
+    'zucchini verde': '🍆',
+    'zucchini amarillo': '🍆',
+    'auyama': '🎃',
+
+    'remolacha': '🍠',
+
+    'picados para sopa': '🥗',
+
+    'brocoli': '🥦',
+
+    'coliflor': '🥦',
+
+    'coco': '🥥',
+
+    'guanabana': '🍈',
+
+    'fruta': '🍎',
+     'verdura': '🥬',
+   };
 
   // Inicializar con últimos 7 días por defecto
   useEffect(() => {
@@ -579,6 +691,43 @@ export default function ListaComprasPage() {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(price);
+  };
+
+  // Obtener emoji para el producto
+  const getProductEmoji = (productName: string): string => {
+    const name = productName.toLowerCase();
+    
+    // Buscar palabras clave en el nombre del producto
+    const keywords = Object.keys(PRODUCT_EMOJIS);
+    
+    for (const keyword of keywords) {
+      if (name.includes(keyword)) {
+        return PRODUCT_EMOJIS[keyword];
+      }
+    }
+    
+    // Si no encuentra emoji específico, usar uno genérico por categoría
+    if (name.includes('frut') || name.includes('fresa') || name.includes('manzana') || 
+        name.includes('banan') || name.includes('aguacat') || name.includes('durazn') || 
+        name.includes('mango') || name.includes('piña') || name.includes('papaya') || 
+        name.includes('ciruela') || name.includes('cereza') || name.includes('sandía') || 
+        name.includes('limón') || name.includes('naranja') || name.includes('mandarina') || 
+        name.includes('uva') || name.includes('mora') || name.includes('granadilla') || 
+        name.includes('maracuyá') || name.includes('guayaba') || name.includes('pitahaya') || 
+        name.includes('melón')) {
+      return '🍎';
+    }
+    
+    if (name.includes('verd') || name.includes('tomat') || name.includes('ceboll') || 
+        name.includes('zanahoria') || name.includes('papa') || name.includes('lechuga') || 
+        name.includes('apio') || name.includes('brócoli') || name.includes('coliflor') || 
+        name.includes('pepino') || name.includes('pimentón') || name.includes('champiñon') || 
+        name.includes('cilantro') || name.includes('perejil') || name.includes('albahaca') || 
+        name.includes('hierbabuena') || name.includes('romero') || name.includes('orégano')) {
+      return '🥬';
+    }
+    
+    return '📦';
   };
 
   // Detectar categoría del producto basándose en palabras clave del nombre
@@ -1303,6 +1452,11 @@ export default function ListaComprasPage() {
     setPurchasedProducts(new Set());
   };
 
+  // Toggle ocultar productos comprados
+  const toggleHidePurchased = () => {
+    setHidePurchased(!hidePurchased);
+  };
+
   // Verificar si un producto es un combo
   const isCombo = (productName: string): boolean => {
     return productName.toLowerCase().includes('combo');
@@ -1689,6 +1843,26 @@ export default function ListaComprasPage() {
                     <Download size={16} />
                     Exportar CSV
                   </button>
+                  <button
+                    onClick={toggleHidePurchased}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${hidePurchased
+                      ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800'
+                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                    }`}
+                    title={hidePurchased ? "Mostrar productos comprados" : "Ocultar productos comprados"}
+                  >
+                    {hidePurchased ? (
+                      <>
+                        <List size={16} />
+                        Mostrar Comprados
+                      </>
+                    ) : (
+                      <>
+                        <List size={16} />
+                        Ocultar Comprados
+                      </>
+                    )}
+                  </button>
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {selectedOrders.size} pedidos seleccionados
@@ -1711,7 +1885,7 @@ export default function ListaComprasPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {groupedProducts.map(product => {
+                    {groupedProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
                       const isExpanded = expandedProducts.has(product.grouping_key);
                       const isPurchased = purchasedProducts.has(product.grouping_key);
                       const categoryStyle = getCategoryStyle(product.product_name);
@@ -1738,10 +1912,10 @@ export default function ListaComprasPage() {
                                   <div className="w-4 h-4 border-2 border-purple-400 rounded-md" />
                                 )}
                               </button>
-                              <div className="min-w-0 flex-1">
-                                <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                                  {product.display_name}
-                                </p>
+                               <div className="min-w-0 flex-1">
+                                 <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                   {getProductEmoji(product.product_name)} {product.display_name}
+                                 </p>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                                   {product.unit_price > 0 && (
                                     <div className="flex items-center gap-1">
@@ -1761,7 +1935,7 @@ export default function ListaComprasPage() {
                                     </div>
                                   )}
                                   <p className={`text-sm ${isPurchased ? 'text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                                    {product.orders_count} cliente{product.orders_count === 1 ? '' : 's'}
+                                    {product.customer_breakdown.length} cliente{product.customer_breakdown.length === 1 ? '' : 's'}
                                   </p>
                                   {product.has_missing_variants && (
                                     <p className="text-xs text-amber-600 font-medium bg-amber-50 dark:bg-amber-900/50 px-2 py-0.5 rounded">
