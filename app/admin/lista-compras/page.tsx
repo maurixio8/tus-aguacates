@@ -855,15 +855,15 @@ export default function ListaComprasPage() {
 
   // Normalizar variante para agrupación consistente
   const normalizeVariant = (variant: string | null): string => {
-    if (!variant) return '';
+    if (!variant || variant.trim() === '') return '';
     let normalized = variant.trim();
-
+    
     // Eliminar acentos/diacríticos
     normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
+    
     // Convertir a minúsculas
     normalized = normalized.toLowerCase();
-
+    
     // Normalizar formatos de peso/tamaño
     normalized = normalized
       .replace(/\s*x\s*/g, 'x')           // "X 250" → "x250"
@@ -879,10 +879,13 @@ export default function ListaComprasPage() {
       .replace(/\s+unidades/g, 'unidades') // "1 unidades" → "1unidades"
       .replace(/\s+bandeja/g, 'bandejas') // "1 bandeja" → "1bandejas"
       .replace(/\s+bandejas/g, 'bandejas'); // "1 bandejas" → "1bandejas"
-
+    
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
-
+    
+    // Si después de normalizar está vacío, retornar string vacío
+    if (normalized.trim() === '') return '';
+    
     return normalized;
   };
 
