@@ -59,6 +59,7 @@ interface Order {
   delivery_notes?: string;
   notes?: string;
   status: string;
+  payment_status?: string;
   total: number;
   total_amount?: number;
   subtotal?: number;
@@ -84,46 +85,89 @@ interface Pagination {
   totalPages: number;
 }
 
-const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-  pending: {
-    label: 'Pendiente',
-    color: 'text-yellow-700',
-    bgColor: 'bg-yellow-100 border-yellow-200',
-    icon: Clock,
-  },
-  confirmed: {
-    label: 'Confirmado',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-100 border-blue-200',
-    icon: ChefHat,
-  },
-  processing: {
-    label: 'En Preparación',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-100 border-purple-200',
-    icon: Truck,
-  },
-  shipped: {
-    label: 'En Camino',
-    color: 'text-blue-600',
-    bgColor: 'bg-blue-100 border-blue-200',
-    icon: Truck,
-  },
-  delivered: {
-    label: 'Entregado',
-    color: 'text-green-700',
-    bgColor: 'bg-green-100 border-green-200',
-    icon: CheckCircle,
-  },
-  cancelled: {
-    label: 'Cancelado',
-    color: 'text-red-700',
-    bgColor: 'bg-red-100 border-red-200',
-    icon: XCircle,
-  },
-};
+   const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
+     pending: {
+       label: 'Pendiente',
+       color: 'text-yellow-700',
+       bgColor: 'bg-yellow-100 border-yellow-200',
+       icon: Clock,
+     },
+     confirmed: {
+       label: 'Confirmado',
+       color: 'text-blue-700',
+       bgColor: 'bg-blue-100 border-blue-200',
+       icon: ChefHat,
+     },
+     processing: {
+       label: 'En Preparación',
+       color: 'text-purple-700',
+       bgColor: 'bg-purple-100 border-purple-200',
+       icon: Truck,
+     },
+     shipped: {
+       label: 'En Camino',
+       color: 'text-blue-600',
+       bgColor: 'bg-blue-100 border-blue-200',
+       icon: Truck,
+     },
+     delivered: {
+       label: 'Entregado',
+       color: 'text-green-700',
+       bgColor: 'bg-green-100 border-green-200',
+       icon: CheckCircle,
+     },
+     cancelled: {
+       label: 'Cancelado',
+       color: 'text-red-700',
+       bgColor: 'bg-red-100 border-red-200',
+       icon: XCircle,
+     },
+   };
 
-interface OrderStats {
+  const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
+    pending: {
+      label: 'Pendiente',
+      color: 'text-yellow-700',
+      bgColor: 'bg-yellow-100 border-yellow-200',
+      icon: Clock,
+    },
+    paid: {
+      label: 'Pagado',
+      color: 'text-green-700',
+      bgColor: 'bg-green-100 border-green-200',
+      icon: CheckCircle,
+    },
+    completed: {
+      label: 'Completado',
+      color: 'text-green-700',
+      bgColor: 'bg-green-100 border-green-200',
+      icon: CheckCircle,
+    },
+    failed: {
+      label: 'Fallido',
+      color: 'text-red-700',
+      bgColor: 'bg-red-100 border-red-200',
+      icon: XCircle,
+    },
+    refunded: {
+      label: 'Reembolsado',
+      color: 'text-blue-700',
+      bgColor: 'bg-blue-100 border-blue-200',
+      icon: AlertTriangle,
+    },
+  };
+
+  interface OrderStats {
+    pending: number;
+    confirmed: number;
+    processing: number;
+    shipped: number;
+    delivered: number;
+    cancelled: number;
+    total: number;
+  };
+
+  interface OrderStats {
   pending: number;
   confirmed: number;
   processing: number;
@@ -133,11 +177,12 @@ interface OrderStats {
   total: number;
 }
 
-export default function OrdersPage() {
+  export default function OrdersPage() {
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState(searchParams.get('status') || '');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState(searchParams.get('payment_status') || '');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [quickFilter, setQuickFilter] = useState<string>('');
@@ -477,7 +522,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
-  }, [status, dateFrom, dateTo, pagination.page]);
+  }, [status, paymentStatusFilter, dateFrom, dateTo, pagination.page]);
 
   useEffect(() => {
     loadOrderStats();
@@ -526,6 +571,7 @@ export default function OrdersPage() {
       params.set('page', pagination.page.toString());
       params.set('limit', pagination.limit.toString());
       if (status) params.set('status', status);
+      if (paymentStatusFilter) params.set('payment_status', paymentStatusFilter);
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
 
@@ -1028,6 +1074,26 @@ export default function OrdersPage() {
             </select>
           </div>
 
+          {/* Estado de Pago */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Estado de Pago</label>
+            <select
+              value={paymentStatusFilter}
+              onChange={(e) => {
+                setPaymentStatusFilter(e.target.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            >
+              <option value="">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="paid">Pagado</option>
+              <option value="completed">Completado</option>
+              <option value="failed">Fallido</option>
+              <option value="refunded">Reembolsado</option>
+            </select>
+          </div>
+
           {/* Fecha Desde */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Desde (Personalizado)</label>
@@ -1163,14 +1229,20 @@ export default function OrdersPage() {
                             <h3 className="text-sm lg:text-lg font-bold text-gray-900 truncate">
                               {customerInfo.name}
                             </h3>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
-                                #{order.order_number || order.id.substring(0, 8)}
-                              </span>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
-                                {statusInfo.label}
-                              </span>
-                            </div>
+                             <div className="flex items-center gap-2 mt-0.5">
+                               <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
+                                 #{order.order_number || order.id.substring(0, 8)}
+                               </span>
+                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
+                                 {statusInfo.label}
+                               </span>
+                               {order.payment_status && paymentStatusConfig[order.payment_status] && (
+                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[order.payment_status].bgColor} ${paymentStatusConfig[order.payment_status].color} border`}>
+                                   {paymentStatusConfig[order.payment_status].icon && React.createElement(paymentStatusConfig[order.payment_status].icon, { className: 'w-3 h-3 mr-1' })}
+                                   {paymentStatusConfig[order.payment_status].label}
+                                 </span>
+                               )}
+                             </div>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">

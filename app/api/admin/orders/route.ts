@@ -222,6 +222,7 @@ export async function GET(request: NextRequest) {
     // Parse query parameters
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || '';
+    const paymentStatus = searchParams.get('payment_status') || '';
     const dateFrom = searchParams.get('dateFrom') || '';
     const dateTo = searchParams.get('dateTo') || '';
     const page = parseInt(searchParams.get('page') || '1');
@@ -377,6 +378,20 @@ export async function GET(request: NextRequest) {
     // Apply status filter a todos los pedidos
     if (status && status !== 'all') {
       allOrders = allOrders.filter(order => order.status === status);
+    }
+
+    // Apply payment_status filter a todos los pedidos
+    if (paymentStatus && paymentStatus !== 'all') {
+      allOrders = allOrders.filter(order => {
+        const normalizedPaymentStatus = order.payment_status?.toLowerCase();
+        const filterValue = paymentStatus.toLowerCase();
+
+        return normalizedPaymentStatus === filterValue ||
+          (filterValue === 'paid' && ['pagado', 'completed', 'paid'].includes(normalizedPaymentStatus)) ||
+          (filterValue === 'pending' && ['pendiente', 'pendiente_pago', 'pending'].includes(normalizedPaymentStatus)) ||
+          (filterValue === 'failed' && ['fallido', 'failed'].includes(normalizedPaymentStatus)) ||
+          (filterValue === 'refunded' && ['reembolsado', 'refunded'].includes(normalizedPaymentStatus));
+      });
     }
 
     // Apply date filters - usar comparación de fechas real, no strings
