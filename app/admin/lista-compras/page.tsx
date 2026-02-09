@@ -264,6 +264,7 @@ export default function ListaComprasPage() {
   // Sistema de aliases para normalizar nombres de productos
   // Permite agrupar productos con nombres similares
   const PRODUCT_NAME_ALIASES: Record<string, string> = {
+    // --- ARÁNDANOS ---
     'arandano': 'Arándanos Orgánicos',
     'arandanos': 'Arándanos Orgánicos',
     'arándano': 'Arándanos Orgánicos',
@@ -274,12 +275,132 @@ export default function ListaComprasPage() {
     'arándanos organic': 'Arándanos Orgánicos',
     'arandanos organico': 'Arándanos Orgánicos',
     'arándanos orgánico': 'Arándanos Orgánicos',
+
+    // --- FRESAS ---
     'fresa economica': 'Fresa Económica',
     'fresas economicas': 'Fresa Económica',
     'fresa económica': 'Fresa Económica',
     'fresas económicas': 'Fresa Económica',
     'fresa premium': 'Fresas Premium',
     'fresas premium': 'Fresas Premium',
+
+    // --- BANANOS (mantener separados por variedad) ---
+    'banano criollo': 'Banano criollo',
+    'banano criollo kilo': 'Banano criollo',
+    'banana criollo': 'Banano criollo',
+    'banana criollo kilo': 'Banano criollo',
+    'banano criollo 1 kilo': 'Banano criollo',
+    'banano criollo 1kilo': 'Banano criollo',
+
+    'banano bocadillo': 'Banano bocadillo',
+    'banano bocadillo kilo': 'Banano bocadillo',
+    'banana bocadillo': 'Banano bocadillo',
+    'banana bocadillo kilo': 'Banano bocadillo',
+    'banano bocadillo 1 kilo': 'Banano bocadillo',
+    'banano bocadillo 1kilo': 'Banano bocadillo',
+
+    // --- TOMATES ---
+    'tomate chonto': 'Tomate chonto',
+    'tomate chonto tamaño mixto': 'Tomate chonto',
+    'tomate chonto 500 gr': 'Tomate chonto',
+    'tomate chonto 500gr': 'Tomate chonto',
+    'tomate chonto 500grs': 'Tomate chonto',
+
+    'tomate cherry': 'Tomate cherry',
+    'tomate cereza': 'Tomate cherry',
+
+    'tomate de arbol': 'Tomate de Árbol',
+    'tomate de árbol': 'Tomate de Árbol',
+    'tomate arbol': 'Tomate de Árbol',
+
+    'tomate larga vida': 'Tomate larga vida',
+    'tomate larga vida 500 gr': 'Tomate larga vida',
+
+    'tomate uvalina': 'Tomate Uvalina',
+    'tomate uvilla': 'Tomate Uvalina',
+
+    // --- AGUACATES ---
+    'aguacate hass': 'Aguacates Hass',
+    'aguacate hass mediano': 'Aguacates Hass',
+    'aguacate hass baby': 'Aguacates Hass Baby',
+    'aguacate hass premium': 'Aguacates Hass Premium',
+
+    'aguacate injerto': 'Aguacate injerto',
+    'aguacate criollo': 'Aguacate criollo',
+
+    // --- CAJAS DE AGUACATES ---
+    'caja de 24 unidades hass': 'Caja de 24 unidades hass mediano',
+    'caja24 unidades': 'Caja de 24 unidades hass mediano',
+    'caja 24 unidades': 'Caja de 24 unidades hass mediano',
+    '24 aguacates': 'Caja de 24 unidades hass mediano',
+    'caja24 aguacates': 'Caja de 24 unidades hass mediano',
+
+    'caja de 12 unidades hass': 'Caja de 12 unidades Premium',
+    'caja12 unidades': 'Caja de 12 unidades Premium',
+    'caja 12 unidades': 'Caja de 12 unidades Premium',
+    '12 aguacates': 'Caja de 12 unidades Premium',
+    'caja12 aguacates': 'Caja de 12 unidades Premium',
+
+    'caja de 7 unidades injerto': 'Caja de 7 unidades injerto',
+    'caja7 unidades': 'Caja de 7 unidades injerto',
+    'caja 7 unidades': 'Caja de 7 unidades injerto',
+
+    'caja de 35 unidades hass baby': 'Caja de 35 unidades hass baby',
+    'caja35 unidades baby': 'Caja de 35 unidades hass baby',
+    'caja 35 unidades baby': 'Caja de 35 unidades hass baby',
+
+    // --- PAQUETES DE AGUACATES ---
+    'paquete 4 unidades': 'Paquete 4 Unidades injerto',
+    'paquete x4 unidades': 'Paquete 4 Unidades injerto',
+    'paquete4 unidades': 'Paquete 4 Unidades injerto',
+    'paquete4unidades': 'Paquete 4 Unidades injerto',
+    '4 aguacates injerto': 'Paquete 4 Unidades injerto',
+
+    'paquete 8 unidades': 'Paquete x 8 unidades mediano',
+    'paquete x8 unidades': 'Paquete x 8 unidades mediano',
+    'paquete8 unidades': 'Paquete x 8 unidades mediano',
+    'paquete8unidades': 'Paquete x 8 unidades mediano',
+
+    'paquete 12 unidades': 'Paquete X 12 Unidades baby',
+    'paquete x12 unidades': 'Paquete X 12 Unidades baby',
+    'paquete12 unidades': 'Paquete X 12 Unidades baby',
+    'paquete12unidades': 'Paquete X 12 Unidades baby',
+
+    // --- OTROS PRODUCTOS ---
+    'pasta de ajo': 'Pasta de Ajo',
+    'pasta ajo': 'Pasta de Ajo',
+
+    'flor de jamaica': 'Flor de Jamaica',
+    'flor de jamaic': 'Flor de Jamaica',
+    'flor jamaica': 'Flor de Jamaica',
+    'flor jamaic': 'Flor de Jamaica',
+
+    'uva isabelina': 'Uva isabelina',
+    'uva isabela': 'Uva isabelina',
+
+    'uva chilena': 'Uva chilena importada',
+    'uva importada': 'Uva chilena importada',
+
+    'limon tahiti': 'Limón Tahiti',
+    'limón tahití': 'Limón Tahiti',
+    'limon tahití': 'Limón Tahiti',
+    'limón tahiti': 'Limón Tahiti',
+
+    'zanahoria': 'Zanahoria',
+    'zanahoria 500 gr': 'Zanahoria',
+    'zanahoria 500gr': 'Zanahoria',
+
+    'cebolla cabezona': 'Cebolla cabezona',
+    'cebolla': 'Cebolla cabezona',
+    'cebolla 500 gr': 'Cebolla cabezona',
+
+    'papa sabanera': 'Papa Sabanera',
+    'papa': 'Papa Sabanera',
+    'papa 500 gr': 'Papa Sabanera',
+
+    'durazno': 'Duraznos',
+    'duraznos': 'Duraznos',
+    'durazno 500 gr': 'Duraznos',
   };
 
 
@@ -745,6 +866,10 @@ export default function ListaComprasPage() {
 
     const productMap = new Map<string, ProductGrouped>();
 
+    // MAPA PARA RASTREAR CLIENTES POR PRODUCTO Y ORDEN
+    // Evita duplicar el mismo cliente en múltiples entradas de customer_breakdown
+    const customerProductMap = new Map<string, CustomerBreakdown>();
+
     selectedOrdersList.forEach(order => {
       const items = extractItemsFromOrder(order);
       const customerName = order.customer_name || 'Cliente sin nombre';
@@ -771,21 +896,47 @@ export default function ListaComprasPage() {
             const componentKey = createGroupingKey(component.name, component.variant || null);
             const normalizedName = normalizeProductName(component.name, component.variant || null);
 
-            // Info del cliente para este componente (del combo)
-            const customerInfo: CustomerBreakdown = {
-              customer_name: customerName,
-              customer_address: customerAddress,
-              order_id: order.id,
-              variant_name: component.variant,
-              quantity: component.quantity * item.quantity,
-              order_items: orderSummaries.get(order.id)
-            };
+            // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
+            const customerUniqueKey = `${componentKey}|${order.id}`;
+
+            // Verificar si ya existe este cliente para este producto
+            let customerInfo = customerProductMap.get(customerUniqueKey);
+
+            if (!customerInfo) {
+              // Crear nueva entrada de cliente
+              customerInfo = {
+                customer_name: customerName,
+                customer_address: customerAddress,
+                order_id: order.id,
+                variant_name: component.variant,
+                quantity: component.quantity * item.quantity,
+                order_items: orderSummaries.get(order.id)
+              };
+              customerProductMap.set(customerUniqueKey, customerInfo);
+            } else {
+              // Actualizar cantidad si ya existe
+              customerInfo.quantity += component.quantity * item.quantity;
+            }
 
             if (productMap.has(componentKey)) {
               const existing = productMap.get(componentKey)!;
               existing.total_quantity += component.quantity * item.quantity;
               existing.orders_count += 1;
-              existing.customer_breakdown.push(customerInfo);
+
+              // Verificar si este cliente ya está en customer_breakdown
+              const existingCustomerIndex = existing.customer_breakdown.findIndex(
+                cb => cb.order_id === order.id
+              );
+
+              if (existingCustomerIndex >= 0) {
+                // Actualizar cantidad del cliente existente
+                existing.customer_breakdown[existingCustomerIndex].quantity += component.quantity * item.quantity;
+                existing.customer_breakdown[existingCustomerIndex].variant_name = component.variant;
+              } else {
+                // Agregar nuevo cliente al breakdown
+                existing.customer_breakdown.push(customerInfo);
+              }
+
               if (!existing.items) existing.items = [];
               existing.items.push(item);
             } else {
@@ -835,17 +986,33 @@ export default function ListaComprasPage() {
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
           const itemWeightDisplay = itemWeightGrams ? formatWeight(itemWeightGrams) : undefined;
 
-          // Info del cliente para este item
-          const customerInfo: CustomerBreakdown = {
-            customer_name: customerName,
-            customer_address: customerAddress,
-            order_id: order.id,
-            variant_name: variantDisplay || undefined,
-            quantity: item.quantity,
-            weight_grams: itemWeightGrams,
-            weight_display: itemWeightDisplay,
-            order_items: orderSummaries.get(order.id)
-          };
+          // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
+          const customerUniqueKey = `${groupingKey}|${order.id}`;
+
+          // Verificar si ya existe este cliente para este producto
+          let customerInfo = customerProductMap.get(customerUniqueKey);
+
+          if (!customerInfo) {
+            // Crear nueva entrada de cliente
+            customerInfo = {
+              customer_name: customerName,
+              customer_address: customerAddress,
+              order_id: order.id,
+              variant_name: variantDisplay || undefined,
+              quantity: item.quantity,
+              weight_grams: itemWeightGrams,
+              weight_display: itemWeightDisplay,
+              order_items: orderSummaries.get(order.id)
+            };
+            customerProductMap.set(customerUniqueKey, customerInfo);
+          } else {
+            // Actualizar cantidad si ya existe
+            customerInfo.quantity += item.quantity;
+            if (itemWeightGrams) {
+              customerInfo.weight_grams = (customerInfo.weight_grams || 0) + itemWeightGrams;
+              customerInfo.weight_display = formatWeight(customerInfo.weight_grams);
+            }
+          }
 
           // Verificar si ya existe este grupo
           if (productMap.has(groupingKey)) {
@@ -853,8 +1020,25 @@ export default function ListaComprasPage() {
             existing.total_quantity += item.quantity;
             existing.orders_count += 1;
 
-            // Agregar desglose por cliente
-            existing.customer_breakdown.push(customerInfo);
+            // Verificar si este cliente ya está en customer_breakdown
+            const existingCustomerIndex = existing.customer_breakdown.findIndex(
+              cb => cb.order_id === order.id
+            );
+
+            if (existingCustomerIndex >= 0) {
+              // Actualizar cantidad del cliente existente
+              existing.customer_breakdown[existingCustomerIndex].quantity += item.quantity;
+              if (itemWeightGrams) {
+                existing.customer_breakdown[existingCustomerIndex].weight_grams =
+                  (existing.customer_breakdown[existingCustomerIndex].weight_grams || 0) + itemWeightGrams;
+                existing.customer_breakdown[existingCustomerIndex].weight_display =
+                  formatWeight(existing.customer_breakdown[existingCustomerIndex].weight_grams || 0);
+              }
+            } else {
+              // Agregar nuevo cliente al breakdown
+              existing.customer_breakdown.push(customerInfo);
+            }
+
             if (!existing.items) existing.items = [];
             existing.items.push(item);
 
