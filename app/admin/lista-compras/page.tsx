@@ -524,8 +524,8 @@ export default function ListaComprasPage() {
     'guanabana': '🍈',
 
     'fruta': '🍎',
-     'verdura': '🥬',
-   };
+    'verdura': '🥬',
+  };
 
   // Inicializar con últimos 7 días por defecto
   useEffect(() => {
@@ -705,37 +705,37 @@ export default function ListaComprasPage() {
   // Obtener emoji para el producto
   const getProductEmoji = (productName: string): string => {
     const name = productName.toLowerCase();
-    
+
     // Buscar palabras clave en el nombre del producto
     const keywords = Object.keys(PRODUCT_EMOJIS);
-    
+
     for (const keyword of keywords) {
       if (name.includes(keyword)) {
         return PRODUCT_EMOJIS[keyword];
       }
     }
-    
+
     // Si no encuentra emoji específico, usar uno genérico por categoría
-    if (name.includes('frut') || name.includes('fresa') || name.includes('manzana') || 
-        name.includes('banan') || name.includes('aguacat') || name.includes('durazn') || 
-        name.includes('mango') || name.includes('piña') || name.includes('papaya') || 
-        name.includes('ciruela') || name.includes('cereza') || name.includes('sandía') || 
-        name.includes('limón') || name.includes('naranja') || name.includes('mandarina') || 
-        name.includes('uva') || name.includes('mora') || name.includes('granadilla') || 
-        name.includes('maracuyá') || name.includes('guayaba') || name.includes('pitahaya') || 
-        name.includes('melón')) {
+    if (name.includes('frut') || name.includes('fresa') || name.includes('manzana') ||
+      name.includes('banan') || name.includes('aguacat') || name.includes('durazn') ||
+      name.includes('mango') || name.includes('piña') || name.includes('papaya') ||
+      name.includes('ciruela') || name.includes('cereza') || name.includes('sandía') ||
+      name.includes('limón') || name.includes('naranja') || name.includes('mandarina') ||
+      name.includes('uva') || name.includes('mora') || name.includes('granadilla') ||
+      name.includes('maracuyá') || name.includes('guayaba') || name.includes('pitahaya') ||
+      name.includes('melón')) {
       return '🍎';
     }
-    
-    if (name.includes('verd') || name.includes('tomat') || name.includes('ceboll') || 
-        name.includes('zanahoria') || name.includes('papa') || name.includes('lechuga') || 
-        name.includes('apio') || name.includes('brócoli') || name.includes('coliflor') || 
-        name.includes('pepino') || name.includes('pimentón') || name.includes('champiñon') || 
-        name.includes('cilantro') || name.includes('perejil') || name.includes('albahaca') || 
-        name.includes('hierbabuena') || name.includes('romero') || name.includes('orégano')) {
+
+    if (name.includes('verd') || name.includes('tomat') || name.includes('ceboll') ||
+      name.includes('zanahoria') || name.includes('papa') || name.includes('lechuga') ||
+      name.includes('apio') || name.includes('brócoli') || name.includes('coliflor') ||
+      name.includes('pepino') || name.includes('pimentón') || name.includes('champiñon') ||
+      name.includes('cilantro') || name.includes('perejil') || name.includes('albahaca') ||
+      name.includes('hierbabuena') || name.includes('romero') || name.includes('orégano')) {
       return '🥬';
     }
-    
+
     return '📦';
   };
 
@@ -794,15 +794,19 @@ export default function ListaComprasPage() {
 
   // Extraer peso en gramos desde la variante
   // Busca patrones como: "1000grs", "500 gramos", "1kg", "0.5 kg", "250grs"
+  // Extraer peso en gramos desde la variante
+  // Busca patrones como: "1000grs", "500 gramos", "1kg", "0.5 kg", "250grs"
   const extractWeightFromVariant = (variantName: string | null): number | undefined => {
     if (!variantName) return undefined;
+
+    const text = variantName.toLowerCase().trim();
 
     // Patrones de búsqueda (en orden de especificidad)
     const patterns = [
       // "1000 grs", "500 gramos", "250 grs"
-      /(\d+(?:\.\d+)?)\s*(?:grs|gramas|gr)\b/i,
+      /(\d+(?:\.\d+)?)\s*(?:grs|gramas|gramos|gr)\b/i,
       // "1 kg", "0.5 kg", "2 kilos"
-      /(\d+(?:\.\d+)?)\s*(?:kg|kilos)\b/i,
+      /(\d+(?:\.\d+)?)\s*(?:kg|kilos?)\b/i,
       // "1000grs" (sin espacio)
       /(\d+(?:\.\d+)?)grs/i,
       // "X250grs" (formato especial)
@@ -810,11 +814,11 @@ export default function ListaComprasPage() {
     ];
 
     for (const pattern of patterns) {
-      const match = variantName.match(pattern);
+      const match = text.match(pattern);
       if (match) {
         const value = parseFloat(match[1]);
         // Si está en kg, convertir a gramos
-        if (/kg|kilos/i.test(variantName)) {
+        if (/kg|kilos?/i.test(text)) {
           return value * 1000;
         }
         return value;
@@ -838,63 +842,69 @@ export default function ListaComprasPage() {
   // Elimina variantes o números repetidos al final del nombre y normaliza acentos
   const normalizeProductName = (name: string, variant?: string | null): string => {
     if (!name) return 'producto sin nombre';
-    let normalized = name.trim();
 
-    // Eliminar acentos/diacríticos
-    normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // Función auxiliar para quitar acentos de forma consistente
+    const stripAccents = (str: string) =>
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-    // Convertir a minúsculas para agrupación insensible a mayúsculas
-    normalized = normalized.toLowerCase();
+    let normalized = stripAccents(name);
 
     // SIEMPRE remover CUALQUIER contenido final entre paréntesis
-    // Esto agrupa productos como "Caja de 12 unidades Premium (12 unidades)" con "Caja de 12 unidades Premium"
     normalized = normalized.replace(/\s*\([^)]*\)\s*$/, '').trim();
+
+    // Remover información de cantidad redundante al final del nombre si ya está normalizada en la variante
+    // Ej: "Arandanos 125gr" -> "arandanos"
+    normalized = normalized.replace(/\s*\d+\s*(grs?|gramos|kg|kilos?|unidades?|bandeja?s?)\b.*$/i, '').trim();
 
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
 
-    // Buscar alias y usar nombre canónico
+    // Buscar alias y usar nombre canónico (pero SIN acentos para la clave de agrupación)
     const alias = PRODUCT_NAME_ALIASES[normalized];
     if (alias) {
-      return alias.toLowerCase();
+      return stripAccents(alias);
     }
 
     return normalized;
   };
 
   // Normalizar variante para agrupación consistente
+  // Normalizar variante para agrupación consistente
   const normalizeVariant = (variant: string | null): string => {
     if (!variant || variant.trim() === '') return '';
+
+    // Si podemos extraer un peso numérico, usar el peso en gramos como variante normalizada
+    // Esto agrupa "1000 gr" con "1 kg" automáticamente
+    const weightGrams = extractWeightFromVariant(variant);
+    if (weightGrams !== undefined) {
+      return `${weightGrams}grs`;
+    }
+
     let normalized = variant.trim();
-    
+
     // Eliminar acentos/diacríticos
     normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-    
+
     // Convertir a minúsculas
     normalized = normalized.toLowerCase();
-    
-    // Normalizar formatos de peso/tamaño
+
+    // Eliminar 'x' inicial si va seguida de un número (ej: "X250" -> "250")
+    normalized = normalized.replace(/^x\s*(\d+)/i, '$1');
+
+    // Normalizar formatos comunes
     normalized = normalized
-      .replace(/\s*x\s*/g, 'x')           // "X 250" → "x250"
-      .replace(/\s+grs/g, 'grs')          // "250 grs" → "250grs"
-      .replace(/\s+gr\b/g, 'grs')         // "250 gr" → "250grs"
-      .replace(/\s+gramos/g, 'grs')       // "250 gramos" → "250grs"
-      .replace(/grs$/g, 'grs')           // Asegurar terminación
-      .replace(/gr\b/g, 'grs')           // "250gr" → "250grs"
-      .replace(/\s+kg\b/g, 'kg')          // "1 kg" → "1kg"
-      .replace(/\s+kilos/g, 'kg')         // "1 kilos" → "1kg"
-      .replace(/\s+kilo/g, 'kg')          // "1 kilo" → "1kg"
-      .replace(/\s+unidad/g, 'unidades')   // "1 unidad" → "1unidades"
-      .replace(/\s+unidades/g, 'unidades') // "1 unidades" → "1unidades"
-      .replace(/\s+bandeja/g, 'bandejas') // "1 bandeja" → "1bandejas"
-      .replace(/\s+bandejas/g, 'bandejas'); // "1 bandejas" → "1bandejas"
-    
+      .replace(/\s*x\s*/g, 'x')
+      .replace(/\s+grs?/g, 'grs')
+      .replace(/\s+gr\b/g, 'grs')
+      .replace(/\s+gramos/g, 'grs')
+      .replace(/\s+kg\b/g, 'kg')
+      .replace(/\s+kilos?/g, 'kg')
+      .replace(/\s+unidades?/g, 'unidades')
+      .replace(/\s+bandeja?s/g, 'bandejas');
+
     // Normalizar espacios múltiples
-    normalized = normalized.replace(/\s+/g, ' ');
-    
-    // Si después de normalizar está vacío, retornar string vacío
-    if (normalized.trim() === '') return '';
-    
+    normalized = normalized.replace(/\s+/g, ' ').trim();
+
     return normalized;
   };
 
@@ -1860,7 +1870,7 @@ export default function ListaComprasPage() {
                     className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${hidePurchased
                       ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800'
                       : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
-                    }`}
+                      }`}
                     title={hidePurchased ? "Mostrar productos comprados" : "Ocultar productos comprados"}
                   >
                     {hidePurchased ? (
@@ -1924,10 +1934,10 @@ export default function ListaComprasPage() {
                                   <div className="w-4 h-4 border-2 border-purple-400 rounded-md" />
                                 )}
                               </button>
-                               <div className="min-w-0 flex-1">
-                                 <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
-                                   {getProductEmoji(product.product_name)} {product.display_name}
-                                 </p>
+                              <div className="min-w-0 flex-1">
+                                <p className={`font-medium text-base ${isPurchased ? 'text-gray-500 line-through dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+                                  {getProductEmoji(product.product_name)} {product.display_name}
+                                </p>
                                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                                   {product.unit_price > 0 && (
                                     <div className="flex items-center gap-1">
