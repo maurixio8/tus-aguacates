@@ -41,8 +41,8 @@ export function InstallPrompt() {
         const handleBeforeInstallPrompt = (e: Event) => {
             e.preventDefault();
             setDeferredPrompt(e as BeforeInstallPromptEvent);
-            // Mostrar prompt después de 3 segundos
-            setTimeout(() => setShowPrompt(true), 3000);
+            // Mostrar prompt después de 2 minutos para no ser invasivo
+            setTimeout(() => setShowPrompt(true), 120000);
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
