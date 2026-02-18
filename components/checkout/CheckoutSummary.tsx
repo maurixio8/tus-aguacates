@@ -1,6 +1,6 @@
 'use client';
 
-import { Truck, ShoppingBag, DollarSign, Tag, Check, Calendar } from 'lucide-react';
+import { Truck, ShoppingBag, DollarSign, Tag, Check, Calendar, CreditCard } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 
 export default function CheckoutSummary() {
@@ -10,7 +10,8 @@ export default function CheckoutSummary() {
     shipping,
     getSubtotal,
     getTotals,
-    getItemCount
+    getItemCount,
+    paymentMethod
   } = useCartStore();
 
   const totals = getTotals();
@@ -176,6 +177,21 @@ export default function CheckoutSummary() {
                   </>
                 )}
               </div>
+            </div>
+          )}
+
+          {totals.paymentFee > 0 && (
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4 text-orange-600" />
+                <div className="flex flex-col">
+                  <span className="text-gray-600 text-sm">Costo pasarela de pago (Bold)</span>
+                  <span className="text-xs text-gray-400">Cobro aplicado por Bold, no por nosotros</span>
+                </div>
+              </div>
+              <span className="font-medium text-orange-600">
+                {formatCurrency(totals.paymentFee)}
+              </span>
             </div>
           )}
 

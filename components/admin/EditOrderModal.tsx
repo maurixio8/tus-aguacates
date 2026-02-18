@@ -136,18 +136,39 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     useEffect(() => {
         if (isOpen) {
             loadCategories();
+
+            // Debug logging para ver qué datos llega al modal
+            console.log('🔍 [EDIT ORDER MODAL] Datos del pedido recibidos:', {
+                order_id: order.id,
+                order_number: order.order_number,
+                has_order_items: !!order.order_items,
+                order_items_count: order.order_items?.length || 0,
+                first_order_item: order.order_items?.[0]
+            });
+
             // Inicializar con los items actuales del pedido
-            if (order.order_items) {
-                setOrderItems(order.order_items.map(item => ({
-                    id: item.id,
-                    product_id: item.product_id,
-                    variant_id: item.variant_id,
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    product_name: item.product_snapshot?.name || item.product_name || 'Producto',
-                    variant_name: item.variant_name
-                })));
+            // Los items ya deberían venir formateados desde la página principal
+            let items: OrderItem[] = [];
+
+            if (order.order_items && order.order_items.length > 0) {
+                console.log('✅ [EDIT ORDER MODAL] Usando order_items formateados:', order.order_items.length, 'items');
+                items = order.order_items;
+            } else {
+                console.warn('⚠️ [EDIT ORDER MODAL] No se encontraron items en el pedido');
             }
+
+            console.log('📦 [EDIT ORDER MODAL] Items a cargar en el estado:', items);
+
+            setOrderItems(items.map(item => ({
+                id: item.id,
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                product_name: item.product_snapshot?.name || item.product_name || 'Producto',
+                variant_name: item.variant_name
+            })));
+
             // Inicializar datos del cliente
             setCustomerData({
                 customer_name: order.customer_name || '',
@@ -159,6 +180,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
         }
     }, [isOpen, order]);
 
+ 
     useEffect(() => {
         if (selectedCategory) {
             loadProducts();
@@ -268,11 +290,6 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     };
 
     const handleSave = async () => {
-        if (orderItems.length === 0) {
-            setError('El pedido debe tener al menos un producto');
-            return;
-        }
-
         if (!customerData.customer_name.trim()) {
             setError('El nombre del cliente es requerido');
             return;
@@ -672,9 +689,9 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                         Cancelar
                     </button>
                     <div className="flex gap-3">
-                        <button
+                    <button
                             onClick={handleSave}
-                            disabled={saving || orderItems.length === 0}
+                            disabled={saving || !customerData.customer_name.trim() || !customerData.customer_phone.trim()}
                             className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
                             {saving ? (

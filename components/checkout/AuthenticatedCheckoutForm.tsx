@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/lib/cart-store';
+import { useCartStore, type PaymentMethod } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import type { Address } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -21,13 +21,13 @@ type CheckoutStep = 'address' | 'payment-method' | 'processing';
 export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFormProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { items, getTotal, clearCart, getTotals, calculateShipping } = useCartStore();
+  const { items, getTotal, clearCart, getTotals, calculateShipping, setPaymentMethod: setStorePaymentMethod, paymentMethod: storePaymentMethod } = useCartStore();
   const totals = getTotals();
 
   const [step, setStep] = useState<CheckoutStep>('address');
   const [orderId, setOrderId] = useState<string>('');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'efectivo'>('daviplata');
+  const [paymentMethod, setLocalPaymentMethod] = useState<'daviplata' | 'efectivo'>('daviplata');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +46,7 @@ export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFo
 
   // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
-    // Only calculate shipping if there are items in the cart
+    // Only calculate shipping if there are items in cart
     if (items.length > 0) {
       calculateShipping();
     }
@@ -58,6 +58,15 @@ export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFo
       calculateShipping(selectedAddress.city);
     }
   }, [selectedAddress, calculateShipping, items.length]);
+
+  // Initialize payment method in store when component mounts
+  useEffect(() => {
+    const methodMap: Record<string, PaymentMethod> = {
+      'daviplata': 'daviplata',
+      'efectivo': 'cash'
+    };
+    setStorePaymentMethod(methodMap[paymentMethod] || 'cash');
+  }, []);
 
   const handleAddressSelect = (address: Address) => {
     setSelectedAddress(address);
@@ -321,7 +330,10 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
-                  onClick={() => setPaymentMethod('daviplata')}
+                  onClick={() => {
+                    setLocalPaymentMethod('daviplata');
+                    setStorePaymentMethod('daviplata');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -329,7 +341,10 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                       name="paymentMethod"
                       value="daviplata"
                       checked={paymentMethod === 'daviplata'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'daviplata')}
+                      onChange={(e) => {
+                        setLocalPaymentMethod(e.target.value as 'daviplata');
+                        setStorePaymentMethod('daviplata');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">
@@ -360,7 +375,10 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
-                  onClick={() => setPaymentMethod('efectivo')}
+                  onClick={() => {
+                    setLocalPaymentMethod('efectivo');
+                    setStorePaymentMethod('cash');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -368,7 +386,10 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
                       name="paymentMethod"
                       value="efectivo"
                       checked={paymentMethod === 'efectivo'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'efectivo')}
+                      onChange={(e) => {
+                        setLocalPaymentMethod(e.target.value as 'efectivo');
+                        setStorePaymentMethod('cash');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">

@@ -2,6 +2,17 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { UnifiedProduct, Product } from './types';
 
+export type PaymentMethod = 'cash' | 'daviplata' | 'nequi' | 'pse' | 'card_visa_mastercard' | 'card_other';
+
+const BOLD_FEES = {
+  card_visa_mastercard: { rate: 0.0299, fixed: 900 },
+  card_other: { rate: 0.0329, fixed: 900 },
+  pse: { rate: 0.0289, fixed: 900 },
+  nequi: { rate: 0.0289, fixed: 900 },
+  daviplata: { rate: 0.0289, fixed: 900 },
+  cash: { rate: 0, fixed: 0 },
+};
+
 /**
  * Default shipping information fallback
  */
@@ -66,6 +77,7 @@ export interface CartTotals {
   subtotal: number;
   discount: number;
   shipping: number;
+  paymentFee: number;
   total: number;
 }
 
@@ -74,6 +86,7 @@ interface CartState {
   isOpen: boolean;
   appliedCoupon: AppliedCoupon | null;
   shipping: ShippingInfo;
+  paymentMethod: PaymentMethod;
   addItem: (product: UnifiedProduct & { variant?: ProductVariant }, quantity?: number) => void;
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
@@ -85,6 +98,7 @@ interface CartState {
   applyCoupon: (code: string, userEmail?: string) => Promise<boolean>;
   removeCoupon: () => void;
   calculateShipping: (location?: string) => Promise<void>;
+  setPaymentMethod: (method: PaymentMethod) => void;
   getTotals: () => CartTotals;
 }
 
@@ -95,6 +109,7 @@ export const useCartStore = create<CartState>()(
       isOpen: false,
       appliedCoupon: null,
       shipping: getDefaultShippingInfo(0),
+      paymentMethod: 'cash',
 
       addItem: (product, quantity = 1) => {
         set((state) => {
@@ -169,7 +184,7 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => {
-        set({ items: [], appliedCoupon: null, shipping: getDefaultShippingInfo(0) });
+        set({ items: [], appliedCoupon: null, shipping: getDefaultShippingInfo(0), paymentMethod: 'cash' });
       },
 
       toggleCart: () => {
@@ -297,17 +312,26 @@ export const useCartStore = create<CartState>()(
         }
       },
 
+      setPaymentMethod: (method: PaymentMethod) => {
+        console.log('💳 Setting payment method:', method);
+        set({ paymentMethod: method });
+      },
+
       getTotals: () => {
         const state = get();
         const subtotal = state.getSubtotal();
         const discount = state.appliedCoupon?.discount_amount || 0;
         const shipping = state.shipping.cost;
+        
+        const fee = BOLD_FEES[state.paymentMethod];
+        const paymentFee = Math.round(subtotal * fee.rate + fee.fixed);
 
         return {
           subtotal,
           discount,
           shipping,
-          total: Math.max(0, subtotal - discount + shipping)
+          paymentFee,
+          total: Math.max(0, subtotal - discount + shipping + paymentFee)
         };
       },
     }),

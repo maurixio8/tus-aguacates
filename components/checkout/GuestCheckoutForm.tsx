@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { useCartStore } from '@/lib/cart-store';
+import { useCartStore, type PaymentMethod } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
@@ -30,7 +30,7 @@ type CheckoutStep = 'info' | 'payment' | 'payment-method' | 'processing';
 
 export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const router = useRouter();
-  const { items, getTotal, clearCart, getTotals, calculateShipping } = useCartStore();
+  const { items, getTotal, clearCart, getTotals, calculateShipping, setPaymentMethod } = useCartStore();
   const totals = getTotals();
 
   const [step, setStep] = useState<CheckoutStep>('info');
@@ -90,6 +90,17 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
       calculateShipping();
     }
   }, [calculateShipping, items.length]);
+
+  // Initialize payment method in store when component mounts
+  useEffect(() => {
+    const methodMap: Record<string, PaymentMethod> = {
+      'bold': 'card_visa_mastercard',
+      'daviplata': 'daviplata',
+      'nequi': 'nequi',
+      'efectivo': 'cash'
+    };
+    setPaymentMethod(methodMap[formData.paymentMethod] || 'cash');
+  }, []);
 
   const handleSubmitInfo = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -737,12 +748,15 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                 <div className="space-y-3">
                   <h4 className="font-medium text-gray-900">¿Cómo prefieres pagar?</h4>
 
-                  {/* Payment Method Buttons */}
+                   {/* Payment Method Buttons */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {/* Bold - Tarjeta/PSE */}
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, paymentMethod: 'bold' })}
+                      onClick={() => {
+                        setFormData({ ...formData, paymentMethod: 'bold' });
+                        setPaymentMethod('card_visa_mastercard');
+                      }}
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'bold'
                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-blue-300'
@@ -760,7 +774,10 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                     {/* Daviplata */}
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, paymentMethod: 'daviplata' })}
+                      onClick={() => {
+                        setFormData({ ...formData, paymentMethod: 'daviplata' });
+                        setPaymentMethod('daviplata');
+                      }}
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'daviplata'
                         ? 'border-red-500 bg-red-50'
                         : 'border-gray-200 hover:border-red-300'
@@ -776,7 +793,10 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                     {/* Nequi */}
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, paymentMethod: 'nequi' })}
+                      onClick={() => {
+                        setFormData({ ...formData, paymentMethod: 'nequi' });
+                        setPaymentMethod('nequi');
+                      }}
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'nequi'
                         ? 'border-pink-500 bg-pink-50'
                         : 'border-gray-200 hover:border-pink-300'
@@ -792,7 +812,10 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
                     {/* Efectivo */}
                     <button
                       type="button"
-                      onClick={() => setFormData({ ...formData, paymentMethod: 'efectivo' })}
+                      onClick={() => {
+                        setFormData({ ...formData, paymentMethod: 'efectivo' });
+                        setPaymentMethod('cash');
+                      }}
                       className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'efectivo'
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-green-300'

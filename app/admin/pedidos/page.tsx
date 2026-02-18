@@ -1627,7 +1627,35 @@ interface Pagination {
 
                         {/* Edit button - for all orders */}
                         <button
-                          onClick={() => setEditingOrder(order)}
+                          onClick={() => {
+                            // Crear una copia del pedido con los items ya extraídos y formateados
+                            const orderForEditing = {
+                              ...order,
+                              order_items: orderItems.map((item: any) => ({
+                                id: item.id,
+                                product_id: item.product_id,
+                                variant_id: item.variant_id,
+                                quantity: item.quantity,
+                                unit_price: item.unit_price || item.price,
+                                subtotal: item.subtotal || (item.quantity * (item.unit_price || item.price)),
+                                product_snapshot: item.product_snapshot || {
+                                  name: item.product_name,
+                                  price: item.unit_price || item.price,
+                                  variant_name: item.variant_name,
+                                  variant_value: item.variant_name
+                                },
+                                product_name: item.product_name || item.product_snapshot?.name
+                              }))
+                            };
+                            console.log('📝 [EDIT BUTTON] Preparando pedido para edición:', {
+                              order_id: order.id,
+                              order_number: order.order_number,
+                              original_items_count: order.order_items?.length || 0,
+                              extracted_items_count: orderItems.length,
+                              orderForEditing
+                            });
+                            setEditingOrder(orderForEditing);
+                          }}
                           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
                         >
                           <Edit className="w-4 h-4" />

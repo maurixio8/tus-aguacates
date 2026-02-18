@@ -280,6 +280,17 @@ export async function GET(request: NextRequest) {
 
     // Combinar y formatear los resultados
     let allOrders: any[] = [];
+    const orderIds = new Set<string>();
+
+    // Función para verificar duplicados
+    const checkDuplicate = (order: any) => {
+      if (orderIds.has(order.id)) {
+        console.warn(`⚠️ API: Order ID ${order.id} (${order.order_number}) is duplicated!`);
+        return true;
+      }
+      orderIds.add(order.id);
+      return false;
+    };
 
     // Procesar pedidos normales
     if (ordersData.data) {
@@ -289,6 +300,19 @@ export async function GET(request: NextRequest) {
           const customerData = await getCustomerData(order, supabase);
           console.log('👤 Customer data for order', order.id, ':', customerData);
 
+          // Log items for registered orders
+          if (order.order_items && order.order_items.length > 0) {
+            console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
+              order.order_items.map((item: any) => ({
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                product_name: item.products?.name || item.product_snapshot?.name
+              }))
+            );
+          }
+
           return {
             ...order,
             ...customerData, // Usar datos reales en lugar de null
@@ -296,7 +320,12 @@ export async function GET(request: NextRequest) {
           };
         })
       );
-      allOrders.push(...regularOrdersWithCustomerData);
+      // Check for duplicates and add
+      regularOrdersWithCustomerData.forEach(order => {
+        if (!checkDuplicate(order)) {
+          allOrders.push(order);
+        }
+      });
       console.log('✅ Processed', regularOrdersWithCustomerData.length, 'regular orders with customer data');
     }
 
@@ -318,7 +347,7 @@ export async function GET(request: NextRequest) {
 
           // Extraer items si existen
           if (parsedData?.items && Array.isArray(parsedData.items)) {
-            console.log(`✅ API: Extracting ${parsedData.items.length} items from guest order ${order.id.substring(0, 8)}`);
+            console.log(`✅ API: Extracting ${parsedData.items.length} items from guest order ${order.id.substring(0,8)}`);
 
             // Mapear de camelCase (BD) a snake_case (frontend esperado)
             orderItems = parsedData.items.map((item: any) => ({
@@ -340,6 +369,14 @@ export async function GET(request: NextRequest) {
             }));
 
             console.log(`✅ API: Mapped ${orderItems.length} items for guest order`);
+            console.log(`📦 API: Items details:`, orderItems.map(item => ({
+              product_id: item.product_id,
+              variant_id: item.variant_id,
+              product_name: item.product_name,
+              variant_name: item.variant_name,
+              quantity: item.quantity,
+              unit_price: item.unit_price
+            })));
           } else {
             console.warn(`⚠️ API: No items found in guest order ${order.id.substring(0, 8)}`);
           }
@@ -369,11 +406,48 @@ export async function GET(request: NextRequest) {
           payment_method: order.payment_method || null
         };
       });
-      allOrders.push(...guestOrders);
+
+      // Check for duplicates and add
+      guestOrders.forEach(order => {
+        if (!checkDuplicate(order)) {
+          allOrders.push(order);
+        }
+      });
+
+      console.log(`✅ Processed ${guestOrders.length} guest orders`);
     }
 
     // Ordenar todos los pedidos por fecha
     allOrders.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    // Log de estadísticas finales
+    console.log('📊 API Admin: Estadísticas finales:', {
+      total_orders: allOrders.length,
+      orders_by_type: {
+        registered: allOrders.filter(o => o.order_type === 'registered').length,
+        guest: allOrders.filter(o => o.order_type === 'guest').length
+      },
+      orders_with_items: allOrders.filter(o => o.order_items && o.order_items.length > 0).length,
+      orders_without_items: allOrders.filter(o => !o.order_items || o.order_items.length === 0).length
+    });
+
+    // Log detallado de items duplicados dentro de cada pedido
+    allOrders.forEach(order => {
+      if (order.order_items && order.order_items.length > 1) {
+        const itemsByKey = new Map<string, number>();
+        order.order_items.forEach((item: any) => {
+          const key = `${item.product_id}-${item.variant_id || 'no-variant'}`;
+          itemsByKey.set(key, (itemsByKey.get(key) || 0) + 1);
+        });
+
+        const duplicates = Array.from(itemsByKey.entries()).filter(([_, count]) => count > 1);
+        if (duplicates.length > 0) {
+          console.warn(`⚠️ API: Order ${order.order_number} (${order.order_type}) has duplicate items:`,
+            duplicates.map(([key, count]) => ({ key, count }))
+          );
+        }
+      }
+    });
 
     // Apply status filter a todos los pedidos
     if (status && status !== 'all') {

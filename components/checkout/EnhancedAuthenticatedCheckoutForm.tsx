@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useCartStore } from '@/lib/cart-store';
+import { useCartStore, type PaymentMethod } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import type { Address, Profile } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
@@ -52,13 +52,13 @@ export function EnhancedAuthenticatedCheckoutForm({
 }: EnhancedAuthenticatedCheckoutFormProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const { items, getTotal, clearCart, getTotals, calculateShipping } = useCartStore();
+  const { items, getTotal, clearCart, getTotals, calculateShipping, setPaymentMethod: setStorePaymentMethod } = useCartStore();
   const totals = getTotals();
 
   const [step, setStep] = useState<CheckoutStep>('review');
   const [orderId, setOrderId] = useState<string>('');
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<'daviplata' | 'nequi' | 'efectivo' | 'bold'>('daviplata');
+  const [paymentMethod, setLocalPaymentMethod] = useState<'daviplata' | 'nequi' | 'efectivo' | 'bold'>('daviplata');
   const [userAddresses, setUserAddresses] = useState<Address[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -106,7 +106,14 @@ export function EnhancedAuthenticatedCheckoutForm({
       // Set preferred payment method (validar que sea un método conocido)
       const validMethods = ['daviplata', 'nequi', 'efectivo', 'bold'] as const;
       if (profile.preferred_payment_method && validMethods.includes(profile.preferred_payment_method as any)) {
-        setPaymentMethod(profile.preferred_payment_method as 'daviplata' | 'nequi' | 'efectivo' | 'bold');
+        setLocalPaymentMethod(profile.preferred_payment_method as 'daviplata' | 'nequi' | 'efectivo' | 'bold');
+        const methodMap: Record<string, PaymentMethod> = {
+          'daviplata': 'daviplata',
+          'nequi': 'nequi',
+          'efectivo': 'cash',
+          'bold': 'card_visa_mastercard'
+        };
+        setStorePaymentMethod(methodMap[profile.preferred_payment_method] || 'cash');
       }
 
       // Load addresses
@@ -600,7 +607,10 @@ ${orderData.appliedCoupon.description}
                   {/* Tarjeta/PSE */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('bold')}
+                    onClick={() => {
+                      setLocalPaymentMethod('bold');
+                      setStorePaymentMethod('card_visa_mastercard');
+                    }}
                     className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'bold'
                       ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                       : 'border-gray-200 hover:border-blue-300'
@@ -617,7 +627,10 @@ ${orderData.appliedCoupon.description}
                   {/* Daviplata */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('daviplata')}
+                    onClick={() => {
+                      setLocalPaymentMethod('daviplata');
+                      setStorePaymentMethod('daviplata');
+                    }}
                     className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'daviplata'
                       ? 'border-red-500 bg-red-50'
                       : 'border-gray-200 hover:border-red-300'
@@ -632,7 +645,10 @@ ${orderData.appliedCoupon.description}
                   {/* Nequi */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('nequi')}
+                    onClick={() => {
+                      setLocalPaymentMethod('nequi');
+                      setStorePaymentMethod('nequi');
+                    }}
                     className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'nequi'
                       ? 'border-pink-500 bg-pink-50'
                       : 'border-gray-200 hover:border-pink-300'
@@ -647,7 +663,10 @@ ${orderData.appliedCoupon.description}
                   {/* Efectivo */}
                   <button
                     type="button"
-                    onClick={() => setPaymentMethod('efectivo')}
+                    onClick={() => {
+                      setLocalPaymentMethod('efectivo');
+                      setStorePaymentMethod('cash');
+                    }}
                     className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${paymentMethod === 'efectivo'
                       ? 'border-green-500 bg-green-50'
                       : 'border-gray-200 hover:border-green-300'
@@ -720,7 +739,10 @@ ${orderData.appliedCoupon.description}
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
-                  onClick={() => setPaymentMethod('daviplata')}
+                  onClick={() => {
+                    setLocalPaymentMethod('daviplata');
+                    setStorePaymentMethod('daviplata');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -728,7 +750,10 @@ ${orderData.appliedCoupon.description}
                       name="paymentMethod"
                       value="daviplata"
                       checked={paymentMethod === 'daviplata'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'daviplata')}
+                      onChange={(e) => {
+                        setLocalPaymentMethod(e.target.value as 'daviplata');
+                        setStorePaymentMethod('daviplata');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">
@@ -759,7 +784,10 @@ ${orderData.appliedCoupon.description}
                     ? 'border-primary bg-primary/5'
                     : 'border-gray-200 hover:border-gray-300'
                     }`}
-                  onClick={() => setPaymentMethod('efectivo')}
+                  onClick={() => {
+                    setLocalPaymentMethod('efectivo');
+                    setStorePaymentMethod('cash');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -767,7 +795,10 @@ ${orderData.appliedCoupon.description}
                       name="paymentMethod"
                       value="efectivo"
                       checked={paymentMethod === 'efectivo'}
-                      onChange={(e) => setPaymentMethod(e.target.value as 'efectivo')}
+                      onChange={(e) => {
+                        setLocalPaymentMethod(e.target.value as 'efectivo');
+                        setStorePaymentMethod('cash');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">
@@ -796,7 +827,10 @@ ${orderData.appliedCoupon.description}
                     ? 'border-pink-500 bg-pink-50'
                     : 'border-gray-200 hover:border-pink-300'
                     }`}
-                  onClick={() => setPaymentMethod('nequi')}
+                  onClick={() => {
+                    setLocalPaymentMethod('nequi');
+                    setStorePaymentMethod('nequi');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -804,7 +838,10 @@ ${orderData.appliedCoupon.description}
                       name="paymentMethod"
                       value="nequi"
                       checked={paymentMethod === 'nequi'}
-                      onChange={() => setPaymentMethod('nequi')}
+                      onChange={() => {
+                        setLocalPaymentMethod('nequi');
+                        setStorePaymentMethod('nequi');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">
@@ -827,7 +864,10 @@ ${orderData.appliedCoupon.description}
                     ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                     : 'border-gray-200 hover:border-blue-300'
                     }`}
-                  onClick={() => setPaymentMethod('bold')}
+                  onClick={() => {
+                    setLocalPaymentMethod('bold');
+                    setStorePaymentMethod('card_visa_mastercard');
+                  }}
                 >
                   <div className="flex items-start gap-3">
                     <input
@@ -835,7 +875,10 @@ ${orderData.appliedCoupon.description}
                       name="paymentMethod"
                       value="bold"
                       checked={paymentMethod === 'bold'}
-                      onChange={() => setPaymentMethod('bold')}
+                      onChange={() => {
+                        setLocalPaymentMethod('bold');
+                        setStorePaymentMethod('card_visa_mastercard');
+                      }}
                       className="mt-1"
                     />
                     <div className="flex-1">
