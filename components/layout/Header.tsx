@@ -125,6 +125,10 @@ export function Header() {
                   <Link href="/recetas" className="hover:text-verde-aguacate-200 transition-colors font-semibold">
                     Recetas
                   </Link>
+                  <Link href="/videos" className="hover:text-verde-aguacate-200 transition-colors font-semibold flex items-center gap-1">
+                    <span>🎬</span>
+                    Vídeos
+                  </Link>
                   <Link href="/categorias" className="hover:text-verde-aguacate-200 transition-colors">
                     Más Categorías
                   </Link>
@@ -351,6 +355,15 @@ export function Header() {
                     >
                       <BookOpen className="w-5 h-5" />
                       <span>Recetas</span>
+                    </Link>
+
+                    <Link
+                      href="/videos"
+                      onClick={closeMobileMenu}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/10 transition-colors font-semibold"
+                    >
+                      <span className="w-5 h-5 flex items-center justify-center">🎬</span>
+                      <span>Vídeos</span>
                     </Link>
 
                     <Link
