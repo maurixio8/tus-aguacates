@@ -522,10 +522,54 @@ export default function CreateOrderPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Guardar cliente nuevo si no estaba seleccionado de la lista
-        if (!selectedCustomer) {
+        // Verificar si hay cambios en los datos del cliente y actualizar
+        let customerUpdated = false;
+        if (selectedCustomer) {
+          // Detectar cambios comparando con los datos originales
+          const hasChanges =
+            customerName.trim() !== selectedCustomer.name ||
+            customerPhone.trim() !== selectedCustomer.phone ||
+            (customerEmail.trim() || null) !== (selectedCustomer.email || null) ||
+            deliveryAddress.trim() !== (selectedCustomer.address || '') ||
+            (deliveryNotes.trim() || null) !== (selectedCustomer.notes || null);
+
+          if (hasChanges) {
+            try {
+              const updateResponse = await fetch(`/api/admin/customers?id=${selectedCustomer.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                  name: customerName.trim(),
+                  phone: customerPhone.trim(),
+                  email: customerEmail.trim() || null,
+                  address: deliveryAddress.trim(),
+                  notes: deliveryNotes.trim() || null,
+                }),
+              });
+
+              const updateData = await updateResponse.json();
+              if (updateData.success) {
+                customerUpdated = true;
+                // Actualizar el cliente seleccionado en el estado local
+                setSelectedCustomer({
+                  ...selectedCustomer,
+                  name: customerName.trim(),
+                  phone: customerPhone.trim(),
+                  email: customerEmail.trim() || null,
+                  address: deliveryAddress.trim(),
+                  notes: deliveryNotes.trim() || null,
+                });
+              }
+            } catch (customerErr) {
+              // Si falla actualizar el cliente, no es crítico - el pedido ya se creó
+              console.log('No se pudo actualizar cliente existente:', customerErr);
+            }
+          }
+        } else {
+          // Guardar cliente nuevo si no estaba seleccionado de la lista
           try {
-            await fetch('/api/admin/customers', {
+            const newCustomerResponse = await fetch('/api/admin/customers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
@@ -537,12 +581,23 @@ export default function CreateOrderPage() {
                 notes: deliveryNotes.trim() || null,
               }),
             });
+            const newCustomerData = await newCustomerResponse.json();
+            if (newCustomerData.success) {
+              setSelectedCustomer(newCustomerData.data);
+              customerUpdated = true;
+            }
           } catch (customerErr) {
             // Si falla guardar el cliente, no es crítico - el pedido ya se creó
             console.log('No se pudo guardar cliente nuevo:', customerErr);
           }
         }
 
+        // Mostrar mensaje de éxito indicando si el cliente fue actualizado
+        const customerStatus = customerUpdated
+          ? (selectedCustomer ? 'y el cliente fue actualizado' : 'y el cliente fue creado')
+          : '';
+
+        console.log(`Pedido creado exitosamente ${customerStatus}`);
         // Guardar datos del pedido para WhatsApp
         setCreatedOrderData({
           orderId: data.data?.id || Date.now().toString(),
