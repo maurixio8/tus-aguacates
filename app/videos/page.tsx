@@ -67,36 +67,35 @@ export default function VideosPage() {
   
 	const REMINDER_INTERVAL = 10; // Mostrar recordatorio cada 10 videos
 
-  useEffect(() => {
-    const videoList: Video[] = [];
-    for (let i = 1; i <= 183; i++) {
-      const titleIndex = (i - 1) % VIDEO_TITLES.length;
-      const variation = Math.floor((i - 1) / VIDEO_TITLES.length) + 1;
-      videoList.push({
-        id: `video-${i}`,
-        filename: `video-${i}.mp4`,
-        url: `${VIDEOS_BASE_URL}/video-${i}.mp4`,
-			// Las miniaturas están en la subcarpeta /thumbnails/ según estructura del servidor
-			thumbnailUrl: `${VIDEOS_BASE_URL}/thumbnails/video-${i}.jpg`,
-        title: `${variation > 1 ? `${VIDEO_TITLES[titleIndex]} #${variation}` : VIDEO_TITLES[titleIndex]} ${i}`
-      });
-    }
-    setVideos(videoList);
-    
-    const viewed = localStorage.getItem('videosViewed');
-    if (viewed) setViewedCount(parseInt(viewed, 10));
+	useEffect(() => {
+		const videoList: Video[] = [];
+		for (let i = 1; i <= 183; i++) {
+			const titleIndex = (i - 1) % VIDEO_TITLES.length;
+			const variation = Math.floor((i - 1) / VIDEO_TITLES.length) + 1;
+			videoList.push({
+				id: `video-${i}`,
+				filename: `video-${i}.mp4`,
+				url: `${VIDEOS_BASE_URL}/video-${i}.mp4`,
+				// Las miniaturas están en la subcarpeta /thumbnails/ según estructura del servidor
+				thumbnailUrl: `${VIDEOS_BASE_URL}/thumbnails/video-${i}.jpg`,
+				title: `${variation > 1 ? `${VIDEO_TITLES[titleIndex]} #${variation}` : VIDEO_TITLES[titleIndex]} ${i}`
+			});
+		}
+		setVideos(videoList);
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const videoIdFromUrl = urlParams.get('v');
-    if (videoIdFromUrl) {
-      const index = videoList.findIndex(v => v.id === videoIdFromUrl);
-      if (index !== -1) {
-        setCurrentVideoIndex(index);
-        setTimeout(() => updateViewCount(index), 100);
-      }
-    }
-    setLoading(false);
-  }, []);
+		// Limpiar contador antiguo de videos bloqueados (ya no usamos límite)
+		localStorage.removeItem('videosViewed');
+
+		const urlParams = new URLSearchParams(window.location.search);
+		const videoIdFromUrl = urlParams.get('v');
+		if (videoIdFromUrl) {
+			const index = videoList.findIndex(v => v.id === videoIdFromUrl);
+			if (index !== -1) {
+				setCurrentVideoIndex(index);
+			}
+		}
+		setLoading(false);
+	}, []);
 
   useEffect(() => {
     if (user) {
@@ -134,42 +133,31 @@ export default function VideosPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentVideoIndex, videos.length]);
 
-  const goToNextVideo = useCallback(() => {
-    if (currentVideoIndex !== null && currentVideoIndex < videos.length - 1) {
-      const newIndex = currentVideoIndex + 1;
-      setCurrentVideoIndex(newIndex);
-      updateViewCount(newIndex);
-    }
-  }, [currentVideoIndex, videos.length]);
-
-  const goToPrevVideo = useCallback(() => {
-    if (currentVideoIndex !== null && currentVideoIndex > 0) {
-      const newIndex = currentVideoIndex - 1;
-      setCurrentVideoIndex(newIndex);
-      updateViewCount(newIndex);
-    }
-  }, [currentVideoIndex]);
-
-  const updateViewCount = (index: number) => {
-    const newCount = index + 1;
-    if (newCount > viewedCount) {
-      setViewedCount(newCount);
-      localStorage.setItem('videosViewed', newCount.toString());
-    }
-  };
-
-	const handleVideoClick = (index: number) => {
-		const isRegistered = !!user || localStorage.getItem('userRegistered') === 'true';
-		
-		// Mostrar recordatorio cada REMINDER_INTERVAL videos si no está registrado
-		if (!isRegistered && (index + 1) % REMINDER_INTERVAL === 0) {
-			setShowLimitModal(true);
+	const goToNextVideo = useCallback(() => {
+		if (currentVideoIndex !== null && currentVideoIndex < videos.length - 1) {
+			const newIndex = currentVideoIndex + 1;
+			setCurrentVideoIndex(newIndex);
+			// Mostrar recordatorio cada 10 videos si no está registrado
+			const isRegistered = !!user || localStorage.getItem('userRegistered') === 'true';
+			if (!isRegistered && (newIndex + 1) % REMINDER_INTERVAL === 0) {
+				setShowLimitModal(true);
+			}
 		}
-		
-		setCurrentVideoIndex(index);
-		updateViewCount(index);
+	}, [currentVideoIndex, videos.length, user]);
+
+	const goToPrevVideo = useCallback(() => {
+		if (currentVideoIndex !== null && currentVideoIndex > 0) {
+			setCurrentVideoIndex(currentVideoIndex - 1);
+		}
+	}, [currentVideoIndex]);
+
+	const updateViewCount = (index: number) => {
+		// Ya no guardamos contador - los videos son libres
 	};
 
+	const handleVideoClick = (index: number) => {
+		setCurrentVideoIndex(index);
+	};
   const toggleLike = async (videoId: string) => {
     if (!user) {
       setLikedVideos(prev => ({ ...prev, [videoId]: !prev[videoId] }));
@@ -353,8 +341,8 @@ export default function VideosPage() {
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
             <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: COLORS.verdeBosque + '20' }}><Play className="w-10 h-10" style={{ color: COLORS.verdeBosque }} /></div>
-				<h2 className="text-xl font-bold mb-2" style={{ color: COLORS.verdeBosque }}>¡Regístrate gratis para ver más! 🥑</h2>
-				<p className="text-gray-600 mb-6 text-sm leading-relaxed text-center px-4">Has visto <strong>{MAX_FREE_VIDEOS} vídeos gratis</strong>. Para seguir disfrutando de todo nuestro contenido, <strong>regístrate gratis</strong> y desbloquea acceso ilimitado.</p>
+				<h2 className="text-xl font-bold mb-2" style={{ color: COLORS.verdeBosque }}>¡Únete a nuestra comunidad! 🥑</h2>
+				<p className="text-gray-600 mb-6 text-sm leading-relaxed text-center px-4">Regístrate gratis para guardar tus videos favoritos, comentar y disfrutar de contenido exclusivo.</p>
 				<div className="flex flex-col gap-3">
 					<a href="/auth/registro" className="w-full px-4 py-3 rounded-xl font-bold text-white text-center" style={{ backgroundColor: COLORS.verdeBosque }}>Registrarse gratis</a>
 					<button onClick={() => setShowLimitModal(false)} className="w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Continuar sin registrar</button>
