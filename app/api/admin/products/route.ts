@@ -32,7 +32,7 @@ function getSupabaseClient() {
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://admin-dashboard-m9p6qyz27-mauricio-s-projects-2bf4b7a2.vercel.app',
+  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
   'Access-Control-Allow-Credentials': 'true',
@@ -417,7 +417,8 @@ export async function POST(request: NextRequest) {
     // Validate required fields (excluding category_id since we handled it)
     const requiredFields = ['name', 'price', 'stock'];
     for (const field of requiredFields) {
-      if (!body[field]) {
+      // Fix: Allow 0 as valid value - only check for null/undefined/empty string
+      if (body[field] === undefined || body[field] === null || body[field] === '') {
         return NextResponse.json(
           { error: `El campo ${field} es requerido` },
           { status: 400, headers: corsHeaders }
