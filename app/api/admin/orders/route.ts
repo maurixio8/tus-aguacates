@@ -314,6 +314,37 @@ export async function GET(request: NextRequest) {
               }))
             );
           }
+
+          // Agregar variant_name a cada item del pedido para la lista de compras
+          const orderItemsWithVariants = order.order_items?.map((item: any) => ({
+            ...item,
+            variantName: item.variant_name || item.variant_value || null,
+            product_snapshot: {
+              ...item.product_snapshot,
+              variant_name: item.variant_name || item.variant_value || null,
+              variant_value: item.variant_value || null
+            }
+          })) || [];
+
+          return {
+            ...order,
+            order_items: orderItemsWithVariants,
+            ...customerData, // Usar datos reales en lugar de null
+            order_type: 'registered'
+          };
+          if (order.order_items && order.order_items.length > 0) {
+            console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
+              order.order_items.map((item: any) => ({
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                product_name: item.products?.name || item.product_snapshot?.name,
+                variant_name: item.variant_name || item.variant_value || null,
+                variantName: item.variant_name || item.variant_value || null
+              }))
+            );
+          }
           if (order.order_items && order.order_items.length > 0) {
             console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
               order.order_items.map((item: any) => ({
