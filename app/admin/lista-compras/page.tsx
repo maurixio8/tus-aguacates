@@ -659,7 +659,50 @@ export default function ListaComprasPage() {
   }, [dateFrom, dateTo]);
 
   // Extraer items de order_data si no hay order_items
+  // Extraer items de order_data si no hay order_items
   const extractItemsFromOrder = (order: Order): OrderItem[] => {
+    // Primero extraer desde order_data (para pedidos de invitados y registrados que guardan variantes ahí)
+    // Esto tiene prioridad porque ahí se guarda la información correcta de variantes
+    if (order.order_data?.items) {
+      return order.order_data.items.map((item: any, index: number) => ({
+        id: item.id || `item-${index}`,
+        product_id: item.productId || item.product_id || `product-${index}`,
+        product_snapshot: {
+          name: item.productName || item.product_name || 'Producto',
+          price: item.price || item.unit_price || 0,
+          variant_name: item.variantName || item.variant_name || null,
+          variant_value: item.variantValue || item.variant_value || null
+        },
+        quantity: item.quantity || 0,
+        unit_price: item.price || item.unit_price || 0,
+        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
+        variantName: item.variantName || item.variant_name || null,
+        variant_value: item.variantValue || item.variant_value || null
+      }));
+    }
+
+    // Luego intentar con order_items
+    if (order.order_items && order.order_items.length > 0) {
+      return order.order_items.map((item: any) => ({
+        ...item,
+        // Asegurar que variantName esté disponible en el nivel superior
+        variantName: item.variantName || item.variant_name || item.product_snapshot?.variant_name || null,
+        variant_value: item.variant_value || item.product_snapshot?.variant_value || null,
+        product_snapshot: {
+          ...item.product_snapshot,
+          variant_name: item.variantName || item.variant_name || item.product_snapshot?.variant_name || null,
+          variant_value: item.variant_value || item.product_snapshot?.variant_value || null
+        }
+      }));
+    }
+
+    // Finalmente con items
+    if (order.items && order.items.length > 0) {
+      return order.items;
+    }
+
+    return [];
+  };
     // Primero intentar con order_items
     if (order.order_items && order.order_items.length > 0) {
       return order.order_items;
