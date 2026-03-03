@@ -52,8 +52,8 @@ export default function VideosPage() {
   const { user } = useAuth();
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentVideoIndex, setCurrentVideoIndex] = useState<number | null>(null);
-  const [viewedCount, setViewedCount] = useState(0);
+	const [currentVideoIndex, setCurrentVideoIndex] = useState<number | null>(null);
+	const [showLimitModal, setShowLimitModal] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<VideoComment[]>([]);
@@ -219,8 +219,7 @@ export default function VideosPage() {
     <div className="min-h-screen" style={{ backgroundColor: COLORS.crema }}>
       <div className="text-white py-3 px-4 sticky top-0 z-40 shadow-lg" style={{ background: `linear-gradient(135deg, ${COLORS.verdeBosque}, ${COLORS.verdeAguacate})` }}>
         <div className="max-w-lg mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2"><span className="text-2xl">🥑</span><h1 className="text-lg font-bold">Vídeos</h1></div>
-          <span className="text-xs px-3 py-1 rounded-full font-medium" style={{ backgroundColor: COLORS.naranja, color: '#000' }}>{viewedCount}/{MAX_FREE_VIDEOS} gratis</span>
+				<div className="flex items-center gap-2"><span className="text-2xl">🥑</span><h1 className="text-lg font-bold">Vídeos</h1></div>
         </div>
       </div>
 
