@@ -335,20 +335,19 @@ export default function VideosPage() {
         </div>
       )}
 
-      {showLimitModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
-            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: COLORS.verdeBosque + '20' }}><Play className="w-10 h-10" style={{ color: COLORS.verdeBosque }} /></div>
+	{showLimitModal && (
+		<div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+			<div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+				<div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: COLORS.verdeBosque + '20' }}><Play className="w-10 h-10" style={{ color: COLORS.verdeBosque }} /></div>
 				<h2 className="text-xl font-bold mb-2" style={{ color: COLORS.verdeBosque }}>¡Únete a nuestra comunidad! 🥑</h2>
 				<p className="text-gray-600 mb-6 text-sm leading-relaxed text-center px-4">Regístrate gratis para guardar tus videos favoritos, comentar y disfrutar de contenido exclusivo.</p>
 				<div className="flex flex-col gap-3">
 					<a href="/auth/registro" className="w-full px-4 py-3 rounded-xl font-bold text-white text-center" style={{ backgroundColor: COLORS.verdeBosque }}>Registrarse gratis</a>
 					<button onClick={() => setShowLimitModal(false)} className="w-full px-4 py-2 text-sm text-gray-500 hover:text-gray-700">Continuar sin registrar</button>
 				</div>
-            </div>
-          </div>
-        </div>
-      )}
+			</div>
+		</div>
+	)}
     </div>
   );
 }
