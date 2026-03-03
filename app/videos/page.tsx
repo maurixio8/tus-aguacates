@@ -54,8 +54,7 @@ export default function VideosPage() {
   const [loading, setLoading] = useState(true);
 	const [currentVideoIndex, setCurrentVideoIndex] = useState<number | null>(null);
 	const [showLimitModal, setShowLimitModal] = useState(false);
-  const [showLimitModal, setShowLimitModal] = useState(false);
-  const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
+	const [likedVideos, setLikedVideos] = useState<Record<string, boolean>>({});
   const [comments, setComments] = useState<VideoComment[]>([]);
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState('');
