@@ -556,9 +556,9 @@ export default function CreateOrderPage() {
                   ...selectedCustomer,
                   name: customerName.trim(),
                   phone: customerPhone.trim(),
-                  email: customerEmail.trim() || null,
+                  email: customerEmail.trim() || undefined,
                   address: deliveryAddress.trim(),
-                  notes: deliveryNotes.trim() || null,
+                  notes: deliveryNotes.trim() || undefined,
                 });
               }
             } catch (customerErr) {
