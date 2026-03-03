@@ -1,0 +1,253 @@
+{
+    "name": "🔔 Monitor Escalados v2 - Con SLA",
+    "nodes": [
+        {
+            "parameters": {
+                "rule": {
+                    "interval": [
+                        {
+                            "field": "minutes",
+                            "minutesInterval": 5
+                        }
+                    ]
+                }
+            },
+            "id": "trigger-schedule",
+            "name": "⏰ Cada 5 minutos",
+            "type": "n8n-nodes-base.scheduleTrigger",
+            "typeVersion": 1.2,
+            "position": [200, 300]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "SELECT \n  nombre, \n  telefono,\n  fecha_escalado,\n  motivo_escalado,\n  prioridad_escalado,\n  ROUND(EXTRACT(EPOCH FROM (NOW() - fecha_escalado))/60) as minutos_esperando,\n  ROUND(EXTRACT(EPOCH FROM (NOW() - fecha_escalado))/60, 0) as minutos_esperando_int\nFROM clientes\nWHERE estado_conversacion = 'ESCALADO'\n  AND (notificado_escalado IS NULL OR notificado_escalado = false)\nORDER BY \n  CASE prioridad_escalado\n    WHEN 'urgente' THEN 1\n    WHEN 'alta' THEN 2\n    WHEN 'normal' THEN 3\n    ELSE 4\n  END,\n  fecha_escalado ASC;",
+                "options": {}
+            },
+            "id": "query-escalados",
+            "name": "🔍 Buscar Escalados Pendientes",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [420, 300],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "conditions": {
+                    "options": {
+                        "caseSensitive": true,
+                        "leftValue": "",
+                        "typeValidation": "strict",
+                        "version": 2
+                    },
+                    "conditions": [
+                        {
+                            "id": "hay-escalados",
+                            "leftValue": "={{ $json.telefono }}",
+                            "rightValue": "",
+                            "operator": {
+                                "type": "string",
+                                "operation": "exists"
+                            }
+                        }
+                    ],
+                    "combinator": "and"
+                },
+                "options": {}
+            },
+            "id": "if-hay-escalados",
+            "name": "❓ ¿Hay Escalados?",
+            "type": "n8n-nodes-base.if",
+            "typeVersion": 2.2,
+            "position": [640, 300]
+        },
+        {
+            "parameters": {
+                "jsCode": "const items = $input.all();\n\nif (items.length === 0) {\n  return [{ json: { mensaje: 'No hay clientes escalados', cantidad: 0 } }];\n}\n// Agrupar por prioridad\nconst porPrioridad = {\n  urgente: [],\n  alta: [],\n  normal: []\n};\n\nitems.forEach(item => {\n  const p = item.json.prioridad_escalado || 'normal';\n  if (!porPrioridad[p]) porPrioridad[p] = [];\n  porPrioridad[p].push(item.json);\n});\n\n// Analizar SLA\nconst sla = {\n  urgente: 15,\n  alta: 30,\n  normal: 60\n};\n\nconst excedidos = {\n  urgente: porPrioridad.urgente.filter(i => i.minutos_esperando > sla.urgente),\n  alta: porPrioridad.alta.filter(i => i.minutos_esperando > sla.alta),\n  normal: porPrioridad.normal.filter(i => i.minutos_esperando > sla.normal)\n};\n\n// Determinar nivel de alerta\nlet alerta = '';\nif (excedidos.urgente.length > 0) {\n  alerta = '🚨 CRÍTICO';\n} else if (excedidos.alta.length > 0) {\n  alerta = '⚠️ ALERTA';\n} else if (excedidos.normal.length > 0) {\n  alerta = '📋 RECORDATORIO';\n} else {\n  alerta = '✅ EN SLA';\n}\n\n// Preparar mensaje\nlet mensaje = `${alerta} CLIENTES ESCALADOS\\n\\n`;\n\nif (porPrioridad.urgente.length > 0) {\n  mensaje += `🔴 URGENTE (${porPrioridad.urgente.length}):\\n`;\n  porPrioridad.urgente.forEach((i, idx) => {\n    const sla_status = i.minutos_esperando > sla.urgente ? '❌ SLA EXCEDIDO' : '✅';\n    mensaje += `  ${idx + 1}. *${i.nombre || 'Sin nombre'}*\\n`;\n    mensaje += `     📱 ${i.telefono}\\n`;\n    mensaje += `     ⏱️ ${Math.floor(i.minutos_esperando)} min ${sla_status}\\n`;\n    mensaje += `     📝 ${i.motivo_escalado || 'Sin motivo'}\\n`;\n  });\n}\n\nif (porPrioridad.alta.length > 0) {\n  mensaje += `\\n🟡 ALTA (${porPrioridad.alta.length}):\\n`;\n  porPrioridad.alta.forEach((i, idx) => {\n    const sla_status = i.minutos_esperando > sla.alta ? '❌ SLA EXCEDIDO' : '✅';\n    mensaje += `  ${idx + 1}. *${i.nombre || 'Sin nombre'}*\\n`;\n    mensaje += `     📱 ${i.telefono}\\n`;\n    mensaje += `     ⏱️ ${Math.floor(i.minutos_esperando)} min ${sla_status}\\n`;\n  });\n}\n\nif (porPrioridad.normal.length > 0) {\n  mensaje += `\\n🟢 NORMAL (${porPrioridad.normal.length}):\\n`;\n  porPrioridad.normal.forEach((i, idx) => {\n    const sla_status = i.minutos_esperando > sla.normal ? '❌ SLA EXCEDIDO' : '✅';\n    mensaje += `  ${idx + 1}. *${i.nombre || 'Sin nombre'}*\\n`;\n    mensaje += `     📱 ${i.telefono}\\n`;\n    mensaje += `     ⏱️ ${Math.floor(i.minutos_esperando)} min ${sla_status}\\n`;\n  });\n}\n\n// Resumen\nconst totalEscalados = items.length;\nconst totalExcedidos = excedidos.urgente.length + excedidos.alta.length + excedidos.normal.length;\n\nmensaje += `\\n📊 RESUMEN:\\n`;\nmensaje += `• Total: ${totalEscalados}\\n`;\nmensaje += `• SLA excedidos: ${totalExcedidos}\\n`;\nmensaje += `• En tiempo: ${totalEscalados - totalExcedidos}\\n`;\n\nif (totalExcedidos > 0) {\n  mensaje += `\\n⚠️ NECESITA ATENCIÓN INMEDIATA: ${totalExcedidos} cliente(s) fuera de SLA`;\n}\n\n// Lista de teléfonos para marcar como notificados\nconst telefonos = items.map(i => i.json.telefono);\n\nreturn [{\n  json: {\n    mensaje,\n    telefonos,\n    cantidad: totalEscalados,\n    excedidos: totalExcedidos,\n    alerta_nivel: alerta,\n    por_prioridad: {\n      urgente: porPrioridad.urgente.length,\n      alta: porPrioridad.alta.length,\n      normal: porPrioridad.normal.length\n    }\n  }\n}];"
+            },
+            "id": "code-preparar-mensaje",
+            "name": "📝 Preparar Mensaje SLA",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [860, 200]
+        },
+        {
+            "parameters": {
+                "method": "POST",
+                "url": "https://api.ycloud.com/v2/whatsapp/messages",
+                "authentication": "predefinedCredentialType",
+                "nodeCredentialType": "httpHeaderAuth",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonBody": "={\n  \"from\": \"573042582777\",\n  \"to\": \"573203062007\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.mensaje }}\"\n  }\n}",
+                "options": {}
+            },
+            "id": "send-whatsapp-admin",
+            "name": "📱 Enviar Notificación Admin",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4.2,
+            "position": [1080, 200],
+            "credentials": {
+                "httpHeaderAuth": {
+                    "id": "9YuNWHvIcXFwYdOX",
+                    "name": "YCloud account"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "UPDATE clientes \nSET notificado_escalado = true\nWHERE estado_conversacion = 'ESCALADO'\n  AND (notificado_escalado IS NULL OR notificado_escalado = false)\nRETURNING telefono, nombre, notificado_escalado;",
+                "options": {}
+            },
+            "id": "marcar-notificados",
+            "name": "✅ Marcar como Notificados",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [1300, 200],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        },
+        {
+            "parameters": {},
+            "id": "no-op",
+            "name": "🔇 Sin Escalados",
+            "type": "n8n-nodes-base.noOp",
+            "typeVersion": 1,
+            "position": [860, 500]
+        },
+        {
+            "parameters": {
+                "jsCode": "const datos = $('📝 Preparar Mensaje SLA').first().json;\n\nconst mensajeReporte = `\n📊 ACTUALIZACIÓN ESCALADOS\n\n${datos.alerta_nivel}\n\n📌 Por Prioridad:\n• Urgentes: ${datos.por_prioridad.urgente}\n• Altos: ${datos.por_prioridad.alta}\n• Normales: ${datos.por_prioridad.normal}\n\n📈 SLA:\n• Total: ${datos.cantidad}\n• En tiempo: ${datos.cantidad - datos.excedidos}\n• Excedidos: ${datos.excedidos}\n`;\n\nreturn [{\n  json: {\n    mensaje: mensajeReporte,\n    timestamp: new Date().toISOString()\n  }\n}];"
+            },
+            "id": "code-reporte",
+            "name": "📊 Generar Reporte",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [1500, 300]
+        },
+        {
+            "parameters": {
+                "operation": "executeQuery",
+                "query": "INSERT INTO escalados_log (\n  fecha,\n  total_escalados,\n  urgentes,\n  altos,\n  normales,\n  excedidos_sla,\n  alerta_nivel\n) VALUES (\n  NOW(),\n  $1,\n  $2,\n  $3,\n  $4,\n  $5,\n  $6\n);",
+                "options": {
+                    "queryReplacement": "={{ $json.cantidad }}, {{ $json.por_prioridad.urgente }}, {{ $json.por_prioridad.alta }}, {{ $json.por_prioridad.normal }}, {{ $json.excedidos }}, {{ $json.alerta_nivel }}"
+                }
+            },
+            "id": "save-log",
+            "name": "📝 Guardar en Log",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2.5,
+            "position": [1700, 300],
+            "credentials": {
+                "postgres": {
+                    "id": "R6hc0vEZJhKQSi3G",
+                    "name": "Mi PostgreSQL Docker"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "⏰ Cada 5 minutos": {
+            "main": [
+                [
+                    {
+                        "node": "🔍 Buscar Escalados Pendientes",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "🔍 Buscar Escalados Pendientes": {
+            "main": [
+                [
+                    {
+                        "node": "❓ ¿Hay Escalados?",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "❓ ¿Hay Escalados?": {
+            "main": [
+                [
+                    {
+                        "node": "📝 Preparar Mensaje SLA",
+                        "type": "main",
+                        "index": 0
+                    }
+                ],
+                [
+                    {
+                        "node": "🔇 Sin Escalados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📝 Preparar Mensaje SLA": {
+            "main": [
+                [
+                    {
+                        "node": "📱 Enviar Notificación Admin",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📱 Enviar Notificación Admin": {
+            "main": [
+                [
+                    {
+                        "node": "✅ Marcar como Notificados",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "✅ Marcar como Notificados": {
+            "main": [
+                [
+                    {
+                        "node": "📊 Generar Reporte",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "📊 Generar Reporte": {
+            "main": [
+                [
+                    {
+                        "node": "📝 Guardar en Log",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "staticData": null,
+    "tags": [],
+    "triggerCount": 0,
+    "updatedAt": "2026-02-08T17:30:00.000Z",
+    "versionId": "1"
+}

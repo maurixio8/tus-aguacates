@@ -308,6 +308,19 @@ export async function GET(request: NextRequest) {
                 variant_id: item.variant_id,
                 quantity: item.quantity,
                 unit_price: item.unit_price,
+                product_name: item.products?.name || item.product_snapshot?.name,
+                variant_name: item.variant_name || item.variant_value || null,
+                variantName: item.variant_name || item.variant_value || null
+              }))
+            );
+          }
+          if (order.order_items && order.order_items.length > 0) {
+            console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
+              order.order_items.map((item: any) => ({
+                product_id: item.product_id,
+                variant_id: item.variant_id,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
                 product_name: item.products?.name || item.product_snapshot?.name
               }))
             );
@@ -363,7 +376,7 @@ export async function GET(request: NextRequest) {
                 product_snapshot: {
                   name: item.productName || item.product_name || 'Producto',
                   price: item.price || item.unit_price || 0,
-                  variant_name: null,
+                  variant_name: item.variantName || item.variant_name || 'Presentación',
                   variant_value: item.variantName || item.variant_name || null
                 }
             }));

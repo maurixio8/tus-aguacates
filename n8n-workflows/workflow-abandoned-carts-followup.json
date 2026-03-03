@@ -1,0 +1,247 @@
+{
+  "name": "📊 Seguimiento de Carritos Abandonados (3 Horas Laborables)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            },
+            {
+              "triggerAtHour": 12
+            },
+            {
+              "triggerAtHour": 15
+            },
+            {
+              "triggerAtHour": 18
+            },
+            {
+              "triggerAtHour": 21
+            }
+          ]
+        }
+      },
+      "id": "trigger-001",
+      "name": "⏰ Cada 3 Horas Laborables",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [220, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n  co.id,\n  co.guest_name,\n  co.guest_email,\n  co.guest_phone,\n  co.total_amount,\n  co.order_data,\n  co.created_at,\n  co.updated_at,\n  co.cart_age_days,\n  co.abandoned_whatsapp_sent,\n  co.abandoned_reminder_sent,\n  -- Calcular edad en horas laborables\n  EXTRACT(EPOCH FROM (NOW() - co.created_at)) / 3600 as horas_inactivo,\n  -- Validar que tenga datos registrados\n  co.guest_email IS NOT NULL AND co.guest_email != '' as tiene_email,\n  co.guest_phone IS NOT NULL AND co.guest_phone != '' AND co.guest_phone LIKE '57%' as tiene_telefono,\n  -- Calcular si cumple 3 horas laborables\n  EXTRACT(DOW FROM co.created_at) NOT IN (0,6) as es_dia_laborable,\n  -- Horas laborables calculadas\n  CASE \n    WHEN EXTRACT(DOW FROM co.created_at) NOT IN (0,6) THEN EXTRACT(EPOCH FROM (NOW() - co.created_at)) / 3600\n    ELSE 0 \n  END as horas_laborables\nFROM guest_orders co\nWHERE co.status = 'carrito_creado'\n  AND co.abandoned = true\n  AND co.abandoned_whatsapp_sent = false\n  AND co.abandoned_reminder_sent->>'whatsapp_3horas' IS NULL\n  AND co.created_at > NOW() - INTERVAL '7 days'\n  -- Validar que el cliente tenga datos registrados\n  AND co.guest_email IS NOT NULL\n  AND co.guest_email != ''\n  AND co.guest_phone IS NOT NULL\n  AND co.guest_phone != ''\n  AND co.guest_phone LIKE '57%'\n  -- Que tenga 3 horas laborables\n  AND horas_laborables >= 3\nORDER BY co.cart_age_days ASC,\n  co.created_at ASC\nLIMIT 20;",
+        "options": {}
+      },
+      "id": "buscar-carritos-seguimiento",
+      "name": "🔍 Buscar Carritos de 3 Horas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [440, 300],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "tiene-datos-completos",
+              "leftValue": "={{ $json.guest_email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "tiene-datos-completos-2",
+              "leftValue": "={{ $json.guest_phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            },
+            {
+              "id": "tiene-3-horas",
+              "leftValue": "={{ $json.horas_laborables }}",
+              "rightValue": ">=3",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "filtro-validar-seguimiento",
+      "name": "✅ ¿Cumple 3 Horas Laborables?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [660, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Formatear mensaje de seguimiento con pregunta de confirmación\nconst order = $input.first().json;\nconst nombre = order.guest_name || 'amigo/a';\nconst edad = order.cart_age_days || 1;\nconst total = Number(order.total_amount) || 0;\nconst prePedido = order.order_data?.items || [];\nconst horasLaborables = Math.floor(order.horas_laborables || 0);\n\n// Determinar mensaje según seguimiento\nlet mensaje_seguimiento = '';\n\nif (horasLaborables >= 3 && horasLaborables < 6) {\n  mensaje_seguimiento = 'Ya han pasado 3 horas laborables desde que creaste tu carrito.\\n\\n¿Te gustaría confirmar el pedido?';\n} else if (horasLaborables >= 6 && horasLaborables < 9) {\n  mensaje_seguimiento = 'Tu pedido lleva más de 6 horas laborables sin confirmar.\\n\\n¿Deseas confirmar este pedido ahora?';\n} else if (horasLaborables >= 9 && horasLaborables < 12) {\n  mensaje_seguimiento = 'Tu pedido lleva más de 9 horas laborables.\\n\\n¿Deseas confirmar este pedido?';\n} else {\n  mensaje_seguimiento = 'Tu pedido lleva más de 12 horas laborables.\\n\\n¿Deseas confirmar este pedido?';\n}\n\n// Calcular día de entrega\nconst now = new Date();\nconst dayOfWeek = now.getDay(); // 0=Dom, 1=Lun, etc.\nlet proximaEntrega = 'Martes';\nif (dayOfWeek >= 2 && dayOfWeek <= 4) {\n  proximaEntrega = 'Viernes';\n} else {\n  proximaEntrega = 'Martes';\n}\n\n// Formatear lista de productos\nlet productosTexto = '';\nif (Array.isArray(prePedido) && prePedido.length > 0) {\n  productosTexto = prePedido.map((item, i) => {\n    const nombre = item.productName || item.producto_nombre || 'Producto';\n    const precio = Number(item.price) || Number(item.precio) || 0;\n    const cantidad = item.quantity || item.cantidad || 1;\n    return `• ${nombre} x${cantidad} - $${precio.toLocaleString('es-CO')}`;\n  }).join('\\n');\n} else {\n  productosTexto = '• Tus productos favoritos están listos';\n}\n\nconst mensaje = `📝 SEGUIMIENTO DE PEDIDO\\n\\nHola ${nombre},\\n\\n${mensaje_seguimiento}\\n\\n${productosTexto}\\n\\n💰 *Total: $${total.toLocaleString('es-CO')}*\\n\\n🚚 Te podemos entregar el *${proximaEntrega}*\\n\\n¿Deseas:\\n1️⃣ Confirmar el pedido\\n2️⃣ Dejar el carrito así\\n3️⃣ Revisar el carrito`;\n\nreturn {\n  json: {\n    orderId: order.id,\n    nombre: nombre,\n    telefono: order.guest_phone,\n    email: order.guest_email,\n    mensaje: mensaje,\n    totalCarrito: total,\n    cartAge: edad,\n    horasLaborables: horasLaborables,\n    productos: prePedido,\n    proximaEntrega: proximaEntrega,\n    opciones: 3\n  }\n};"
+      },
+      "id": "formatear-mensaje-seguimiento",
+      "name": "📝 Formatear Mensaje Seguimiento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ycloud.com/v2/whatsapp/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "YCloudApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"573042582777\",\n  \"to\": \"{{ $json.telefono }}\",\n  \"type\": \"interactive\",\n  \"interactive\": {\n    \"type\": \"button\",\n    \"body\": {\n      \"text\": {{ JSON.stringify($json.mensaje) }}\n    },\n    \"action\": {\n      \"buttons\": [\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"confirmar_pedido\",\n            \"title\": \"✅ Confirmar Pedido\"\n          }\n        },\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"dejar_pedido\",\n            \"title\": \"❌ Dejar Así\"\n          }\n        },\n        {\n          \"type\": \"reply\",\n          \"reply\": {\n            \"id\": \"revisar_carrito\",\n            \"title\": \"👁️ Revisar Carrito\"\n          }\n        }\n      ]\n    }\n  }\n}",
+        "options": {}
+      },
+      "id": "enviar-whatsapp-seguimiento",
+      "name": "📱 Enviar WhatsApp Seguimiento",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "credentials": {
+        "YCloudApi": {
+          "id": "9YuNWHvIcXFwYdOX",
+          "name": "YCloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE guest_orders\nSET\n  abandoned_whatsapp_sent = true,\n  abandoned_reminder_sent = jsonb_set(abandoned_reminder_sent,\n    to_jsonb('whatsapp_3horas'),\n    to_jsonb((abandoned_reminder_sent->>'whatsapp_3horas')::jsonb || {\"sent_at\": \"{{ now() }}\"})\n  )\nWHERE id = '{{ $('📝 Formatear Mensaje Seguimiento').first().json.orderId }}';\n\nRETURNING id, abandoned_whatsapp_sent, abandoned_reminder_sent;",
+        "options": {}
+      },
+      "id": "actualizar-whatsapp-3horas",
+      "name": "✅ Actualizar WhatsApp 3 Horas",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1320, 300],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO recordatorios_enviados (\n  cliente_telefono,\n  cliente_email,\n  cliente_nombre,\n  tipo,\n  mensaje_enviado,\n  metadata,\n  sent_at\n) VALUES (\n  '{{ $('📝 Formatear Mensaje Seguimiento').first().json.telefono }}',\n  '{{ $('📝 Formatear Mensaje Seguimiento').first().json.email }}',\n  '{{ $('📝 Formatear Mensaje Seguimiento').first().json.nombre }}',\n  'seguimiento_3horas',\n  '{{ $('📝 Formatear Mensaje Seguimiento').first().json.mensaje.substring(0, 200) }}...',\n  '{{ JSON.stringify({\n    order_id: $('📝 Formatear Mensaje Seguimiento').first().json.orderId,\n    total: $('📝 Formatear Mensaje Seguimiento').first().json.totalCarrito,\n    cart_age: $('📝 Formatear Mensaje Seguimiento').first().json.cartAge,\n    horas_laborables: $('📝 Formatear Mensaje Seguimiento').first().json.horasLaborables,\n    opciones: $('📝 Formatear Mensaje Seguimiento').first().json.opciones\n  }) }}',\n  '{{ $json.sent_at }}'\n)\nON CONFLICT (cliente_telefono, tipo, sent_at)\nDO NOTHING;\n\nRETURNING id;",
+        "options": {}
+      },
+      "id": "registrar-seguimiento",
+      "name": "💾 Registrar Seguimiento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1540, 300],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO abandoned_carts_events (\n  order_id,\n  event_type,\n  event_data,\n  created_at\n) VALUES (\n  '{{ $('📝 Formatear Mensaje Seguimiento').first().json.orderId }}',\n  'seguimiento_3horas',\n  '{{ JSON.stringify({\n    nombre: $('📝 Formatear Mensaje Seguimiento').first().json.nombre,\n    total: $('📝 Formatear Mensaje Seguimiento').first().json.totalCarrito,\n    cart_age: $('📝 Formatear Mensaje Seguimiento').first().json.cartAge,\n    horas_laborables: $('📝 Formatear Mensaje Seguimiento').first().json.horasLaborables,\n    productos: $('📝 Formatear Mensaje Seguimiento').first().json.productos.length\n  }) }}',\n  '{{ now() }}'\n);",
+        "options": {}
+      },
+      "id": "crear-evento-seguimiento",
+      "name": "📊 Crear Evento Seguimiento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1760, 300],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE abandoned_carts_metrics\nSET\n  status = 'seguimiento_3horas',\n  sent_at = '{{ now() }}'\nWHERE order_id = '{{ $('📝 Formatear Mensaje Seguimiento').first().json.orderId }}';",
+        "options": {}
+      },
+      "id": "actualizar-metricas-seguimiento",
+      "name": "📊 Actualizar Métricas Seguimiento",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [1980, 300],
+      "credentials": {
+        "postgres": {
+          "id": "R6hc0vEZJhKQSi3G",
+          "name": "Mi PostgreSQL Docker"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "⏰ Cada 3 Horas Laborables": {
+      "main": [[{"node": "🔍 Buscar Carritos de 3 Horas", "type": "main", "index": 0}]]
+    },
+    "🔍 Buscar Carritos de 3 Horas": {
+      "main": [[{"node": "✅ ¿Cumple 3 Horas Laborables?", "type": "main", "index": 0}]]
+    },
+    "✅ ¿Cumple 3 Horas Laborables?": {
+      "main": [[{"node": "📝 Formatear Mensaje Seguimiento", "type": "main", "index": 0}]]
+    },
+    "📝 Formatear Mensaje Seguimiento": {
+      "main": [[{"node": "📱 Enviar WhatsApp Seguimiento", "type": "main", "index": 0}]]
+    },
+    "📱 Enviar WhatsApp Seguimiento": {
+      "main": [[{"node": "✅ Actualizar WhatsApp 3 Horas", "type": "main", "index": 0}]]
+    },
+    "✅ Actualizar WhatsApp 3 Horas": {
+      "main": [[{"node": "💾 Registrar Seguimiento", "type": "main", "index": 0}]]
+    },
+    "💾 Registrar Seguimiento": {
+      "main": [[{"node": "📊 Crear Evento Seguimiento", "type": "main", "index": 0}]]
+    },
+    "📊 Crear Evento Seguimiento": {
+      "main": [[{"node": "📊 Actualizar Métricas Seguimiento", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-02-19T10:00:00.000Z",
+  "versionId": "1.0"
+}

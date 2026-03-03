@@ -1,0 +1,166 @@
+{
+  "name": "💰 Notificación Pagos Bold",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notificacion-pago-bold",
+        "options": {}
+      },
+      "id": "webhook-pago-bold",
+      "name": "📥 Webhook Pago Bold",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "notificacion-pago-bold"
+    },
+    {
+      "parameters": {
+        "jsCode": "const payload = $input.first().json;\nconst orderId = payload.payment?.order_id || payload.order_id || 'N/A';\nconst amount = payload.payment?.amount_in_cents ? (payload.payment.amount_in_cents / 100) : (payload.amount || 0);\nconst eventType = payload.event_type || 'unknown';\nconst status = payload.payment?.status || 'unknown';\nconst transactionId = payload.payment?.transaction_id || 'N/A';\nconst customerName = payload.customer?.name || payload.customer_name || 'Cliente';\nconst customerPhone = payload.customer?.phone || payload.customer_phone || '';\nconst customerEmail = payload.customer?.email || payload.customer_email || '';\nconst paymentMethod = payload.payment?.payment_method || payload.payment_method || 'N/A';\n\nconst metodoPago = {\n  'card': 'Tarjeta',\n  'pse': 'PSE',\n  'nequi': 'Nequi',\n  'daviplata': 'Daviplata',\n  'cash': 'Efectivo'\n} [paymentMethod] || paymentMethod;\n\nlet mensajeEstado = '';\nlet esPagoAprobado = false;\n\nswitch(eventType) {\n  case 'payment.approved':\n    mensajeEstado = '✅ PAGO APROBADO';\n    esPagoAprobado = true;\n    break;\n  case 'payment.rejected':\n    mensajeEstado = '❌ PAGO RECHAZADO';\n    break;\n  case 'void.approved':\n    mensajeEstado = '💸 REEMBOLSO APROBADO';\n    break;\n  default:\n    mensajeEstado = '📋 Estado: ' + status;\n}\n\nreturn {\n  orderId,\n  amount,\n  eventType,\n  status,\n  transactionId,\n  customerName,\n  customerPhone,\n  customerEmail,\n  paymentMethod: metodoPago,\n  mensajeEstado,\n  esPagoAprobado,\n  timestamp: new Date().toISOString()\n};"
+      },
+      "id": "procesar-datos",
+      "name": "🔧 Procesar Datos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "filtrar-aprobados",
+      "name": "🔍 Solo Pagos Aprobados",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [650, 300],
+      "conditions": {
+        "rules": [
+          {
+            "operation": "equal",
+            "value1": "={{ $json.esPagoAprobado }}",
+            "value2": true
+          }
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\nconst mensaje = '💰 *NUEVO PAGO RECIBIDO*' + '\\n\\n' + data.mensajeEstado + '\\n\\n📦 *Pedido:* ' + data.orderId + '\\n💵 *Monto:* $' + data.amount.toLocaleString('es-CO') + '\\n👤 *Cliente:* ' + data.customerName + '\\n📞 *Telefono:* ' + data.customerPhone + '\\n📧 *Email:* ' + data.customerEmail + '\\n💳 *Metodo:* ' + data.paymentMethod + '\\n🔖 *Transaccion:* ' + data.transactionId + '\\n\\n⏰ *Hora:* ' + new Date(data.timestamp).toLocaleString('es-CO', { timeZone: 'America/Bogota' });\nreturn {\n  mensaje,\n  phone: '573203062007',\n  orderId: data.orderId,\n  amount: data.amount\n};"
+      },
+      "id": "preparar-mensaje",
+      "name": "📝 Preparar Mensaje",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ycloud.com/v2/whatsapp/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "YCloudApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"from\": \"573203062007\", \"to\": \"{{ $json.phone }}\", \"type\": \"text\", \"text\": { \"body\": \"{{ $json.mensaje }}\" } } }}",
+        "options": {}
+      },
+      "id": "enviar-whatsapp",
+      "name": "📱 Notificar a Mauricio",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300],
+      "credentials": {
+        "YCloudApi": {
+          "id": "9YuNWHvIcXFwYdOX",
+          "name": "YCloud account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ received: true, message: 'Notificación enviada' }) }}"
+      },
+      "id": "respuesta-ok",
+      "name": "✅ Respuesta OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1250, 300]
+    }
+  ],
+  "connections": {
+    "📥 Webhook Pago Bold": {
+      "main": [
+        [
+          {
+            "node": "🔧 Procesar Datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔧 Procesar Datos": {
+      "main": [
+        [
+          {
+            "node": "🔍 Solo Pagos Aprobados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔍 Solo Pagos Aprobados": {
+      "main": [
+        [
+          {
+            "node": "📝 Preparar Mensaje",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📝 Preparar Mensaje": {
+      "main": [
+        [
+          {
+            "node": "📱 Notificar a Mauricio",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Notificar a Mauricio": {
+      "main": [
+        [
+          {
+            "node": "✅ Respuesta OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["pagos", "bold", "notificaciones"],
+  "triggerCount": 1,
+  "updatedAt": "2026-02-19T15:00:00.000Z",
+  "createdAt": "2026-02-19T15:00:00.000Z"
+}

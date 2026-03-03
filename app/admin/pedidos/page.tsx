@@ -1379,7 +1379,12 @@ interface Pagination {
                                           item.productName ||
                                           'Producto'}
                                       </p>
-                                      {item.variantName && (
+                                      {/* Mostrar variant - soportando diferentes nombres de campos */}
+                                      {(item.variantName || item.variant_name || item.variant_value) && (
+                                        <p className="text-sm text-gray-600">
+                                          {item.variantName || item.variant_name || item.variant_value}
+                                        </p>
+                                      )}
                                         <p className="text-sm text-gray-600">{item.variantName}</p>
                                       )}
                                     </div>
@@ -1621,6 +1626,34 @@ interface Pagination {
                             >
                               <FileText className="w-4 h-4" />
                               WA Resumen
+                            </a>
+
+                            <a
+                              href={(() => {
+                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, buenos días. Tu pedido está próximo a llegar. Ya está en la ruta de entrega para hoy y será entregado en el transcurso del día.`)}`;
+                              })()}
+                              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Enviar mensaje de pedido en ruta"
+                            >
+                              🚚 En ruta
+                            </a>
+
+                            <a
+                              href={(() => {
+                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, tu pedido está próximo a llegar. Llegará muy pronto.`)}`;
+                              })()}
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Enviar mensaje de llegada inminente"
+                            >
+                              📍 Llegando
                             </a>
                           </div>
                         )}

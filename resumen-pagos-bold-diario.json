@@ -1,0 +1,179 @@
+{
+  "name": "Resumen Diario Pagos Bold",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Cada Hora",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const ahora = new Date();\nconst hace24Horas = new Date(ahora.getTime() - 24 * 60 * 60 * 1000);\n\nreturn {\n  fecha_actual: ahora.toISOString(),\n  fecha_24h_antes: hace24Horas.toISOString()\n};"
+      },
+      "id": "calcular-fechas",
+      "name": "Calcular Fechas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [250, 0]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT\n  id,\n  guest_name,\n  guest_phone,\n  guest_email,\n  total_amount,\n  payment_status,\n  bold_transaction_id,\n  bold_payment_method,\n  payment_method,\n  created_at,\n  paid_at\nFROM guest_orders\nWHERE\n  payment_method = 'bold'\n  AND payment_status = 'pagado'\n  AND paid_at >= $1\n  AND paid_at <= $2\nORDER BY paid_at DESC;",
+        "options": {
+          "queryParameters": ["=", "="]
+        }
+      },
+      "id": "consultar-pagos",
+      "name": "Consultar Pagos Bold",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [450, 0],
+      "credentials": {
+        "supabaseApi": {
+          "id": "oFlOZEZmGLS2kaKr",
+          "name": "Supabase account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const pagos = $input.all().map(item => item.json);\n\nif (pagos.length === 0) {\n  return {\n    hay_pagos: false,\n    mensaje: 'No hay nuevos pagos Bold en las ultimas 24 horas'\n  };\n}\n\nlet resumen = '💰 *RESUMEN DIARIO DE PAGOS BOLD*\\n\\n';\nresumen += `📅 Periodo: ${new Date().toLocaleDateString('es-CO')}\\n\\n`;\nresumen += `📦 Total de pagos: ${pagos.length}\\n\\n`;\nresumen += `💵 Monto total: $${pagos.reduce((sum, p) => sum + parseFloat(p.total_amount || 0), 0).toLocaleString('es-CO')}\\n\\n`;\n\n// Lista de pagos\npagos.forEach((pago, index) => {\n  const hora = new Date(pago.paid_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });\n  const metodoPago = {\n    'card': 'Tarjeta',\n    'nequi': 'Nequi',\n    'pse': 'PSE',\n    'daviplata': 'Daviplata'\n  }[pago.bold_payment_method] || pago.bold_payment_method || 'N/A';\n  \n  resumen += `📌 *Pago ${index + 1}*\\n`;\n  resumen += `👤 ${pago.guest_name || 'N/A'}\\n`;\n  resumen += `📞 ${pago.guest_phone || 'N/A'}\\n`;\n  resumen += `💵 $${parseFloat(pago.total_amount || 0).toLocaleString('es-CO')} - ${metodoPago}\\n`;\n  resumen += `🔖 ${pago.bold_transaction_id || 'N/A'}\\n`;\n  resumen += `⏰ ${hora}\\n\\n`;\n});\n\nreturn {\n  hay_pagos: true,\n  cantidad: pagos.length,\n  monto_total: pagos.reduce((sum, p) => sum + parseFloat(p.total_amount || 0), 0),\n  mensaje: resumen\n};"
+      },
+      "id": "preparar-resumen",
+      "name": "Preparar Resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 0]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "filtrar-con-pagos",
+      "name": "Hay Pagos?",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [850, 0],
+      "conditions": {
+        "rules": [
+          {
+            "operation": "equal",
+            "value1": "={{ $json.hay_pagos }}",
+            "value2": true
+          }
+        ]
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ycloud.com/v2/whatsapp/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "YCloudApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"from\": \"573203062007\",\n  \"to\": \"573203062007\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": $json.mensaje\n  }\n} }}",
+        "options": {}
+      },
+      "id": "enviar-resumen",
+      "name": "Enviar Resumen WhatsApp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 0],
+      "credentials": {
+        "YCloudApi": {
+          "id": "9YuNWHvIcXFwYdOX",
+          "name": "YCloud account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Cada Hora": {
+      "main": [
+        [
+          {
+            "node": "Calcular Fechas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calcular Fechas": {
+      "main": [
+        [
+          {
+            "node": "Consultar Pagos Bold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Consultar Pagos Bold": {
+      "main": [
+        [
+          {
+            "node": "Preparar Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar Resumen": {
+      "main": [
+        [
+          {
+            "node": "Hay Pagos?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hay Pagos?": {
+      "main": [
+        [
+          {
+            "node": "Enviar Resumen WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": ["pagos", "bold", "resumen"],
+  "triggerCount": 0,
+  "updatedAt": "2026-02-19T22:00:00.000Z",
+  "createdAt": "2026-02-19T22:00:00.000Z"
+}

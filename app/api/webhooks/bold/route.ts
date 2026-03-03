@@ -174,6 +174,45 @@ export async function POST(request: NextRequest) {
 
         console.log('[Bold Webhook] Successfully processed event for order:', orderId);
 
+        // =====================================================
+        // 🚀 NOTIFICAR A N8N PARA WHATSAPP
+        // =====================================================
+        // Enviamos la notificación a n8n solo si el pago fue aprobado
+        if (event_type === 'payment.approved') {
+            const n8nWebhookUrl = process.env.N8N_PAGO_BOLD_WEBHOOK_URL;
+            
+            if (n8nWebhookUrl) {
+                try {
+                    // Enviar datos del pago a n8n para notificación
+                    await fetch(n8nWebhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            event_type: payload.event_type,
+                            event_id: payload.event_id,
+                            timestamp: payload.timestamp,
+                            payment: {
+                                transaction_id: payment.transaction_id,
+                                order_id: orderId,
+                                amount_in_cents: payment.amount_in_cents,
+                                amount: payment.amount_in_cents / 100,
+                                payment_method: payment.payment_method,
+                                status: payment.status,
+                                card_last_four: payment.card_last_four,
+                                card_brand: payment.card_brand,
+                            },
+                            customer: payload.customer
+                        })
+                    });
+                    console.log('[Bold Webhook] ✅ Notificación enviada a n8n');
+                } catch (n8nError) {
+                    console.error('[Bold Webhook] ⚠️ Error enviando a n8n:', n8nError);
+                }
+            } else {
+                console.warn('[Bold Webhook] ⚠️ N8N_PAGO_BOLD_WEBHOOK_URL no configurada - saltando notificación');
+            }
+        }
+
         return NextResponse.json({
             received: true,
             event_id: payload.event_id,

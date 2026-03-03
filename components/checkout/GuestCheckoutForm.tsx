@@ -164,6 +164,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           productName: item.product.name,
           productId: item.product.id,
           variantName: item.variant?.variant_value || null,
+          variantType: item.variant?.variant_name || null,
           variantId: item.variant?.id || null,
           quantity: item.quantity,
           price: item.price

@@ -1,0 +1,259 @@
+═══════════════════════════════════════════════════════════════
+        DOCUMENTACIÓN N8N - TUS AGUACATES
+        REVISIÓN COMPLETA Y CREACIÓN DE MANUAL
+═══════════════════════════════════════════════════════════════
+
+📅 FECHA: Febrero 8, 2026
+🎯 OBJETIVO: Revisar flujos n8n y crear documentación completa
+📊 RESULTADO: 6 documentos creados, 2,857 líneas de documentación
+
+═══════════════════════════════════════════════════════════════
+        DOCUMENTOS CREADOS
+═══════════════════════════════════════════════════════════════
+
+1. 📖 MANUAL_COMPLETO_N8N.md (613 líneas, 18K)
+   - Documentación técnica completa de todos los flujos
+   - Descripción detallada de 6 flujos críticos
+   - Integraciones y servicios
+   - Troubleshooting y estadísticas
+   ⏱️  Tiempo: 2 horas lectura
+
+2. 📋 RESUMEN_EJECUTIVO_N8N.md (271 líneas, 6K)
+   - Visión general del sistema
+   - Los 6 flujos críticos explicados brevemente
+   - Servicios integrados
+   - Preguntas frecuentes
+   ⏱️  Tiempo: 30 minutos lectura
+
+3. 🗺️ DIAGRAMA_CONECTIVIDAD.md (657 líneas, 33K)
+   - Arquitectura visual completa
+   - Cadenas de conexión
+   - Mapa de integraciones
+   - Métricas del sistema
+   ⏱️  Tiempo: 45 minutos lectura
+
+4. 📚 INDICE_DOCUMENTACION.md (465 líneas, 12K)
+   - Guía de navegación a toda la documentación
+   - 3 rutas de aprendizaje (novato, técnico, director)
+   - Checklists de verificación
+   ⏱️  Tiempo: 20 minutos lectura
+
+5. 🚀 README.md (387 líneas, 9.7K)
+   - Página de entrada principal
+   - ¿Qué necesito leer primero?
+   - Servicios integrados
+   - Rutas de aprendizaje
+   ⏱️  Tiempo: 30 minutos lectura
+
+6. 📋 REVISIÓN_N8N_2026-02-08.md (464 líneas, 14K)
+   - Resumen del trabajo realizado
+   - Análisis completo del sistema
+   - Próximos pasos recomendados
+   ⏱️  Tiempo: 15 minutos lectura
+
+═══════════════════════════════════════════════════════════════
+        ESTADÍSTICAS DEL SISTEMA N8N
+═══════════════════════════════════════════════════════════════
+
+Total de flujos: 46 JSON files
+Flujos activos: 9 (20%)
+Flujos en revisión: 6 (13%)
+Flujos inactivos: 31 (67%)
+
+Servicios integrados:
+- 📱 YCloud API (WhatsApp)
+- 🗄️ Supabase (2 instancias)
+- 💾 PostgreSQL Local (Docker)
+- 🤖 OpenAI (gpt-4.1-mini)
+- 🤖 DeepSeek (búsqueda y pre-procesamiento)
+
+Instancia n8n:
+- URL: https://dep-n8n.n8ntusaguacates.space
+- Webhook principal: /webhook/ycloud
+
+═══════════════════════════════════════════════════════════════
+        LOS 6 FLUJOS CRÍTICOS
+═══════════════════════════════════════════════════════════════
+
+1️⃣ AGENTE LUZ v6.5 (WhatsApp Bot)
+   - Estado: ✅ Activo
+   - Frecuencia: Continuo
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Responde mensajes de WhatsApp automáticamente
+   - ¿Por qué es crítico? Procesa 100% de interacciones clientes
+
+2️⃣ SINCRONIZACIÓN DE CLIENTES
+   - Estado: ✅ Activo
+   - Frecuencia: Hourly
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Sincroniza clientes entre Supabase y PostgreSQL
+   - ¿Por qué es crítico? El Agente Luz necesita datos actualizados
+
+3️⃣ CONFIRMAR PRE-PEDIDO
+   - Estado: ✅ Activo
+   - Frecuencia: Continuo
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Confirma pedidos desde WhatsApp
+   - ¿Por qué es crítico? Cierra la venta del cliente
+
+4️⃣ AUDITORÍA DIARIA (6 AM)
+   - Estado: ✅ Activo
+   - Frecuencia: Diario (6 AM)
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Revisa integridad de datos
+   - ¿Por qué es crítico? Detecta errores antes de que afecten al negocio
+
+5️⃣ RECORDATORIOS DE CARRITOS
+   - Estado: ✅ Activo
+   - Frecuencia: 4x/día
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Envía recordatorios de carritos abandonados
+   - ¿Por qué es crítico? Recupera ventas perdidas
+
+6️⃣ PROCESAR BUFFER (10s)
+   - Estado: ✅ Activo
+   - Frecuencia: 10s interval
+   - Prioridad: 🔴 CRÍTICO
+   - ¿Qué hace? Agrupa mensajes en batches
+   - ¿Por qué es crítico? Mejora performance y reduce llamadas API
+
+═══════════════════════════════════════════════════════════════
+        RUTAS DE APRENDIZAJE
+═══════════════════════════════════════════════════════════════
+
+PARA NOVATOS (Nivel 1) - 1.5 horas
+✅ 30 min: RESUMEN EJECUTIVO N8N.md
+✅ 45 min: DIAGRAMA DE CONECTIVIDAD.md
+✅ 10 min: INDEX_FLUJOS.md
+📊 Resultado: Entiende el sistema completo
+
+PARA TÉCNICOS (Nivel 2) - 3.5 horas
+✅ 30 min: RESUMEN EJECUTIVO N8N.md
+✅ 45 min: DIAGRAMA DE CONECTIVIDAD.md
+✅ 10 min: INDEX_FLUJOS.md
+✅ 2 horas: MANUAL COMPLETO N8N.md
+📊 Resultado: Puedes trabajar con el sistema
+
+PARA DIRECTORES (Nivel 3) - 1.5 horas
+✅ 30 min: RESUMEN EJECUTIVO N8N.md
+✅ 45 min: DIAGRAMA DE CONECTIVIDAD.md
+📊 Resultado: Visión estratégica del sistema
+
+═══════════════════════════════════════════════════════════════
+        CATEGORÍAS DE FLUJOS
+═══════════════════════════════════════════════════════════════
+
+1. 🤖 AGENTES IA (6 flujos)
+   - Agente Luz v6.5 - Activo
+   - Agente Luz v5 - Revisión
+   - Agente WhatsApp MVP - Revisión
+   - v4, v3, v2 - Inactivos
+
+2. 🔄 SINCRONIZACIÓN (7 flujos)
+   - Sync Clientes - Activo (Hourly)
+   - Sync Productos - Revisión
+   - Sync Variantes - Revisión
+
+3. 📦 AUTOMATIZACIÓN DE PEDIDOS (6 flujos)
+   - Confirmar Pre-pedido - Activo (Continuo)
+   - Automatización Pedidos Web - Activo
+   - Auditoría Pedidos - Activo
+   - Auditoría Diaria - Activo
+
+4. 📢 MARKETING (8 flujos)
+   - Recordatorios Carritos - Activo (4x/día)
+   - Auto-etiquetar YCloud - Activo
+   - Campañas (Navidad, 500 clientes, etc.) - Inactivos
+
+5. 🔧 LIMPIEZA Y MANTENIMIENTO (5+ flujos)
+   - Procesar Buffer - Activo
+   - Nodos Pulidor - Revisión
+   - MCP Helper - Revisión
+
+═══════════════════════════════════════════════════════════════
+        COMO UTILIZAR LA DOCUMENTACIÓN
+═══════════════════════════════════════════════════════════════
+
+1. Para nuevos miembros del equipo:
+   - PRIMERA SEMANA: Lee los 4 documentos principales
+   - SEGUNDA SEMANA: Pregunta dudas al equipo técnico
+   - TERCERA SEMANA: Practica con los flujos
+
+2. Para directores y gerentes:
+   - Revisión SEMANAL (30 min): Métricas y errores
+   - Revisión MENSUAL (1 hora): Planifica mejoras
+
+3. Para técnicos:
+   - DIARIO (15 min): Revisa logs
+   - SEMANAL (1 hora): Revisa métricas
+   - MENSUAL (3 horas): Profundiza en documentación
+
+═══════════════════════════════════════════════════════════════
+        CHECKLISTS DE VERIFICACIÓN
+═══════════════════════════════════════════════════════════════
+
+DIARIO (15 min)
+☐ Revisa logs del sistema
+☐ Si hay errores, revisa troubleshooting
+☐ Verifica métricas básicas
+
+SEMANAL (1 hora)
+☐ Revisa métricas completas
+☐ Verifica uptime y tasa de éxito
+☐ Revisa si hay errores recurrentes
+☐ Identifica mejoras
+
+MENSUAL (3 horas)
+☐ Revisa toda documentación
+☐ Explora nuevos flujos
+☐ Identifica mejoras o parches
+☐ Planifica próximos pasos
+
+═══════════════════════════════════════════════════════════════
+        CONCLUSIÓN
+═══════════════════════════════════════════════════════════════
+
+✅ REVISIÓN COMPLETA del sistema n8n (46 flujos)
+✅ 6 documentos creados con 2,857 líneas
+✅ 3 rutas de aprendizaje (novato, técnico, director)
+✅ Métricas del sistema documentadas
+✅ Servicios integrados explicados
+✅ Checklists de verificación
+✅ Troubleshooting detallado
+
+IMPACTO:
+🚀 Onboarding rápido (1.5 hrs para novatos)
+📚 Referencia fácil a toda la información
+🔍 Análisis rápido del sistema
+🛠️ Implementación segura de cambios
+📊 Monitoreo efectivo con métricas
+🎯 Mejoras continuas con checklist
+
+═══════════════════════════════════════════════════════════════
+        ARCHIVOS
+═══════════════════════════════════════════════════════════════
+
+Ubicación: tus-aguacates/n8n-workflows/
+
+DOCUMENTOS PRINCIPALES:
+1. MANUAL_COMPLETO_N8N.md
+2. RESUMEN_EJECUTIVO_N8N.md
+3. DIAGRAMA_DE_CONECTIVIDAD.md
+4. INDICE_DOCUMENTACION.md
+5. README.md
+6. REVISIÓN_N8N_2026-02-08.md
+
+VER EN:
+- RESUMEN_EJECUTIVO_N8N.md para visión general
+- README.md para navegación
+- MANUAL_COMPLETO_N8N.md para detalles técnicos
+- DIAGRAMA_DE_CONECTIVIDAD.md para arquitectura visual
+
+═══════════════════════════════════════════════════════════════
+        ¿TIENES PREGUNTAS?
+═══════════════════════════════════════════════════════════════
+
+1. PRIMERO: Busca en INDEX_FLUJOS.md
+2. SEGUNDO: Revisa MANUAL_COMPLETO_N8N.md
+3. TERCERO: Mira DIAGRAMA_DE_CONECTIVIDAD.md
+4. C
