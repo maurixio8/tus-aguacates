@@ -32,24 +32,10 @@ function getSupabaseClient() {
 
 // Configuración CORS para permitir el dashboard
 const corsHeaders = {
-  'Access-Control-Allow-Origin': 'https://tus-aguacates.vercel.app',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
-const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
+  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 };
-
-// Manejar solicitudes OPTIONS para CORS
-export async function OPTIONS(request: NextRequest) {
-  return new NextResponse(null, { headers: corsHeaders });
-}
 
 // Helper function to verify admin authentication
 async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {

@@ -92,7 +92,7 @@ interface CustomerBreakdown {
   }>;
 }
 
-interface ProductGrouped {
+export interface ProductGrouped {
   // Clave única para agrupación
   grouping_key: string;
   // Nombre base del producto
@@ -703,37 +703,7 @@ export default function ListaComprasPage() {
 
     return [];
   };
-    // Primero intentar con order_items
-    if (order.order_items && order.order_items.length > 0) {
-      return order.order_items;
-    }
 
-    // Luego con items
-    if (order.items && order.items.length > 0) {
-      return order.items;
-    }
-
-    // Finalmente extraer desde order_data (para pedidos de invitados)
-    if (order.order_data?.items) {
-      return order.order_data.items.map((item: any, index: number) => ({
-        id: item.id || `item-${index}`,
-        product_id: item.productId || item.product_id || `product-${index}`,
-        product_snapshot: {
-          name: item.productName || item.product_name || 'Producto',
-          price: item.price || item.unit_price || 0,
-          variant_name: item.variantName || item.variant_name || null,
-          variant_value: item.variantValue || item.variant_value || null
-        },
-        quantity: item.quantity || 0,
-        unit_price: item.price || item.unit_price || 0,
-        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
-        variantName: item.variantName || item.variant_name || null,
-        variant_value: item.variantValue || item.variant_value || null
-      }));
-    }
-
-    return [];
-  };
 
   // Formatear precio para mostrar
   const formatPrice = (price: number) => {
@@ -2156,8 +2126,7 @@ export default function ListaComprasPage() {
               </div>
             )}
           </>
-        )
-      }
+        )}
     </div >
   );
 }

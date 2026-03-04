@@ -85,89 +85,89 @@ interface Pagination {
   totalPages: number;
 }
 
-   const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-     pending: {
-       label: 'Pendiente',
-       color: 'text-yellow-700',
-       bgColor: 'bg-yellow-100 border-yellow-200',
-       icon: Clock,
-     },
-     confirmed: {
-       label: 'Confirmado',
-       color: 'text-blue-700',
-       bgColor: 'bg-blue-100 border-blue-200',
-       icon: ChefHat,
-     },
-     processing: {
-       label: 'En Preparación',
-       color: 'text-purple-700',
-       bgColor: 'bg-purple-100 border-purple-200',
-       icon: Truck,
-     },
-     shipped: {
-       label: 'En Camino',
-       color: 'text-blue-600',
-       bgColor: 'bg-blue-100 border-blue-200',
-       icon: Truck,
-     },
-     delivered: {
-       label: 'Entregado',
-       color: 'text-green-700',
-       bgColor: 'bg-green-100 border-green-200',
-       icon: CheckCircle,
-     },
-     cancelled: {
-       label: 'Cancelado',
-       color: 'text-red-700',
-       bgColor: 'bg-red-100 border-red-200',
-       icon: XCircle,
-     },
-   };
+const statusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
+  pending: {
+    label: 'Pendiente',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100 border-yellow-200',
+    icon: Clock,
+  },
+  confirmed: {
+    label: 'Confirmado',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100 border-blue-200',
+    icon: ChefHat,
+  },
+  processing: {
+    label: 'En Preparación',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-100 border-purple-200',
+    icon: Truck,
+  },
+  shipped: {
+    label: 'En Camino',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100 border-blue-200',
+    icon: Truck,
+  },
+  delivered: {
+    label: 'Entregado',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 border-green-200',
+    icon: CheckCircle,
+  },
+  cancelled: {
+    label: 'Cancelado',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100 border-red-200',
+    icon: XCircle,
+  },
+};
 
-  const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
-    pending: {
-      label: 'Pendiente',
-      color: 'text-yellow-700',
-      bgColor: 'bg-yellow-100 border-yellow-200',
-      icon: Clock,
-    },
-    paid: {
-      label: 'Pagado',
-      color: 'text-green-700',
-      bgColor: 'bg-green-100 border-green-200',
-      icon: CheckCircle,
-    },
-    completed: {
-      label: 'Completado',
-      color: 'text-green-700',
-      bgColor: 'bg-green-100 border-green-200',
-      icon: CheckCircle,
-    },
-    failed: {
-      label: 'Fallido',
-      color: 'text-red-700',
-      bgColor: 'bg-red-100 border-red-200',
-      icon: XCircle,
-    },
-    refunded: {
-      label: 'Reembolsado',
-      color: 'text-blue-700',
-      bgColor: 'bg-blue-100 border-blue-200',
-      icon: AlertTriangle,
-    },
-  };
+const paymentStatusConfig: Record<string, { label: string; color: string; bgColor: string; icon: any }> = {
+  pending: {
+    label: 'Pendiente',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100 border-yellow-200',
+    icon: Clock,
+  },
+  paid: {
+    label: 'Pagado',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 border-green-200',
+    icon: CheckCircle,
+  },
+  completed: {
+    label: 'Completado',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 border-green-200',
+    icon: CheckCircle,
+  },
+  failed: {
+    label: 'Fallido',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100 border-red-200',
+    icon: XCircle,
+  },
+  refunded: {
+    label: 'Reembolsado',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100 border-blue-200',
+    icon: AlertTriangle,
+  },
+};
 
-  interface OrderStats {
-    pending: number;
-    confirmed: number;
-    processing: number;
-    shipped: number;
-    delivered: number;
-    cancelled: number;
-    total: number;
-  };
+interface OrderStats {
+  pending: number;
+  confirmed: number;
+  processing: number;
+  shipped: number;
+  delivered: number;
+  cancelled: number;
+  total: number;
+};
 
-  interface OrderStats {
+interface OrderStats {
   pending: number;
   confirmed: number;
   processing: number;
@@ -177,7 +177,7 @@ interface Pagination {
   total: number;
 }
 
-  export default function OrdersPage() {
+export default function OrdersPage() {
   const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1229,20 +1229,20 @@ interface Pagination {
                             <h3 className="text-sm lg:text-lg font-bold text-gray-900 truncate">
                               {customerInfo.name}
                             </h3>
-                             <div className="flex items-center gap-2 mt-0.5">
-                               <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
-                                 #{order.order_number || order.id.substring(0, 8)}
-                               </span>
-                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
-                                 {statusInfo.label}
-                               </span>
-                               {order.payment_status && paymentStatusConfig[order.payment_status] && (
-                                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[order.payment_status].bgColor} ${paymentStatusConfig[order.payment_status].color} border`}>
-                                   {paymentStatusConfig[order.payment_status].icon && React.createElement(paymentStatusConfig[order.payment_status].icon, { className: 'w-3 h-3 mr-1' })}
-                                   {paymentStatusConfig[order.payment_status].label}
-                                 </span>
-                               )}
-                             </div>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
+                                #{order.order_number || order.id.substring(0, 8)}
+                              </span>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
+                                {statusInfo.label}
+                              </span>
+                              {order.payment_status && paymentStatusConfig[order.payment_status] && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[order.payment_status].bgColor} ${paymentStatusConfig[order.payment_status].color} border`}>
+                                  {paymentStatusConfig[order.payment_status].icon && React.createElement(paymentStatusConfig[order.payment_status].icon, { className: 'w-3 h-3 mr-1' })}
+                                  {paymentStatusConfig[order.payment_status].label}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0">
@@ -1384,8 +1384,6 @@ interface Pagination {
                                         <p className="text-sm text-gray-600">
                                           {item.variantName || item.variant_name || item.variant_value}
                                         </p>
-                                      )}
-                                        <p className="text-sm text-gray-600">{item.variantName}</p>
                                       )}
                                     </div>
                                     <div className="text-right">
