@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 import { Play, X, Heart, MessageCircle, Share2, Sparkles, ShoppingBag, Send } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
@@ -60,7 +62,8 @@ export default function VideosPage() {
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoContainerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
 
@@ -132,6 +135,8 @@ export default function VideosPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentVideoIndex, videos.length]);
 
+
+
   const goToNextVideo = useCallback(() => {
     if (currentVideoIndex !== null && currentVideoIndex < videos.length - 1) {
       const newIndex = currentVideoIndex + 1;
@@ -149,6 +154,64 @@ export default function VideosPage() {
       setCurrentVideoIndex(currentVideoIndex - 1);
     }
   }, [currentVideoIndex]);
+
+  // Initialize Video.js player when video opens
+  useEffect(() => {
+    if (currentVideoIndex === null || !videoContainerRef.current || videos.length === 0) return;
+
+    const video = videos[currentVideoIndex];
+
+    // Dispose previous player if exists
+    if (playerRef.current) {
+      playerRef.current.dispose();
+      playerRef.current = null;
+    }
+
+    // Create new player
+    const player = videojs(videoContainerRef.current, {
+      controls: true,
+      autoplay: true,
+      preload: 'auto',
+      fluid: false,
+      responsive: false,
+      playbackRates: [0.5, 1, 1.5, 2],
+      controlBar: {
+        children: [
+          'playToggle',
+          'volumePanel',
+          'currentTimeDisplay',
+          'timeDivider',
+          'durationDisplay',
+          'progressControl',
+          'playbackRateMenuButton',
+          'fullscreenToggle',
+        ],
+      },
+      sources: [{ src: video.url, type: 'video/mp4' }],
+    });
+
+    playerRef.current = player;
+
+    // Go fullscreen on first play
+    player.one('play', () => {
+      if (!player.isFullscreen()) {
+        player.requestFullscreen();
+      }
+    });
+
+    // Go to next video when ended
+    player.on('ended', () => {
+      goToNextVideo();
+    });
+
+    return () => {
+      if (playerRef.current && !playerRef.current.isDisposed()) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, [currentVideoIndex, videos, goToNextVideo]);
+
 
   const updateViewCount = (index: number) => {
     // Ya no guardamos contador - los videos son libres
@@ -189,7 +252,12 @@ export default function VideosPage() {
   };
 
   const closeVideo = () => {
-    if (videoRef.current) videoRef.current.pause();
+    if (playerRef.current && !playerRef.current.isDisposed()) {
+      playerRef.current.pause();
+      if (playerRef.current.isFullscreen()) {
+        playerRef.current.exitFullscreen();
+      }
+    }
     setCurrentVideoIndex(null);
   };
 
@@ -260,8 +328,10 @@ export default function VideosPage() {
             <button onClick={closeVideo} className="pointer-events-auto text-white p-2 rounded-full bg-black/40 backdrop-blur-md hover:bg-black/60 transition-colors shadow-lg"><X className="w-5 h-5" /></button>
           </div>
 
-          <div className="flex-1 flex items-center justify-center relative">
-            <video ref={videoRef} src={videos[currentVideoIndex].url} controls autoPlay playsInline className="h-full max-w-full object-contain" controlsList="nodownload" onEnded={goToNextVideo} crossOrigin="anonymous" />
+        <div className="flex-1 flex items-center justify-center relative">
+          <div data-vjs-player>
+            <div ref={videoContainerRef} className="video-js vjs-big-play-centered vjs-fill" />
+          </div>
 
             <div className="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
               <button onClick={() => toggleLike(videos[currentVideoIndex].id)} className="flex flex-col items-center gap-1 text-white group">
