@@ -940,6 +940,29 @@ export default function OrdersPage() {
         </div>
       )}
 
+      {/* Recordatorio para marcar pedidos como entregados */}
+      {(orderStats.pending + orderStats.confirmed + orderStats.processing + orderStats.shipped) >= 3 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center gap-4">
+          <div className="bg-blue-100 p-2 rounded-lg">
+            <Package className="w-6 h-6 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-blue-800">
+              ¿Ya entregaste los pedidos?
+            </p>
+            <p className="text-sm text-blue-700">
+              Recuerda marcar los pedidos como "Entregado" una vez que los hayas entregado. Esto ayuda a mantener el control de tu empresa.
+            </p>
+          </div>
+          <button
+            onClick={() => { setStatus('pending'); setPagination(prev => ({ ...prev, page: 1 })); }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-all"
+          >
+            Ver pedidos
+          </button>
+        </div>
+      )}
+
       {/* Filtros */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6 space-y-4">
         {/* Filtros Rápidos de Fecha */}

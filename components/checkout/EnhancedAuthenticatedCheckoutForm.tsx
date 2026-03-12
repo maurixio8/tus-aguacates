@@ -13,6 +13,17 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import CheckoutSummary from './CheckoutSummary';
 import CouponInput from './CouponInput';
 import dynamic from 'next/dynamic';
+
+// Cargar BoldPayButton dinámicamente para evitar errores de SSR
+const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex items-center justify-center py-4">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <span className="ml-3 text-gray-600">Cargando...</span>
+    </div>
+  ),
+});
 import {
   User,
   Mail,
@@ -27,17 +38,7 @@ import {
   Check
 } from 'lucide-react';
 import { SubscriptionConfigModal } from './SubscriptionConfigModal';
-
-// Cargar BoldPayButton dinámicamente para evitar errores de SSR
-const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
-  ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center py-4">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      <span className="ml-3 text-gray-600">Cargando...</span>
-    </div>
-  ),
-});
+import DuplicateOrderModal from './DuplicateOrderModal';
 
 interface EnhancedAuthenticatedCheckoutFormProps {
   onSuccess: (orderId: string) => void;
@@ -72,6 +73,52 @@ export function EnhancedAuthenticatedCheckoutForm({
     email: ''
   });
 
+  // Estado para modal de pedido duplicado (usuarios autenticados)
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{ id: string, time: string } | null>(null);
+
+
+  // Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
+  const normalizePhone = (phone: string): string => {
+    // Quitar todo excepto números
+    const digits = phone.replace(/\D/g, '');
+    // Si tiene 10 dígitos y empieza con 3, agregar 57
+    if (digits.length === 10 && digits.startsWith('3')) {
+      return '57' + digits;
+    }
+    // Si ya tiene 12 dígitos con 57, retornar tal cual
+    if (digits.length === 12 && digits.startsWith('57')) {
+      return digits;
+    }
+    // Retornar con prefijo 57 si no lo tiene
+    return digits.startsWith('57') ? digits : '57' + digits;
+  };
+
+  // Validar formato de teléfono colombiano
+  const validatePhone = (phone: string): { valid: boolean; message: string } => {
+    const digits = phone.replace(/\D/g, '');
+    
+    if (!digits) {
+      return { valid: false, message: 'El número de teléfono es requerido' };
+    }
+    
+    if (digits.length < 10) {
+      return { valid: false, message: 'El número debe tener al menos 10 dígitos' };
+    }
+    
+    if (digits.length > 13) {
+      return { valid: false, message: 'El número no puede tener más de 13 dígitos' };
+    }
+    
+    // Verificar que sea un número móvil colombiano (empieza con 3 después del 57)
+    const cleanNumber = digits.startsWith('57') ? digits : '57' + digits;
+    if (cleanNumber.length === 12 && !cleanNumber.startsWith('573')) {
+      return { valid: false, message: 'Los números colombianos deben empezar con 3 (ej: 300, 310, 320)' };
+    }
+    
+    return { valid: true, message: '' };
+  };
+
   // Función mejorada para extraer mensaje de error de Supabase
   const extractErrorMessage = (error: any): string => {
     if (typeof error === 'string') return error;
@@ -83,7 +130,6 @@ export function EnhancedAuthenticatedCheckoutForm({
     if (error?.code === '23505') return 'El número de pedido ya existe. Por favor intenta de nuevo.';
     return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
   };
-
   // Initialize shipping calculation when component mounts and cart has items
   useEffect(() => {
     // Only calculate shipping if there are items in the cart
@@ -155,13 +201,23 @@ export function EnhancedAuthenticatedCheckoutForm({
   const handleSavePersonalInfo = async () => {
     if (!user) return;
 
+    // Validar teléfono antes de guardar
+    const phoneValidation = validatePhone(personalInfo.phone);
+    if (!phoneValidation.valid) {
+      setError(phoneValidation.message);
+      return;
+    }
+
     try {
+      // Normalizar teléfono antes de guardar
+      const normalizedPhone = normalizePhone(personalInfo.phone);
+      
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: personalInfo.full_name,
           preferred_name: personalInfo.preferred_name,
-          phone: personalInfo.phone,
+          phone: normalizedPhone,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -169,8 +225,8 @@ export function EnhancedAuthenticatedCheckoutForm({
       if (error) throw error;
 
       setEditingPersonalInfo(false);
-      // Update profile state to reflect changes
-      // This would typically be handled by a context or state management
+      // Actualizar el estado local con el teléfono normalizado
+      setPersonalInfo({ ...personalInfo, phone: normalizedPhone });
     } catch (err) {
       console.error('Error saving personal info:', err);
       setError('Error al guardar información personal');
@@ -198,11 +254,53 @@ export function EnhancedAuthenticatedCheckoutForm({
 
     setLoading(true);
     setError('');
+
+    // VALIDACIÓN: Verificar si ya existe un pedido hoy para este usuario autenticado
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+
+    console.log('🔍 Verificando pedidos existentes para usuario autenticado...', {
+      userId: user.id,
+      today: today
+    });
+
+    const { data: existingOrder, error: checkError } = await supabase
+      .from('orders')
+      .select('id, created_at, status, order_data')
+      .eq('user_id', user.id)
+      .gte('created_at', today + 'T00:00:00.000Z')
+      .lte('created_at', today + 'T23:59:59.999Z')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    console.log('🔍 Resultado búsqueda pedidos autenticados:', {
+      error: checkError,
+      found: existingOrder ? existingOrder.length : 0,
+      orders: existingOrder
+    });
+
+    if (checkError) {
+      console.error('Error checking existing orders:', checkError);
+    } else if (existingOrder && existingOrder.length > 0) {
+      const order = existingOrder[0];
+      const orderTime = new Date(order.created_at).toLocaleTimeString('es-CO', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Activar Modal de Duplicado en lugar de lanzar error
+      setDuplicateOrderInfo({
+        id: order.id,
+        time: orderTime
+      });
+      setShowDuplicateModal(true);
+      setLoading(false);
+      return; // DETENER EJECUCIÓN AQUÍ
+    }
+
     // Para Bold, NO cambiar a processing - quedarse en payment-method para mostrar BoldPayButton
     if (paymentMethod !== 'bold') {
       setStep('processing');
     }
-
     try {
       // Save payment preference
       await supabase
@@ -366,25 +464,16 @@ ${orderData.appliedCoupon.description}
       setError('Debes seleccionar una dirección para crear una suscripción');
       return;
     }
-    setShowSubscriptionModal(true);
   };
 
-  const handleSubscriptionCreated = (subscription: any) => {
-    setShowSubscriptionModal(false);
-    // Opcional: mostrar mensaje de éxito o redirigir a panel de suscripciones
+  const handleSubscriptionCreated = () => {
+    // Callback cuando se crea una suscripción exitosamente
+    clearCart();
   };
 
-  if (!user || !profile) {
-    return (
-      <div className="text-center p-8">
-        <p className="text-muted-foreground">
-          Debes iniciar sesión para continuar
-        </p>
-      </div>
-    );
-  }
 
-  const displayName = profile.preferred_name || profile.full_name || user.email?.split('@')[0];
+
+  const displayName = profile?.preferred_name || profile?.full_name || user?.email?.split('@')[0];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -966,6 +1055,15 @@ ${orderData.appliedCoupon.description}
           {/* Quick Info */}
         </div>
       </div>
+
+      {/* Modal de pedido duplicado para usuarios autenticados */}
+      <DuplicateOrderModal
+        isOpen={showDuplicateModal}
+        onClose={() => setShowDuplicateModal(false)}
+        existingOrderId={duplicateOrderInfo?.id || ''}
+        existingOrderTime={duplicateOrderInfo?.time || ''}
+        customerName={profile?.full_name || profile?.preferred_name || 'Cliente'}
+      />
 
       {/* Modal de Configuración de Suscripción */}
       <SubscriptionConfigModal
