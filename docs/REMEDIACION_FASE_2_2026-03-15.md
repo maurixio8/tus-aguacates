@@ -107,6 +107,33 @@ Resultado:
 
 - Exitoso
 
+## Actualizacion posterior: utilidades locales y endpoint de variantes
+
+Se revisaron los cambios locales pendientes relacionados con despliegue y utilidades internas.
+
+Cambios aplicados:
+
+- `app/api/admin/add-variants/route.ts`
+  - Se convirtio de endpoint publico con `service role` y CORS abierto a endpoint protegido por autenticacion admin
+  - `GET` ahora funciona como vista previa segura
+  - `POST` exige `{"confirm": true}` para ejecutar inserciones
+- `scripts/check-order-items-schema.js`
+  - Se eliminaron secretos hardcodeados
+  - Ahora exige variables de entorno para ejecutarse
+- `temp-fetch-products.js`
+  - Se eliminaron claves embebidas
+  - Ahora usa variables de entorno
+- `vercel.json`
+  - Se descarto el archivo local por ser redundante y potencialmente confuso para el despliegue
+
+Verificacion ejecutada:
+
+- `npx tsc -p tsconfig.json --noEmit --pretty false --incremental false`
+
+Resultado:
+
+- Exitoso
+
 ## Riesgos residuales
 
 ### 1. Estado real de la base de datos
