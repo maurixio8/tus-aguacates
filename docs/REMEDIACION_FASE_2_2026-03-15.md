@@ -121,8 +121,8 @@ Cambios aplicados:
   - Se eliminaron secretos hardcodeados
   - Ahora exige variables de entorno para ejecutarse
 - `temp-fetch-products.js`
-  - Se eliminaron claves embebidas
-  - Ahora usa variables de entorno
+  - Se reemplazo por `scripts/list-active-products.js`
+  - La utilidad ahora usa variables de entorno y deja de vivir como archivo temporal en la raiz
 - `vercel.json`
   - Se descarto el archivo local por ser redundante y potencialmente confuso para el despliegue
 
