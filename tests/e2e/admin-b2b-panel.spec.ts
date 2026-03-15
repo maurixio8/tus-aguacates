@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { ADMIN_CREDENTIALS } from '../fixtures/admin';
 
-const BASE_URL = process.env.BASE_URL || 'https://tus-aguacates.vercel.app';
+const BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
 
 test.describe('Panel Admin B2B - Pruebas Completas', () => {
   test.beforeEach(async ({ page }) => {
@@ -11,8 +12,8 @@ test.describe('Panel Admin B2B - Pruebas Completas', () => {
     await expect(page.getByRole('heading', { name: 'Iniciar Sesión' })).toBeVisible();
 
     // Llenar credenciales
-    await page.fill('input[type="email"]', 'admin@tusaguacates.com');
-    await page.fill('input[type="password"]', 'admin123');
+    await page.fill('input[type="email"]', ADMIN_CREDENTIALS.email);
+    await page.fill('input[type="password"]', ADMIN_CREDENTIALS.password);
 
     // Click en iniciar sesión
     await page.click('button:has-text("Iniciar Sesión")');

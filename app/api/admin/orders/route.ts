@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -137,74 +136,6 @@ async function getCustomerData(order: any, supabase: any): Promise<{
     customer_phone: null,
     delivery_address: null
   };
-}
-
-// Helper function to verify admin authentication
-async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
-  try {
-    // Get the admin-token from cookie OR Authorization header
-    let token = request.cookies.get('admin-token')?.value;
-
-    // If no cookie, check Authorization header
-    if (!token) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-      }
-    }
-
-    // For same-origin requests from admin dashboard, check origin and referer
-    const origin = request.headers.get('origin');
-    const referer = request.headers.get('referer');
-    const host = request.headers.get('host');
-
-    // More flexible same-origin detection
-    const isSameOrigin =
-      (origin && (origin.includes('tus-aguacates.vercel.app') || origin.includes('localhost:3000'))) ||
-      (referer && referer.includes('/admin')) ||
-      (host && (host.includes('tus-aguacates.vercel.app') || host.includes('localhost:3000')));
-
-    // Allow requests from same origin without strict token verification
-    if (isSameOrigin) {
-      console.log('✅ Auth: Same-origin request detected, allowing access');
-      return { success: true, adminId: 'admin-001' };
-    }
-
-    // If we have a token, verify it
-    if (token) {
-      try {
-        const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-        const decoded = jwt.verify(token, jwtSecret) as any;
-
-        // Check if this is an admin token
-        if (decoded.type !== 'admin') {
-          return { success: false, error: 'Token no válido para administrador' };
-        }
-
-        return { success: true, adminId: decoded.id };
-      } catch (tokenError) {
-        console.log('⚠️ Auth: Token verification failed, but same-origin allowed');
-        // For same-origin requests, still allow even if token is invalid
-        if (isSameOrigin) {
-          return { success: true, adminId: 'admin-001' };
-        }
-        return { success: false, error: 'Token inválido' };
-      }
-    }
-
-    // For development, allow requests without token
-    if (process.env.NODE_ENV === 'development') {
-      console.log('✅ Auth: Development mode, allowing access');
-      return { success: true, adminId: 'admin-dev' };
-    }
-
-    console.log('❌ Auth: No authentication found');
-    return { success: false, error: 'No autenticado' };
-
-  } catch (error) {
-    console.error('❌ Auth: Authentication error:', error);
-    return { success: false, error: 'Error de autenticación' };
-  }
 }
 
 // GET - List orders with filtering

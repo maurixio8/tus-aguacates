@@ -78,7 +78,7 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/admin-auth/logout', { method: 'POST' });
+      await fetch('/api/auth/admin/logout', { method: 'POST' });
     } catch (error) {
       console.error('Error en logout:', error);
     }

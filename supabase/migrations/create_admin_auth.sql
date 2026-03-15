@@ -40,11 +40,11 @@ CREATE INDEX IF NOT EXISTS idx_admin_activity_log_admin_id ON admin_activity_log
 CREATE INDEX IF NOT EXISTS idx_admin_activity_log_action ON admin_activity_log(action);
 CREATE INDEX IF NOT EXISTS idx_admin_activity_log_created_at ON admin_activity_log(created_at);
 
--- Insertar administrador inicial (credenciales: admin@tusaguacates.com / admin123)
+-- Insertar administrador inicial (configurar una credencial segura antes de producción)
 INSERT INTO admin_users (email, password_hash, name, role, is_active)
 VALUES (
   'admin@tusaguacates.com',
-  '$2b$10$rJzGKQgxX5vCEXvmEdvxCOHxzj2jJ8iJGHsWn.CVRmRsUpnEpMA1e', -- hash de 'admin123'
+  '$2b$10$rJzGKQgxX5vCEXvmEdvxCOHxzj2jJ8iJGHsWn.CVRmRsUpnEpMA1e', -- reemplazar por un hash seguro antes de despliegue
   'Administrador Principal',
   'super_admin',
   TRUE

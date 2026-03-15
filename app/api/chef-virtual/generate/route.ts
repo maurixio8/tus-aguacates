@@ -5,15 +5,94 @@ import { extractBearerToken, createSupabaseRequestClient } from '@/lib/supabaseR
 
 export const dynamic = 'force-dynamic';
 
-/**
- * API para generar recetas con el Chef Virtual
- * POST /api/chef-virtual/generate
- *
- * Genera una receta con IA y la guarda en BD si el usuario está autenticado
- */
+const AUTHENTICATED_DAILY_LIMIT = 5;
+const GUEST_DAILY_LIMIT = 2;
+const guestDailyUsage = new Map<string, { date: string; count: number }>();
+
+function getToday(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function getGuestKey(request: NextRequest): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+  const realIp = request.headers.get('x-real-ip');
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+
+  return `${forwardedFor || realIp || 'unknown'}:${userAgent}`;
+}
+
+function getGuestUsage(request: NextRequest): number {
+  const key = getGuestKey(request);
+  const today = getToday();
+  const usage = guestDailyUsage.get(key);
+
+  if (!usage || usage.date !== today) {
+    guestDailyUsage.set(key, { date: today, count: 0 });
+    return 0;
+  }
+
+  return usage.count;
+}
+
+function incrementGuestUsage(request: NextRequest) {
+  const key = getGuestKey(request);
+  const today = getToday();
+  const current = guestDailyUsage.get(key);
+
+  if (!current || current.date !== today) {
+    guestDailyUsage.set(key, { date: today, count: 1 });
+    return;
+  }
+
+  guestDailyUsage.set(key, { date: today, count: current.count + 1 });
+}
+
+async function getAuthenticatedUsage(supabaseClient: typeof supabase, userId: string) {
+  const today = getToday();
+
+  const { data: limits } = await supabaseClient
+    .from('user_recipe_limits')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  const { data: subscription } = await supabaseClient
+    .from('user_chef_subscription')
+    .select('*')
+    .eq('user_id', userId)
+    .single();
+
+  const recipesLimit = subscription?.recipes_limit || AUTHENTICATED_DAILY_LIMIT;
+  const isSameDay = limits?.last_reset === today;
+  const recipesGeneratedToday = isSameDay ? limits?.recipes_generated_today || 0 : 0;
+
+  return {
+    recipesLimit,
+    recipesGeneratedToday,
+    today,
+  };
+}
+
+async function persistAuthenticatedUsage(
+  supabaseClient: typeof supabase,
+  userId: string,
+  today: string,
+  recipesGeneratedToday: number
+) {
+  await supabaseClient
+    .from('user_recipe_limits')
+    .upsert(
+      {
+        user_id: userId,
+        recipes_generated_today: recipesGeneratedToday,
+        last_reset: today,
+      },
+      { onConflict: 'user_id' }
+    );
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Verificar que el servicio esté disponible
     if (!isChefVirtualAvailable()) {
       return NextResponse.json(
         { error: 'El servicio de Chef Virtual no está disponible. Contacta al administrador.', success: false },
@@ -24,7 +103,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { ingredients, preferences } = body;
 
-    // Validar ingredientes
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
       return NextResponse.json(
         { error: 'Debes ingresar al menos un ingrediente', success: false },
@@ -32,7 +110,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar que los ingredientes sean strings
     if (!ingredients.every((ing: string) => typeof ing === 'string' && ing.trim().length > 0)) {
       return NextResponse.json(
         { error: 'Los ingredientes deben ser textos válidos', success: false },
@@ -40,7 +117,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validar límites de ingredientes (máximo 20)
     if (ingredients.length > 20) {
       return NextResponse.json(
         { error: 'Máximo 20 ingredientes permitidos', success: false },
@@ -48,32 +124,125 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verificar autenticación
     const authHeader = request.headers.get('authorization');
     const token = extractBearerToken(authHeader);
     let userId: string | null = null;
-    let supabaseClient = supabase; // Cliente por defecto
-
-    console.log('[CHEF-VIRTUAL-GENERATE] Token present:', !!token);
+    let supabaseClient = supabase;
 
     if (token) {
-      // Crear cliente Supabase con el token del usuario para que RLS funcione
       supabaseClient = createSupabaseRequestClient(token);
 
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabaseClient.auth.getUser();
+
       if (!authError && user) {
         userId = user.id;
-        console.log('[CHEF-VIRTUAL-GENERATE] User authenticated:', userId);
-      } else {
-        console.error('[CHEF-VIRTUAL-GENERATE] Auth error:', authError);
       }
-    } else {
-      console.log('[CHEF-VIRTUAL-GENERATE] No token provided, recipe will not be saved');
     }
 
-    // Generar la receta
-    const result = await generateRecipe(ingredients, preferences);
+    if (userId) {
+      const { recipesLimit, recipesGeneratedToday, today } = await getAuthenticatedUsage(
+        supabaseClient,
+        userId
+      );
 
+      if (recipesGeneratedToday >= recipesLimit) {
+        return NextResponse.json(
+          {
+            error: 'Has alcanzado tu límite diario de recetas.',
+            success: false,
+            limit: recipesLimit,
+          },
+          { status: 429 }
+        );
+      }
+
+      const result = await generateRecipe(ingredients, preferences);
+
+      if (!result.success || !result.recipe) {
+        return NextResponse.json(
+          { error: result.error, success: false },
+          { status: 500 }
+        );
+      }
+
+      let recipeError: { message: string; code?: string; details?: string; hint?: string } | null = null;
+
+      try {
+        const { error: insertError } = await supabaseClient
+          .from('generated_recipes')
+          .insert({
+            user_id: userId,
+            ingredients: JSON.stringify(ingredients),
+            recipe_data: result.recipe,
+            is_favorited: false,
+          });
+
+        if (insertError) {
+          recipeError = {
+            message: insertError.message,
+            code: insertError.code,
+            details: insertError.details,
+            hint: insertError.hint,
+          };
+        }
+
+        await persistAuthenticatedUsage(
+          supabaseClient,
+          userId,
+          today,
+          recipesGeneratedToday + 1
+        );
+
+        await supabaseClient
+          .from('user_chef_subscription')
+          .upsert(
+            {
+              user_id: userId,
+              tier: 'registered',
+              recipes_limit: AUTHENTICATED_DAILY_LIMIT,
+              can_save: true,
+              saved_recipes_limit: 10,
+            },
+            { onConflict: 'user_id' }
+          );
+      } catch (dbError: any) {
+        recipeError = dbError;
+      }
+
+      return NextResponse.json({
+        success: true,
+        recipe: result.recipe,
+        saved: !recipeError,
+        warning: recipeError
+          ? 'La receta se generó pero hubo un error al guardarla en tu historial.'
+          : undefined,
+        errorDetails: recipeError
+          ? {
+              message: recipeError.message,
+              code: recipeError.code,
+              details: recipeError.details,
+              hint: recipeError.hint,
+            }
+          : undefined,
+      });
+    }
+
+    const guestUsage = getGuestUsage(request);
+    if (guestUsage >= GUEST_DAILY_LIMIT) {
+      return NextResponse.json(
+        {
+          error: 'Has alcanzado tu límite diario de recetas como visitante.',
+          success: false,
+          limit: GUEST_DAILY_LIMIT,
+        },
+        { status: 429 }
+      );
+    }
+
+    const result = await generateRecipe(ingredients, preferences);
     if (!result.success) {
       return NextResponse.json(
         { error: result.error, success: false },
@@ -81,111 +250,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Si el usuario está autenticado, guardar la receta en BD
-    let recipeError: { message: string; code?: string; details?: string; hint?: string } | null = null;
-    if (userId && result.recipe) {
-      const today = new Date().toISOString().split('T')[0];
-
-      console.log('[CHEF-VIRTUAL-GENERATE] Saving recipe for user:', userId);
-
-      try {
-        // 1. Guardar la receta generada usando el cliente con el token
-        const { error: insertError } = await supabaseClient
-          .from('generated_recipes')
-          .insert({
-            user_id: userId,
-            ingredients: JSON.stringify(ingredients),
-            recipe_data: result.recipe,
-            is_favorited: false
-          });
-
-        if (insertError) {
-          console.error('[CHEF-VIRTUAL-GENERATE] Error guardando receta:', insertError);
-          recipeError = insertError as any;
-        } else {
-          console.log('[CHEF-VIRTUAL-GENERATE] Recipe saved successfully');
-        }
-
-        // 2. Actualizar/crear registro de límites
-        const { data: existingLimits } = await supabaseClient
-          .from('user_recipe_limits')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-
-        if (existingLimits) {
-          // Verificar si es un nuevo día
-          if (existingLimits.last_reset !== today) {
-            // Resetear contador y actualizar
-            await supabaseClient
-              .from('user_recipe_limits')
-              .update({
-                recipes_generated_today: 1,
-                last_reset: today
-              })
-              .eq('user_id', userId);
-          } else {
-            // Incrementar contador
-            await supabaseClient
-              .from('user_recipe_limits')
-              .update({
-                recipes_generated_today: (existingLimits.recipes_generated_today || 0) + 1
-              })
-              .eq('user_id', userId);
-          }
-        } else {
-          // Crear nuevo registro
-          await supabaseClient
-            .from('user_recipe_limits')
-            .insert({
-              user_id: userId,
-              recipes_generated_today: 1,
-              last_reset: today
-            });
-        }
-
-        // 3. Asegurar que el usuario tenga suscripción registrada
-        const { data: existingSubscription } = await supabaseClient
-          .from('user_chef_subscription')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
-
-        if (!existingSubscription) {
-          await supabaseClient
-            .from('user_chef_subscription')
-            .insert({
-              user_id: userId,
-              tier: 'registered',
-              recipes_limit: 5,
-              can_save: true,
-              saved_recipes_limit: 10
-            });
-        }
-
-        console.log('[CHEF-VIRTUAL-GENERATE] Recipe and limits saved for user:', userId);
-      } catch (dbError: any) {
-        console.error('[CHEF-VIRTUAL-GENERATE] Error en operaciones de BD:', dbError);
-        recipeError = dbError;
-        // No fallar el request por errores de BD
-      }
-    } else {
-      console.log('[CHEF-VIRTUAL-GENERATE] Recipe NOT saved (userId:', userId, ', recipe:', !!result.recipe, ')');
-    }
+    incrementGuestUsage(request);
 
     return NextResponse.json({
       success: true,
       recipe: result.recipe,
-      saved: !!userId && !recipeError, // true si se guardó correctamente
-      warning: recipeError ? 'La receta se generó pero hubo un error al guardarla en tu historial.' : undefined,
-      errorDetails: recipeError ? {
-        message: recipeError.message,
-        code: recipeError.code,
-        details: recipeError.details,
-        hint: recipeError.hint
-      } : undefined
+      saved: false,
     });
-
   } catch (error) {
     console.error('[CHEF-VIRTUAL-GENERATE] Error:', error);
     return NextResponse.json(

@@ -1,18 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const timestamp = new Date().toISOString();
-  const env = {
-    supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    supabase_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
-    jwt_secret: !!process.env.JWT_SECRET,
-    node_env: process.env.NODE_ENV
-  };
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   return NextResponse.json({
-    status: 'API Working',
-    timestamp,
-    environment: env,
-    deployment_time: '2025-12-16T12:36:00Z'
+    status: 'ok',
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date().toISOString(),
   });
 }

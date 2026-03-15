@@ -325,7 +325,7 @@ const response = await fetch(`/api/admin/products/${productId}`, {
 **Solución:**
 ```
 1. Abre http://localhost:3000/admin/login
-2. Inicia sesión: admin@tusaguacates.com / admin123
+2. Inicia sesión con una cuenta administrativa autorizada
 3. Intenta de nuevo
 ```
 

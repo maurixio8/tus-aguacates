@@ -20,7 +20,7 @@ Se han aplicado **3 parches de seguridad críticos** detectados en la auditoría
 
 ```typescript
 // ❌ CÓDIGO ANTERIOR (INSEGURO)
-const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const jwtSecret = process.env.JWT_SECRET;
 ```
 
 Si `JWT_SECRET` no estaba configurado en producción, el sistema usaba un valor por defecto conocido, permitiendo que **cualquiera pudiera crear tokens de admin válidos**.

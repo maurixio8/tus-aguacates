@@ -135,7 +135,7 @@ export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey!, 
 #### **Antes (INSEGURO)**
 
 ```typescript
-const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const jwtSecret = process.env.JWT_SECRET;
 const decoded = jwt.verify(token, jwtSecret) as any;
 ```
 

@@ -88,7 +88,7 @@ CREATE TRIGGER update_admin_users_updated_at BEFORE UPDATE ON admin_users
 CREATE TRIGGER update_guest_orders_updated_at BEFORE UPDATE ON guest_orders
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Insert default admin user (password: admin123)
+-- Insert initial admin user (set a secure password before using in production)
 -- NOTE: Change this password in production!
 INSERT INTO admin_users (email, name, password_hash, role)
 VALUES (

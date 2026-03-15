@@ -1,41 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
-
-// Helper function to verify admin authentication
-async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
-  try {
-    // Get the admin-token cookie from the request
-    const token = request.cookies.get('admin-token')?.value;
-
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
-
-    // Verify the JWT token
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    let decoded;
-    try {
-      decoded = jwt.verify(token, jwtSecret) as any;
-    } catch (jwtError) {
-      console.error('JWT verification error:', jwtError);
-      return { success: false, error: 'Token inválido' };
-    }
-
-    // Check if this is an admin token
-    if (decoded.type !== 'admin') {
-      return { success: false, error: 'Token no válido para administrador' };
-    }
-
-    return { success: true, adminId: decoded.id };
-
-  } catch (error) {
-    console.error('Authentication error:', error);
-    return { success: false, error: 'Error de autenticación' };
-  }
-}
 
 // GET - List coupons with pagination and filters
 export async function GET(request: NextRequest) {

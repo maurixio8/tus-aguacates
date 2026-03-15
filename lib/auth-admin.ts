@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-// Interfaces para TypeScript
 export interface AdminUser {
   id: string;
   email: string;
@@ -14,6 +13,7 @@ export interface AdminUser {
   last_login: string | null;
   created_at: string;
   updated_at: string;
+  password_hash?: string;
 }
 
 export interface AuthResult {
@@ -22,206 +22,225 @@ export interface AuthResult {
   error?: string;
 }
 
-// Cliente de Supabase para server-side (ADMIN - BYPASS RLS)
-export function createSupabaseClient() {
-  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
-  const serviceRoleKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
+const ADMIN_TOKEN_COOKIE_NAME = 'admin-token';
+const ADMIN_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24;
+const DEFAULT_ADMIN_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:5174',
+  'http://127.0.0.1:5174',
+];
 
-  console.log('🔍 [AUTH-ADMIN] Environment variables check:', {
-    hasUrl: !!supabaseUrl,
-    hasServiceRoleKey: !!serviceRoleKey,
-    urlPrefix: supabaseUrl ? supabaseUrl.substring(0, 20) + '...' : 'null'
-  });
+function cleanEnvValue(value?: string): string {
+  return (value || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
+}
 
-  if (!supabaseUrl) {
-    console.error('❌ [AUTH-ADMIN] NEXT_PUBLIC_SUPABASE_URL not configured');
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL environment variable');
+function getRequiredEnv(name: string): string {
+  const value = cleanEnvValue(process.env[name]);
+  if (!value) {
+    throw new Error(`Missing ${name} environment variable`);
   }
+  return value;
+}
 
-  if (!serviceRoleKey) {
-    console.error('❌ [AUTH-ADMIN] SUPABASE_SERVICE_ROLE_KEY not configured');
-    throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable. This is required for admin operations. Please configure it in Vercel or .env.local');
-  }
+function getJwtSecret(): string {
+  return getRequiredEnv('JWT_SECRET');
+}
 
-  console.log('✅ [AUTH-ADMIN] Creating Supabase client with service_role key (bypass RLS)');
+function getSupabaseUrl(): string {
+  return getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL');
+}
 
-  return createClient(
-    supabaseUrl,
-    serviceRoleKey,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    }
+function getSupabaseServiceRoleKey(): string {
+  return getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY');
+}
+
+function getAllowedAdminOrigins(request?: NextRequest): string[] {
+  const configuredOrigins = cleanEnvValue(process.env.ADMIN_ALLOWED_ORIGINS)
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
+  const requestOrigin = request ? new URL(request.url).origin : null;
+
+  return Array.from(
+    new Set(
+      [...DEFAULT_ADMIN_ALLOWED_ORIGINS, ...configuredOrigins, requestOrigin]
+        .filter((origin): origin is string => Boolean(origin))
+    )
   );
 }
 
+export function getAdminCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get('origin');
+  const allowedOrigins = new Set(getAllowedAdminOrigins(request));
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, PATCH, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-admin-token',
+    'Access-Control-Allow-Credentials': 'true',
+    'Access-Control-Max-Age': '86400',
+  };
 
-// Verificar si un usuario es administrador
-export async function verifyAdminUser(supabase: any, userId: string): Promise<AuthResult> {
+  if (origin && allowedOrigins.has(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
+}
+
+export function getAdminCookieOptions(request: NextRequest) {
+  const url = new URL(request.url);
+  const isSecure = url.protocol === 'https:';
+  const isLocalHost = ['localhost', '127.0.0.1'].includes(url.hostname);
+
+  return {
+    httpOnly: true,
+    secure: isSecure,
+    sameSite: 'lax' as const,
+    maxAge: ADMIN_TOKEN_MAX_AGE_SECONDS,
+    path: '/',
+    ...(isSecure && !isLocalHost ? { domain: url.hostname } : {}),
+  };
+}
+
+function extractAdminToken(request: NextRequest): string | null {
+  const cookieToken =
+    request.cookies.get(ADMIN_TOKEN_COOKIE_NAME)?.value ||
+    request.cookies.get('admin_token')?.value;
+
+  if (cookieToken) {
+    return cookieToken;
+  }
+
+  const authHeader = request.headers.get('authorization');
+  if (authHeader?.startsWith('Bearer ')) {
+    return authHeader.slice(7);
+  }
+
+  return request.headers.get('x-admin-token');
+}
+
+export function createSupabaseClient() {
+  return createClient(getSupabaseUrl(), getSupabaseServiceRoleKey(), {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
+export async function verifyAdminUser(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  userId: string
+): Promise<AuthResult> {
   try {
-    // PRIMERO: Intentar verificar con tabla admin_users
-    try {
-      const { data: adminUser, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('id', userId)
-        .eq('is_active', true)
-        .single();
+    const { data, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('id', userId)
+      .eq('is_active', true)
+      .single();
 
-      if (!error && adminUser) {
-        return {
-          success: true,
-          user: adminUser
-        };
-      }
-    } catch (tableError) {
-      console.log('⚠️ Tabla admin_users no existe, usando fallback temporal');
-    }
-
-    // FALLBACK TEMPORAL: Permitir acceso al admin temporal
-    if (userId === 'admin-001') {
-      const tempAdmin: AdminUser = {
-        id: 'admin-001',
-        email: 'admin@tusaguacates.com',
-        name: 'Administrador Temporal',
-        role: 'super_admin',
-        is_active: true,
-        last_login: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
+    if (error || !data) {
       return {
-        success: true,
-        user: tempAdmin
+        success: false,
+        error: 'Usuario administrador no encontrado o inactivo',
       };
     }
 
     return {
-      success: false,
-      error: 'Usuario administrador no encontrado o inactivo'
+      success: true,
+      user: data,
     };
   } catch (error) {
     console.error('Error verifying admin user:', error);
     return {
       success: false,
-      error: 'Error al verificar usuario administrador'
+      error: 'Error al verificar usuario administrador',
     };
   }
 }
 
-// Autenticar administrador con email y contraseña
 export async function authenticateAdmin(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseClient>,
   email: string,
   password: string
 ): Promise<AuthResult> {
   try {
-    // PRIMERO: Intentar autenticación con tabla admin_users
-    try {
-      const { data: adminUser, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .eq('email', email.toLowerCase().trim())
-        .eq('is_active', true)
-        .single();
+    const normalizedEmail = email.toLowerCase().trim();
 
-      if (!error && adminUser) {
-        // Tabla existe, verificar contraseña normalmente
-        const isPasswordValid = await bcrypt.compare(password, adminUser.password_hash);
+    const { data: adminUser, error } = await supabase
+      .from('admin_users')
+      .select('*')
+      .eq('email', normalizedEmail)
+      .eq('is_active', true)
+      .single();
 
-        if (!isPasswordValid) {
-          return {
-            success: false,
-            error: 'Credenciales inválidas'
-          };
-        }
-
-        return {
-          success: true,
-          user: adminUser
-        };
-      }
-    } catch (tableError) {
-      console.log('⚠️ Tabla admin_users no existe, usando fallback temporal');
+    if (error || !adminUser?.password_hash) {
+      return {
+        success: false,
+        error: 'Credenciales inválidas',
+      };
     }
 
-    // FALLBACK TEMPORAL: Autenticación hardcodeada mientras las tablas se crean
-    const hardcodedEmail = 'admin@tusaguacates.com';
-    const hardcodedPassword = 'admin123';
-
-    if (email === hardcodedEmail && password === hardcodedPassword) {
-      // Usuario admin temporal hardcodeado
-      const tempAdmin: AdminUser = {
-        id: 'admin-001',
-        email: hardcodedEmail,
-        name: 'Administrador Temporal',
-        role: 'super_admin',
-        is_active: true,
-        last_login: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
+    const isPasswordValid = await bcrypt.compare(password, adminUser.password_hash);
+    if (!isPasswordValid) {
       return {
-        success: true,
-        user: tempAdmin
+        success: false,
+        error: 'Credenciales inválidas',
       };
     }
 
     return {
-      success: false,
-      error: 'Credenciales inválidas'
+      success: true,
+      user: adminUser,
     };
-
   } catch (error) {
     console.error('Authentication error:', error);
     return {
       success: false,
-      error: 'Error interno del servidor'
+      error: 'Error interno del servidor',
     };
   }
 }
 
-// Registrar actividad de administrador
+export function createAdminToken(user: Pick<AdminUser, 'id' | 'email' | 'role'>): string {
+  return jwt.sign(
+    {
+      id: user.id,
+      email: user.email,
+      type: 'admin',
+      role: user.role,
+    },
+    getJwtSecret(),
+    { expiresIn: ADMIN_TOKEN_MAX_AGE_SECONDS }
+  );
+}
+
 export async function logAdminActivity(
-  supabase: any,
+  supabase: ReturnType<typeof createSupabaseClient>,
   adminId: string,
   action: string,
   tableName?: string,
   recordId?: string,
-  oldValues?: any,
-  newValues?: any,
+  oldValues?: unknown,
+  newValues?: unknown,
   ipAddress?: string,
   userAgent?: string
 ): Promise<boolean> {
   try {
-    // Si es el admin temporal, solo loggear a consola y retornar true
-    if (adminId === 'admin-001') {
-      console.log(`📝 ACTIVIDAD ADMIN: ${action}`, {
-        adminId,
-        tableName,
-        recordId,
-        ipAddress,
-        timestamp: new Date().toISOString()
-      });
-      return true;
-    }
-
-    const { error } = await supabase
-      .from('admin_activity_log')
-      .insert({
-        admin_id: adminId,
-        action,
-        table_name: tableName,
-        record_id: recordId,
-        old_values: oldValues,
-        new_values: newValues,
-        ip_address: ipAddress,
-        user_agent: userAgent
-      });
+    const { error } = await supabase.from('admin_activity_log').insert({
+      admin_id: adminId,
+      action,
+      table_name: tableName,
+      record_id: recordId,
+      old_values: oldValues,
+      new_values: newValues,
+      ip_address: ipAddress,
+      user_agent: userAgent,
+    });
 
     return !error;
   } catch (error) {
@@ -230,122 +249,105 @@ export async function logAdminActivity(
   }
 }
 
-// Obtener usuario actual autenticado desde token JWT
 export async function getCurrentAdminUser(): Promise<AdminUser | null> {
   try {
     const cookieStore = await cookies();
-    const token = cookieStore.get('admin-token')?.value;
+    const token =
+      cookieStore.get(ADMIN_TOKEN_COOKIE_NAME)?.value ||
+      cookieStore.get('admin_token')?.value;
 
     if (!token) {
       return null;
     }
 
-    const jwtSecret = (process.env.JWT_SECRET || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
-    if (!jwtSecret) {
-      console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
-      throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');
-    }
-    const decoded = jwt.verify(token, jwtSecret) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as jwt.JwtPayload & {
+      id?: string;
+      type?: string;
+    };
 
-    if (decoded.type !== 'admin') {
+    if (decoded.type !== 'admin' || !decoded.id) {
       return null;
     }
 
-    // Obtener datos actualizados del usuario desde la base de datos
     const supabase = createSupabaseClient();
-    const { data: adminUser, error } = await supabase
-      .from('admin_users')
-      .select('*')
-      .eq('id', decoded.id)
-      .eq('is_active', true)
-      .single();
-
-    if (error || !adminUser) {
-      return null;
-    }
-
-    return adminUser;
+    const result = await verifyAdminUser(supabase, decoded.id);
+    return result.success ? result.user || null : null;
   } catch (error) {
     console.error('Error getting current admin user:', error);
     return null;
   }
 }
 
-/**
- * Verifica autenticación de admin desde una NextRequest
- * Acepta token tanto de cookie como de Authorization header
- */
-export async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
+export async function verifyAdminAuth(
+  request: NextRequest
+): Promise<{ success: boolean; adminId?: string; error?: string; user?: AdminUser }> {
   try {
-    // Intentar obtener token de cookie primero
-    let token = request.cookies.get('admin-token')?.value;
-
-    // Si no hay token en cookie, intentar obtenerlo del header Authorization
+    const token = extractAdminToken(request);
     if (!token) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        token = authHeader.substring(7); // Remover 'Bearer ' prefix
-      }
+      return { success: false, error: 'No autenticado' };
     }
 
-    if (!token) {
-      return { success: false, error: 'No autenticado - falta token' };
+    const decoded = jwt.verify(token, getJwtSecret()) as jwt.JwtPayload & {
+      id?: string;
+      type?: string;
+    };
+
+    if (decoded.type !== 'admin' || !decoded.id) {
+      return { success: false, error: 'Token no válido para administrador' };
     }
 
-    const jwtSecret = (process.env.JWT_SECRET || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
-    if (!jwtSecret) {
-      console.error('❌ [AUTH-ADMIN] JWT_SECRET not configured in environment variables');
-      throw new Error('Missing JWT_SECRET environment variable. This is required for admin authentication. Please configure it in Vercel or .env.local');
-    }
-    const decoded = jwt.verify(token, jwtSecret) as any;
+    const supabase = createSupabaseClient();
+    const result = await verifyAdminUser(supabase, decoded.id);
 
-    if (decoded.type !== 'admin') {
-      return { success: false, error: 'No autorizado - token no es de admin' };
+    if (!result.success || !result.user) {
+      return { success: false, error: result.error || 'No autorizado' };
     }
 
-    return { success: true, adminId: decoded.id };
+    return {
+      success: true,
+      adminId: result.user.id,
+      user: result.user,
+    };
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
       return { success: false, error: 'Token expirado' };
     }
+
     if (error instanceof jwt.JsonWebTokenError) {
       return { success: false, error: 'Token inválido' };
     }
+
+    console.error('Error verifying admin auth:', error);
     return { success: false, error: 'Error de autenticación' };
   }
 }
 
-// Verificar si el usuario tiene permisos específicos
-export function hasPermission(user: AdminUser, requiredRole: 'admin' | 'super_admin' | 'viewer'): boolean {
+export function hasPermission(
+  user: AdminUser,
+  requiredRole: 'admin' | 'super_admin' | 'viewer'
+): boolean {
   const roleHierarchy = {
     viewer: 1,
     admin: 2,
-    super_admin: 3
+    super_admin: 3,
   };
 
   return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
 }
 
-// Crear hash de contraseña
 export async function hashPassword(password: string): Promise<string> {
-  const saltRounds = 10;
-  return await bcrypt.hash(password, saltRounds);
+  return bcrypt.hash(password, 10);
 }
 
-// Verificar contraseña
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return await bcrypt.compare(password, hash);
+  return bcrypt.compare(password, hash);
 }
 
-// Actualizar último login
-export async function updateLastLogin(supabase: any, adminId: string): Promise<boolean> {
+export async function updateLastLogin(
+  supabase: ReturnType<typeof createSupabaseClient>,
+  adminId: string
+): Promise<boolean> {
   try {
-    // Si es el admin temporal, solo loggear y retornar true
-    if (adminId === 'admin-001') {
-      console.log('📝 Actualizando login para admin temporal');
-      return true;
-    }
-
     const { error } = await supabase
       .from('admin_users')
       .update({ last_login: new Date().toISOString() })
@@ -358,11 +360,10 @@ export async function updateLastLogin(supabase: any, adminId: string): Promise<b
   }
 }
 
-// Obtener lista de actividades recientes
 export async function getRecentActivities(
-  supabase: any,
-  limit: number = 50
-): Promise<any[]> {
+  supabase: ReturnType<typeof createSupabaseClient>,
+  limit = 50
+): Promise<unknown[]> {
   try {
     const { data, error } = await supabase
       .from('admin_activity_log')

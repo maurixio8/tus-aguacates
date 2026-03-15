@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -36,49 +36,18 @@ export async function OPTIONS(request: NextRequest) {
     return new NextResponse(null, { headers: corsHeaders });
 }
 
-// Helper para verificar token de admin
-async function verifyAdminAuth(req: NextRequest) {
-    try {
-        const headerToken = req.headers.get('x-admin-token');
-        const cookieToken = req.cookies.get('admin_token')?.value || req.cookies.get('admin-token')?.value;
-        const token = headerToken || cookieToken;
-
-        if (!token) {
-            return { success: false, error: 'No autorizado' };
-        }
-
-        const JWT_SECRET = process.env.JWT_SECRET || 'tus-aguacates-secret-key';
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
-
-        if (decoded.type !== 'admin') {
-            return { success: false, error: 'Token no válido para administrador' };
-        }
-
-        return { success: true, adminId: decoded.id };
-    } catch (error) {
-        console.error('❌ Error auth:', error);
-        return { success: false, error: 'Token inválido' };
-    }
-}
-
 // GET - Get single variant by ID
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const origin = request.headers.get('origin');
-        const referer = request.headers.get('referer');
-        const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
-
-        if (!isSameOrigin) {
-            const auth = await verifyAdminAuth(request);
-            if (!auth.success) {
-                return NextResponse.json(
-                    { error: auth.error },
-                    { status: 401, headers: corsHeaders }
-                );
-            }
+        const auth = await verifyAdminAuth(request);
+        if (!auth.success) {
+            return NextResponse.json(
+                { error: auth.error },
+                { status: 401, headers: corsHeaders }
+            );
         }
 
         const { id } = await params;
@@ -127,18 +96,12 @@ export async function PATCH(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const origin = request.headers.get('origin');
-        const referer = request.headers.get('referer');
-        const isSameOrigin = !origin || origin.includes('tus-aguacates') || referer?.includes('/admin');
-
-        if (!isSameOrigin) {
-            const auth = await verifyAdminAuth(request);
-            if (!auth.success) {
-                return NextResponse.json(
-                    { error: auth.error },
-                    { status: 401, headers: corsHeaders }
-                );
-            }
+        const auth = await verifyAdminAuth(request);
+        if (!auth.success) {
+            return NextResponse.json(
+                { error: auth.error },
+                { status: 401, headers: corsHeaders }
+            );
         }
 
         const { id } = await params;

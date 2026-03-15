@@ -8,7 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createHash } from 'crypto';
+import { createHmac, timingSafeEqual } from 'crypto';
 
 /**
  * Verify webhook signature from Bold
@@ -28,11 +28,18 @@ function verifyWebhookSignature(payload: string, signature?: string): boolean {
     }
 
     try {
-        const hmac = createHash('sha256');
-        hmac.update(signingSecret + payload);
+        const hmac = createHmac('sha256', signingSecret);
+        hmac.update(payload);
         const expectedSignature = hmac.digest('hex');
 
-        const isValid = signature === expectedSignature;
+        if (signature.length !== expectedSignature.length) {
+            return false;
+        }
+
+        const isValid = timingSafeEqual(
+            Buffer.from(signature),
+            Buffer.from(expectedSignature)
+        );
 
         if (!isValid) {
             console.error('[Bold Webhook] ❌ Invalid signature', {

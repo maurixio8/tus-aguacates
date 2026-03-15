@@ -6,6 +6,8 @@
 import { Page, APIRequestContext } from '@playwright/test';
 import { ADMIN_CREDENTIALS, ADMIN_URLS, TIMEOUTS } from '../fixtures/admin';
 
+const E2E_BASE_URL = process.env.BASE_URL || 'http://127.0.0.1:3000';
+
 /**
  * Realiza login de administrador vía UI
  * @param page - Página de Playwright
@@ -41,10 +43,8 @@ export async function loginAsAdmin(page: Page): Promise<void> {
  * @returns Promise<string> - Token JWT de autenticación
  */
 export async function getAdminToken(request: APIRequestContext): Promise<string> {
-  const baseURL = process.env.BASE_URL || 'https://tus-aguacates.vercel.app';
-
   // Realizar login vía API
-  const response = await request.post(`${baseURL}/api/auth/admin/login`, {
+  const response = await request.post(`${E2E_BASE_URL}/api/auth/admin/login`, {
     data: {
       email: ADMIN_CREDENTIALS.email,
       password: ADMIN_CREDENTIALS.password,
@@ -88,7 +88,7 @@ export async function setupAuthenticatedPage(page: Page): Promise<void> {
     {
       name: 'admin-token',
       value: token,
-      domain: new URL(process.env.BASE_URL || 'https://tus-aguacates.vercel.app').hostname,
+      domain: new URL(E2E_BASE_URL).hostname,
       path: '/',
       httpOnly: true,
       sameSite: 'Lax',
@@ -110,8 +110,7 @@ export async function authenticatedRequest(
   method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   data?: any
 ) {
-  const baseURL = process.env.BASE_URL || 'https://tus-aguacates.vercel.app';
-  const fullUrl = url.startsWith('http') ? url : `${baseURL}${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${E2E_BASE_URL}${url}`;
 
   const token = await getAdminToken(request);
 

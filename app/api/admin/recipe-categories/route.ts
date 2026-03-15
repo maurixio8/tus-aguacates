@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import jwt from 'jsonwebtoken';
+import { verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,30 +20,14 @@ function getSupabaseClient() {
   });
 }
 
-async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
-  try {
-    const token = request.cookies.get('admin-token')?.value;
-
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
-
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    const decoded = jwt.verify(token, jwtSecret) as any;
-
-    if (decoded.type !== 'admin') {
-      return { success: false, error: 'Token inválido' };
-    }
-
-    return { success: true, adminId: decoded.id };
-  } catch (error) {
-    return { success: false, error: 'Token expirado o inválido' };
-  }
-}
-
 // GET - List all recipe categories
 export async function GET(request: NextRequest) {
   try {
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success) {
+      return NextResponse.json({ error: auth.error, success: false }, { status: 401 });
+    }
+
     const supabase = getSupabaseClient();
     const { searchParams } = new URL(request.url);
     const includeInactive = searchParams.get('includeInactive') === 'true';

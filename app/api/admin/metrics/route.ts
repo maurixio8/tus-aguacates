@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,49 +15,6 @@ const corsHeaders = {
 // Manejar solicitudes OPTIONS para CORS
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, { headers: corsHeaders });
-}
-
-// Helper function to verify admin authentication
-async function verifyAdminAuth(request: NextRequest): Promise<{ success: boolean; adminId?: string; error?: string }> {
-  try {
-    // Get the admin-token from cookie OR Authorization header
-    let token = request.cookies.get('admin-token')?.value;
-
-    // If no cookie, check Authorization header
-    if (!token) {
-      const authHeader = request.headers.get('Authorization');
-      if (authHeader?.startsWith('Bearer ')) {
-        token = authHeader.substring(7);
-      }
-    }
-
-    // For same-origin requests from admin dashboard, check referer
-    const referer = request.headers.get('referer');
-    const isSameOrigin = referer?.includes('/admin');
-
-    if (!token && isSameOrigin) {
-      // Allow same-origin requests without token for dashboard
-      return { success: true, adminId: 'admin-001' };
-    }
-
-    if (!token) {
-      return { success: false, error: 'No autenticado' };
-    }
-
-    // Verify the JWT token
-    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-    const decoded = jwt.verify(token, jwtSecret) as any;
-
-    // Check if this is an admin token
-    if (decoded.type !== 'admin') {
-      return { success: false, error: 'Token no válido para administrador' };
-    }
-
-    return { success: true, adminId: decoded.id };
-
-  } catch (error) {
-    return { success: false, error: 'Error de autenticación' };
-  }
 }
 
 // GET - Dashboard metrics

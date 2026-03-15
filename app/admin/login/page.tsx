@@ -83,7 +83,7 @@ export default function AdminLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
-                placeholder="admin@tusaguacates.com"
+                placeholder="correo@empresa.com"
                 required
               />
             </div>
@@ -128,12 +128,11 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Credenciales de ayuda */}
+          {/* Mensaje de seguridad */}
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <p className="text-xs text-gray-500 text-center">
-              <strong>Credenciales:</strong><br />
-              admin@tusaguacates.com<br />
-              admin123
+              <strong>Acceso restringido:</strong><br />
+              Usa una cuenta administrativa autorizada.
             </p>
           </div>
         </div>

@@ -3,10 +3,20 @@
  * Contiene datos de prueba y constantes centralizadas
  */
 
+function getRequiredE2EEnv(name: string): string {
+  const value = process.env[name]?.trim();
+
+  if (!value) {
+    throw new Error(`Missing required E2E environment variable: ${name}`);
+  }
+
+  return value;
+}
+
 // Credenciales de administrador
 export const ADMIN_CREDENTIALS = {
-  email: 'admin@tusaguacates.com',
-  password: 'admin123',
+  email: getRequiredE2EEnv('E2E_ADMIN_EMAIL'),
+  password: getRequiredE2EEnv('E2E_ADMIN_PASSWORD'),
 };
 
 // URLs del Dashboard
