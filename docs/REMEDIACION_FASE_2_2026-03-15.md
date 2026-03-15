@@ -127,3 +127,29 @@ La siguiente fase deberia enfocarse en dos frentes:
 
 1. Rotacion real de credenciales admin y revison de `admin_users` en Supabase
 2. CI de seguridad minima con build, chequeo de tipos y validaciones para impedir que reaparezcan fallbacks o credenciales embebidas
+
+## Actualizacion posterior: origen de pedidos en lista de compras
+
+Se ajusto la clasificacion funcional de pedidos para reflejar los 3 origenes reales del negocio:
+
+1. `registered`: pedido hecho por cliente registrado
+2. `guest`: pedido hecho por cliente no registrado
+3. `admin_manual`: pedido creado manualmente desde el dashboard
+
+Cambios aplicados:
+
+- `app/api/admin/orders/route.ts`
+  - Los pedidos de `orders` ahora se clasifican como `registered` solo si tienen `user_id`
+  - Los pedidos de `orders` con `user_id = null` pasan a `admin_manual`
+  - Los pedidos de `guest_orders` se mantienen como `guest`
+- `app/admin/lista-compras/page.tsx`
+  - La UI ahora muestra el origen del pedido en la lista de seleccion y en el desglose por cliente
+  - El resumen copiable y el CSV exportado incluyen el origen del pedido
+
+Verificacion ejecutada:
+
+- `npx tsc -p tsconfig.json --noEmit --pretty false --incremental false`
+
+Resultado:
+
+- Exitoso

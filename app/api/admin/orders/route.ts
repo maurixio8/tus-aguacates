@@ -223,6 +223,10 @@ export async function GET(request: NextRequest) {
       return false;
     };
 
+    const getRegularOrderType = (order: any) => {
+      return order.user_id ? 'registered' : 'admin_manual';
+    };
+
     // Procesar pedidos normales
     if (ordersData.data) {
       console.log('📋 Processing regular orders:', ordersData.data.length, 'orders');
@@ -261,7 +265,7 @@ export async function GET(request: NextRequest) {
             ...order,
             order_items: orderItemsWithVariants,
             ...customerData, // Usar datos reales en lugar de null
-            order_type: 'registered'
+            order_type: getRegularOrderType(order)
           };
           if (order.order_items && order.order_items.length > 0) {
             console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
@@ -291,7 +295,7 @@ export async function GET(request: NextRequest) {
           return {
             ...order,
             ...customerData, // Usar datos reales en lugar de null
-            order_type: 'registered'
+            order_type: getRegularOrderType(order)
           };
         })
       );
@@ -400,7 +404,8 @@ export async function GET(request: NextRequest) {
       total_orders: allOrders.length,
       orders_by_type: {
         registered: allOrders.filter(o => o.order_type === 'registered').length,
-        guest: allOrders.filter(o => o.order_type === 'guest').length
+        guest: allOrders.filter(o => o.order_type === 'guest').length,
+        admin_manual: allOrders.filter(o => o.order_type === 'admin_manual').length
       },
       orders_with_items: allOrders.filter(o => o.order_items && o.order_items.length > 0).length,
       orders_without_items: allOrders.filter(o => !o.order_items || o.order_items.length === 0).length

@@ -64,7 +64,7 @@ interface Order {
   created_at: string;
   order_items?: OrderItem[];
   items?: OrderItem[];
-  order_type?: 'registered' | 'guest';
+  order_type?: 'registered' | 'guest' | 'admin_manual';
   order_data?: any;
   // Campos de totales
   total?: number;
@@ -79,6 +79,7 @@ interface CustomerBreakdown {
   customer_name: string;
   customer_address?: string;
   order_id: string;
+  order_type?: Order['order_type'];
   variant_name?: string;
   quantity: number;
   weight_grams?: number;
@@ -157,6 +158,30 @@ export default function ListaComprasPage() {
     } else {
       document.documentElement.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+    }
+  };
+
+  const getOrderTypeLabel = (orderType?: Order['order_type']) => {
+    switch (orderType) {
+      case 'guest':
+        return 'Cliente invitado';
+      case 'admin_manual':
+        return 'Creado en dashboard';
+      case 'registered':
+      default:
+        return 'Cliente registrado';
+    }
+  };
+
+  const getOrderTypeBadgeClass = (orderType?: Order['order_type']) => {
+    switch (orderType) {
+      case 'guest':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300';
+      case 'admin_manual':
+        return 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/50 dark:text-fuchsia-300';
+      case 'registered':
+      default:
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300';
     }
   };
   const [dateFrom, setDateFrom] = useState('');
@@ -295,12 +320,15 @@ export default function ListaComprasPage() {
     'fresas premium': 'Fresas Premium',
 
     // --- BANANOS (mantener separados por variedad) ---
-    'banano criollo': 'Banano criollo',
-    'banano criollo kilo': 'Banano criollo',
-    'banana criollo': 'Banano criollo',
-    'banana criollo kilo': 'Banano criollo',
-    'banano criollo 1 kilo': 'Banano criollo',
-    'banano criollo 1kilo': 'Banano criollo',
+  'banano criollo': 'Banano criollo',
+  'banano criollo kilo': 'Banano criollo',
+  'banano criollo (un kilo)': 'Banano criollo',
+  'banano criollo (1 kilo)': 'Banano criollo',
+  'banana criollo': 'Banano criollo',
+  'banana criollo kilo': 'Banano criollo',
+  'banano criollo 1 kilo': 'Banano criollo',
+  'banano criollo 1kilo': 'Banano criollo',
+  'banano criollo 1k': 'Banano criollo',
 
     'banano bocadillo': 'Banano bocadillo',
     'banano bocadillo kilo': 'Banano bocadillo',
@@ -338,18 +366,22 @@ export default function ListaComprasPage() {
     'aguacate injerto': 'Aguacate injerto',
     'aguacate criollo': 'Aguacate criollo',
 
-    // --- CAJAS DE AGUACATES ---
-    'caja de 24 unidades hass': 'Caja de 24 unidades hass mediano',
-    'caja24 unidades': 'Caja de 24 unidades hass mediano',
-    'caja 24 unidades': 'Caja de 24 unidades hass mediano',
-    '24 aguacates': 'Caja de 24 unidades hass mediano',
-    'caja24 aguacates': 'Caja de 24 unidades hass mediano',
+  // --- CAJAS DE AGUACATES ---
+  'caja de 24 unidades hass': 'Caja de 24 unidades hass mediano',
+  'caja24 unidades': 'Caja de 24 unidades hass mediano',
+  'caja 24 unidades': 'Caja de 24 unidades hass mediano',
+  '24 aguacates': 'Caja de 24 unidades hass mediano',
+  'caja24 aguacates': 'Caja de 24 unidades hass mediano',
+  'caja de (24 unidades)': 'Caja de 24 unidades hass mediano',
+  'caja de 24 unidades': 'Caja de 24 unidades hass mediano',
 
-    'caja de 12 unidades hass': 'Caja de 12 unidades Premium',
-    'caja12 unidades': 'Caja de 12 unidades Premium',
-    'caja 12 unidades': 'Caja de 12 unidades Premium',
-    '12 aguacates': 'Caja de 12 unidades Premium',
-    'caja12 aguacates': 'Caja de 12 unidades Premium',
+  'caja de 12 unidades hass': 'Caja de 12 unidades Premium',
+  'caja12 unidades': 'Caja de 12 unidades Premium',
+  'caja 12 unidades': 'Caja de 12 unidades Premium',
+  '12 aguacates': 'Caja de 12 unidades Premium',
+  'caja12 aguacates': 'Caja de 12 unidades Premium',
+  'caja de (12 unidades)': 'Caja de 12 unidades Premium',
+  'caja de 12 unidades': 'Caja de 12 unidades Premium',
 
     'caja de 7 unidades injerto': 'Caja de 7 unidades injerto',
     'caja7 unidades': 'Caja de 7 unidades injerto',
@@ -385,6 +417,43 @@ export default function ListaComprasPage() {
     'flor jamaica': 'Flor de Jamaica',
     'flor jamaic': 'Flor de Jamaica',
 
+  // --- ACEITES ---
+  'aceite de coco': 'Aceite de Coco',
+  'aceite de coco 105': 'Aceite de Coco',
+  'aceite coco': 'Aceite de Coco',
+  'aceite coco 105': 'Aceite de Coco',
+  'aceite de coco (x 105 ml)': 'Aceite de Coco',
+  'aceite de coco x 105': 'Aceite de Coco',
+
+  // --- FRESAS (añadir variantes) ---
+  'fresas premium 500gr': 'Fresas Premium',
+  'fresas premium 500 gr': 'Fresas Premium',
+  'fresas premium (500gr)': 'Fresas Premium',
+  'fresas premium (500 gr)': 'Fresas Premium',
+
+  // --- MANGOS ---
+  'mango azucar': 'Mango Azúcar',
+  'mango azucar 500gr': 'Mango Azúcar',
+  'mango azucar 500 gr': 'Mango Azúcar',
+  'mango azucar (500grs)': 'Mango Azúcar',
+  'mango commun': 'Mango Comun',
+  'mango comun': 'Mango Comun',
+  'mango comun 500gr': 'Mango Comun',
+  'mango comun 500 gr': 'Mango Comun',
+  'mango comun (500grs)': 'Mango Comun',
+
+  // --- FRIJOL ---
+  // --- FRIJOL ---
+  'frijol desgranado': 'Frijol Desgranado',
+  'frijol desgranado 500gr': 'Frijol Desgranado',
+  'frijol desgranado 500 gr': 'Frijol Desgranado',
+  'frijol desgranado (500grs)': 'Frijol Desgranado',
+
+  // --- DURAZNOS ---
+  'durazno': 'Duraznos',
+  'duraznos': 'Duraznos',
+  'durazno importado': 'Duraznos importados',
+  'duraznos importados': 'Duraznos importados',
     'uva isabelina': 'Uva isabelina',
     'uva isabela': 'Uva isabelina',
 
@@ -1092,6 +1161,7 @@ export default function ListaComprasPage() {
                 customer_name: customerName,
                 customer_address: customerAddress,
                 order_id: order.id,
+                order_type: order.order_type,
                 variant_name: component.variant,
                 quantity: component.quantity * item.quantity,
                 order_items: orderSummaries.get(order.id)
@@ -1182,6 +1252,7 @@ export default function ListaComprasPage() {
               customer_name: customerName,
               customer_address: customerAddress,
               order_id: order.id,
+              order_type: order.order_type,
               variant_name: variantDisplay || undefined,
               quantity: item.quantity,
               weight_grams: itemWeightGrams,
@@ -1530,7 +1601,7 @@ export default function ListaComprasPage() {
   const generateOrderSummary = (customer: CustomerBreakdown) => {
     if (!customer.order_items || customer.order_items.length === 0) return '';
 
-    const lines = [`Pedido para: ${customer.customer_name}`, ''];
+    const lines = [`Pedido para: ${customer.customer_name}`, `Origen: ${getOrderTypeLabel(customer.order_type)}`, ''];
     customer.order_items.forEach(item => {
       const variant = item.variant_name ? ` (${item.variant_name})` : '';
       const weight = item.weight_display ? ` - ${item.weight_display}` : '';
@@ -1552,7 +1623,7 @@ export default function ListaComprasPage() {
 
     // Crear CSV con BOM para Excel
     const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Origen Pedido', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
 
     const rows: string[][] = [];
 
@@ -1566,6 +1637,7 @@ export default function ListaComprasPage() {
         '--- TOTAL ---',
         '',
         '',
+        '',
         ''
       ]);
 
@@ -1577,6 +1649,7 @@ export default function ListaComprasPage() {
           '',
           '',
           customer.customer_name,
+          getOrderTypeLabel(customer.order_type),
           customer.customer_address || '-',
           customer.quantity.toString(),
           customer.weight_display || '-'
@@ -1608,6 +1681,30 @@ export default function ListaComprasPage() {
     await navigator.clipboard.writeText(allText);
     setCopiedItems(new Set(groupedProducts.map(p => p.grouping_key)));
     setTimeout(() => setCopiedItems(new Set()), 2000);
+  };
+
+  // Extraer unidades por caja del nombre del producto
+  // Ej: "Caja de 24 unidades hass mediano" -> 24
+  // Ej: "caja de (24 unidades)" -> 24
+  const getUnitsPerBox = (productName: string): number | null => {
+    const name = productName.toLowerCase();
+    // Patrón 1: "caja de 24 unidades" o "caja de (24 unidades)"
+    const match = name.match(/caja\s+(?:de\s+)?\(?\s*(\d+)\s*\)?\s*unidad/i);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  // Calcular cajas reales desde cantidad total (detectando si se guardó mal)
+  // Si quantity parece ser unidades (multiplo del tamaño de caja), convertir a cajas
+  const calculateBoxCount = (productName: string, totalQuantity: number): number => {
+    const unitsPerBox = getUnitsPerBox(productName);
+    if (!unitsPerBox) return totalQuantity;
+    
+    // Si la cantidad es múltiplo exacto del tamaño de caja, probablemente son unidades
+    // Ej: 144 = 6 * 24, entonces eran 6 cajas guardadas como 144 unidades
+    if (totalQuantity % unitsPerBox === 0 && totalQuantity > unitsPerBox) {
+      return totalQuantity / unitsPerBox;
+    }
+    return totalQuantity;
   };
 
   const handleDownloadCSV = exportToExcel;
@@ -1821,9 +1918,14 @@ export default function ListaComprasPage() {
                           <p className="font-medium text-gray-900 dark:text-white truncate">
                             {order.customer_name || 'Cliente'}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {itemCount} productos
-                          </p>
+                          <div className="flex flex-wrap items-center gap-2 mt-1">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {itemCount} productos
+                            </p>
+                            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderTypeBadgeClass(order.order_type)}`}>
+                              {getOrderTypeLabel(order.order_type)}
+                            </span>
+                          </div>
                         </div>
                       </div>
                     );
@@ -2011,6 +2113,11 @@ export default function ListaComprasPage() {
                                         <p className="font-semibold text-gray-900 dark:text-white text-xs">
                                           {customer.customer_name}
                                         </p>
+                                        <div className="mt-1">
+                                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderTypeBadgeClass(customer.order_type)}`}>
+                                            {getOrderTypeLabel(customer.order_type)}
+                                          </span>
+                                        </div>
                                         {customer.customer_address && (
                                           <p className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">
                                             {customer.customer_address}
@@ -2061,7 +2168,15 @@ export default function ListaComprasPage() {
                                       </div>
                                       <div className="text-right flex-shrink-0">
                                         <p className="font-bold text-gray-900 dark:text-white text-sm">
-                                          {customer.quantity}x
+                                        {getUnitsPerBox(product.display_name) ? (
+                                          (() => {
+                                            const boxCount = calculateBoxCount(product.display_name, customer.quantity);
+                                            const unitsPerBox = getUnitsPerBox(product.display_name)!;
+                                            return `${boxCount} cajas (${boxCount * unitsPerBox} unid.)`;
+                                          })()
+                                        ) : (
+                                          `${customer.quantity}x`
+                                        )}
                                         </p>
                                         <p className="text-[10px] text-gray-500 dark:text-gray-400">
                                           {customer.variant_name || 'Unidad'}
@@ -2077,7 +2192,24 @@ export default function ListaComprasPage() {
                           {/* Columna 3: Totales */}
                           <td className="px-6 py-4 whitespace-nowrap text-right align-top">
                             <div className="flex flex-col items-end gap-1">
-                              {product.total_weight_display ? (
+                              {getUnitsPerBox(product.display_name) ? (
+                                <>
+                                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                                    {(() => {
+                                      const boxCount = calculateBoxCount(product.display_name, product.total_quantity);
+                                      return `${boxCount} cajas`;
+                                    })()}
+                                  </p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                    {(() => {
+                                      const boxCount = calculateBoxCount(product.display_name, product.total_quantity);
+                                      const unitsPerBox = getUnitsPerBox(product.display_name)!;
+                                      const totalUnits = boxCount * unitsPerBox;
+                                      return `(${totalUnits} unid. = ${boxCount} × ${unitsPerBox})`;
+                                    })()}
+                                  </p>
+                                </>
+                              ) : product.total_weight_display ? (
                                 <>
                                   <p className="text-xl font-bold text-green-600 dark:text-green-400">
                                     {product.total_weight_display}
