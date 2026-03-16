@@ -74,6 +74,20 @@ interface Order {
   shipping_cost?: number;
 }
 
+interface CatalogVariant {
+  id: string;
+  variant_name?: string;
+  variant_value?: string;
+  is_active?: boolean;
+}
+
+interface CatalogProduct {
+  id: string;
+  name: string;
+  variants?: CatalogVariant[];
+  product_variants?: CatalogVariant[];
+}
+
 // Desglose de un producto por cliente
 interface CustomerBreakdown {
   customer_name: string;
@@ -134,6 +148,7 @@ export interface ProductGrouped {
 
 export default function ListaComprasPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<CatalogProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -454,6 +469,34 @@ export default function ListaComprasPage() {
   'duraznos': 'Duraznos',
   'durazno importado': 'Duraznos importados',
   'duraznos importados': 'Duraznos importados',
+  'granadillas en bandeja': 'Granadillas',
+  'granadilla en bandeja': 'Granadillas',
+  'granada fresca': 'Granada',
+  'granada': 'Granada',
+  'kiwi': 'Kiwis',
+  'kiwis': 'Kiwis',
+  'kiwi 400 gramos': 'Kiwis',
+  'kiwi 450grs': 'Kiwis',
+  'kiwi 900grs': 'Kiwis',
+  'manzana verde en bandeja': 'Manzana verde Bandeja',
+  'manzana verde bandeja': 'Manzana verde Bandeja',
+  'manzana roja en bandeja': 'Manzana roja Bandeja',
+  'manzana roja bandeja': 'Manzana roja Bandeja',
+  'cebolla larga maya': 'Cebolla larga malla',
+  'apio entero': 'Apio Entero paquete',
+  'apio entero paquete': 'Apio Entero paquete',
+  'apio tallos': 'Apio tallos bandeja',
+  'zumo de limon': 'Zumo Limón concentrado',
+  'zumo limon': 'Zumo Limón concentrado',
+  'zumo de limon concentrado': 'Zumo Limón concentrado',
+  'zumo limon concentrado': 'Zumo Limón concentrado',
+  'semillas de chia': 'Semillas de Chía',
+  'semillas chia': 'Semillas de Chía',
+  'semillas de chia 120 gramos': 'Semillas de Chía',
+  'semillas de linaza': 'Semillas Linaza',
+  'linaza': 'Semillas Linaza',
+  'aceite aguacate': 'Aceite de Aguacate',
+  'aceite de aguacate': 'Aceite de Aguacate',
     'uva isabelina': 'Uva isabelina',
     'uva isabela': 'Uva isabelina',
 
@@ -716,6 +759,25 @@ export default function ListaComprasPage() {
     }
   };
 
+  const loadCatalogProducts = async () => {
+    try {
+      const params = new URLSearchParams();
+      params.set('status', 'active');
+      params.set('limit', '500');
+
+      const response = await fetch(`/api/admin/products?${params}`, {
+        credentials: 'include',
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setCatalogProducts(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error cargando catalogo de productos:', error);
+    }
+  };
+
   // Cargar pedidos cuando cambien las fechas
   useEffect(() => {
     // Solo cargar si tenemos ambas fechas
@@ -727,27 +789,98 @@ export default function ListaComprasPage() {
     }
   }, [dateFrom, dateTo]);
 
+  useEffect(() => {
+    loadCatalogProducts();
+  }, []);
+
+  const extractVariantInfo = (item: any) => {
+    const nestedVariant = item?.variant && typeof item.variant === 'object' ? item.variant : null;
+    const snapshot = item?.product_snapshot && typeof item.product_snapshot === 'object'
+      ? item.product_snapshot
+      : null;
+
+    const variantType =
+      item?.variantType ||
+      item?.variant_type ||
+      item?.variant_name ||
+      item?.variantName ||
+      nestedVariant?.variant_name ||
+      snapshot?.variant_name ||
+      null;
+
+    const variantValue =
+      item?.variantValue ||
+      item?.variant_value ||
+      nestedVariant?.variant_value ||
+      snapshot?.variant_value ||
+      null;
+
+    return {
+      variantType,
+      variantValue,
+      variantDisplay: variantValue || variantType || null,
+    };
+  };
+
   // Extraer items de order_data si no hay order_items
   // Extraer items de order_data si no hay order_items
   const extractItemsFromOrder = (order: Order): OrderItem[] => {
     // Primero extraer desde order_data (para pedidos de invitados y registrados que guardan variantes ahí)
     // Esto tiene prioridad porque ahí se guarda la información correcta de variantes
     if (order.order_data?.items) {
-      return order.order_data.items.map((item: any, index: number) => ({
-        id: item.id || `item-${index}`,
-        product_id: item.productId || item.product_id || `product-${index}`,
-        product_snapshot: {
-          name: item.productName || item.product_name || 'Producto',
-          price: item.price || item.unit_price || 0,
-          variant_name: item.variantName || item.variant_name || null,
-          variant_value: item.variantValue || item.variant_value || null
-        },
-        quantity: item.quantity || 0,
-        unit_price: item.price || item.unit_price || 0,
-        subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
-        variantName: item.variantName || item.variant_name || null,
-        variant_value: item.variantValue || item.variant_value || null
-      }));
+      return order.order_data.items.map((item: any, index: number) => {
+        const variantInfo = extractVariantInfo(item);
+
+        return {
+          id: item.id || `item-${index}`,
+          product_id: item.productId || item.product_id || `product-${index}`,
+          product_snapshot: {
+            name: item.productName || item.product_name || 'Producto',
+            price: item.price || item.unit_price || 0,
+            variant_name: variantInfo.variantType,
+            variant_value: variantInfo.variantValue
+          },
+          quantity: item.quantity || 0,
+          unit_price: item.price || item.unit_price || 0,
+          subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
+          variantName: variantInfo.variantDisplay,
+          variant_value: variantInfo.variantValue
+        };
+      });
+    }
+
+    if (order.order_items && order.order_items.length > 0) {
+      return order.order_items.map((item: any) => {
+        const variantInfo = extractVariantInfo(item);
+
+        return {
+          ...item,
+          variantName: variantInfo.variantDisplay,
+          variant_value: variantInfo.variantValue,
+          product_snapshot: {
+            ...item.product_snapshot,
+            variant_name: variantInfo.variantType,
+            variant_value: variantInfo.variantValue
+          }
+        };
+      });
+    }
+
+    if (order.items && order.items.length > 0) {
+      return order.items.map((item: any) => {
+        const variantInfo = extractVariantInfo(item);
+
+        return {
+          ...item,
+          variantName: variantInfo.variantDisplay,
+          variant_value: variantInfo.variantValue,
+          product_snapshot: {
+            ...item.product_snapshot,
+            variant_name: variantInfo.variantType,
+            variant_value: variantInfo.variantValue
+          }
+        };
+      });
     }
 
     // Luego intentar con order_items
@@ -1014,7 +1147,12 @@ export default function ListaComprasPage() {
       /\d+\s*unidad/i,      // "12 unidades", "4 unidad"
       /x\s*\d+/i,           // "x4", "x 12"
       /\d+\s*(gr|grs|kg|kilos|gramos)/i,  // "500gr", "1 kg"
+      /\d+\s*bandeja/i,
+      /\bbandeja\b/i,
+      /\d+\s*ml\b/i,
       /paquete\s*x?\s*\d+/i, // "paquete 4", "paquete x4"
+      /\bpaquete\b/i,
+      /\bmalla\b/i,
       /caja\s*de\s*\d+/i,   // "caja de 12"
       /\d+\s*kilo/i,        // "1 kilo"
     ];
@@ -1039,7 +1177,131 @@ export default function ListaComprasPage() {
       return `${weightMatch[1]} ${unit}`;
     }
 
+    const trayMatch = productName.match(/(\d+)\s*bandeja(s)?/i);
+    if (trayMatch) {
+      return `${trayMatch[1]} Bandejas`;
+    }
+
+    if (/\bbandeja\b/i.test(name)) {
+      return '1 Bandeja';
+    }
+
+    const mlMatch = productName.match(/(\d+(?:\.\d+)?)\s*ml/i);
+    if (mlMatch) {
+      return `X${mlMatch[1]} ml`;
+    }
+
+    if (/\bmalla\b/i.test(name)) {
+      return 'Malla';
+    }
+
+    if (/\bpaquete\b/i.test(name)) {
+      return 'Paquete';
+    }
+
     return null;
+  };
+
+  const getActiveCatalogVariants = (product: CatalogProduct): CatalogVariant[] => {
+    return (product.variants || product.product_variants || []).filter((variant) => variant.is_active !== false);
+  };
+
+  const catalogVariantsByName = useMemo(() => {
+    const catalogMap = new Map<string, { displayName: string; variants: Map<string, string> }>();
+
+    catalogProducts.forEach((product) => {
+      const normalizedName = normalizeProductName(product.name, null);
+      const existing = catalogMap.get(normalizedName) || {
+        displayName: product.name,
+        variants: new Map<string, string>()
+      };
+
+      getActiveCatalogVariants(product).forEach((variant) => {
+        const variantDisplay = variant.variant_value || variant.variant_name || '';
+        const normalizedVariant = normalizeVariant(variantDisplay);
+        if (normalizedVariant && !existing.variants.has(normalizedVariant)) {
+          existing.variants.set(normalizedVariant, variantDisplay);
+        }
+      });
+
+      catalogMap.set(normalizedName, existing);
+    });
+
+    return catalogMap;
+  }, [catalogProducts]);
+
+  const selectedVariantHints = useMemo(() => {
+    const variantHints = new Map<string, Map<string, { display: string; count: number }>>();
+    const selectedOrdersList = orders.filter((order) => selectedOrders.has(order.id));
+
+    selectedOrdersList.forEach((order) => {
+      extractItemsFromOrder(order).forEach((item) => {
+        const productName =
+          item.product_snapshot?.name ||
+          item.products?.name ||
+          item.product_name ||
+          item.productName ||
+          'Producto sin nombre';
+
+        const variantInfo = extractVariantInfo(item);
+        const candidateVariant = variantInfo.variantValue || variantInfo.variantType || extractQuantityFromName(productName);
+        if (!candidateVariant) {
+          return;
+        }
+
+        const normalizedName = normalizeProductName(productName, candidateVariant);
+        const normalizedVariant = normalizeVariant(candidateVariant);
+        if (!normalizedVariant) {
+          return;
+        }
+
+        const productHints = variantHints.get(normalizedName) || new Map<string, { display: string; count: number }>();
+        const currentVariant = productHints.get(normalizedVariant);
+
+        productHints.set(normalizedVariant, {
+          display: currentVariant?.display || candidateVariant,
+          count: (currentVariant?.count || 0) + 1
+        });
+
+        variantHints.set(normalizedName, productHints);
+      });
+    });
+
+    return variantHints;
+  }, [orders, selectedOrders]);
+
+  const resolveVariantForProduct = (productName: string, item: OrderItem) => {
+    const variantInfo = extractVariantInfo(item);
+    let variantDisplay = variantInfo.variantValue || variantInfo.variantType || null;
+    const quantityFromName = extractQuantityFromName(productName);
+    const normalizedName = normalizeProductName(productName, variantDisplay || quantityFromName);
+
+    if (!variantDisplay && quantityFromName) {
+      variantDisplay = quantityFromName;
+    }
+
+    const catalogEntry = catalogVariantsByName.get(normalizedName);
+    const selectedHints = selectedVariantHints.get(normalizedName);
+
+    if (!variantDisplay && selectedHints && selectedHints.size === 1) {
+      variantDisplay = Array.from(selectedHints.values())[0].display;
+    }
+
+    if (!variantDisplay && catalogEntry && catalogEntry.variants.size === 1) {
+      variantDisplay = Array.from(catalogEntry.variants.values())[0];
+    }
+
+    const requiresVariant = Math.max(
+      catalogEntry?.variants.size || 0,
+      selectedHints?.size || 0
+    ) > 1;
+
+    return {
+      normalizedName,
+      variantDisplay,
+      requiresVariant,
+      catalogDisplayName: catalogEntry?.displayName || productName
+    };
   };
 
   // Extraer multiplicador de la variante para calcular unidades físicas
@@ -1094,7 +1356,8 @@ export default function ListaComprasPage() {
       const items = extractItemsFromOrder(order);
       const orderItems = items.map(item => {
         const productName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
-        const variantName = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || null;
+        const { variantDisplay } = resolveVariantForProduct(productName, item);
+        const variantName = variantDisplay || null;
         const weightPerUnit = extractWeightFromVariant(variantName);
         const totalWeight = weightPerUnit ? weightPerUnit * item.quantity : undefined;
 
@@ -1109,7 +1372,7 @@ export default function ListaComprasPage() {
     });
 
     return summaries;
-  }, [orders]);
+  }, [orders, selectedOrders, catalogProducts]);
 
   // Calcular productos agrupados de los pedidos seleccionados
   const groupedProducts = useMemo(() => {
@@ -1226,6 +1489,11 @@ export default function ListaComprasPage() {
             variantDisplay = quantityFromName;
           }
 
+          const variantResolution = resolveVariantForProduct(productName, item);
+          if (variantResolution.variantDisplay) {
+            variantDisplay = variantResolution.variantDisplay;
+          }
+
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
 
@@ -1233,8 +1501,8 @@ export default function ListaComprasPage() {
           const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
 
           // Crear clave de agrupación inteligente (detecta si variante ya está en el nombre)
-          const groupingKey = createGroupingKey(productName, variantDisplay);
-          const normalizedName = normalizeProductName(productName, variantDisplay);
+          const groupingKey = createGroupingKey(variantResolution.catalogDisplayName, variantDisplay);
+          const normalizedName = variantResolution.normalizedName;
 
           // Calcular peso para este item
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
@@ -1326,7 +1594,7 @@ export default function ListaComprasPage() {
 
             // Solo marcar como faltante si NO hay variante Y el nombre NO tiene info de cantidad
             // (productos como "Caja de 12 unidades" no necesitan variante)
-            if (!variantDisplay && !nameHasQuantity) {
+            if (!variantDisplay && !nameHasQuantity && variantResolution.requiresVariant) {
               existing.has_missing_variants = true;
             }
 
@@ -1347,11 +1615,12 @@ export default function ListaComprasPage() {
             }
           } else {
             // Crear nombre a mostrar (usando nombre normalizado)
-            let displayName = normalizedName;
+            const displayBaseName = variantResolution.catalogDisplayName || normalizedName;
+            let displayName = displayBaseName;
 
             // Si hay variante separada, agregarla
             if (variantDisplay) {
-              displayName = `${normalizedName} (${variantDisplay})`;
+              displayName = `${displayBaseName} (${variantDisplay})`;
             }
 
             // Calcular peso total inicial
@@ -1375,9 +1644,9 @@ export default function ListaComprasPage() {
 
             productMap.set(groupingKey, {
               grouping_key: groupingKey,
-              product_name: normalizedName,
+              product_name: displayBaseName,
               variant_name: variantDisplay || undefined,
-              variant_value: variantValue || undefined,
+              variant_value: variantDisplay || undefined,
               display_name: displayName,
               unit_price: unitPrice,
               total_quantity: item.quantity,
@@ -1390,7 +1659,7 @@ export default function ListaComprasPage() {
               smallest_weight_grams: weightPerUnitGrams, // Inicializar con el peso de esta variante
               total_in_smallest_units: item.quantity, // Inicializar con la cantidad actual
               // Solo falta variante si NO hay variantDisplay Y el nombre NO tiene info de cantidad
-              has_missing_variants: !variantDisplay && !nameHasQuantity,
+              has_missing_variants: !variantDisplay && !nameHasQuantity && variantResolution.requiresVariant,
               orders_count: 1,
               customer_breakdown: [customerInfo],
               items: [item]
@@ -1423,7 +1692,7 @@ export default function ListaComprasPage() {
         return a.product_name.localeCompare(b.product_name);
       }
     );
-  }, [orders, selectedOrders]);
+  }, [orders, selectedOrders, catalogProducts]);
 
   // Estados para controlar la visibilidad de secciones (Compact View)
   const [showSalesSummary, setShowSalesSummary] = useState(false);
