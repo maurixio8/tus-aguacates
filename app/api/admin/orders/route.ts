@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
+import {
+  buildOperationalFlags,
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+} from '@/lib/orders/operational';
 
 export const dynamic = 'force-dynamic';
 
@@ -264,38 +269,14 @@ export async function GET(request: NextRequest) {
           return {
             ...order,
             order_items: orderItemsWithVariants,
-            ...customerData, // Usar datos reales en lugar de null
-            order_type: getRegularOrderType(order)
-          };
-          if (order.order_items && order.order_items.length > 0) {
-            console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
-              order.order_items.map((item: any) => ({
-                product_id: item.product_id,
-                variant_id: item.variant_id,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                product_name: item.products?.name || item.product_snapshot?.name,
-                variant_name: item.variant_name || item.variant_value || null,
-                variantName: item.variant_name || item.variant_value || null
-              }))
-            );
-          }
-          if (order.order_items && order.order_items.length > 0) {
-            console.log(`📦 API: Order ${order.id.substring(0,8)} has ${order.order_items.length} items:`,
-              order.order_items.map((item: any) => ({
-                product_id: item.product_id,
-                variant_id: item.variant_id,
-                quantity: item.quantity,
-                unit_price: item.unit_price,
-                product_name: item.products?.name || item.product_snapshot?.name
-              }))
-            );
-          }
-
-          return {
-            ...order,
-            ...customerData, // Usar datos reales en lugar de null
-            order_type: getRegularOrderType(order)
+            status: normalizeOrderStatus(order.status),
+            payment_status: normalizePaymentStatus(order.payment_status),
+            ...customerData,
+            order_type: getRegularOrderType(order),
+            operational_flags: buildOperationalFlags({
+              ...customerData,
+              order_items: orderItemsWithVariants,
+            }),
           };
         })
       );
@@ -367,7 +348,7 @@ export async function GET(request: NextRequest) {
           id: order.id,
           order_number: `INV-${order.id.toString().slice(-8)}`, // Formato INV-XXXXXXXX
           user_id: null,
-          status: order.status,
+          status: normalizeOrderStatus(order.status),
           subtotal: order.order_data?.subtotal || 0,
           total: order.total_amount,
           total_amount: order.total_amount,
@@ -375,14 +356,20 @@ export async function GET(request: NextRequest) {
           customer_email: order.guest_email,
           customer_phone: order.guest_phone,
           delivery_address: order.guest_address,
-          delivery_notes: null,
+          delivery_notes: order.order_data?.delivery_notes || order.order_data?.deliveryNotes || null,
           order_data: order.order_data,
           order_items: orderItems, // ← AGREGADO: Items correctamente mapeados
           created_at: order.created_at,
           updated_at: order.updated_at,
           order_type: 'guest',
-          payment_status: order.payment_status || 'pending',
-          payment_method: order.payment_method || null
+          payment_status: normalizePaymentStatus(order.payment_status),
+          payment_method: order.payment_method || null,
+          operational_flags: buildOperationalFlags({
+            customer_name: order.guest_name,
+            customer_phone: order.guest_phone,
+            delivery_address: order.guest_address,
+            order_items: orderItems,
+          }),
         };
       });
 
@@ -431,21 +418,14 @@ export async function GET(request: NextRequest) {
 
     // Apply status filter a todos los pedidos
     if (status && status !== 'all') {
-      allOrders = allOrders.filter(order => order.status === status);
+      allOrders = allOrders.filter(order => order.status === normalizeOrderStatus(status));
     }
 
     // Apply payment_status filter a todos los pedidos
     if (paymentStatus && paymentStatus !== 'all') {
-      allOrders = allOrders.filter(order => {
-        const normalizedPaymentStatus = order.payment_status?.toLowerCase();
-        const filterValue = paymentStatus.toLowerCase();
-
-        return normalizedPaymentStatus === filterValue ||
-          (filterValue === 'paid' && ['pagado', 'completed', 'paid'].includes(normalizedPaymentStatus)) ||
-          (filterValue === 'pending' && ['pendiente', 'pendiente_pago', 'pending'].includes(normalizedPaymentStatus)) ||
-          (filterValue === 'failed' && ['fallido', 'failed'].includes(normalizedPaymentStatus)) ||
-          (filterValue === 'refunded' && ['reembolsado', 'refunded'].includes(normalizedPaymentStatus));
-      });
+      allOrders = allOrders.filter(
+        order => order.payment_status === normalizePaymentStatus(paymentStatus)
+      );
     }
 
     // Apply date filters - usar comparación de fechas real, no strings
@@ -686,7 +666,9 @@ export async function POST(request: NextRequest) {
 
     // Parsear dirección para extraer componentes
     const address = parseAddress(body.delivery_address);
-    const shippingCost = finalTotal - subtotal;
+    const shippingCost = typeof body.shipping_fee === 'number'
+      ? body.shipping_fee
+      : finalTotal - subtotal;
 
     // Create the order - user_id es null para pedidos manuales de admin
     const orderInsertData: Record<string, unknown> = {
@@ -936,7 +918,8 @@ export async function PATCH(request: NextRequest) {
           updateData.shipping_address = JSON.stringify({
             street_address: customerData.delivery_address.trim(),
             city: 'Bogotá',
-            state: 'Cundinamarca'
+            state: 'Cundinamarca',
+            additional_info: customerData.delivery_notes?.trim() || null
           });
         }
         if (customerData.delivery_notes !== undefined) {
@@ -1109,12 +1092,14 @@ export async function PATCH(request: NextRequest) {
 
         // Update order total
         const subtotal = items.reduce((sum: number, item: any) => sum + (item.unit_price * item.quantity), 0);
+        const shippingFee = total && total > subtotal ? total - subtotal : 0;
         const { error: updateError } = await supabase
           .from('orders')
           .update({
             subtotal: subtotal,
             total: total || subtotal,
             total_amount: total || subtotal,
+            shipping_fee: shippingFee,
             updated_at: new Date().toISOString()
           })
           .eq('id', orderId);

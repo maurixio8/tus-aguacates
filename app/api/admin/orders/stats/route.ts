@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
+import { normalizeOrderStatus } from '@/lib/orders/operational';
 
 export const dynamic = 'force-dynamic';
 
 // GET - Obtener estadísticas de pedidos
 export async function GET(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'viewer');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const supabase = createSupabaseClient();
 
     // Obtener conteos por estado de la tabla orders
@@ -40,20 +46,8 @@ export async function GET(request: NextRequest) {
     // Contar pedidos de orders
     if (ordersData) {
       for (const order of ordersData) {
-        const status = order.status || 'pending';
-        if (status in stats) {
-          stats[status as keyof typeof stats]++;
-        } else {
-          // Mapear estados alternativos
-          const statusMap: Record<string, keyof typeof stats> = {
-            'en_preparacion': 'processing',
-            'listo_entrega': 'shipped',
-            'entregado': 'delivered',
-            'cancelado': 'cancelled'
-          };
-          const mappedStatus = statusMap[status] || 'pending';
-          stats[mappedStatus]++;
-        }
+        const status = normalizeOrderStatus(order.status);
+        stats[status]++;
         stats.total++;
       }
     }
@@ -61,20 +55,8 @@ export async function GET(request: NextRequest) {
     // Contar pedidos de guest_orders
     if (guestOrdersData) {
       for (const order of guestOrdersData) {
-        const status = order.status || 'pending';
-        if (status in stats) {
-          stats[status as keyof typeof stats]++;
-        } else {
-          // Mapear estados alternativos
-          const statusMap: Record<string, keyof typeof stats> = {
-            'en_preparacion': 'processing',
-            'listo_entrega': 'shipped',
-            'entregado': 'delivered',
-            'cancelado': 'cancelled'
-          };
-          const mappedStatus = statusMap[status] || 'pending';
-          stats[mappedStatus]++;
-        }
+        const status = normalizeOrderStatus(order.status);
+        stats[status]++;
         stats.total++;
       }
     }

@@ -1,5 +1,6 @@
 // Utility to generate professional order summaries for WhatsApp
 // Supports both registered orders and guest orders
+import type { AdminOrderType } from '@/lib/orders/operational';
 
 export interface OrderItem {
   id: string;
@@ -49,7 +50,7 @@ export interface Order {
     phone?: string;
   };
   delivery_notes?: string;
-  order_type?: 'registered' | 'guest';
+  order_type?: AdminOrderType;
   created_at: string;
   updated_at?: string;
 }
