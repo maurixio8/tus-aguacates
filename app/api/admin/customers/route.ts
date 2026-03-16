@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -112,6 +112,11 @@ const calculateSearchScore = (customer: CustomerForSearch, searchTerms: string[]
 // Ahora lee de TODAS las fuentes: customers, profiles, y guest_orders
 export async function GET(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
@@ -412,6 +417,11 @@ export async function GET(request: NextRequest) {
 // POST - Crear nuevo cliente (crear usuario en auth y perfil)
 export async function POST(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const body = await request.json();
 
     // Validar campos requeridos
@@ -482,6 +492,11 @@ export async function POST(request: NextRequest) {
 // PATCH - Actualizar cliente
 export async function PATCH(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('id');
 
@@ -595,6 +610,11 @@ export async function PATCH(request: NextRequest) {
 // DELETE - Eliminar cliente
 export async function DELETE(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'super_admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get('id');
 

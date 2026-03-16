@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +22,11 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const adminAccess = await requireAdminRole(request, 'super_admin', corsHeaders);
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const { id: orderId } = await params;
 
     console.log('🗑️ [DELETE ORDER] Intentando eliminar pedido:', orderId);

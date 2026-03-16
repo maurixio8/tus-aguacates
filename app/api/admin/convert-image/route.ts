@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 export async function POST(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     console.log('🚀 API: Iniciando conversión de imagen');
 
     const formData = await request.formData();

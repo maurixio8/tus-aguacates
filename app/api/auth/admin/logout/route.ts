@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAdminUser, logAdminActivity, createSupabaseClient } from '@/lib/auth-admin';
+import {
+  createSupabaseClient,
+  getAdminCookieOptions,
+  getCurrentAdminUser,
+  logAdminActivity,
+} from '@/lib/auth-admin';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,12 +37,14 @@ export async function POST(request: NextRequest) {
     });
 
     // Eliminar cookie de admin-token
-    response.cookies.set('admin-token', '', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 0 // Expirar inmediatamente
-    });
+    const expiredCookieOptions = {
+      ...getAdminCookieOptions(request),
+      maxAge: 0,
+      expires: new Date(0),
+    };
+
+    response.cookies.set('admin-token', '', expiredCookieOptions);
+    response.cookies.set('admin_token', '', expiredCookieOptions);
 
     return response;
 

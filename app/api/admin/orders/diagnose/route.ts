@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +21,11 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
+  const adminAccess = await requireAdminRole(request, 'super_admin', corsHeaders);
+  if (adminAccess.response) {
+    return adminAccess.response;
+  }
+
   const diagnostics: any = {
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
