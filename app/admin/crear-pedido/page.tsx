@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -49,6 +49,13 @@ interface Product {
   variants?: ProductVariant[];
   hasVariants?: boolean;
   is_active: boolean;
+}
+
+interface QuickProductSearchResult {
+  key: string;
+  product: Product;
+  variant?: ProductVariant;
+  score: number;
 }
 
 interface OrderItem {
@@ -111,9 +118,16 @@ export default function CreateOrderPage() {
 
   // Estado para búsqueda global de productos
   const [globalProductSearch, setGlobalProductSearch] = useState('');
-  const [globalSearchResults, setGlobalSearchResults] = useState<Product[]>([]);
+  const [globalSearchResults, setGlobalSearchResults] = useState<QuickProductSearchResult[]>([]);
   const [loadingGlobalSearch, setLoadingGlobalSearch] = useState(false);
   const [showGlobalSearchResults, setShowGlobalSearchResults] = useState(false);
+  const [globalSearchActiveIndex, setGlobalSearchActiveIndex] = useState(0);
+  const [globalProductCatalog, setGlobalProductCatalog] = useState<Product[]>([]);
+  const [globalProductCatalogLoaded, setGlobalProductCatalogLoaded] = useState(false);
+  const globalSearchInputRef = useRef<HTMLInputElement | null>(null);
+  const globalSearchContainerRef = useRef<HTMLDivElement | null>(null);
+  const globalSearchCatalogRequestRef = useRef<Promise<Product[]> | null>(null);
+  const latestGlobalSearchRequestRef = useRef(0);
 
   useEffect(() => {
     loadCategories();
@@ -179,95 +193,216 @@ export default function CreateOrderPage() {
       .trim();
   };
 
-  // Búsqueda global de productos (todas las categorías)
-  const searchProductsGlobal = async (query: string) => {
-    if (query.length < 2) {
-      setGlobalSearchResults([]);
-      setShowGlobalSearchResults(false);
-      return;
+  const getActiveVariants = (product: Product): ProductVariant[] => {
+    return (product.variants || product.product_variants || []).filter((variant) => variant.is_active);
+  };
+
+  const scoreSearchText = (rawText: string, query: string): number => {
+    const normalizedText = normalizeText(rawText);
+    const normalizedQuery = normalizeText(query);
+
+    if (!normalizedText || !normalizedQuery) {
+      return 0;
     }
 
-    setLoadingGlobalSearch(true);
-    try {
-      // Buscar en todas las categorías sin filtro de categoría
+    let score = 0;
+    const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean);
+    const words = normalizedText.split(/\s+/).filter(Boolean);
+
+    if (normalizedText === normalizedQuery) {
+      score += 120;
+    } else if (normalizedText.startsWith(normalizedQuery)) {
+      score += 90;
+    } else if (normalizedText.includes(normalizedQuery)) {
+      score += 40;
+    }
+
+    for (const term of searchTerms) {
+      if (!term) continue;
+
+      if (words.some((word) => word === term)) {
+        score += 35;
+      }
+
+      if (words.some((word) => word.startsWith(term))) {
+        score += 20;
+      }
+
+      if (normalizedText.includes(term)) {
+        score += 12;
+      }
+    }
+
+    return score;
+  };
+
+  const buildQuickProductResults = (catalog: Product[], query: string): QuickProductSearchResult[] => {
+    return catalog
+      .flatMap((product) => {
+        const categoryName = product.categories?.name || '';
+        const activeVariants = getActiveVariants(product);
+        const results: QuickProductSearchResult[] = [];
+
+        const productScore = scoreSearchText(`${product.name} ${categoryName}`, query);
+        if (productScore > 0) {
+          results.push({
+            key: `product-${product.id}`,
+            product,
+            score: productScore + (activeVariants.length > 0 ? 5 : 18),
+          });
+        }
+
+        activeVariants.forEach((variant) => {
+          const variantScore = scoreSearchText(
+            `${product.name} ${categoryName} ${variant.variant_name} ${variant.variant_value}`,
+            query
+          );
+
+          if (variantScore > 0) {
+            results.push({
+              key: `variant-${variant.id}`,
+              product,
+              variant,
+              score: variantScore + 28,
+            });
+          }
+        });
+
+        return results;
+      })
+      .sort((a, b) => b.score - a.score || a.product.name.localeCompare(b.product.name))
+      .slice(0, 15);
+  };
+
+  const clearGlobalProductSearch = () => {
+    latestGlobalSearchRequestRef.current += 1;
+    setGlobalProductSearch('');
+    setGlobalSearchResults([]);
+    setShowGlobalSearchResults(false);
+    setGlobalSearchActiveIndex(0);
+    setLoadingGlobalSearch(false);
+  };
+
+  const loadGlobalProductCatalog = async (): Promise<Product[]> => {
+    if (globalProductCatalogLoaded) {
+      return globalProductCatalog;
+    }
+
+    if (globalSearchCatalogRequestRef.current) {
+      return globalSearchCatalogRequestRef.current;
+    }
+
+    const request = (async () => {
       const params = new URLSearchParams();
       params.set('status', 'active');
-      params.set('limit', '50'); // Más resultados para filtrar localmente
-      params.set('search', query);
+      params.set('limit', '250');
 
       const response = await fetch(`/api/admin/products/?${params}`, {
         credentials: 'include',
       });
       const data = await response.json();
 
-      if (data.success) {
-        const activeProducts = (data.data || []).filter((p: Product) => p.is_active);
-
-        // Aplicar scoring local para ordenar por relevancia
-        const searchTerms = query.toLowerCase().split(/\s+/).filter(t => t.length > 0);
-        const scoredProducts = activeProducts.map((product: Product) => {
-          let score = 0;
-          const productName = normalizeText(product.name);
-
-          for (const term of searchTerms) {
-            const normalizedTerm = normalizeText(term);
-
-            // Coincidencia exacta del nombre
-            if (productName === normalizedTerm) {
-              score += 100;
-            }
-            // Nombre empieza con el término
-            else if (productName.startsWith(normalizedTerm)) {
-              score += 80;
-            }
-            // Alguna palabra del nombre coincide
-            else {
-              const words = productName.split(' ');
-              for (const word of words) {
-                if (word === normalizedTerm) {
-                  score += 70;
-                } else if (word.startsWith(normalizedTerm)) {
-                  score += 50;
-                } else if (word.includes(normalizedTerm) && normalizedTerm.length >= 2) {
-                  score += 30;
-                }
-              }
-            }
-          }
-
-          return { ...product, searchScore: score };
-        });
-
-        // Filtrar y ordenar por score
-        const filteredProducts = scoredProducts
-          .filter((p: Product & { searchScore: number }) => p.searchScore > 0)
-          .sort((a: Product & { searchScore: number }, b: Product & { searchScore: number }) => b.searchScore - a.searchScore)
-          .slice(0, 15); // Limitar a 15 resultados
-
-        setGlobalSearchResults(filteredProducts);
-        setShowGlobalSearchResults(true);
+      if (!data.success) {
+        throw new Error(data.error || 'No se pudo cargar el catalogo de productos');
       }
-    } catch (error) {
-      console.error('Error en búsqueda global de productos:', error);
+
+      const activeProducts = (data.data || []).filter((product: Product) => product.is_active);
+      setGlobalProductCatalog(activeProducts);
+      setGlobalProductCatalogLoaded(true);
+      return activeProducts;
+    })();
+
+    globalSearchCatalogRequestRef.current = request;
+
+    try {
+      return await request;
     } finally {
-      setLoadingGlobalSearch(false);
+      globalSearchCatalogRequestRef.current = null;
     }
+  };
+
+  // Busqueda global de productos (todas las categorias)
+  const searchProductsGlobal = async (query: string) => {
+    await runFastGlobalSearch(query);
   };
 
   // Efecto para búsqueda global de productos con debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (globalProductSearch) {
-        searchProductsGlobal(globalProductSearch);
+      const trimmedSearch = globalProductSearch.trim();
+
+      if (trimmedSearch.length >= 2) {
+        searchProductsGlobal(trimmedSearch);
       } else {
         setGlobalSearchResults([]);
         setShowGlobalSearchResults(false);
+        setGlobalSearchActiveIndex(0);
+        setLoadingGlobalSearch(false);
       }
-    }, 300);
+    }, 150);
     return () => clearTimeout(timer);
   }, [globalProductSearch]);
 
   // Buscar clientes para autocompletado (búsqueda inteligente)
+  useEffect(() => {
+    loadGlobalProductCatalog().catch((error) => {
+      console.error('Error precargando catalogo para busqueda rapida:', error);
+    });
+  }, []);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!globalSearchContainerRef.current?.contains(event.target as Node)) {
+        setShowGlobalSearchResults(false);
+        setGlobalSearchActiveIndex(0);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+    };
+  }, []);
+
+  const runFastGlobalSearch = async (query: string) => {
+    const trimmedQuery = query.trim();
+
+    if (trimmedQuery.length < 2) {
+      setGlobalSearchResults([]);
+      setShowGlobalSearchResults(false);
+      setGlobalSearchActiveIndex(0);
+      setLoadingGlobalSearch(false);
+      return;
+    }
+
+    const requestId = latestGlobalSearchRequestRef.current + 1;
+    latestGlobalSearchRequestRef.current = requestId;
+    setLoadingGlobalSearch(true);
+
+    try {
+      const catalog = await loadGlobalProductCatalog();
+
+      if (requestId !== latestGlobalSearchRequestRef.current) {
+        return;
+      }
+
+      const filteredProducts = buildQuickProductResults(catalog, trimmedQuery);
+      setGlobalSearchResults(filteredProducts);
+      setShowGlobalSearchResults(true);
+      setGlobalSearchActiveIndex(0);
+    } catch (error) {
+      if (requestId === latestGlobalSearchRequestRef.current) {
+        setGlobalSearchResults([]);
+        setShowGlobalSearchResults(true);
+      }
+      console.error('Error en busqueda rapida de productos:', error);
+    } finally {
+      if (requestId === latestGlobalSearchRequestRef.current) {
+        setLoadingGlobalSearch(false);
+      }
+    }
+  };
+
   const searchCustomers = async (query: string) => {
     if (query.length < 2) {
       setCustomerSuggestions([]);
@@ -357,6 +492,51 @@ export default function CreateOrderPage() {
       : product.name;
     setAddedNotification(notificationText);
     setTimeout(() => setAddedNotification(null), 2000);
+  };
+
+  const selectQuickSearchResult = (result: QuickProductSearchResult) => {
+    addToOrder(result.product, result.variant);
+    clearGlobalProductSearch();
+    window.requestAnimationFrame(() => {
+      globalSearchInputRef.current?.focus();
+    });
+  };
+
+  const handleGlobalSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      setShowGlobalSearchResults(false);
+      setGlobalSearchActiveIndex(0);
+      return;
+    }
+
+    if (!showGlobalSearchResults || globalSearchResults.length === 0) {
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setGlobalSearchActiveIndex((currentIndex) =>
+        currentIndex >= globalSearchResults.length - 1 ? 0 : currentIndex + 1
+      );
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setGlobalSearchActiveIndex((currentIndex) =>
+        currentIndex <= 0 ? globalSearchResults.length - 1 : currentIndex - 1
+      );
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const activeResult = globalSearchResults[globalSearchActiveIndex] || globalSearchResults[0];
+
+      if (activeResult) {
+        selectQuickSearchResult(activeResult);
+      }
+    }
   };
 
   const updateQuantity = (index: number, delta: number) => {
@@ -698,17 +878,27 @@ export default function CreateOrderPage() {
         {/* Columna izquierda: Selección de productos */}
         <div className="space-y-4">
           {/* 🔍 BÚSQUEDA GLOBAL DE PRODUCTOS (Nueva) */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+          <div ref={globalSearchContainerRef} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               🔍 Búsqueda rápida de productos
             </label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
+                ref={globalSearchInputRef}
                 type="text"
                 placeholder="Buscar cualquier producto (ej: aguacate, fresa, combo...)"
                 value={globalProductSearch}
-                onChange={(e) => setGlobalProductSearch(e.target.value)}
+                onChange={(e) => {
+                  setGlobalProductSearch(e.target.value);
+                  setGlobalSearchActiveIndex(0);
+                }}
+                onFocus={() => {
+                  if (globalProductSearch.trim().length >= 2) {
+                    setShowGlobalSearchResults(true);
+                  }
+                }}
+                onKeyDown={handleGlobalSearchKeyDown}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-base"
               />
               {loadingGlobalSearch && (
@@ -719,6 +909,10 @@ export default function CreateOrderPage() {
             </div>
 
             {/* Resultados de búsqueda global */}
+            <p className="mt-2 text-xs text-gray-500">
+              Usa flechas y Enter para agregar mas rapido. La busqueda tambien incluye variantes.
+            </p>
+
             {showGlobalSearchResults && globalSearchResults.length > 0 && (
               <div className="mt-3 border border-gray-200 rounded-lg overflow-hidden">
                 <div className="bg-blue-50 p-2 border-b border-gray-200">
@@ -726,9 +920,21 @@ export default function CreateOrderPage() {
                     ✨ {globalSearchResults.length} resultado{globalSearchResults.length !== 1 ? 's' : ''} encontrado{globalSearchResults.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                <div className="max-h-[300px] overflow-y-auto divide-y divide-gray-100">
-                  {globalSearchResults.map((product) => (
-                    <div key={product.id} className="p-3 hover:bg-gray-50 transition-colors">
+                <div className="max-h-[320px] overflow-y-auto divide-y divide-gray-100">
+                  {globalSearchResults.map((result, index) => {
+                    const product = result.product;
+                    const isActive = index === globalSearchActiveIndex;
+                    const variantCount = getActiveVariants(product).length;
+                    const displayPrice = result.variant?.price_adjustment ?? product.price;
+
+                    return (
+                    <button
+                      key={result.key}
+                      type="button"
+                      onMouseEnter={() => setGlobalSearchActiveIndex(index)}
+                      onClick={() => selectQuickSearchResult(result)}
+                      className={`w-full p-3 text-left transition-colors ${isActive ? 'bg-blue-50' : 'hover:bg-gray-50'}`}
+                    >
                       <div className="flex items-center gap-3">
                         {product.main_image_url ? (
                           <img
@@ -742,54 +948,41 @@ export default function CreateOrderPage() {
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 text-sm">{product.name}</p>
-                          <p className="text-green-600 font-medium text-sm">{formatCurrency(product.price)}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="font-medium text-gray-900 text-sm">{product.name}</p>
+                            {result.variant ? (
+                              <span className="text-xs font-medium text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
+                                {result.variant.variant_value}
+                              </span>
+                            ) : variantCount > 0 ? (
+                              <span className="text-xs font-medium text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                                Producto base
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {result.variant
+                              ? `${result.variant.variant_name}: ${result.variant.variant_value}`
+                              : variantCount > 0
+                                ? `${variantCount} variante${variantCount !== 1 ? 's' : ''} disponible${variantCount !== 1 ? 's' : ''}`
+                                : 'Producto sin variantes'}
+                          </p>
                           {product.categories && (
-                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                            <span className="inline-flex mt-2 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
                               {product.categories.name}
                             </span>
                           )}
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => {
-                              addToOrder(product);
-                              setGlobalProductSearch('');
-                              setShowGlobalSearchResults(false);
-                            }}
-                            className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
-                          >
-                            <Plus className="w-3 h-3" />
-                            Agregar
-                          </button>
+                        <div className="flex flex-col items-end gap-2">
+                          <p className="text-green-600 font-medium text-sm">{formatCurrency(displayPrice)}</p>
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${isActive ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'}`}>
+                            {isActive ? 'Enter' : 'Agregar'}
+                          </span>
                         </div>
                       </div>
-                      {/* Mostrar variantes si existen */}
-                      {((product.variants && product.variants.length > 0) || (product.product_variants && product.product_variants.length > 0)) && (
-                        <div className="mt-2 ml-15 flex flex-wrap gap-1">
-                          {(product.variants || product.product_variants || [])
-                            .filter((v) => v.is_active)
-                            .slice(0, 3)
-                            .map((variant) => (
-                              <button
-                                key={variant.id}
-                                onClick={() => {
-                                  addToOrder(product, variant);
-                                  setGlobalProductSearch('');
-                                  setShowGlobalSearchResults(false);
-                                }}
-                                className="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-                              >
-                                {variant.variant_value} - {formatCurrency(variant.price_adjustment || product.price)}
-                              </button>
-                            ))}
-                          {((product.variants?.length || 0) + (product.product_variants?.length || 0)) > 3 && (
-                            <span className="text-xs text-gray-500 px-2 py-1">+más</span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    </button>
+                  );
+                })}
                 </div>
               </div>
             )}
