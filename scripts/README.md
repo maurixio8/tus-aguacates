@@ -9,6 +9,7 @@ Mantener como comandos versionados del proyecto. Deben tener nombre estable, ser
 Ejemplos actuales:
 
 - `analyze-bundle.js`
+- `audit-catalog-normalization.js`
 - `update-image-cache.js`
 - `validate-whatsapp-config.js`
 - `verify-ci-cd-setup.js`
