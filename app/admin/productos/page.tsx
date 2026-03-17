@@ -115,6 +115,16 @@ export default function ProductsPage() {
     setTimeout(() => setToast(null), 3000);
   };
 
+  const handleNumericInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
+    requestAnimationFrame(() => {
+      event.currentTarget.select();
+    });
+  };
+
+  const handleNumericInputMouseUp = (event: React.MouseEvent<HTMLInputElement>) => {
+    event.preventDefault();
+  };
+
   useEffect(() => {
     console.log('🚀 [ProductsPage] Component mounted, loading categories...');
     loadCategories();
@@ -1266,6 +1276,8 @@ export default function ProductsPage() {
                                                   ...editingVariant,
                                                   data: { ...editData, price: parseFloat(e.target.value) || 0 }
                                                 })}
+                                                onFocus={handleNumericInputFocus}
+                                                onMouseUp={handleNumericInputMouseUp}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                 min="0"
                                               />
@@ -1287,6 +1299,8 @@ export default function ProductsPage() {
                                                   ...editingVariant,
                                                   data: { ...editData, stock_quantity: parseInt(e.target.value) || 0 }
                                                 })}
+                                                onFocus={handleNumericInputFocus}
+                                                onMouseUp={handleNumericInputMouseUp}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                 min="0"
                                               />
@@ -1472,6 +1486,8 @@ export default function ProductsPage() {
                     type="number"
                     value={editingProduct.price}
                     onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                    onFocus={handleNumericInputFocus}
+                    onMouseUp={handleNumericInputMouseUp}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                     min="0"
                     required
@@ -1484,6 +1500,8 @@ export default function ProductsPage() {
                     type="number"
                     value={editingProduct.discount_price || ''}
                     onChange={(e) => setEditingProduct({ ...editingProduct, discount_price: parseFloat(e.target.value) || undefined })}
+                    onFocus={handleNumericInputFocus}
+                    onMouseUp={handleNumericInputMouseUp}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                     min="0"
                     placeholder="Opcional"
@@ -1498,6 +1516,8 @@ export default function ProductsPage() {
                   type="number"
                   value={editingProduct.stock}
                   onChange={(e) => setEditingProduct({ ...editingProduct, stock: parseInt(e.target.value) || 0 })}
+                  onFocus={handleNumericInputFocus}
+                  onMouseUp={handleNumericInputMouseUp}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
                   min="0"
                   required
@@ -1604,6 +1624,8 @@ export default function ProductsPage() {
                               type="number"
                               value={variant.price || 0}
                               onChange={(e) => updateVariantInProduct(index, 'price', parseFloat(e.target.value) || 0)}
+                              onFocus={handleNumericInputFocus}
+                              onMouseUp={handleNumericInputMouseUp}
                               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 font-bold text-gray-700"
                               min="0"
                             />
@@ -1616,6 +1638,8 @@ export default function ProductsPage() {
                               type="number"
                               value={variant.stock_quantity || 0}
                               onChange={(e) => updateVariantInProduct(index, 'stock_quantity', parseInt(e.target.value) || 0)}
+                              onFocus={handleNumericInputFocus}
+                              onMouseUp={handleNumericInputMouseUp}
                               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-green-500 outline-none bg-gray-50 font-medium"
                               min="0"
                             />

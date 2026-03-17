@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, hasPermission, verifyAdminAuth } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,6 +22,14 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success || !auth.user || !hasPermission(auth.user, 'admin')) {
+      return NextResponse.json(
+        { error: auth.error || 'No autorizado' },
+        { status: auth.success ? 403 : 401, headers: corsHeaders }
+      );
+    }
+
     const { id: orderId } = await params;
 
     console.log('🗑️ [DELETE ORDER] Intentando eliminar pedido:', orderId);
