@@ -41,7 +41,6 @@ interface ProductVariant {
   stock_quantity?: number;
   is_active?: boolean;
   sku?: string;
-  sort_order?: number;
 }
 
 interface Product {
@@ -498,12 +497,11 @@ export default function ProductsPage() {
     const currentVariants = editingProduct.variants || editingProduct.product_variants || [];
     const newVariant: ProductVariant = {
       id: '',
-      variant_name: 'Presentación',
+      variant_name: 'Presentacion',
       variant_value: '',
       price: editingProduct.price,
       stock_quantity: 0,
-      is_active: true,
-      sort_order: currentVariants.length
+      is_active: true
     };
 
     setEditingProduct({
