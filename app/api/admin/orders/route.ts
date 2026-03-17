@@ -138,6 +138,23 @@ async function getCustomerData(order: any, supabase: any): Promise<{
   };
 }
 
+function parseJsonObject(value: any): Record<string, any> {
+  if (!value) {
+    return {};
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  return typeof value === 'object' ? value : {};
+}
+
 // GET - List orders with filtering
 export async function GET(request: NextRequest) {
   try {
@@ -897,6 +914,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     // If updating customer data
+    let customerDataUpdated = false;
+
     if (customerData) {
       console.log('📝 API: Updating customer data for order:', orderId, customerData);
 
@@ -906,42 +925,99 @@ export async function PATCH(request: NextRequest) {
 
       // Mapear campos según tipo de pedido
       if (isGuestOrder) {
+        const { data: currentGuestOrder } = await supabase
+          .from('guest_orders')
+          .select('order_data')
+          .eq('id', orderId)
+          .single();
+
+        const nextOrderData = parseJsonObject(currentGuestOrder?.order_data);
+        const nextCustomer = {
+          ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
+        };
         // Para guest_orders, los campos son: guest_name, guest_phone, guest_email, guest_address
         if (customerData.customer_name !== undefined) {
-          updateData.guest_name = customerData.customer_name.trim();
+          const value = customerData.customer_name.trim();
+          updateData.guest_name = value;
+          nextCustomer.name = value;
+          nextCustomer.full_name = value;
         }
         if (customerData.customer_phone !== undefined) {
-          updateData.guest_phone = customerData.customer_phone.trim();
+          const value = customerData.customer_phone.trim();
+          updateData.guest_phone = value;
+          nextCustomer.phone = value;
         }
         if (customerData.customer_email !== undefined) {
-          updateData.guest_email = customerData.customer_email.trim() || null;
+          const value = customerData.customer_email.trim() || null;
+          updateData.guest_email = value;
+          nextCustomer.email = value;
         }
         if (customerData.delivery_address !== undefined) {
-          updateData.guest_address = customerData.delivery_address.trim();
-        }
-      } else {
-        // Para orders, usar campos normales
-        if (customerData.customer_name !== undefined) {
-          updateData.customer_name = customerData.customer_name.trim();
-        }
-        if (customerData.customer_phone !== undefined) {
-          updateData.customer_phone = customerData.customer_phone.trim();
-        }
-        if (customerData.customer_email !== undefined) {
-          updateData.customer_email = customerData.customer_email.trim() || null;
-        }
-        if (customerData.delivery_address !== undefined) {
-          updateData.delivery_address = customerData.delivery_address.trim();
-          // También actualizar shipping_address como JSON
-          updateData.shipping_address = JSON.stringify({
-            street_address: customerData.delivery_address.trim(),
-            city: 'Bogotá',
-            state: 'Cundinamarca'
-          });
+          const value = customerData.delivery_address.trim();
+          updateData.guest_address = value;
+          nextCustomer.address = value;
+          nextCustomer.delivery_address = value;
         }
         if (customerData.delivery_notes !== undefined) {
-          updateData.delivery_notes = customerData.delivery_notes.trim() || null;
+          const value = customerData.delivery_notes.trim() || null;
+          nextOrderData.delivery_notes = value;
         }
+
+        nextOrderData.customer = nextCustomer;
+        updateData.order_data = nextOrderData;
+      } else {
+        const { data: currentOrder } = await supabase
+          .from('orders')
+          .select('shipping_address, order_data')
+          .eq('id', orderId)
+          .single();
+
+        const shippingAddress = parseJsonObject(currentOrder?.shipping_address);
+        const nextOrderData = parseJsonObject(currentOrder?.order_data);
+        const nextCustomer = {
+          ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
+        };
+        // Para orders, usar campos normales
+        if (customerData.customer_name !== undefined) {
+          const value = customerData.customer_name.trim();
+          updateData.customer_name = value;
+          shippingAddress.full_name = value;
+          shippingAddress.name = value;
+          nextCustomer.name = value;
+          nextCustomer.full_name = value;
+        }
+        if (customerData.customer_phone !== undefined) {
+          const value = customerData.customer_phone.trim();
+          updateData.customer_phone = value;
+          shippingAddress.phone = value;
+          nextCustomer.phone = value;
+        }
+        if (customerData.customer_email !== undefined) {
+          const value = customerData.customer_email.trim() || null;
+          updateData.customer_email = value;
+          shippingAddress.email = value;
+          nextCustomer.email = value;
+        }
+        if (customerData.delivery_address !== undefined) {
+          const value = customerData.delivery_address.trim();
+          updateData.delivery_address = value;
+          shippingAddress.street_address = value;
+          shippingAddress.address = value;
+          shippingAddress.delivery_address = value;
+          shippingAddress.city = shippingAddress.city || 'Bogota';
+          shippingAddress.state = shippingAddress.state || 'Cundinamarca';
+          nextCustomer.address = value;
+          nextCustomer.delivery_address = value;
+        }
+        if (customerData.delivery_notes !== undefined) {
+          const value = customerData.delivery_notes.trim() || null;
+          updateData.delivery_notes = value;
+          shippingAddress.additional_info = value;
+          nextOrderData.delivery_notes = value;
+        }
+        nextOrderData.customer = nextCustomer;
+        updateData.shipping_address = shippingAddress;
+        updateData.order_data = nextOrderData;
       }
 
       const tableName = isGuestOrder ? 'guest_orders' : 'orders';
@@ -959,6 +1035,10 @@ export async function PATCH(request: NextRequest) {
       }
 
       console.log('✅ API: Customer data updated successfully');
+    }
+
+    if (customerData) {
+      customerDataUpdated = true;
     }
 
     // If updating items
@@ -1168,8 +1248,15 @@ export async function PATCH(request: NextRequest) {
       }, { headers: corsHeaders });
     }
 
+    if (customerDataUpdated) {
+      return NextResponse.json({
+        success: true,
+        message: 'Datos del pedido actualizados exitosamente'
+      }, { headers: corsHeaders });
+    }
+
     return NextResponse.json(
-      { error: 'Debe proporcionar status o items para actualizar' },
+      { error: 'Debe proporcionar status, items o datos del cliente para actualizar' },
       { status: 400, headers: corsHeaders }
     );
 
