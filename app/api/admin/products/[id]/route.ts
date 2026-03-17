@@ -175,14 +175,13 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       const variantsToUpsert = body.variants.map((v: any, index: number) => ({
         ...(v.id ? { id: v.id } : {}),
         product_id: productId,
-        variant_name: v.variant_name || 'Presentación',
+        variant_name: v.variant_name || 'Presentacion',
         variant_value: v.variant_value || '',
         price: Number(v.price) || body.price || data.price,
         price_adjustment: Number(v.price_adjustment) || 0,
         stock_quantity: Number(v.stock_quantity) || 0,
         is_active: v.is_active !== false,
         sku: v.sku || `${data.sku || 'PRD'}-V${index + 1}-${Date.now().toString(36).toUpperCase()}`,
-        sort_order: v.sort_order || index
       }));
 
       const { error: syncError } = await supabase

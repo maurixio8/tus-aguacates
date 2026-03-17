@@ -82,8 +82,7 @@ export async function GET(request: NextRequest) {
           price,
           price_adjustment,
           stock_quantity,
-          is_active,
-          sort_order
+          is_active
         )
       `, { count: 'exact' })
       .order('created_at', { ascending: false })
@@ -374,14 +373,13 @@ export async function POST(request: NextRequest) {
 
       const variantsToInsert = body.variants.map((v: any, index: number) => ({
         product_id: data.id,
-        variant_name: v.variant_name || 'Presentación',
+        variant_name: v.variant_name || 'Presentacion',
         variant_value: v.variant_value || '',
         price: Number(v.price) || body.price,
         price_adjustment: Number(v.price_adjustment) || 0,
         stock_quantity: Number(v.stock_quantity) || 0,
         is_active: v.is_active !== false,
         sku: v.sku || `${sku}-V${index + 1}`,
-        sort_order: v.sort_order || index
       }));
 
       const { error: variantsError } = await supabase
