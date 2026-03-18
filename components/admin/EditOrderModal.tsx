@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
     X,
     Search,
@@ -10,7 +10,6 @@ import {
     Layers,
     ChevronRight,
     Save,
-    MessageCircle,
     Trash2,
     AlertCircle,
     User,
@@ -101,6 +100,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [activeTab, setActiveTab] = useState<'products' | 'customer'>('customer');
+    const customerNameInputRef = useRef<HTMLInputElement | null>(null);
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
 
     // Estado para datos del cliente
     const [customerData, setCustomerData] = useState<CustomerData>({
@@ -188,6 +189,20 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
             setProducts([]);
         }
     }, [selectedCategory, search]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const focusTimer = window.setTimeout(() => {
+            if (activeTab === 'customer') {
+                customerNameInputRef.current?.focus();
+            } else {
+                searchInputRef.current?.focus();
+            }
+        }, 120);
+
+        return () => window.clearTimeout(focusTimer);
+    }, [activeTab, isOpen]);
 
     const loadCategories = async () => {
         try {
@@ -317,140 +332,169 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
         }
     };
 
+    const selectedCategoryName = categories.find((category) => category.id === selectedCategory)?.name;
+    const fieldClassName = 'w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-[15px] text-gray-900 placeholder:text-gray-400 shadow-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100 caret-green-700';
+    const sectionCardClassName = 'rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm';
+
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-            <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 p-3 backdrop-blur-[2px] sm:p-4">
+            <div className="mx-auto flex h-full max-w-6xl items-center justify-center">
+                <div className="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gray-50">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-900">
+                <div className="flex flex-col gap-4 border-b border-gray-200 bg-gradient-to-r from-white via-green-50 to-emerald-50 px-4 py-4 sm:px-6">
+                    <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-green-700">
+                            GestiÃ³n de pedidos
+                        </p>
+                        <h2 className="mt-1 text-xl font-bold text-gray-950 sm:text-2xl">
                             Editar Pedido #{order.order_number}
                         </h2>
-                        <p className="text-sm text-gray-500">
+                        <p className="mt-1 text-sm text-gray-600">
                             {order.customer_name} • {order.customer_phone}
                         </p>
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                        className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-600 transition hover:border-gray-300 hover:bg-gray-100 hover:text-gray-900"
                     >
-                        <X className="w-6 h-6 text-gray-500" />
+                        <X className="h-5 w-5" />
                     </button>
+                </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-green-100 bg-white/80 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Productos</p>
+                            <p className="mt-1 text-lg font-semibold text-gray-900">{orderItems.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-green-100 bg-white/80 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Subtotal</p>
+                            <p className="mt-1 text-lg font-semibold text-gray-900">{formatCurrency(calculateSubtotal())}</p>
+                        </div>
+                        <div className="rounded-2xl border border-green-100 bg-white/80 px-4 py-3">
+                            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Total actual</p>
+                            <p className="mt-1 text-lg font-semibold text-green-700">{formatCurrency(calculateTotal())}</p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Error */}
                 {error && (
-                    <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                        <AlertCircle className="w-5 h-5 text-red-600" />
-                        <span className="text-red-700">{error}</span>
+                    <div className="mx-4 mt-4 flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 sm:mx-6">
+                        <AlertCircle className="h-5 w-5 flex-shrink-0 text-red-600" />
+                        <span className="text-sm font-medium text-red-700">{error}</span>
                     </div>
                 )}
 
                 {/* Tabs */}
-                <div className="flex border-b border-gray-200 bg-gray-50">
+                <div className="flex border-b border-gray-200 bg-white px-2 sm:px-4">
                     <button
                         onClick={() => setActiveTab('customer')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                        className={`flex-1 rounded-t-2xl px-4 py-3 text-sm font-semibold transition-colors sm:px-6 ${
                             activeTab === 'customer'
-                                ? 'bg-white text-green-600 border-b-2 border-green-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                                ? 'border-b-2 border-green-600 bg-green-50 text-green-700'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                     >
-                        <User className="w-4 h-4" />
-                        Datos del Cliente
+                        <span className="flex items-center justify-center gap-2">
+                            <User className="h-4 w-4" />
+                            Datos del Cliente
+                        </span>
                     </button>
                     <button
                         onClick={() => setActiveTab('products')}
-                        className={`flex-1 px-4 py-3 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                        className={`flex-1 rounded-t-2xl px-4 py-3 text-sm font-semibold transition-colors sm:px-6 ${
                             activeTab === 'products'
-                                ? 'bg-white text-green-600 border-b-2 border-green-600'
-                                : 'text-gray-600 hover:text-gray-900'
+                                ? 'border-b-2 border-green-600 bg-green-50 text-green-700'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                         }`}
                     >
-                        <Package className="w-4 h-4" />
-                        Productos ({orderItems.length})
+                        <span className="flex items-center justify-center gap-2">
+                            <Package className="h-4 w-4" />
+                            Productos ({orderItems.length})
+                        </span>
                     </button>
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-hidden flex">
+                <div className="flex-1 overflow-y-auto bg-slate-50">
                     {/* Tab: Customer Data */}
                     {activeTab === 'customer' && (
-                        <div className="w-full p-6 overflow-y-auto">
-                            <div className="max-w-2xl mx-auto space-y-4">
+                        <div className="w-full p-4 sm:p-6">
+                            <div className="mx-auto max-w-3xl space-y-4">
                                 {/* Nombre */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                                        <User className="w-4 h-4" />
+                                <div className={sectionCardClassName}>
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <User className="h-4 w-4 text-green-700" />
                                         Nombre del Cliente *
                                     </label>
                                     <input
+                                        ref={customerNameInputRef}
                                         type="text"
                                         value={customerData.customer_name}
                                         onChange={(e) => setCustomerData({ ...customerData, customer_name: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        className={fieldClassName}
                                         placeholder="Nombre completo del cliente"
                                     />
                                 </div>
 
                                 {/* Teléfono */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                                        <Phone className="w-4 h-4" />
+                                <div className={sectionCardClassName}>
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <Phone className="h-4 w-4 text-green-700" />
                                         Teléfono / WhatsApp *
                                     </label>
                                     <input
                                         type="tel"
                                         value={customerData.customer_phone}
                                         onChange={(e) => setCustomerData({ ...customerData, customer_phone: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        className={fieldClassName}
                                         placeholder="300 123 4567"
                                     />
                                 </div>
 
                                 {/* Email */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                                        <Mail className="w-4 h-4" />
+                                <div className={sectionCardClassName}>
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <Mail className="h-4 w-4 text-green-700" />
                                         Correo Electrónico
                                     </label>
                                     <input
                                         type="email"
                                         value={customerData.customer_email}
                                         onChange={(e) => setCustomerData({ ...customerData, customer_email: e.target.value })}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        className={fieldClassName}
                                         placeholder="cliente@ejemplo.com"
                                     />
                                 </div>
 
                                 {/* Dirección */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                                        <MapPin className="w-4 h-4" />
+                                <div className={sectionCardClassName}>
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <MapPin className="h-4 w-4 text-green-700" />
                                         Dirección de Entrega
                                     </label>
                                     <textarea
                                         value={customerData.delivery_address}
                                         onChange={(e) => setCustomerData({ ...customerData, delivery_address: e.target.value })}
-                                        rows={3}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                                        rows={4}
+                                        className={`${fieldClassName} min-h-[112px] resize-y`}
                                         placeholder="Calle, número, edificio, apartamento, barrio..."
                                     />
                                 </div>
 
                                 {/* Notas de entrega */}
-                                <div>
-                                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1">
-                                        <FileText className="w-4 h-4" />
+                                <div className={sectionCardClassName}>
+                                    <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-800">
+                                        <FileText className="h-4 w-4 text-green-700" />
                                         Notas de Entrega
                                     </label>
                                     <textarea
                                         value={customerData.delivery_notes}
                                         onChange={(e) => setCustomerData({ ...customerData, delivery_notes: e.target.value })}
-                                        rows={2}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
+                                        rows={3}
+                                        className={`${fieldClassName} min-h-[96px] resize-y`}
                                         placeholder="Instrucciones especiales para la entrega..."
                                     />
                                 </div>
@@ -485,46 +529,57 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
 
                     {/* Tab: Products - Left: Product selection */}
                     {activeTab === 'products' && (
-                    <>
-                    <div className="w-1/2 border-r border-gray-200 flex flex-col overflow-hidden">
+                    <div className="flex flex-col gap-4 p-4 sm:p-6 lg:flex-row">
+                    <div className="w-full lg:w-1/2 rounded-2xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
                         {/* Categories */}
-                        <div className="p-4 border-b border-gray-200">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Agregar productos</p>
-                            <div className="flex flex-wrap gap-1">
+                        <div className="grid gap-4 border-b border-gray-200 p-4 sm:grid-cols-2">
+                            <div>
+                                <p className="mb-2 text-sm font-medium text-gray-800">Categoría</p>
                                 {loadingCategories ? (
-                                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-green-600"></div>
+                                    <div className="flex h-[50px] items-center">
+                                        <div className="h-5 w-5 animate-spin rounded-full border-b-2 border-green-600"></div>
+                                    </div>
                                 ) : (
-                                    categories.map(cat => (
-                                        <button
-                                            key={cat.id}
-                                            onClick={() => setSelectedCategory(cat.id)}
-                                            className={`px-2 py-1 text-xs rounded-lg border transition-all ${selectedCategory === cat.id
-                                                    ? 'bg-green-600 text-white border-green-600'
-                                                    : 'bg-white text-gray-600 border-gray-200 hover:border-green-400'
-                                                }`}
-                                        >
-                                            {cat.name}
-                                        </button>
-                                    ))
+                                    <select
+                                        value={selectedCategory}
+                                        onChange={(e) => {
+                                            setSelectedCategory(e.target.value);
+                                            setExpandedProduct(null);
+                                        }}
+                                        className={fieldClassName}
+                                    >
+                                        <option value="">Selecciona una categoría</option>
+                                        {categories.map((category) => (
+                                            <option key={category.id} value={category.id}>
+                                                {category.name}
+                                            </option>
+                                        ))}
+                                    </select>
                                 )}
                             </div>
-                        </div>
-
-                        {/* Search */}
-                        {selectedCategory && (
-                            <div className="p-4 border-b border-gray-200">
+                            <div>
+                                <p className="mb-2 text-sm font-medium text-gray-800">Buscar producto</p>
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                                     <input
+                                        ref={searchInputRef}
                                         type="text"
-                                        placeholder="Buscar productos..."
+                                        placeholder={selectedCategory ? 'Buscar productos...' : 'Selecciona primero una categoría'}
                                         value={search}
                                         onChange={(e) => setSearch(e.target.value)}
-                                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                        disabled={!selectedCategory}
+                                        className={`${fieldClassName} pl-10 disabled:bg-gray-100 disabled:text-gray-400`}
                                     />
                                 </div>
                             </div>
-                        )}
+                        </div>
+                        <div className="border-b border-gray-200 px-4 py-3">
+                            <p className="text-sm text-gray-600">
+                                {selectedCategoryName
+                                    ? `${products.length} producto${products.length === 1 ? '' : 's'} en ${selectedCategoryName}`
+                                    : 'Elige una categoría para ver el catálogo.'}
+                            </p>
+                        </div>
 
                         {/* Products list */}
                         <div className="flex-1 overflow-y-auto">
@@ -543,26 +598,26 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                 </div>
                             ) : (
                                 products.map(product => (
-                                    <div key={product.id} className="border-b border-gray-100">
-                                        <div className="p-3 hover:bg-gray-50 flex items-center gap-3">
+                                    <div key={product.id} className="m-3 rounded-2xl border border-gray-200 bg-white shadow-sm transition hover:border-green-300 hover:shadow-md">
+                                        <div className="p-4 flex items-start gap-3">
                                             {product.main_image_url ? (
                                                 <img
                                                     src={product.main_image_url}
                                                     alt={product.name}
-                                                    className="w-10 h-10 rounded object-cover"
+                                                    className="w-12 h-12 rounded-xl object-cover"
                                                 />
                                             ) : (
-                                                <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center">
+                                                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
                                                     <Package className="w-5 h-5 text-gray-400" />
                                                 </div>
                                             )}
                                             <div className="flex-1 min-w-0">
                                                 <p className="font-medium text-gray-900 text-sm truncate">{product.name}</p>
-                                                <p className="text-green-600 text-sm">{formatCurrency(product.price)}</p>
+                                                <p className="text-green-700 text-sm font-medium">{formatCurrency(product.price)}</p>
                                                 {(product.variants?.length || product.product_variants?.length) ? (
                                                     <button
                                                         onClick={() => setExpandedProduct(expandedProduct === product.id ? null : product.id)}
-                                                        className="text-xs text-blue-600 flex items-center gap-1"
+                                                        className="mt-2 inline-flex items-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700"
                                                     >
                                                         <Layers className="w-3 h-3" />
                                                         {product.variants?.length || product.product_variants?.length} variantes
@@ -572,7 +627,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                             </div>
                                             <button
                                                 onClick={() => addProduct(product)}
-                                                className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                                                className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-green-600 text-white transition hover:bg-green-700"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </button>
@@ -580,18 +635,18 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
 
                                         {/* Variants */}
                                         {expandedProduct === product.id && (product.variants || product.product_variants) && (
-                                            <div className="px-3 pb-3 space-y-1">
+                                            <div className="px-4 pb-4 space-y-2">
                                                 {(product.variants || product.product_variants || [])
                                                     .filter(v => v.is_active)
                                                     .map(variant => (
-                                                        <div key={variant.id} className="flex items-center justify-between p-2 bg-blue-50 rounded-lg">
+                                                        <div key={variant.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-slate-50 p-3">
                                                             <div>
                                                                 <p className="text-xs font-medium">{variant.variant_value}</p>
                                                                 <p className="text-xs text-gray-500">{formatCurrency(variant.price_adjustment || product.price)}</p>
                                                             </div>
                                                             <button
                                                                 onClick={() => addProduct(product, variant)}
-                                                                className="p-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs"
+                                                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700"
                                                             >
                                                                 <Plus className="w-3 h-3" />
                                                             </button>
@@ -606,9 +661,10 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                     </div>
 
                     {/* Right: Order items */}
-                    <div className="w-1/2 flex flex-col overflow-hidden">
+                    <div className="w-full lg:w-1/2 rounded-2xl border border-gray-200 bg-white shadow-sm flex flex-col overflow-hidden">
                         <div className="p-4 border-b border-gray-200 bg-gray-50">
                             <p className="font-medium text-gray-900">Productos del Pedido ({orderItems.length})</p>
+                            <p className="mt-1 text-sm text-gray-500">Ajusta cantidades o elimina productos sin perder de vista el total.</p>
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
@@ -619,7 +675,8 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                 </div>
                             ) : (
                                 orderItems.map((item, index) => (
-                                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                                    <div key={index} className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+                                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
                                         <div className="flex-1 min-w-0">
                                             <p className="font-medium text-gray-900 text-sm">{item.product_name}</p>
                                             {item.variant_name && (
@@ -627,28 +684,32 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                             )}
                                             <p className="text-green-600 text-sm">{formatCurrency(item.unit_price)}</p>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center justify-between gap-3 sm:justify-end">
+                                            <div className="flex items-center gap-2 rounded-xl bg-slate-100 p-1">
                                             <button
                                                 onClick={() => updateQuantity(index, -1)}
-                                                className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-700 transition hover:bg-gray-200"
                                             >
                                                 <Minus className="w-4 h-4" />
                                             </button>
-                                            <span className="w-8 text-center font-medium">{item.quantity}</span>
+                                            <span className="min-w-[2.5rem] text-center font-medium text-gray-900">{item.quantity}</span>
                                             <button
                                                 onClick={() => updateQuantity(index, 1)}
-                                                className="p-1 bg-gray-200 hover:bg-gray-300 rounded"
+                                                className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-white text-gray-700 transition hover:bg-gray-200"
                                             >
                                                 <Plus className="w-4 h-4" />
                                             </button>
+                                            </div>
                                             <button
                                                 onClick={() => removeItem(index)}
-                                                className="p-1 text-red-500 hover:bg-red-50 rounded ml-2"
+                                                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 text-red-600 transition hover:bg-red-100"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
-                                        <div className="text-right w-24">
+                                        </div>
+                                        <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+                                            <span className="text-sm text-gray-500">Total línea</span>
                                             <p className="font-semibold text-gray-900">
                                                 {formatCurrency(item.unit_price * item.quantity)}
                                             </p>
@@ -676,23 +737,23 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                             </div>
                         </div>
                     </div>
-                    </>
+                    </div>
                     )}
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-4 border-t border-gray-200 bg-gray-50">
+                <div className="flex flex-col gap-3 border-t border-gray-200 bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
                     <button
                         onClick={onClose}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        className="rounded-xl border border-gray-300 px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
                     >
                         Cancelar
                     </button>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col-reverse gap-3 sm:flex-row">
                     <button
                             onClick={handleSave}
                             disabled={saving || !customerData.customer_name.trim() || !customerData.customer_phone.trim()}
-                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {saving ? (
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -702,6 +763,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                             Guardar Cambios
                         </button>
                     </div>
+                </div>
                 </div>
             </div>
         </div>
