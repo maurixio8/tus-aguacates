@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tus Aguacates
 
-## Getting Started
+Aplicación ecommerce construida con Next.js, Supabase y un conjunto de automatizaciones operativas para catálogo, pagos, WhatsApp y administración.
 
-First, run the development server:
+## Mapa rápido del repositorio
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- `app/`: rutas, páginas y endpoints del producto
+- `components/`: UI reutilizable
+- `lib/`: lógica compartida, stores y utilidades
+- `tests/`: unit, integration, smoke y e2e
+- `scripts/`: utilidades operativas y de mantenimiento
+- `supabase/`: funciones y assets asociados a backend/serverless
+- `docs/`: documentación técnica y operativa viva
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Arranque local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Usar Node `20` (`.nvmrc`).
+2. Copiar `.env.example` a `.env.local`.
+3. Instalar dependencias con `npm ci`.
+4. Levantar la app con `npm run dev`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Comandos oficiales
 
-## Learn More
+- `npm run dev`: desarrollo local
+- `npm run lint`: lint del repo
+- `npm run typecheck`: validación TypeScript
+- `npm run test:critical`: baseline rápida de checkout/carrito
+- `npm run test:run`: suite Vitest completa
+- `npm run test:e2e`: suite Playwright
+- `npm run build`: build de producción
+- `npm run validate`: gate mínimo local antes de merge
+- `npm run validate:ci`: gate completo pensado para CI
+- `npm run lint`: diagnóstico visible de deuda de estilo/tipos no bloqueante por ahora
 
-To learn more about Next.js, take a look at the following resources:
+## Entornos
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Desarrollo local: `.env.local`
+- Referencia contractual de variables: `.env.example`
+- CI: variables inyectadas por GitHub Actions
+- Producción: variables configuradas en Vercel y Supabase
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Toda variable nueva debe registrarse en `.env.example`.
 
-## Deploy on Vercel
+## Calidad y mantenibilidad
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- La base mínima actual de calidad está documentada en `docs/maintainability-baseline.md`.
+- Los scripts del proyecto se clasifican en `scripts/README.md`.
+- Los cambios que afecten checkout, autenticación, catálogo o administración deben dejar al menos una prueba pequeña y reproducible.
+- `lint` queda disponible como radar de deuda, pero el gate obligatorio actual es `validate` hasta reducir el backlog heredado.

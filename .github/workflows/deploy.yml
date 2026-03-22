@@ -13,14 +13,18 @@ on:
 # Variables de entorno
 env:
   NODE_VERSION: '20'  # Next.js 16 requiere Node.js >= 20.9.0
+  APP_DIR: '.'
 
 jobs:
   # ============================================
   # JOB 1: Verificación de código
   # ============================================
-  lint:
-    name: 🔍 Lint & Type Check
+  quality:
+    name: 🔍 Lint, Typecheck y Baseline
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
@@ -30,66 +34,28 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
       - name: 📥 Install dependencies
         run: npm ci
 
-      - name: 🔎 TypeScript check
-        run: npx tsc --noEmit
+      - name: 🧭 Lint debt report
+        run: npm run lint
+        continue-on-error: true
 
-      - name: 🧹 Lint check
-        run: npm run lint || echo "Lint check skipped (no lint script)"
-
-  # ============================================
-  # JOB 2: Tests E2E con Playwright
-  # TEMPORALMENTE DESACTIVADO - Los tests tardan demasiado
-  # Se puede reactivar cuando se optimicen los tests
-  # ============================================
-  test:
-    name: 🧪 E2E Tests
-    runs-on: ubuntu-latest
-    needs: lint
-    # Desactivado temporalmente - eliminar esta línea para reactivar
-    if: github.event_name == 'never_trigger'
-    timeout-minutes: 10
-    steps:
-      - name: 📥 Checkout código
-        uses: actions/checkout@v4
-
-      - name: 🔧 Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: 📥 Install dependencies
-        run: npm ci
-
-      - name: 🎭 Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      - name: 🧪 Run E2E tests
-        run: npm run test:e2e
-        env:
-          # URL del preview deployment para tests
-          BASE_URL: http://localhost:3000
-        continue-on-error: true  # No fallar el workflow si los tests fallan (configurar después)
-
-      - name: 📊 Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: playwright-report/
-          retention-days: 7
+      - name: 🔎 Run quality gate
+        run: npm run validate
 
   # ============================================
-  # JOB 3: Build de producción
+  # JOB 2: Build de producción
   # ============================================
   build:
     name: 🏗️ Build
     runs-on: ubuntu-latest
-    needs: lint  # Solo depende de lint, no de test (que está desactivado)
+    needs: quality
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
@@ -99,6 +65,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
       - name: 📥 Install dependencies
         run: npm ci
@@ -106,15 +73,16 @@ jobs:
       - name: 🏗️ Build production
         run: npm run build
         env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://gxqkmaaqoehydulksudj.supabase.co' }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cWttYWFxb2VoeWR1bGtzdWRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NDI5NDQsImV4cCI6MjA3ODAxODk0NH0.XAR-ysQgt0ZkRZfIZx_DvpYMzmEMFsdAYK3EP1tc0mw' }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4cWttYWFxb2VoeWR1bGtzdWRqIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MjQ0Mjk0NCwiZXhwIjoyMDc4MDE4OTQ0fQ.hQpBcmGfCjJqX8fBRMCJs0Knxyms8KxekVWHxkfOn0M' }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-placeholder-anon-key' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'ci-placeholder-service-role-key' }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-placeholder-jwt-secret-with-minimum-length-32' }}
 
       - name: 📦 Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: nextjs-build
-          path: .next
+          path: ${{ env.APP_DIR }}/.next
           retention-days: 1
 
   # ============================================
@@ -137,7 +105,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          working-directory: ./
+          working-directory: ${{ env.APP_DIR }}
 
       - name: ✅ Deploy status
         if: success()
@@ -152,15 +120,17 @@ jobs:
           exit 1
 
   # ============================================
-  # JOB 5: Tests smoke post-deploy (opcional)
-  # TEMPORALMENTE DESACTIVADO - Se puede reactivar cuando se optimicen los tests
+  # JOB 4: Smoke tests manuales
+  # Se mantienen fuera del camino crítico hasta estabilizar la suite E2E.
   # ============================================
   smoke-test:
     name: 🕵️ Smoke Tests (Post-Deploy)
     runs-on: ubuntu-latest
     needs: [deploy]
-    # Desactivado temporalmente - eliminar esta línea para reactivar
-    if: github.event_name == 'never_trigger'
+    if: github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
     steps:
       - name: 📥 Checkout código
         uses: actions/checkout@v4
@@ -170,6 +140,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
+          cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
       - name: 📥 Install dependencies
         run: npm ci
