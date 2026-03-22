@@ -1,16 +1,89 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Store, Eye, EyeOff, AlertCircle } from 'lucide-react';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const restoreSavedCredential = async () => {
+      try {
+        const credentialsApi = navigator.credentials as unknown as
+          | {
+              get?: (options?: unknown) => Promise<unknown>;
+            }
+          | undefined;
+        if (!credentialsApi?.get) {
+          return;
+        }
+
+        const credential = await credentialsApi.get({
+          password: true,
+          mediation: 'optional',
+        } as CredentialRequestOptions & { password: boolean; mediation: CredentialMediationRequirement });
+
+        if (cancelled || !credential) {
+          return;
+        }
+
+        const passwordCredential = credential as Credential & { id?: string; password?: string };
+        if (typeof passwordCredential.id === 'string' && passwordCredential.id) {
+          setEmail((current) => current || passwordCredential.id || '');
+        }
+        if (typeof passwordCredential.password === 'string' && passwordCredential.password) {
+          setPassword((current) => current || passwordCredential.password || '');
+        }
+      } catch (credentialError) {
+        console.warn('No fue posible restaurar credenciales guardadas:', credentialError);
+      }
+    };
+
+    void restoreSavedCredential();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const persistCredential = async () => {
+    try {
+        const credentialsApi = navigator.credentials as unknown as
+          | {
+              store?: (credential: Credential) => Promise<void>;
+            }
+          | undefined;
+      const PasswordCredentialCtor = (window as Window & {
+        PasswordCredential?: new (init: {
+          id: string;
+          password: string;
+          name?: string;
+          iconURL?: string;
+        }) => Credential;
+      }).PasswordCredential;
+
+      if (!credentialsApi?.store || !PasswordCredentialCtor || !email.trim() || !password) {
+        return;
+      }
+
+      const credential = new PasswordCredentialCtor({
+        id: email.trim(),
+        password,
+        name: 'Tus Aguacates Admin',
+        iconURL: `${window.location.origin}/favicon.ico`,
+      });
+
+      await credentialsApi.store(credential);
+    } catch (credentialError) {
+      console.warn('No fue posible guardar la contraseña en el navegador:', credentialError);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +106,7 @@ export default function AdminLoginPage() {
       if (data.success && data.user) {
         // Guardar datos del admin en localStorage
         localStorage.setItem('admin', JSON.stringify(data.user));
+        await persistCredential();
         // Pequeño delay para asegurar que localStorage se sincroniza
         await new Promise(resolve => setTimeout(resolve, 100));
         // Usar window.location para forzar recarga completa

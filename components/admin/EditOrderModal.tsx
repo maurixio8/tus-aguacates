@@ -339,17 +339,17 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 bg-slate-950/60 p-3 backdrop-blur-[2px] sm:p-4">
-            <div className="mx-auto flex h-full max-w-6xl items-center justify-center">
-                <div className="flex max-h-[94vh] w-full flex-col overflow-hidden rounded-[28px] bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 p-0 backdrop-blur-[2px] sm:p-4">
+            <div className="mx-auto flex h-full max-w-6xl items-end justify-center sm:items-center">
+                <div className="flex max-h-[100dvh] w-full flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:max-h-[94vh] sm:rounded-[28px]">
                 {/* Header */}
-                <div className="flex flex-col gap-4 border-b border-gray-200 bg-gradient-to-r from-white via-green-50 to-emerald-50 px-4 py-4 sm:px-6">
+                <div className="border-b border-gray-200 bg-white px-4 py-3 sm:bg-gradient-to-r sm:from-white sm:via-green-50 sm:to-emerald-50 sm:px-6 sm:py-4">
                     <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0">
-                        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-green-700">
+                        <p className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-green-700 sm:block">
                             GestiÃ³n de pedidos
                         </p>
-                        <h2 className="mt-1 text-xl font-bold text-gray-950 sm:text-2xl">
+                        <h2 className="text-lg font-bold text-gray-950 sm:mt-1 sm:text-2xl">
                             Editar Pedido #{order.order_number}
                         </h2>
                         <p className="mt-1 text-sm text-gray-600">
@@ -363,7 +363,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                         <X className="h-5 w-5" />
                     </button>
                 </div>
-                    <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="hidden gap-3 sm:grid sm:grid-cols-3">
                         <div className="rounded-2xl border border-green-100 bg-white/80 px-4 py-3">
                             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">Productos</p>
                             <p className="mt-1 text-lg font-semibold text-gray-900">{orderItems.length}</p>
@@ -500,9 +500,11 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                 </div>
 
                                 {/* Resumen del pedido */}
-                                <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                    <p className="text-sm font-medium text-gray-700 mb-2">Resumen del Pedido</p>
-                                    <div className="space-y-1 text-sm">
+                                <details className="rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                                    <summary className="cursor-pointer list-none text-sm font-semibold text-gray-900">
+                                        Ver resumen del pedido
+                                    </summary>
+                                    <div className="mt-4 space-y-2 text-sm">
                                         <div className="flex justify-between">
                                             <span className="text-gray-600">Productos:</span>
                                             <span className="font-medium">{orderItems.length} items</span>
@@ -517,12 +519,12 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                                 {calculateShipping() === 0 ? 'GRATIS' : formatCurrency(calculateShipping())}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between pt-2 border-t border-gray-300">
+                                        <div className="flex justify-between border-t border-gray-200 pt-2">
                                             <span className="font-semibold">Total:</span>
                                             <span className="font-bold text-green-600">{formatCurrency(calculateTotal())}</span>
                                         </div>
                                     </div>
-                                </div>
+                                </details>
                             </div>
                         </div>
                     )}
