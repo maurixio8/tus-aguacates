@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+
 import { Play, X, Heart, MessageCircle, Share2, Sparkles, ShoppingBag, Send } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
