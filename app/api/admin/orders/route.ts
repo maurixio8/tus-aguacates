@@ -965,59 +965,6 @@ export async function PATCH(request: NextRequest) {
 
         nextOrderData.customer = nextCustomer;
         updateData.order_data = nextOrderData;
-      } else {
-        const { data: currentOrder } = await supabase
-          .from('orders')
-          .select('shipping_address, order_data')
-          .eq('id', orderId)
-          .single();
-
-        const shippingAddress = parseJsonObject(currentOrder?.shipping_address);
-        const nextOrderData = parseJsonObject(currentOrder?.order_data);
-        const nextCustomer = {
-          ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
-        };
-        // Para orders, usar campos normales
-        if (customerData.customer_name !== undefined) {
-          const value = customerData.customer_name.trim();
-          updateData.customer_name = value;
-          shippingAddress.full_name = value;
-          shippingAddress.name = value;
-          nextCustomer.name = value;
-          nextCustomer.full_name = value;
-        }
-        if (customerData.customer_phone !== undefined) {
-          const value = customerData.customer_phone.trim();
-          updateData.customer_phone = value;
-          shippingAddress.phone = value;
-          nextCustomer.phone = value;
-        }
-        if (customerData.customer_email !== undefined) {
-          const value = customerData.customer_email.trim() || null;
-          updateData.customer_email = value;
-          shippingAddress.email = value;
-          nextCustomer.email = value;
-        }
-        if (customerData.delivery_address !== undefined) {
-          const value = customerData.delivery_address.trim();
-          updateData.delivery_address = value;
-          shippingAddress.street_address = value;
-          shippingAddress.address = value;
-          shippingAddress.delivery_address = value;
-          shippingAddress.city = shippingAddress.city || 'Bogota';
-          shippingAddress.state = shippingAddress.state || 'Cundinamarca';
-          nextCustomer.address = value;
-          nextCustomer.delivery_address = value;
-        }
-        if (customerData.delivery_notes !== undefined) {
-          const value = customerData.delivery_notes.trim() || null;
-          updateData.delivery_notes = value;
-          shippingAddress.additional_info = value;
-          nextOrderData.delivery_notes = value;
-        }
-        nextOrderData.customer = nextCustomer;
-        updateData.shipping_address = shippingAddress;
-        updateData.order_data = nextOrderData;
       }
 
       const tableName = isGuestOrder ? 'guest_orders' : 'orders';
