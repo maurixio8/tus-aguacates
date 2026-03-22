@@ -8,8 +8,16 @@ import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
 import dynamic from 'next/dynamic';
-import OrderSuccessModal from './OrderSuccessModal';
-import DuplicateOrderModal from './DuplicateOrderModal';
+
+// Lazy load de modales pesados (framer-motion)
+const OrderSuccessModal = dynamic(() => import('./OrderSuccessModal'), {
+  ssr: false,
+  loading: () => null
+});
+const DuplicateOrderModal = dynamic(() => import('./DuplicateOrderModal'), {
+  ssr: false,
+  loading: () => null
+});
 
 // Cargar BoldPayButton dinámicamente para evitar errores de SSR
 const BoldPayButton = dynamic(() => import('./BoldPayButton'), {

@@ -38,7 +38,12 @@ import {
   Check
 } from 'lucide-react';
 import { SubscriptionConfigModal } from './SubscriptionConfigModal';
-import DuplicateOrderModal from './DuplicateOrderModal';
+
+// Lazy load de modal pesado (framer-motion)
+const DuplicateOrderModal = dynamic(() => import('./DuplicateOrderModal'), {
+  ssr: false,
+  loading: () => null
+});
 
 interface EnhancedAuthenticatedCheckoutFormProps {
   onSuccess: (orderId: string) => void;
