@@ -495,9 +495,8 @@ export default function CreateOrderPage() {
         customer_phone: customerPhone.trim(),
         customer_email: customerEmail.trim() || null,
         delivery_address: deliveryAddress.trim(),
-        delivery_notes: shipping > 0
-          ? `${deliveryNotes.trim() ? deliveryNotes.trim() + ' | ' : ''}Domicilio: ${formatCurrency(shipping)}`
-          : deliveryNotes.trim() || null,
+        delivery_notes: deliveryNotes.trim() || null,
+        shipping_fee: shipping,
         payment_method: paymentMethod,
         items: selectedItems.map((item) => ({
           product_id: item.product_id,

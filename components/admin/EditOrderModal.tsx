@@ -18,6 +18,7 @@ import {
     MapPin,
     FileText
 } from 'lucide-react';
+import type { AdminOrderType } from '@/lib/orders/operational';
 
 interface Category {
     id: string;
@@ -78,7 +79,7 @@ interface Order {
     shipping_address?: string;
     total: number;
     order_items?: OrderItem[];
-    order_type?: 'registered' | 'guest';
+    order_type?: AdminOrderType;
 }
 
 interface EditOrderModalProps {

@@ -23,6 +23,12 @@ import {
   Check,
   ClipboardList
 } from 'lucide-react';
+import {
+  getOrderTypeLabel,
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+  type AdminOrderType,
+} from '@/lib/orders/operational';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
 import EditOrderModal from '@/components/admin/EditOrderModal';
 import { Edit } from 'lucide-react';
@@ -74,8 +80,9 @@ interface Order {
   items?: OrderItem[];
   user_id?: string;
   shipping_address?: string;
-  order_type?: 'registered' | 'guest';
+  order_type?: AdminOrderType;
   order_data?: any;
+  operational_flags?: string[];
 }
 
 interface Pagination {
@@ -154,6 +161,21 @@ const paymentStatusConfig: Record<string, { label: string; color: string; bgColo
     color: 'text-blue-700',
     bgColor: 'bg-blue-100 border-blue-200',
     icon: AlertTriangle,
+  },
+};
+
+const orderTypeConfig: Record<AdminOrderType, { bgColor: string; textColor: string }> = {
+  registered: {
+    bgColor: 'bg-emerald-100 border-emerald-200',
+    textColor: 'text-emerald-700',
+  },
+  guest: {
+    bgColor: 'bg-amber-100 border-amber-200',
+    textColor: 'text-amber-700',
+  },
+  admin_manual: {
+    bgColor: 'bg-sky-100 border-sky-200',
+    textColor: 'text-sky-700',
   },
 };
 
@@ -1180,7 +1202,7 @@ export default function OrdersPage() {
           ) : (
             <>
               {filteredOrders.map((order) => {
-                const statusInfo = statusConfig[order.status] || statusConfig.pending;
+                const statusInfo = statusConfig[normalizeOrderStatus(order.status)] || statusConfig.pending;
                 const StatusIcon = statusInfo.icon;
 
                 // Función para extraer items de order_data si no hay order_items
@@ -1235,6 +1257,14 @@ export default function OrdersPage() {
                   }))
                 });
 
+                const normalizedStatus = normalizeOrderStatus(order.status);
+                const normalizedPaymentStatus = order.payment_status
+                  ? normalizePaymentStatus(order.payment_status)
+                  : null;
+                const orderType = (order.order_type || 'registered') as AdminOrderType;
+                const orderTypeInfo = orderTypeConfig[orderType] || orderTypeConfig.registered;
+                const hasOperationalWarnings = (order.operational_flags?.length || 0) > 0;
+
                 return (
                   <div
                     key={order.id}
@@ -1256,13 +1286,21 @@ export default function OrdersPage() {
                               <span className="text-[10px] lg:text-xs font-mono text-gray-400 hidden lg:inline">
                                 #{order.order_number || order.id.substring(0, 8)}
                               </span>
-                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border`}>
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${statusConfig[normalizedStatus].bgColor} ${statusConfig[normalizedStatus].color} border`}>
                                 {statusInfo.label}
                               </span>
-                              {order.payment_status && paymentStatusConfig[order.payment_status] && (
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[order.payment_status].bgColor} ${paymentStatusConfig[order.payment_status].color} border`}>
-                                  {paymentStatusConfig[order.payment_status].icon && React.createElement(paymentStatusConfig[order.payment_status].icon, { className: 'w-3 h-3 mr-1' })}
-                                  {paymentStatusConfig[order.payment_status].label}
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${orderTypeInfo.bgColor} ${orderTypeInfo.textColor} border`}>
+                                {getOrderTypeLabel(orderType)}
+                              </span>
+                              {normalizedPaymentStatus && paymentStatusConfig[normalizedPaymentStatus] && (
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[normalizedPaymentStatus].bgColor} ${paymentStatusConfig[normalizedPaymentStatus].color} border`}>
+                                  {paymentStatusConfig[normalizedPaymentStatus].icon && React.createElement(paymentStatusConfig[normalizedPaymentStatus].icon, { className: 'w-3 h-3 mr-1' })}
+                                  {paymentStatusConfig[normalizedPaymentStatus].label}
+                                </span>
+                              )}
+                              {hasOperationalWarnings && (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
+                                  Revisar datos
                                 </span>
                               )}
                             </div>
@@ -1380,6 +1418,24 @@ export default function OrdersPage() {
                                 <p className="text-sm text-gray-600 mt-1">
                                   <strong>Notas del pedido:</strong> {order.notes}
                                 </p>
+                              )}
+                              {hasOperationalWarnings && (
+                                <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                                  <strong>Alertas operativas:</strong> {order.operational_flags?.map((flag) => {
+                                    switch (flag) {
+                                      case 'missing_customer_name':
+                                        return 'falta nombre';
+                                      case 'missing_customer_phone':
+                                        return 'falta telefono';
+                                      case 'missing_delivery_address':
+                                        return 'falta direccion';
+                                      case 'missing_items':
+                                        return 'faltan items';
+                                      default:
+                                        return flag;
+                                    }
+                                  }).join(', ')}
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1501,7 +1557,7 @@ export default function OrdersPage() {
                         </button>
 
                         {/* Quick action buttons based on current status */}
-                        {order.status === 'pending' && (
+                        {normalizedStatus === 'pending' && (
                           <button
                             onClick={() => handleUpdateStatus(order.id, 'confirmed')}
                             disabled={updatingOrder === order.id}
@@ -1511,7 +1567,7 @@ export default function OrdersPage() {
                             Confirmar
                           </button>
                         )}
-                        {order.status === 'confirmed' && (
+                        {normalizedStatus === 'confirmed' && (
                           <button
                             onClick={() => handleUpdateStatus(order.id, 'processing')}
                             disabled={updatingOrder === order.id}
@@ -1521,7 +1577,7 @@ export default function OrdersPage() {
                             En Preparación
                           </button>
                         )}
-                        {order.status === 'processing' && (
+                        {normalizedStatus === 'processing' && (
                           <button
                             onClick={() => handleUpdateStatus(order.id, 'shipped')}
                             disabled={updatingOrder === order.id}
@@ -1531,12 +1587,12 @@ export default function OrdersPage() {
                             Enviar
                           </button>
                         )}
-                        {(order.status === 'confirmed' || order.status === 'processing' || order.status === 'shipped') && (
+                        {(normalizedStatus === 'confirmed' || normalizedStatus === 'processing' || normalizedStatus === 'shipped') && (
                           <button
                             onClick={() => handleUpdateStatus(order.id, 'delivered')}
                             disabled={updatingOrder === order.id}
                             className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm disabled:opacity-50 flex items-center gap-2"
-                            title={order.status === 'shipped' ? 'Marcar como entregado' : 'Marcar como entregado (salta pasos)'}
+                            title={normalizedStatus === 'shipped' ? 'Marcar como entregado' : 'Marcar como entregado (salta pasos)'}
                           >
                             <CheckCircle className="w-4 h-4" />
                             Marcar Entregado
