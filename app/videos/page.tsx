@@ -61,8 +61,7 @@ export default function VideosPage() {
   const [newComment, setNewComment] = useState('');
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<ReturnType<typeof videojs> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef<number>(0);
 
@@ -154,62 +153,6 @@ export default function VideosPage() {
     }
   }, [currentVideoIndex]);
 
-  // Initialize Video.js player when video opens
-  useEffect(() => {
-    if (currentVideoIndex === null || !videoContainerRef.current || videos.length === 0) return;
-
-    const video = videos[currentVideoIndex];
-
-    // Dispose previous player if exists
-    if (playerRef.current) {
-      playerRef.current.dispose();
-      playerRef.current = null;
-    }
-
-    // Create new player
-    const player = videojs(videoContainerRef.current, {
-      controls: true,
-      autoplay: true,
-      preload: 'auto',
-      fluid: false,
-      responsive: false,
-      playbackRates: [0.5, 1, 1.5, 2],
-      controlBar: {
-        children: [
-          'playToggle',
-          'volumePanel',
-          'currentTimeDisplay',
-          'timeDivider',
-          'durationDisplay',
-          'progressControl',
-          'playbackRateMenuButton',
-          'fullscreenToggle',
-        ],
-      },
-      sources: [{ src: video.url, type: 'video/mp4' }],
-    });
-
-    playerRef.current = player;
-
-    // Go fullscreen on first play
-    player.one('play', () => {
-      if (!player.isFullscreen()) {
-        player.requestFullscreen();
-      }
-    });
-
-    // Go to next video when ended
-    player.on('ended', () => {
-      goToNextVideo();
-    });
-
-    return () => {
-      if (playerRef.current && !playerRef.current.isDisposed()) {
-        playerRef.current.dispose();
-        playerRef.current = null;
-      }
-    };
-  }, [currentVideoIndex, videos, goToNextVideo]);
 
 
   const updateViewCount = (index: number) => {
@@ -251,11 +194,8 @@ export default function VideosPage() {
   };
 
   const closeVideo = () => {
-    if (playerRef.current && !playerRef.current.isDisposed()) {
-      playerRef.current.pause();
-      if (playerRef.current.isFullscreen()) {
-        playerRef.current.exitFullscreen();
-      }
+    if (videoRef.current) {
+      videoRef.current.pause();
     }
     setCurrentVideoIndex(null);
   };
@@ -328,9 +268,7 @@ export default function VideosPage() {
           </div>
 
         <div className="flex-1 flex items-center justify-center relative">
-          <div data-vjs-player>
-            <div ref={videoContainerRef} className="video-js vjs-big-play-centered vjs-fill" />
-          </div>
+          <video ref={videoRef} src={videos[currentVideoIndex].url} controls autoPlay playsInline className="h-full max-w-full object-contain" controlsList="nodownload" onEnded={goToNextVideo} crossOrigin="anonymous" />
 
             <div className="absolute right-4 bottom-32 z-30 flex flex-col gap-6 items-center">
               <button onClick={() => toggleLike(videos[currentVideoIndex].id)} className="flex flex-col items-center gap-1 text-white group">
