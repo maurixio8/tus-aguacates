@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminAuth } from '@/lib/auth-admin';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
 // Create Supabase client with service role key for admin operations
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase configuration');
@@ -24,9 +24,9 @@ function getSupabaseClient() {
 // GET - List all categories
 export async function GET(request: NextRequest) {
   try {
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json({ error: auth.error, success: false }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'viewer');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();
@@ -59,9 +59,9 @@ export async function GET(request: NextRequest) {
 // POST - Create new category
 export async function POST(request: NextRequest) {
   try {
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json({ error: auth.error, success: false }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();
@@ -102,9 +102,9 @@ export async function POST(request: NextRequest) {
 // PATCH - Update category
 export async function PATCH(request: NextRequest) {
   try {
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json({ error: auth.error, success: false }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();
@@ -153,9 +153,9 @@ export async function PATCH(request: NextRequest) {
 // DELETE - Delete category
 export async function DELETE(request: NextRequest) {
   try {
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json({ error: auth.error, success: false }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'super_admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();

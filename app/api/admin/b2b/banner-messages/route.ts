@@ -5,6 +5,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -15,6 +16,11 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
  */
 export async function GET(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'viewer');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { data: messages, error } = await supabase
@@ -49,6 +55,11 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body = await request.json();
@@ -99,6 +110,11 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const searchParams = request.nextUrl.searchParams;
@@ -163,6 +179,11 @@ export async function PATCH(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const adminAccess = await requireAdminRole(request, 'super_admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const searchParams = request.nextUrl.searchParams;

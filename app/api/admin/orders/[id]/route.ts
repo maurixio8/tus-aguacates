@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient, hasPermission, verifyAdminAuth } from '@/lib/auth-admin';
+import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,12 +22,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success || !auth.user || !hasPermission(auth.user, 'admin')) {
-      return NextResponse.json(
-        { error: auth.error || 'No autorizado' },
-        { status: auth.success ? 403 : 401, headers: corsHeaders }
-      );
+    const adminAccess = await requireAdminRole(request, 'super_admin', corsHeaders);
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const { id: orderId } = await params;

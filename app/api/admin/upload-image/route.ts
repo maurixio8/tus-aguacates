@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import sharp from 'sharp';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
 // Create Supabase client
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase configuration');
@@ -23,10 +24,9 @@ function getSupabaseClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Verify referer for security
-    const referer = request.headers.get('referer');
-    if (!referer?.includes('/admin')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const formData = await request.formData();

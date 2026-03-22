@@ -5,7 +5,11 @@ const { createClient } = require('@supabase/supabase-js');
 
 // Configuración
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://fkclagdodqeqcvdhqyjl.supabase.co';
-const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZrY2xhZ2RvZHFlcWN2ZGhxeWpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NTA4ODgsImV4cCI6MjA3ODAyNjg4OH0.q1s3qLhTM5M2T1tqJ_3f2BtW1rXy0zL9Yf3kK8mF2cE';
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!SUPABASE_ANON_KEY) {
+  throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY is required');
+}
 
 // Usuario de prueba
 const TEST_USER_ID = '219488db-1bda-4ac6-a961-8affe601bcb6';

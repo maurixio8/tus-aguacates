@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { cookies } from 'next/headers';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 export interface AdminUser {
   id: string;
@@ -57,18 +57,17 @@ function getSupabaseServiceRoleKey(): string {
   return getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY');
 }
 
-function getAllowedAdminOrigins(request?: NextRequest): string[] {
+function getAllowedAdminOrigins(_request?: NextRequest): string[] {
   const configuredOrigins = cleanEnvValue(process.env.ADMIN_ALLOWED_ORIGINS)
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
 
-  const requestOrigin = request ? new URL(request.url).origin : null;
-
   return Array.from(
     new Set(
-      [...DEFAULT_ADMIN_ALLOWED_ORIGINS, ...configuredOrigins, requestOrigin]
-        .filter((origin): origin is string => Boolean(origin))
+      [...DEFAULT_ADMIN_ALLOWED_ORIGINS, ...configuredOrigins].filter(
+        (origin): origin is string => Boolean(origin)
+      )
     )
   );
 }
@@ -81,6 +80,7 @@ export function getAdminCorsHeaders(request: NextRequest): Record<string, string
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, x-admin-token',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
+    Vary: 'Origin',
   };
 
   if (origin && allowedOrigins.has(origin)) {
@@ -98,7 +98,7 @@ export function getAdminCookieOptions(request: NextRequest) {
   return {
     httpOnly: true,
     secure: isSecure,
-    sameSite: 'lax' as const,
+    sameSite: 'strict' as const,
     maxAge: ADMIN_TOKEN_MAX_AGE_SECONDS,
     path: '/',
     ...(isSecure && !isLocalHost ? { domain: url.hostname } : {}),
@@ -333,6 +333,34 @@ export function hasPermission(
   };
 
   return roleHierarchy[user.role] >= roleHierarchy[requiredRole];
+}
+
+export async function requireAdminRole(
+  request: NextRequest,
+  requiredRole: 'admin' | 'super_admin' | 'viewer' = 'viewer',
+  headers?: Record<string, string>
+): Promise<{ user?: AdminUser; response?: NextResponse }> {
+  const auth = await verifyAdminAuth(request);
+
+  if (!auth.success || !auth.user) {
+    return {
+      response: NextResponse.json(
+        { success: false, error: auth.error || 'No autenticado' },
+        { status: 401, headers }
+      ),
+    };
+  }
+
+  if (!hasPermission(auth.user, requiredRole)) {
+    return {
+      response: NextResponse.json(
+        { success: false, error: 'Permisos insuficientes' },
+        { status: 403, headers }
+      ),
+    };
+  }
+
+  return { user: auth.user };
 }
 
 export async function hashPassword(password: string): Promise<string> {

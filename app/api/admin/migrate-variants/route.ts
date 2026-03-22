@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 
 // Create Supabase client
 function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase configuration');
@@ -25,10 +26,9 @@ function getSupabaseClient() {
 // POST - Migrate variants from JSON to Supabase
 export async function POST(request: NextRequest) {
   try {
-    // Verify referer for security
-    const referer = request.headers.get('referer');
-    if (!referer?.includes('/admin')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'super_admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();
@@ -169,9 +169,9 @@ export async function POST(request: NextRequest) {
 // GET - Check migration status
 export async function GET(request: NextRequest) {
   try {
-    const referer = request.headers.get('referer');
-    if (!referer?.includes('/admin')) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    const adminAccess = await requireAdminRole(request, 'super_admin');
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     const supabase = getSupabaseClient();

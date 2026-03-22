@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyAdminAuth } from '@/lib/auth-admin';
+import { requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,8 +8,7 @@ export const revalidate = 0;
 // Create Supabase client directly to avoid import issues
 function getSupabaseClient() {
   const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\\n/g, '').replace(/\\r/g, '').trim();
-  // Usar SUPABASE_SERVICE_ROLE_KEY si existe, si no usar ANON_KEY
-  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const rawKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
   const supabaseKey = rawKey.replace(/\\n/g, '').replace(/\\r/g, '').trim();
 
   if (!supabaseUrl || !supabaseKey) {
@@ -50,12 +49,9 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { id: productId } = await params;
 
     // Verify admin authentication
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: 401, headers: corsHeaders }
-      );
+    const adminAccess = await requireAdminRole(request, 'admin', corsHeaders);
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     if (!productId) {
@@ -249,12 +245,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const { id: productId } = await params;
 
     // Verify admin authentication
-    const auth = await verifyAdminAuth(request);
-    if (!auth.success) {
-      return NextResponse.json(
-        { error: auth.error },
-        { status: 401, headers: corsHeaders }
-      );
+    const adminAccess = await requireAdminRole(request, 'super_admin', corsHeaders);
+    if (adminAccess.response) {
+      return adminAccess.response;
     }
 
     if (!productId) {
