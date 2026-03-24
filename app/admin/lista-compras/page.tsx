@@ -527,8 +527,6 @@ export default function ListaComprasPage() {
   'jalapeños bandeja': 'Jalapeños',
   'mangostinos kilo': 'Mangostinos',
   'manzana bandeja combinada': 'Manzana combinada',
-  'manzana roja bandeja': 'Manzana roja',
-  'manzana verde bandeja': 'Manzana verde',
   'manzanilla paquete': 'Manzanilla',
   'mazorca sabanera x3 uni': 'Mazorca sabanera',
   'pitahaya morada kilo': 'Pitahaya morada',
