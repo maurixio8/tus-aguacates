@@ -520,8 +520,6 @@ export default function ListaComprasPage() {
   'ajo importado malla': 'Ajo importado',
   'apio entero paquete': 'Apio Entero',
   'apio tallos bandeja': 'Apio tallos',
-  'banano bocadillo kilo': 'Banano bocadillo',
-  'banano criollo kilo': 'Banano criollo',
   'cebolla larga malla': 'Cebolla larga',
   'cilantro fresco paquete': 'Cilantro fresco',
   'espinaca paquete x1 kilo': 'Espinaca',
