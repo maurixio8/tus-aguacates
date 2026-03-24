@@ -1207,13 +1207,14 @@ export default function ListaComprasPage() {
   };
 
   const catalogVariantsByName = useMemo(() => {
-    const catalogMap = new Map<string, { displayName: string; variants: Map<string, string> }>();
+    const catalogMap = new Map<string, { displayName: string; variants: Map<string, string>; variantNames: Map<string, string> }>();
 
     catalogProducts.forEach((product) => {
       const normalizedName = normalizeProductName(product.name, null);
       const existing = catalogMap.get(normalizedName) || {
         displayName: product.name,
-        variants: new Map<string, string>()
+        variants: new Map<string, string>(),
+        variantNames: new Map<string, string>()
       };
 
       getActiveCatalogVariants(product).forEach((variant) => {
@@ -1221,6 +1222,10 @@ export default function ListaComprasPage() {
         const normalizedVariant = normalizeVariant(variantDisplay);
         if (normalizedVariant && !existing.variants.has(normalizedVariant)) {
           existing.variants.set(normalizedVariant, variantDisplay);
+          // Also store the current variant_name (e.g., "Peso", "Cantidad", "Volumen")
+          if (variant.variant_name) {
+            existing.variantNames.set(normalizedVariant, variant.variant_name);
+          }
         }
       });
 
@@ -1273,6 +1278,7 @@ export default function ListaComprasPage() {
   const resolveVariantForProduct = (productName: string, item: OrderItem) => {
     const variantInfo = extractVariantInfo(item);
     let variantDisplay = variantInfo.variantValue || variantInfo.variantType || null;
+    let currentVariantName: string | null = null; // Will hold current catalog variant_name
     const quantityFromName = extractQuantityFromName(productName);
     const normalizedName = normalizeProductName(productName, variantDisplay || quantityFromName);
 
@@ -1283,12 +1289,27 @@ export default function ListaComprasPage() {
     const catalogEntry = catalogVariantsByName.get(normalizedName);
     const selectedHints = selectedVariantHints.get(normalizedName);
 
+    // If we have a variant from historical data, check if the catalog has a better variant_name
+    if (variantDisplay && catalogEntry) {
+      const normalizedDisplay = normalizeVariant(variantDisplay);
+      const catalogVariantName = catalogEntry.variantNames.get(normalizedDisplay);
+      if (catalogVariantName && catalogVariantName !== 'Presentación') {
+        currentVariantName = catalogVariantName;
+      }
+    }
+
     if (!variantDisplay && selectedHints && selectedHints.size === 1) {
       variantDisplay = Array.from(selectedHints.values())[0].display;
     }
 
     if (!variantDisplay && catalogEntry && catalogEntry.variants.size === 1) {
       variantDisplay = Array.from(catalogEntry.variants.values())[0];
+      // Also get the variant_name for single-variant products
+      const normalizedDisplay = normalizeVariant(variantDisplay);
+      const catalogVariantName = catalogEntry.variantNames.get(normalizedDisplay);
+      if (catalogVariantName) {
+        currentVariantName = catalogVariantName;
+      }
     }
 
     const requiresVariant = Math.max(
@@ -1299,6 +1320,7 @@ export default function ListaComprasPage() {
     return {
       normalizedName,
       variantDisplay,
+      currentVariantName, // Include the current catalog variant_name
       requiresVariant,
       catalogDisplayName: catalogEntry?.displayName || productName
     };
@@ -1618,9 +1640,17 @@ export default function ListaComprasPage() {
             const displayBaseName = variantResolution.catalogDisplayName || normalizedName;
             let displayName = displayBaseName;
 
-            // Si hay variante separada, agregarla
+            // Use current catalog variant_name if available (e.g., "Peso", "Cantidad", "Volumen")
+            // instead of historical "Presentación"
+            const displayVariantName = variantResolution.currentVariantName || null;
+
+            // Si hay variante separada, agregarla con el nombre actual del catálogo
             if (variantDisplay) {
-              displayName = `${displayBaseName} (${variantDisplay})`;
+              if (displayVariantName && displayVariantName !== 'Presentación') {
+                displayName = `${displayBaseName} (${displayVariantName}: ${variantDisplay})`;
+              } else {
+                displayName = `${displayBaseName} (${variantDisplay})`;
+              }
             }
 
             // Calcular peso total inicial
@@ -1645,7 +1675,7 @@ export default function ListaComprasPage() {
             productMap.set(groupingKey, {
               grouping_key: groupingKey,
               product_name: displayBaseName,
-              variant_name: variantDisplay || undefined,
+              variant_name: displayVariantName || variantDisplay || undefined,
               variant_value: variantDisplay || undefined,
               display_name: displayName,
               unit_price: unitPrice,
