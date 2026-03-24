@@ -1289,12 +1289,24 @@ export default function ListaComprasPage() {
     const catalogEntry = catalogVariantsByName.get(normalizedName);
     const selectedHints = selectedVariantHints.get(normalizedName);
 
-    // If we have a variant from historical data, check if the catalog has a better variant_name
-    if (variantDisplay && catalogEntry) {
-      const normalizedDisplay = normalizeVariant(variantDisplay);
-      const catalogVariantName = catalogEntry.variantNames.get(normalizedDisplay);
-      if (catalogVariantName && catalogVariantName !== 'Presentación') {
-        currentVariantName = catalogVariantName;
+    // If we have a catalog entry, try to get the current variant_name
+    if (catalogEntry) {
+      // First, try to find exact match with the variant value
+      if (variantDisplay) {
+        const normalizedDisplay = normalizeVariant(variantDisplay);
+        const catalogVariantName = catalogEntry.variantNames.get(normalizedDisplay);
+        if (catalogVariantName && catalogVariantName !== 'Presentación') {
+          currentVariantName = catalogVariantName;
+        }
+      }
+      
+      // If no exact match, use the variant_name from ANY active variant
+      // (most products have consistent variant_name across all variants)
+      if (!currentVariantName && catalogEntry.variantNames.size > 0) {
+        const firstVariantName = Array.from(catalogEntry.variantNames.values())[0];
+        if (firstVariantName && firstVariantName !== 'Presentación') {
+          currentVariantName = firstVariantName;
+        }
       }
     }
 
