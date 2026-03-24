@@ -500,8 +500,45 @@ export default function ListaComprasPage() {
     'uva isabelina': 'Uva isabelina',
     'uva isabela': 'Uva isabelina',
 
-    'uva chilena': 'Uva chilena importada',
-    'uva importada': 'Uva chilena importada',
+  'uva chilena': 'Uva chilena importada',
+  'uva importada': 'Uva chilena importada',
+
+  // --- NUEVA MAYA (productos renombrados) ---
+  'nueva maya paquete x 8 mediano': 'Nueva Maya mediano',
+  'nueva maya paquete x8 mediano': 'Nueva Maya mediano',
+  'nueva maya 8 mediano': 'Nueva Maya mediano',
+  'nueva maya x 8 mediano': 'Nueva Maya mediano',
+  'nueva maya paquete 8 mediano': 'Nueva Maya mediano',
+
+  'nueva maya paquete x 7 premium': 'Nueva Maya premium',
+  'nueva maya paquete x7 premium': 'Nueva Maya premium',
+  'nueva maya 7 premium': 'Nueva Maya premium',
+  'nueva maya x 7 premium': 'Nueva Maya premium',
+  'nueva maya paquete 7 premium': 'Nueva Maya premium',
+  'nueva maya premium': 'Nueva Maya premium',
+
+  // --- OTROS PRODUCTOS RENOMBRADOS ---
+  'ajo importado malla': 'Ajo importado',
+  'apio entero paquete': 'Apio Entero',
+  'apio tallos bandeja': 'Apio tallos',
+  'banano bocadillo kilo': 'Banano bocadillo',
+  'banano criollo kilo': 'Banano criollo',
+  'cebolla larga malla': 'Cebolla larga',
+  'cilantro fresco paquete': 'Cilantro fresco',
+  'espinaca paquete x1 kilo': 'Espinaca',
+  'guisantes bandeja': 'Guisantes',
+  'jalapeños bandeja': 'Jalapeños',
+  'mangostinos kilo': 'Mangostinos',
+  'manzana bandeja combinada': 'Manzana combinada',
+  'manzana roja bandeja': 'Manzana roja',
+  'manzana verde bandeja': 'Manzana verde',
+  'manzanilla paquete': 'Manzanilla',
+  'mazorca sabanera x3 uni': 'Mazorca sabanera',
+  'pitahaya morada kilo': 'Pitahaya morada',
+  'platano verde x 4 unidades': 'Platano verde',
+  'rabanos x bandeja': 'Rábanos',
+  'rugula bandeja': 'Rúcula',
+  'yacon bandeja': 'Yacon',
   };
 
   // Emoticones para cada producto
@@ -799,7 +836,7 @@ export default function ListaComprasPage() {
       ? item.product_snapshot
       : null;
 
-    const variantType =
+    let variantType =
       item?.variantType ||
       item?.variant_type ||
       item?.variant_name ||
@@ -808,12 +845,22 @@ export default function ListaComprasPage() {
       snapshot?.variant_name ||
       null;
 
-    const variantValue =
+    let variantValue =
       item?.variantValue ||
       item?.variant_value ||
       nestedVariant?.variant_value ||
       snapshot?.variant_value ||
       null;
+
+    // Handle case where variant_name contains both type and value (e.g., "Presentacion: 500 gr")
+    // This happens in some historical orders where the format was stored incorrectly
+    if (variantType && variantType.includes(':') && !variantValue) {
+      const parts = variantType.split(':').map((s: string) => s.trim());
+      if (parts.length === 2) {
+        variantType = parts[0]; // e.g., "Presentacion"
+        variantValue = parts[1]; // e.g., "500 gr"
+      }
+    }
 
     return {
       variantType,
