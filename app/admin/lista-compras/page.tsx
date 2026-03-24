@@ -1289,7 +1289,7 @@ export default function ListaComprasPage() {
     const catalogEntry = catalogVariantsByName.get(normalizedName);
     const selectedHints = selectedVariantHints.get(normalizedName);
 
-    // If we have a catalog entry, try to get the current variant_name
+    // If we have a catalog entry, try to get the current variant_name and value
     if (catalogEntry) {
       // First, try to find exact match with the variant value
       if (variantDisplay) {
@@ -1300,12 +1300,17 @@ export default function ListaComprasPage() {
         }
       }
       
-      // If no exact match, use the variant_name from ANY active variant
-      // (most products have consistent variant_name across all variants)
-      if (!currentVariantName && catalogEntry.variantNames.size > 0) {
+      // If no exact match OR if variantDisplay is generic "Presentación", 
+      // use the variant_name and first variant value from ANY active variant
+      if ((!currentVariantName || variantDisplay === 'Presentación') && catalogEntry.variantNames.size > 0) {
         const firstVariantName = Array.from(catalogEntry.variantNames.values())[0];
+        const firstVariantValue = Array.from(catalogEntry.variants.values())[0];
         if (firstVariantName && firstVariantName !== 'Presentación') {
           currentVariantName = firstVariantName;
+        }
+        // If the order's variant_value is generic "Presentación", use the catalog's actual value
+        if (variantDisplay === 'Presentación' && firstVariantValue) {
+          variantDisplay = firstVariantValue;
         }
       }
     }
