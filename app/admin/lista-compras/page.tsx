@@ -484,7 +484,6 @@ export default function ListaComprasPage() {
   'manzana roja bandeja': 'Manzana roja Bandeja',
   'cebolla larga maya': 'Cebolla larga malla',
   'apio entero': 'Apio Entero paquete',
-  'apio entero paquete': 'Apio Entero paquete',
   'apio tallos': 'Apio tallos bandeja',
   'zumo de limon': 'Zumo Limón concentrado',
   'zumo limon': 'Zumo Limón concentrado',
