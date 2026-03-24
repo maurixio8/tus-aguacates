@@ -939,24 +939,35 @@ export async function PATCH(request: NextRequest) {
         }
       } else {
         // Para orders, usar campos normales
+        const { data: currentOrder } = await supabase
+          .from('orders')
+          .select('order_data')
+          .eq('id', orderId)
+          .single();
+
+        const nextOrderData = parseJsonObject(currentOrder?.order_data);
+        const nextCustomer = {
+          ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
+        };
+
         if (customerData.customer_name !== undefined) {
           updateData.customer_name = customerData.customer_name.trim();
+          nextCustomer.name = customerData.customer_name.trim();
+          nextCustomer.full_name = customerData.customer_name.trim();
         }
         if (customerData.customer_phone !== undefined) {
           updateData.customer_phone = customerData.customer_phone.trim();
+          nextCustomer.phone = customerData.customer_phone.trim();
         }
         if (customerData.customer_email !== undefined) {
-          updateData.customer_email = customerData.customer_email.trim() || null;
+          const value = customerData.customer_email.trim() || null;
+          updateData.customer_email = value;
+          nextCustomer.email = value;
         }
         if (customerData.delivery_address !== undefined) {
           updateData.delivery_address = customerData.delivery_address.trim();
-          // También actualizar shipping_address como JSON
-          updateData.shipping_address = JSON.stringify({
-            street_address: customerData.delivery_address.trim(),
-            city: 'Bogotá',
-            state: 'Cundinamarca',
-            additional_info: customerData.delivery_notes?.trim() || null
-          });
+          nextCustomer.address = customerData.delivery_address.trim();
+          nextCustomer.delivery_address = customerData.delivery_address.trim();
         }
         if (customerData.delivery_notes !== undefined) {
           const value = customerData.delivery_notes.trim() || null;
