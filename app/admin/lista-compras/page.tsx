@@ -1701,7 +1701,23 @@ export default function ListaComprasPage() {
             }
           } else {
             // Crear nombre a mostrar (usando nombre normalizado)
-            const displayBaseName = variantResolution.catalogDisplayName || normalizedName;
+            let displayBaseName = variantResolution.catalogDisplayName || normalizedName;
+            
+            // Fallback: if catalog lookup failed but we have an alias, use the alias for display
+            // This handles cases where the order has old product names that were renamed
+            if (displayBaseName === productName) {
+              const stripAccents = (str: string) =>
+                str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+              const normalizedForAlias = stripAccents(productName)
+                .replace(/\s*\([^)]*\)\s*$/, '').trim()
+                .replace(/\s*\d+\s*(grs?|gramos?|kg|kilos?|unidades?|bandeja?s?)\b.*$/i, '').trim()
+                .replace(/\s+/g, ' ');
+              const alias = PRODUCT_NAME_ALIASES[normalizedForAlias];
+              if (alias) {
+                displayBaseName = alias;
+              }
+            }
+            
             let displayName = displayBaseName;
 
             // Use current catalog variant_name if available (e.g., "Peso", "Cantidad", "Volumen")
