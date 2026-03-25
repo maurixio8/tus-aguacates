@@ -1698,9 +1698,9 @@ export default function ListaComprasPage() {
             // Crear nombre a mostrar (usando nombre normalizado)
             let displayBaseName = variantResolution.catalogDisplayName || normalizedName;
             
-            // Fallback: if catalog lookup failed but we have an alias, use the alias for display
-            // This handles cases where the order has old product names that were renamed
-            if (displayBaseName === productName) {
+            // Fallback: if catalog lookup failed (displayBaseName === normalizedName),
+            // try to use alias for display
+            if (displayBaseName === normalizedName) {
               const stripAccents = (str: string) =>
                 str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
               const normalizedForAlias = stripAccents(productName)
