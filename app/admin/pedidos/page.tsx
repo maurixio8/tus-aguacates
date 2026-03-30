@@ -394,8 +394,8 @@ export default function OrdersPage() {
       if (name.includes('pera')) return '🍐';
       if (name.includes('coco')) return '🥥';
       if (name.includes('kiwi')) return '🥝';
-      if (name.includes('arándano') || name.includes('arandano') || name.includes('mora')) return '🫐';
-      if (name.includes('frambuesa')) return '🫐';
+      if (name.includes('arándano') || name.includes('arandano') || name.includes('mora')) return '💜';
+      if (name.includes('frambuesa')) return '🍓';
       if (name.includes('cidra')) return '🍈';
       if (name.includes('papa') || name.includes('patata')) return '🥔';
       if (name.includes('cebolla')) return '🧅';
@@ -435,13 +435,35 @@ export default function OrdersPage() {
     lines.push('───────────────────────────────────');
 
     // ═══════════════════════════════════════
-    // TOTAL
+    // DESGLOSE FINANCIERO
     // ═══════════════════════════════════════
     lines.push('');
-    if (isPaid) {
-      lines.push(`💰 TOTAL: ${formatMoney(totalAmount)} (PAGADO)`);
+    lines.push('💵 RESUMEN DE PAGO:');
+    
+    // Subtotal de productos
+    lines.push(`   Subtotal productos: ${formatMoney(itemsSubtotal)}`);
+    
+    // Envío
+    const shippingFee = order.shipping_fee || order.shipping_cost || 0;
+    if (shippingFee > 0) {
+      lines.push(`   🚚 Domicilio: ${formatMoney(shippingFee)}`);
     } else {
-      lines.push(`💰 TOTAL A COBRAR: ${formatMoney(totalAmount)}`);
+      lines.push(`   🚚 Domicilio: GRATIS`);
+    }
+    
+    // Descuento si existe
+    const discount = order.discount || order.discount_amount || 0;
+    if (discount > 0) {
+      lines.push(`   🏷️ Descuento: -${formatMoney(discount)}`);
+    }
+    
+    lines.push('   ─────────────────────');
+    
+    // Total final
+    if (isPaid) {
+      lines.push(`   💰 TOTAL: ${formatMoney(totalAmount)} (PAGADO)`);
+    } else {
+      lines.push(`   💰 TOTAL A COBRAR: ${formatMoney(totalAmount)}`);
     }
 
     // ═══════════════════════════════════════
