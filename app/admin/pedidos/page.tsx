@@ -304,9 +304,15 @@ export default function OrdersPage() {
       });
     };
 
-    // Calcular totales
+    // Calcular totales desde los items
     const totalProducts = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    const totalAmount = order.total || 0;
+    
+    // Calcular total desde items (igual que calculateOrderSummary)
+    const itemsSubtotal = orderItems.reduce((sum, item) => {
+      const itemTotal = (item.unit_price || item.price || 0) * item.quantity;
+      return sum + itemTotal;
+    }, 0);
+    const totalAmount = order.total || order.total_amount || itemsSubtotal;
 
     // Obtener estado de pago
     const paymentStatus = order.payment_status || 'pending';
@@ -369,12 +375,57 @@ export default function OrdersPage() {
     lines.push(`☑️ VERIFICAR PRODUCTOS (${totalProducts} items):`);
     lines.push('───────────────────────────────────');
 
+    // Función para asignar emoticón según el producto
+    const getProductEmoji = (productName: string): string => {
+      const name = productName.toLowerCase();
+      if (name.includes('aguacate') || name.includes('hass')) return '🥑';
+      if (name.includes('limón') || name.includes('limon')) return '🍋';
+      if (name.includes('mango')) return '🥭';
+      if (name.includes('fresa')) return '🍓';
+      if (name.includes('piña') || name.includes('pina')) return '🍍';
+      if (name.includes('papaya')) return '🍈';
+      if (name.includes('banano') || name.includes('plátano') || name.includes('platano')) return '🍌';
+      if (name.includes('naranja') || name.includes('mandarina')) return '🍊';
+      if (name.includes('manzana')) return '🍎';
+      if (name.includes('uva')) return '🍇';
+      if (name.includes('sandía') || name.includes('sandia')) return '🍉';
+      if (name.includes('durazno') || name.includes('melocotón')) return '🍑';
+      if (name.includes('cereza')) return '🍒';
+      if (name.includes('pera')) return '🍐';
+      if (name.includes('coco')) return '🥥';
+      if (name.includes('kiwi')) return '🥝';
+      if (name.includes('arándano') || name.includes('arandano') || name.includes('mora')) return '🫐';
+      if (name.includes('frambuesa')) return '🫐';
+      if (name.includes('cidra')) return '🍈';
+      if (name.includes('papa') || name.includes('patata')) return '🥔';
+      if (name.includes('cebolla')) return '🧅';
+      if (name.includes('ajo')) return '🧄';
+      if (name.includes('zanahoria')) return '🥕';
+      if (name.includes('maíz') || name.includes('maiz')) return '🌽';
+      if (name.includes('tomate')) return '🍅';
+      if (name.includes('lechuga') || name.includes('espinaca')) return '🥬';
+      if (name.includes('brócoli') || name.includes('brocoli')) return '🥦';
+      if (name.includes('champiñón') || name.includes('champinon') || name.includes('hongo')) return '🍄';
+      if (name.includes('café') || name.includes('cafe')) return '☕';
+      if (name.includes('miel')) return '🍯';
+      if (name.includes('huevo')) return '🥚';
+      if (name.includes('leche')) return '🥛';
+      if (name.includes('queso')) return '🧀';
+      if (name.includes('pan')) return '🥖';
+      if (name.includes('carne') || name.includes('res')) return '🥩';
+      if (name.includes('pollo')) return '🍗';
+      if (name.includes('pescado') || name.includes('salmón')) return '🐟';
+      if (name.includes('camarón') || name.includes('camaron')) return '🦐';
+      return '📦'; // Default para productos sin categoría
+    };
+
     orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
       const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
+      const emoji = getProductEmoji(itemName);
       
       // Variante más visible en línea separada
-      lines.push(`   ☐ ${item.quantity}x ${itemName}`);
+      lines.push(`   ☐ ${emoji} ${item.quantity}x ${itemName}`);
       if (variant) {
         lines.push(`      ↳ Variante: ${variant}`);
       }
