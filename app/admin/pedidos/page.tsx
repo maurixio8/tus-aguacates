@@ -266,14 +266,25 @@ export default function OrdersPage() {
   const getAddressFromObject = (addr: any): string => {
     if (!addr || typeof addr !== 'object') return '';
     const streetAddress = addr.street_address || addr.address || addr.street || '';
+    const neighborhood = addr.neighborhood || addr.barrio || addr.locality || '';
     const city = addr.city || '';
     const state = addr.state || addr.department || '';
-    const parts = [streetAddress, city, state].filter(Boolean);
+    const postalCode = addr.postal_code || addr.zip_code || '';
+    const additionalInfo = addr.additional_info || addr.references || addr.referencias || '';
+    
+    const parts: string[] = [];
+    if (streetAddress) parts.push(streetAddress);
+    if (neighborhood) parts.push(neighborhood);
+    if (city) parts.push(city);
+    if (state) parts.push(state);
+    if (postalCode) parts.push(`CP: ${postalCode}`);
+    if (additionalInfo) parts.push(`Ref: ${additionalInfo}`);
+    
     return parts.join(', ');
   };
 
-  // Generar resumen del pedido para REPARTIDOR (copiar al portapapeles)
-  // Formato optimizado para entrega: nombre grande, total visible, link WhatsApp, productos con precios
+  // Generar resumen del pedido para EMPAQUE (copiar al portapapeles)
+  // Formato optimizado para verificación: lista de productos, variantes visibles, estado de pago, fecha entrega
   const getOrderSummaryText = (order: Order, customerName: string, orderItems: any[]): string => {
     // Formatear moneda
     const formatMoney = (amount: number) => {
@@ -284,83 +295,116 @@ export default function OrdersPage() {
       }).format(amount);
     };
 
-    // Limpiar teléfono para WhatsApp
-    const getWhatsAppLink = (phone: string | undefined) => {
-      if (!phone) return '';
-      const cleanPhone = phone.replace(/\D/g, '');
-      const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-      return `https://wa.me/${fullPhone}`;
+    // Formatear fecha
+    const formatDateShort = (dateString: string) => {
+      return new Date(dateString).toLocaleDateString('es-CO', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      });
     };
 
     // Calcular totales
     const totalProducts = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
     const totalAmount = order.total || 0;
 
-    // Obtener teléfono
-    const customerPhone = order.customer_phone || '';
-    const whatsappLink = getWhatsAppLink(customerPhone);
+    // Obtener estado de pago
+    const paymentStatus = order.payment_status || 'pending';
+    const paymentLabel = paymentStatusConfig[normalizePaymentStatus(paymentStatus)]?.label || 'Pendiente';
+    const isPaid = ['paid', 'completed', 'pagado', 'completado'].includes(paymentStatus.toLowerCase());
+
+    // Obtener fecha de entrega
+    const deliveryDate = order.delivery_date || '';
 
     // Construir resumen
     const lines: string[] = [];
 
     // ═══════════════════════════════════════
-    // HEADER - Información principal destacada
+    // HEADER - Para empaque
     // ═══════════════════════════════════════
-    lines.push('═══════════════════════════════');
-    lines.push(`🚚 ENTREGA #${order.order_number || order.id.slice(-6).toUpperCase()}`);
-    lines.push('═══════════════════════════════');
+    lines.push('═══════════════════════════════════');
+    lines.push(`📦 EMPAQUE - Pedido #${order.order_number || order.id.slice(-6).toUpperCase()}`);
+    lines.push('═══════════════════════════════════');
     lines.push('');
 
-    // Cliente en grande
-    lines.push(`👤 CLIENTE: ${customerName.toUpperCase()}`);
-    lines.push(`📞 Tel: ${customerPhone}`);
-    if (whatsappLink) {
-      lines.push(`💬 WhatsApp: ${whatsappLink}`);
+    // ═══════════════════════════════════════
+    // ESTADO DE PAGO - Destacado
+    // ═══════════════════════════════════════
+    if (isPaid) {
+      lines.push('✅ PAGO: PAGADO');
+    } else {
+      lines.push('⚠️  PAGO: PENDIENTE - COBRAR AL ENTREGAR');
     }
     lines.push('');
 
-    // Dirección destacada
-    const address = getAddressText(order);
-    lines.push('📍 DIRECCIÓN DE ENTREGA:');
-    lines.push(`   ${address || 'Sin dirección'}`);
+    // ═══════════════════════════════════════
+    // FECHA DE ENTREGA
+    // ═══════════════════════════════════════
+    if (deliveryDate) {
+      lines.push(`📅 ENTREGA: ${formatDateShort(deliveryDate)}`);
+      lines.push('');
+    }
+
+    // ═══════════════════════════════════════
+    // CLIENTE
+    // ═══════════════════════════════════════
+    lines.push(`👤 CLIENTE: ${customerName.toUpperCase()}`);
+    const customerPhone = order.customer_phone || '';
+    if (customerPhone) {
+      lines.push(`📞 Tel: ${customerPhone}`);
+    }
     lines.push('');
 
     // ═══════════════════════════════════════
-    // PRODUCTOS
+    // DIRECCIÓN COMPLETA
     // ═══════════════════════════════════════
-    lines.push(`📦 PRODUCTOS (${totalProducts} ${totalProducts === 1 ? 'item' : 'items'}):`);
-    lines.push('───────────────────────────────');
+    const address = getAddressText(order);
+    lines.push('📍 DIRECCIÓN DE ENTREGA:');
+    lines.push(`   ${address || '⚠️ Sin dirección'}`);
+    lines.push('');
+
+    // ═══════════════════════════════════════
+    // PRODUCTOS - Lista para verificación
+    // ═══════════════════════════════════════
+    lines.push(`☑️ VERIFICAR PRODUCTOS (${totalProducts} items):`);
+    lines.push('───────────────────────────────────');
 
     orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
       const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
-      const variantText = variant ? ` (${variant})` : '';
-      const price = item.unit_price || item.price || item.product_snapshot?.price || 0;
-      const subtotal = price * (item.quantity || 1);
-
-      lines.push(`   ${index + 1}. ${item.quantity}x ${itemName}${variantText}`);
-      lines.push(`      └─ ${formatMoney(subtotal)}`);
+      
+      // Variante más visible en línea separada
+      lines.push(`   ☐ ${item.quantity}x ${itemName}`);
+      if (variant) {
+        lines.push(`      ↳ Variante: ${variant}`);
+      }
+      lines.push('');
     });
 
-    lines.push('───────────────────────────────');
-    lines.push('');
+    lines.push('───────────────────────────────────');
 
     // ═══════════════════════════════════════
-    // TOTAL DESTACADO
+    // TOTAL
     // ═══════════════════════════════════════
-    lines.push('💰 TOTAL A COBRAR:');
-    lines.push(`   >>> ${formatMoney(totalAmount)} <<<`);
     lines.push('');
-
-    // Notas si existen
-    const notes = order.delivery_notes || order.notes;
-    if (notes) {
-      lines.push('📝 NOTAS:');
-      lines.push(`   ${notes}`);
-      lines.push('');
+    if (isPaid) {
+      lines.push(`💰 TOTAL: ${formatMoney(totalAmount)} (PAGADO)`);
+    } else {
+      lines.push(`💰 TOTAL A COBRAR: ${formatMoney(totalAmount)}`);
     }
 
-    lines.push('═══════════════════════════════');
+    // ═══════════════════════════════════════
+    // NOTAS DE ENTREGA
+    // ═══════════════════════════════════════
+    const notes = order.delivery_notes || order.notes;
+    if (notes) {
+      lines.push('');
+      lines.push('📝 NOTAS DE ENTREGA:');
+      lines.push(`   ${notes}`);
+    }
+
+    lines.push('');
+    lines.push('═══════════════════════════════════');
 
     return lines.join('\n');
   };
