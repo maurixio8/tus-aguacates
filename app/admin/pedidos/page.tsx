@@ -306,13 +306,6 @@ export default function OrdersPage() {
 
     // Calcular totales desde los items
     const totalProducts = orderItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    
-    // Calcular total desde items (igual que calculateOrderSummary)
-    const itemsSubtotal = orderItems.reduce((sum, item) => {
-      const itemTotal = (item.unit_price || item.price || 0) * item.quantity;
-      return sum + itemTotal;
-    }, 0);
-    const totalAmount = order.total || order.total_amount || itemsSubtotal;
 
     // Obtener estado de pago
     const paymentStatus = order.payment_status || 'pending';
@@ -435,35 +428,35 @@ export default function OrdersPage() {
     lines.push('───────────────────────────────────');
 
     // ═══════════════════════════════════════
-    // DESGLOSE FINANCIERO
+    // DESGLOSE FINANCIERO (usando calculateOrderSummary)
     // ═══════════════════════════════════════
+    const calculations = calculateOrderSummary(order, orderItems);
+    
     lines.push('');
     lines.push('💵 RESUMEN DE PAGO:');
     
     // Subtotal de productos
-    lines.push(`   Subtotal productos: ${formatMoney(itemsSubtotal)}`);
+    lines.push(`   Subtotal productos: ${formatMoney(calculations.subtotal)}`);
     
     // Envío
-    const shippingFee = order.shipping_fee || order.shipping_cost || 0;
-    if (shippingFee > 0) {
-      lines.push(`   🚚 Domicilio: ${formatMoney(shippingFee)}`);
+    if (calculations.shippingFee > 0) {
+      lines.push(`   🚚 Domicilio: ${formatMoney(calculations.shippingFee)}`);
     } else {
       lines.push(`   🚚 Domicilio: GRATIS`);
     }
     
     // Descuento si existe
-    const discount = order.discount || order.discount_amount || 0;
-    if (discount > 0) {
-      lines.push(`   🏷️ Descuento: -${formatMoney(discount)}`);
+    if (calculations.discount > 0) {
+      lines.push(`   🏷️ Descuento: -${formatMoney(calculations.discount)}`);
     }
     
     lines.push('   ─────────────────────');
     
     // Total final
     if (isPaid) {
-      lines.push(`   💰 TOTAL: ${formatMoney(totalAmount)} (PAGADO)`);
+      lines.push(`   💰 TOTAL: ${formatMoney(calculations.total)} (PAGADO)`);
     } else {
-      lines.push(`   💰 TOTAL A COBRAR: ${formatMoney(totalAmount)}`);
+      lines.push(`   💰 TOTAL A COBRAR: ${formatMoney(calculations.total)}`);
     }
 
     // ═══════════════════════════════════════
