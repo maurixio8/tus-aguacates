@@ -850,7 +850,7 @@ export default function OrdersPage() {
     if (order.order_type === 'guest' && order.order_data) {
       // Para invitados, extraer datos del order_data si existen
       const orderData = order.order_data as any;
-      shippingFee = orderData.shipping_cost || orderData.shippingFee || 0;
+      shippingFee = orderData.shipping_cost || orderData.shippingFee || orderData.shipping || 0;
       discount = orderData.discount || orderData.discount_amount || 0;
       couponCode = orderData.coupon_code || orderData.couponCode || null;
     } else {
