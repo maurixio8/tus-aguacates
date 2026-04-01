@@ -1052,9 +1052,9 @@ export async function PATCH(request: NextRequest) {
         }
 
         // Validar costo de envío (Backend Safeguard)
-        // Regla: si subtotal < 68000 y no tiene envío gratis explícito, DEBE cobrar envío.
+        // Regla retail: si subtotal < 68900 y no tiene envío gratis explícito, DEBE cobrar envío.
         const SHIPPING_COST = 7400;
-        const FREE_SHIPPING_THRESHOLD = 68000;
+        const FREE_SHIPPING_THRESHOLD = 68900;
         const hasFreeShippingCoupon = orderData.coupon_code && (orderData.free_shipping || orderData.coupon?.free_shipping);
 
         if (!hasFreeShippingCoupon && subtotal < FREE_SHIPPING_THRESHOLD) {

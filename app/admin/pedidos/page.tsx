@@ -41,6 +41,7 @@ interface OrderItem {
     price?: number;
     main_image_url?: string;
     image?: string;
+    description?: string;
   };
   quantity: number;
   unit_price: number;
@@ -48,11 +49,13 @@ interface OrderItem {
   products?: {
     name?: string;
     main_image_url?: string;
+    description?: string;
   };
   product_name?: string;
   productName?: string;
   variantName?: string;
   price?: number;
+  description?: string;
 }
 
 interface Order {
@@ -415,12 +418,17 @@ export default function OrdersPage() {
     orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
       const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
+      const description = item.product_snapshot?.description || item.products?.description || item.description || '';
       const emoji = getProductEmoji(itemName);
       
       // Variante más visible en línea separada
       lines.push(`   ☐ ${emoji} ${item.quantity}x ${itemName}`);
       if (variant) {
         lines.push(`      ↳ Variante: ${variant}`);
+      }
+      // Mostrar descripción si existe (importante para combos)
+      if (description) {
+        lines.push(`      📋 Incluye: ${description}`);
       }
       lines.push('');
     });

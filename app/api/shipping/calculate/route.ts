@@ -147,14 +147,14 @@ export async function POST(request: NextRequest) {
     // Ignore database rules to avoid configuration conflicts
     freeShippingMin = 68900; // $68.900
     shippingCost = 7400; // $7.400
-    freeShipping = subtotal > freeShippingMin;
+    freeShipping = subtotal >= freeShippingMin;
 
     console.log('🚚 Applied default shipping rule (hardcoded):', {
       freeShippingMin,
       shippingCost,
       subtotal,
       freeShipping,
-      comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`,
+      comparison: `subtotal (${subtotal}) >= freeShippingMin (${freeShippingMin}) = ${subtotal >= freeShippingMin}`,
       note: 'Database rules ignored to prevent configuration conflicts'
     });
 

@@ -1,0 +1,740 @@
+{
+  "name": "🧪 LABR - nuevo asistente (REPARADO)",
+  "nodes": [
+    {
+      "parameters": {
+        "name": "TOOL_BuscarProductos",
+        "description": "Buscar productos y precios reales de la tienda online. Úsala cuando el cliente pregunte por disponibilidad, catálogo o quiera conocer productos actuales de la tienda. Input: termino_busqueda. IMPORTANTE: pega la nueva AGENT_OPS_API_KEY dentro de este nodo antes de usarlo.",
+        "jsCode": "const termino = $fromAI('termino_busqueda', 'Producto o término a buscar en la tienda online', 'string');\nconst API_KEY = '4d8cfb14fba5451c875ac515fa047f9b';\n\nif (!termino || !String(termino).trim()) {\n  return '⚠️ Debes enviar un término de búsqueda válido.';\n}\n\nif (API_KEY === 'CONFIGURAR_AQUI_NUEVA_AGENT_OPS_API_KEY') {\n  return '⚠️ Configura la nueva AGENT_OPS_API_KEY dentro del nodo TOOL_BuscarProductos antes de usar esta herramienta.';\n}\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://tus-aguacates.vercel.app/api/agent/products',\n    qs: { search: termino, limit: 5, active_only: true },\n    headers: {\n      'x-agent-key': API_KEY,\n      'Accept': 'application/json'\n    },\n    json: true\n  });\n\n  return JSON.stringify(response);\n} catch (error) {\n  return '❌ Error consultando catálogo online: ' + error.message;\n}"
+      },
+      "id": "f0b60d84-7f58-4f11-8e4d-0a4c0d7f9b11",
+      "name": "TOOL_BuscarProductos",
+      "type": "@n8n/n8n-nodes-langchain.toolCode",
+      "position": [
+        2656,
+        1552
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "connections": {
+    "📥 Webhook YCloud": {
+      "main": [
+        [
+          {
+            "node": "🔀 ¿Viene del Buffer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "1. Pre-procesamiento YCloud": {
+      "main": [
+        [
+          {
+            "node": "❓ ¿Cliente Bloqueado?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ ¿Es Media?": {
+      "main": [
+        [
+          {
+            "node": "📱 Responder Media No Soportado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "2. Obtener Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Obtener Cliente": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ ¿Busca Producto?": {
+      "main": [
+        [
+          {
+            "node": "3. Búsqueda Automática Productos",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "4. Merge Datos + Productos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Búsqueda Automática Productos": {
+      "main": [
+        [
+          {
+            "node": "4. Merge Datos + Productos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Merge Datos + Productos": {
+      "main": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_AnadirAlCarrito": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_CalcularTotalPrePedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_GuardarNombreCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_CambiarEstadoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 Preparar Respuesta": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar WhatsApp YCloud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarProductos": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_EscalarServicioCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ConsultarEstadoPedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_GuardarDireccionCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ObtenerVariantes": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code - Formatear Producto": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Producto del Botón": {
+      "main": [
+        [
+          {
+            "node": "Code - Formatear Producto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Click de Botón": {
+      "main": [
+        [
+          {
+            "node": "Buscar Producto del Botón",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "❓ ¿Busca Producto?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Detectar Click de Botón",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 ¿Es Copiloto?": {
+      "main": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❓ ¿Es Media?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Memoria Copiloto": {
+      "ai_memory": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ListarClientesSinNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ActualizarNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ConsultarCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_BuscarPorNombre": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ContarClientes": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_VaciarCarrito": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_VaciarTodosCarritos": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ListarCarritosActivos": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ResumenCarritos": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_ConfirmarPedido": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📤 Preparar Respuesta Copiloto": {
+      "main": [
+        [
+          {
+            "node": "📱 Enviar WhatsApp YCloud",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Agente Copiloto1": {
+      "main": [
+        [
+          {
+            "node": "📤 Preparar Respuesta Copiloto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_CambiarEstadoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_BorrarMemoriaCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ADMIN_LimpiarCarritoCliente": {
+      "ai_tool": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ConfirmarPedidoConEtiqueta": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Model Selector": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "🧠 Agente Copiloto1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ ¿Cliente Bloqueado?": {
+      "main": [
+        [
+          {
+            "node": "🛑 Fin - Cliente Escalado",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🔀 ¿Es Copiloto?",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "📊 Marcar Respuesta Campaña",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "🔧 Init Webhook": {
+      "main": [
+        [
+          {
+            "node": "🔧 INIT - Crear tabla buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 ¿Viene del Buffer?": {
+      "main": [
+        [
+          {
+            "node": "1. Pre-procesamiento YCloud",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "💾 Guardar en Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💾 Guardar en Buffer": {
+      "main": [
+        [
+          {
+            "node": "⏹️ Buffer guardado OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2daa57db-e4ab-4696-a96a-4b4cad12b8fc": {
+      "main": [
+        [
+          {
+            "node": "4a51a2f9-c6d8-483e-a9dd-4a379d2ec130",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Model Selector",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "37802349-d077-4ffe-a17d-acbf9652535d": {
+      "main": [
+        [
+          {
+            "node": "4a51a2f9-c6d8-483e-a9dd-4a379d2ec130",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "fb1e25a8-8f9b-417a-924f-5e713233d2f9": {
+      "main": [
+        [
+          {
+            "node": "4a51a2f9-c6d8-483e-a9dd-4a379d2ec130",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "211df281-543d-497a-b643-25dca132695c": {
+      "main": [
+        [
+          {
+            "node": "4a51a2f9-c6d8-483e-a9dd-4a379d2ec130",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "21c4122f-796a-4149-9524-9891a5a75928": {
+      "main": [
+        [
+          {
+            "node": "4a51a2f9-c6d8-483e-a9dd-4a379d2ec130",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_ConsultarPrecio": {
+      "ai_tool": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TOOL_BuscarRecetas": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "🧠 Buffer Window Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "🤖 Agente Luz v4",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🤖 Agente Luz v": {
+      "main": [
+        [
+          {
+            "node": "📤 Preparar Respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "🤖 Agente Luz v",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {}
+}

@@ -288,8 +288,8 @@ ${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.v
       mensajeWhatsApp += `
 
 👤 *Mis datos:*
-• Me llamo ${firstName}
-• Tel: ${formData.phone}
+• Nombre: ${firstName}
+• Teléfono: ${formData.phone}
 • Dirección: ${formData.address}
 
 💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Tarjeta/PSE'}`;

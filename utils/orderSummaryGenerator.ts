@@ -10,6 +10,7 @@ export interface OrderItem {
     price?: number;
     main_image_url?: string;
     image?: string;
+    description?: string;
   };
   quantity: number;
   unit_price: number;
@@ -17,11 +18,13 @@ export interface OrderItem {
   products?: {
     name?: string;
     main_image_url?: string;
+    description?: string;
   };
   product_name?: string;
   productName?: string;
   variantName?: string;
   price?: number;
+  description?: string;
 }
 
 export interface Order {
@@ -67,25 +70,35 @@ export function generateOrderSummary(order: Order): string {
       quantity: item.quantity,
       unit_price: item.price || 0,
       subtotal: (item.price || 0) * (item.quantity || 0),
-      product_name: item.productName || item.name || 'Producto'
+      product_name: item.productName || item.name || 'Producto',
+      variantName: item.variantValue || item.variant_name || item.variantType || ''
     }));
   } else if (order.order_items) {
     // Registered orders: extract from order_items
     items = order.order_items.map((item: OrderItem) => ({
       ...item,
-      name: item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto'
+      name: item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto',
+      variantName: item.variantName || (item as any).variant_value || (item as any).variant_name || ''
     }));
+  }
+
+  // Extract shipping cost from order_data if available (same logic as calculateOrderSummary)
+  let shippingCost = 0;
+  let discount = 0;
+  
+  if (order.order_type === 'guest' && order.order_data) {
+    const orderData = order.order_data as any;
+    shippingCost = orderData.shipping_cost || orderData.shippingFee || orderData.shipping || 0;
+    discount = orderData.discount || orderData.discount_amount || 0;
+  } else {
+    shippingCost = (order as any).shipping_fee || (order as any).shipping_cost || 0;
+    discount = (order as any).discount || (order as any).discount_amount || 0;
   }
 
   // Calculate totals
   const subtotal = order.subtotal || items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
-  const total = order.total || order.total_amount || 0;
-  const shippingCost = total - subtotal;
-
-  // Check if there's a discount (when shipping is negative or less than expected)
-  const expectedShipping = 7400; // Costo de envío estándar
-  const hasDiscount = shippingCost < expectedShipping || shippingCost < 0;
-  const discountAmount = hasDiscount ? Math.abs(shippingCost - expectedShipping) : 0;
+  const total = order.total || order.total_amount || (subtotal + shippingCost - discount);
+  const hasDiscount = discount > 0;
 
   // Format currency
   const formatCurrency = (amount: number) => {
@@ -127,7 +140,7 @@ export function generateOrderSummary(order: Order): string {
     const isDeliveryDay = DELIVERY_DAYS.includes(orderDayOfWeek);
     const isBeforeCutOff = orderHour < CUT_OFF_HOUR;
 
-    // If it's a delivery day and before 10 AM, deliver TODAY (same day)
+    // If it's a delivery day and before 10 Am, deliver TODAY (same day)
     if (isDeliveryDay && isBeforeCutOff) {
       return orderDate.toLocaleDateString('es-ES', {
         weekday: 'long',
@@ -188,13 +201,19 @@ export function generateOrderSummary(order: Order): string {
   // Build product list with checkmark emojis
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
-    const variantName = item.variantName || '';
+    const variantName = item.variantName || (item as any).variant_value || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
+    const description = item.product_snapshot?.description || item.products?.description || (item as any).description || '';
 
     // Format: "✅ 2x Zanahoria (1 kg) - $10,000" or "✅ 1x Cebolla - $3,000"
-    const productDisplay = variantName
+    let productDisplay = variantName
       ? `✅ ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
       : `✅ ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
+
+    // Add description if exists (important for combos)
+    if (description) {
+      productDisplay += `\n    📋 Incluye: ${description}`;
+    }
 
     return productDisplay;
   }).join('\n');
@@ -205,11 +224,11 @@ export function generateOrderSummary(order: Order): string {
   // Build financial summary based on whether there's a discount
   let financialSummary = '';
 
-  if (hasDiscount && discountAmount > 0) {
+  if (hasDiscount && discount > 0) {
     financialSummary = `💰 *Resumen:*
 ✅ Subtotal: ${formatCurrency(subtotal)}
-✅ Envío: ${formatCurrency(expectedShipping)}
-🎁 Descuento: -${formatCurrency(discountAmount)}
+✅ Envío: ${shippingCost > 0 ? formatCurrency(shippingCost) : 'GRATIS 🎉'}
+🎁 Descuento: -${formatCurrency(discount)}
 💚 *TOTAL:* ${formatCurrency(total)}`;
   } else {
     const shippingText = shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost);
@@ -219,7 +238,7 @@ export function generateOrderSummary(order: Order): string {
 💚 *TOTAL:* ${formatCurrency(total)}`;
   }
 
-  // Generate delivery address
+  // Generate delivery address - extract complete address for guest orders
   let deliveryAddress = order.delivery_address || 'N/A';
 
   if (!order.delivery_address && order.shipping_address) {
@@ -227,15 +246,29 @@ export function generateOrderSummary(order: Order): string {
       // Try to parse JSON string
       try {
         const parsed = JSON.parse(order.shipping_address);
-        deliveryAddress = parsed.address || parsed.street_address || order.shipping_address;
+        // Build complete address with all fields
+        const parts = [];
+        if (parsed.street_address || parsed.address) parts.push(parsed.street_address || parsed.address);
+        if (parsed.neighborhood || parsed.barrio) parts.push(parsed.neighborhood || parsed.barrio);
+        if (parsed.city) parts.push(parsed.city);
+        if (parsed.state || parsed.department) parts.push(parsed.state || parsed.department);
+        if (parsed.postal_code) parts.push(`CP: ${parsed.postal_code}`);
+        if (parsed.additional_info || parsed.references) parts.push(`Ref: ${parsed.additional_info || parsed.references}`);
+        deliveryAddress = parts.join(', ') || order.shipping_address;
       } catch {
         deliveryAddress = order.shipping_address;
       }
     } else {
-      // It's already an object
-      deliveryAddress = order.shipping_address.address ||
-        order.shipping_address.street_address ||
-        'N/A';
+      // It's already an object - build complete address
+      const addr = order.shipping_address;
+      const parts = [];
+      if (addr.street_address || addr.address) parts.push(addr.street_address || addr.address);
+      if ((addr as any).neighborhood || (addr as any).barrio) parts.push((addr as any).neighborhood || (addr as any).barrio);
+      if (addr.city) parts.push(addr.city);
+      if (addr.state || (addr as any).department) parts.push(addr.state || (addr as any).department);
+      if ((addr as any).postal_code) parts.push(`CP: ${(addr as any).postal_code}`);
+      if ((addr as any).additional_info || (addr as any).references) parts.push(`Ref: ${(addr as any).additional_info || (addr as any).references}`);
+      deliveryAddress = parts.join(', ') || (addr.address || addr.street_address || 'N/A');
     }
   }
 
@@ -246,9 +279,10 @@ ${greeting}, ${firstName}! 👋
 
 Gracias por confiar en nosotros. Aquí está el resumen de tu pedido:
 
-📋 *Pedido #${orderNumber}* (${totalItemsCount} producto${totalItemsCount !== 1 ? 's' : ''})
+📋 *Pedido #${orderNumber}*
+📦 ${totalItemsCount} producto${totalItemsCount !== 1 ? 's' : ''}
 
-📦 *Productos:*
+*Productos:*
 ${productList}
 
 ${financialSummary}

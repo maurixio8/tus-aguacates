@@ -1,0 +1,15 @@
+{
+    "parameters": {
+        "name": "TOOL_BuscarProductos",
+        "description": "Buscar productos y precios reales de la tienda online. Úsala cuando el cliente pregunte por disponibilidad, catálogo o quiera conocer productos actuales de la tienda. Input: termino_busqueda. IMPORTANTE: pega la nueva AGENT_OPS_API_KEY dentro de este nodo antes de usarlo.",
+        "jsCode": "const termino = $fromAI('termino_busqueda', 'Producto o término a buscar en la tienda online', 'string');\nconst API_KEY = '4d8cfb14fba5451c875ac515fa047f9b';\n\nif (!termino || !String(termino).trim()) {\n  return '⚠️ Debes enviar un término de búsqueda válido.';\n}\n\nif (API_KEY === 'CONFIGURAR_AQUI_NUEVA_AGENT_OPS_API_KEY') {\n  return '⚠️ Configura la nueva AGENT_OPS_API_KEY dentro del nodo TOOL_BuscarProductos antes de usar esta herramienta.';\n}\n\ntry {\n  const response = await this.helpers.httpRequest({\n    method: 'GET',\n    url: 'https://tus-aguacates.vercel.app/api/agent/products',\n    qs: { search: termino, limit: 5, active_only: true },\n    headers: {\n      'x-agent-key': API_KEY,\n      'Accept': 'application/json'\n    },\n    json: true\n  });\n\n  return JSON.stringify(response);\n} catch (error) {\n  return '❌ Error consultando catálogo online: ' + error.message;\n}"
+    },
+    "id": "f0b60d84-7f58-4f11-8e4d-0a4c0d7f9b11",
+    "name": "TOOL_BuscarProductos",
+    "type": "@n8n/n8n-nodes-langchain.toolCode",
+    "position": [
+        2656,
+        1552
+    ],
+    "typeVersion": 1
+}

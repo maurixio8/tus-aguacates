@@ -1,0 +1,126 @@
+{
+  "name": "LAB - Probar Agent Orders Active",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## LAB: orders/active\n\n1. Crea una credencial de tipo **Header Auth** en n8n\n2. Header name: `x-agent-key`\n3. Header value: **pega aquí la nueva `AGENT_OPS_API_KEY`**\n4. Abre el nodo **🧾 Consultar Pedido Activo API** y selecciona esa credencial\n5. Cambia el teléfono en **📱 Teléfono de prueba**\n6. Ejecuta el workflow\n\nResultados esperados:\n- key mala o ausente -> 401\n- phone inválido -> 400\n- key válida -> 200",
+        "width": 520,
+        "height": 340,
+        "color": 7
+      },
+      "id": "sticky-orders-active-lab",
+      "name": "📝 Instrucciones LAB",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        220,
+        80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "manual-trigger-orders-active-lab",
+      "name": "▶️ Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        280,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "field-phone-orders-active-lab",
+              "name": "phone",
+              "value": "573001112233",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-phone-orders-active-lab",
+      "name": "📱 Teléfono de prueba",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        560,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://tus-aguacates.vercel.app/api/agent/orders/active",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "phone",
+              "value": "={{ $json.phone }}"
+            }
+          ]
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "http-orders-active-lab",
+      "name": "🧾 Consultar Pedido Activo API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        900,
+        420
+      ]
+    }
+  ],
+  "connections": {
+    "▶️ Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "📱 Teléfono de prueba",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📱 Teléfono de prueba": {
+      "main": [
+        [
+          {
+            "node": "🧾 Consultar Pedido Activo API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  }
+}

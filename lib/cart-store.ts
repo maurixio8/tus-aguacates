@@ -19,14 +19,14 @@ const BOLD_FEES = {
 const getDefaultShippingInfo = (subtotal: number = 0): ShippingInfo => {
   const freeShippingMin = 68900;
   const shippingCost = 7400;
-  const freeShipping = subtotal > freeShippingMin; // Changed from >= to >
+  const freeShipping = subtotal >= freeShippingMin;
 
   console.log('🚚 getDefaultShippingInfo:', {
     subtotal,
     freeShippingMin,
     shippingCost,
     freeShipping,
-    comparison: `subtotal (${subtotal}) > freeShippingMin (${freeShippingMin}) = ${subtotal > freeShippingMin}`
+    comparison: `subtotal (${subtotal}) >= freeShippingMin (${freeShippingMin}) = ${subtotal >= freeShippingMin}`
   });
 
   return {

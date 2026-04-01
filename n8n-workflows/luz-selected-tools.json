@@ -1,0 +1,100 @@
+[
+  {
+    "parameters": {
+      "descriptionType": "manual",
+      "toolDescription": "Herramienta de FALLBACK para buscar productos. Úsala SOLO cuando los productos encontrados automáticamente NO coinciden con lo que pidió el cliente. Input: término de búsqueda del producto.",
+      "operation": "executeQuery",
+      "query": "SELECT \n    id,\n    name,\n    COALESCE(discount_price, price) as precio,\n    description,\n    category_name\nFROM productos_tienda p\nWHERE \n    is_active = true\n    AND p.name NOT ILIKE '%Fresa Premium 250g%' AND p.price > 0 AND p.stock > 0 AND (\n        name ILIKE '%' || $1 || '%'\n        OR description ILIKE '%' || $1 || '%'\n        OR category_name ILIKE '%' || $1 || '%'\n    )\nORDER BY \n    CASE \n        WHEN is_featured = true THEN 0 \n        ELSE 1 \n    END,\n    name\nLIMIT 5;\n",
+      "options": {
+        "queryReplacement": "={{ $fromAI('termino_busqueda','Producto a buscar','string','aguacate') }}"
+      }
+    },
+    "id": "37802349-d077-4ffe-a17d-acbf9652535d",
+    "name": "TOOL_BuscarProductos",
+    "type": "n8n-nodes-base.postgresTool",
+    "position": [
+      2640,
+      1568
+    ],
+    "typeVersion": 2.6,
+    "credentials": {
+      "postgres": {
+        "id": "R6hc0vEZJhKQSi3G",
+        "name": "Mi PostgreSQL Docker"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "descriptionType": "manual",
+      "toolDescription": "Consultar el estado del cliente y su último pedido. Usarla cuando el cliente pregunte: ¿cómo va mi pedido? ¿tengo pedidos?",
+      "operation": "executeQuery",
+      "query": "SELECT \n  c.nombre,\n  c.telefono,\n  c.estado_conversacion as estado,\n  c.direccion,\n  c.pre_pedido as carrito,\n  c.updated_at as ultima_actualizacion,\n  CASE \n    WHEN c.estado_conversacion = 'PEDIDO_CONFIRMADO' THEN '✅ Tu pedido fue confirmado. Te contactaremos para coordinar la entrega.'\n    WHEN c.estado_conversacion = 'PEDIDO_ONLINE' THEN '🛒 Tu pedido de la tienda online está siendo procesado.'\n    WHEN c.estado_conversacion = 'EN_PEDIDO' THEN '📦 Tienes un pedido en proceso. ¿Deseas confirmarlo?'\n    WHEN c.estado_conversacion = 'ESCALADO' THEN '👤 Un asesor te contactará pronto.'\n    ELSE '💬 No encontré pedidos recientes. ¿Quieres hacer uno nuevo?'\n  END as mensaje_estado\nFROM clientes c\nWHERE c.telefono LIKE '%' || RIGHT('{{ $('1. Pre-procesamiento YCloud').first().json.from }}', 10) || '%'\nLIMIT 1;",
+      "options": {}
+    },
+    "id": "65cf129f-27f4-4962-afb3-139f78304515",
+    "name": "TOOL_ConsultarEstadoPedido",
+    "type": "n8n-nodes-base.postgresTool",
+    "position": [
+      2816,
+      1488
+    ],
+    "typeVersion": 2.6,
+    "credentials": {
+      "postgres": {
+        "id": "R6hc0vEZJhKQSi3G",
+        "name": "Mi PostgreSQL Docker"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "descriptionType": "manual",
+      "toolDescription": "USA SIEMPRE cuando el cliente pregunte por un producto. Obtiene tamaños, pesos y precios. Input: supabase_id del producto (búscalo en productosEncontrados).",
+      "operation": "executeQuery",
+      "query": "SELECT \n  v.variant_name as tipo,\n  v.variant_value as presentacion,\n  v.price as precio,\n  v.stock_quantity as stock,\n  p.name as producto\nFROM variantes_productos v\nJOIN productos_tienda p ON p.supabase_id = v.product_supabase_id\nWHERE p.id = $1\n  AND v.is_active = true\nORDER BY v.variant_name, v.price;",
+      "options": {
+        "queryReplacement": "={{ $fromAI('producto_id','ID numérico del producto','number',0) }}"
+      }
+    },
+    "id": "fb1e25a8-8f9b-417a-924f-5e713233d2f9",
+    "name": "TOOL_ObtenerVariantes",
+    "type": "n8n-nodes-base.postgresTool",
+    "position": [
+      2048,
+      1744
+    ],
+    "typeVersion": 2.6,
+    "credentials": {
+      "postgres": {
+        "id": "R6hc0vEZJhKQSi3G",
+        "name": "Mi PostgreSQL Docker"
+      }
+    }
+  },
+  {
+    "parameters": {
+      "descriptionType": "manual",
+      "toolDescription": "USA SIEMPRE cuando pregunten por precios, ¿cuánto vale?, ¿qué costo tiene? Input: nombre del producto o tamaño.",
+      "operation": "executeQuery",
+      "query": "SELECT name, price, description FROM productos_tienda WHERE is_active = true AND (name ILIKE '%' || $1 || '%' OR description ILIKE '%' || $1 || '%') ORDER BY price LIMIT 5;",
+      "options": {
+        "queryReplacement": "={{ $fromAI('termino','Producto','string','') }}"
+      }
+    },
+    "id": "d3c1a2b3-c4d5-4e6f-8a9b-0c1d2e3f4a5b",
+    "name": "TOOL_ConsultarPrecio",
+    "type": "n8n-nodes-base.postgresTool",
+    "position": [
+      2800,
+      1808
+    ],
+    "typeVersion": 2.6,
+    "credentials": {
+      "postgres": {
+        "id": "R6hc0vEZJhKQSi3G",
+        "name": "Mi PostgreSQL Docker"
+      }
+    }
+  }
+]
