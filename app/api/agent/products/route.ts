@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
     const rawLimit = searchParams.get('limit');
     const rawActiveOnly = searchParams.get('active_only');
 
-    const limit = Math.min(Math.max(parseInt(rawLimit || '5', 10), 1), 20);
+    const limit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
     const activeOnly = rawActiveOnly === null ? true : rawActiveOnly !== 'false';
 
     let supabase;
@@ -124,6 +124,7 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (search) {
+      // Search in product name, description, SKU, AND category name, AND variant values
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
     }
 
