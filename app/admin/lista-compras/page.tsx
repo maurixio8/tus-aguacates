@@ -1133,17 +1133,24 @@ export default function ListaComprasPage() {
 
   // Normalizar variante para agrupación consistente
   // Normalizar variante para agrupación consistente
-  const normalizeVariant = (variant: string | null): string => {
-    if (!variant || variant.trim() === '') return '';
+const normalizeVariant = (variant: string | null): string => {
+  if (!variant || variant.trim() === '') return '';
 
-    // Si podemos extraer un peso numérico, usar el peso en gramos como variante normalizada
-    // Esto agrupa "1000 gr" con "1 kg" automáticamente
-    const weightGrams = extractWeightFromVariant(variant);
-    if (weightGrams !== undefined) {
-      return `${weightGrams}grs`;
-    }
+  // Ignorar variantes que son solo nombres de campos, no valores reales
+  const lowerVariant = variant.trim().toLowerCase();
+  const fieldNames = ['cantidad', 'peso', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+  if (fieldNames.includes(lowerVariant)) {
+    return ''; // Tratar como sin variante
+  }
 
-    let normalized = variant.trim();
+  // Si podemos extraer un peso numérico, usar el peso en gramos como variante normalizada
+  // Esto agrupa "1000 gr" con "1 kg" automáticamente
+  const weightGrams = extractWeightFromVariant(variant);
+  if (weightGrams !== undefined) {
+    return `${weightGrams}grs`;
+  }
+
+  let normalized = variant.trim();
 
     // Eliminar acentos/diacríticos
     normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
