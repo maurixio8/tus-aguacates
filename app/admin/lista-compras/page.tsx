@@ -23,10 +23,14 @@ import {
   Sun,
   Moon,
   List,
-  Download
+  Download,
+  Search,
+  Route
 } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import SupplierView from './SupplierView';
+import { SUPPLIERS } from '@/lib/suppliers-config';
 
 interface OrderItem {
   id: string;
@@ -206,6 +210,8 @@ export default function ListaComprasPage() {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [copiedItems, setCopiedItems] = useState<Set<string>>(new Set());
   const [hidePurchased, setHidePurchased] = useState(false);
+  const [productSearch, setProductSearch] = useState('');
+  const [showSupplierView, setShowSupplierView] = useState(false);
 
   // Helper para formatear fecha LOCAL (no UTC)
   const formatLocalDate = (date: Date) => {
@@ -1799,6 +1805,98 @@ export default function ListaComprasPage() {
     );
   }, [orders, selectedOrders, catalogProducts]);
 
+  // Filtrar productos por búsqueda
+  const filteredProducts = useMemo(() => {
+    if (!productSearch.trim()) return groupedProducts;
+    const search = productSearch.toLowerCase().trim();
+    return groupedProducts.filter(p =>
+      p.product_name.toLowerCase().includes(search) ||
+      p.display_name.toLowerCase().includes(search) ||
+      (p.variant_name && p.variant_name.toLowerCase().includes(search)) ||
+      p.customer_breakdown.some(c => c.customer_name.toLowerCase().includes(search))
+    );
+  }, [groupedProducts, productSearch]);
+
+  // Progreso de compra
+  const purchaseProgress = useMemo(() => {
+    const total = groupedProducts.length;
+    if (total === 0) return { purchased: 0, total: 0, percentage: 0 };
+    const purchased = groupedProducts.filter(p => purchasedProducts.has(p.grouping_key)).length;
+    return { purchased, total, percentage: Math.round((purchased / total) * 100) };
+  }, [groupedProducts, purchasedProducts]);
+
+  // Productos por bodega (para SupplierView)
+  const productsBySupplier = useMemo(() => {
+    const supplierMap = new Map<string, {
+      products: typeof groupedProducts;
+      totalCost: number;
+      totalWeight: number;
+      customerCount: number;
+    }>();
+
+    // Inicializar todos los suppliers
+    SUPPLIERS.forEach(supplier => {
+      supplierMap.set(supplier.id, {
+        products: [],
+        totalCost: 0,
+        totalWeight: 0,
+        customerCount: 0
+      });
+    });
+
+    // Asignar productos a suppliers basado en keywords
+    const productSupplierMap: Record<string, string> = {
+      'aguacate': 'corabastos',
+      'hass': 'corabastos',
+      'injerto': 'corabastos',
+      'fresa': 'corabastos',
+      'arandano': 'corabastos',
+      'arándano': 'corabastos',
+      'banano': 'corabastos',
+      'tomate': 'corabastos',
+      'cebolla': 'corabastos',
+      'papa': 'corabastos',
+      'zanahoria': 'corabastos',
+      'limon': 'corabastos',
+      'mango': 'corabastos',
+      'uva': 'corabastos',
+      'durazno': 'corabastos',
+      'manzana': 'corabastos',
+      'kiwi': 'plaza',
+      'pera': 'plaza',
+      'ciruela': 'plaza',
+      'cereza': 'plaza',
+      'aceite': 'deposito',
+      'pasta de ajo': 'deposito',
+      'semillas': 'deposito',
+      'zumo': 'deposito',
+      'manzanilla': 'deposito',
+      'flor de jamaica': 'deposito',
+    };
+
+    filteredProducts.forEach(product => {
+      const name = product.product_name.toLowerCase();
+      let assignedSupplier = 'corabastos'; // default
+
+      for (const [keyword, supplierId] of Object.entries(productSupplierMap)) {
+        if (name.includes(keyword)) {
+          assignedSupplier = supplierId;
+          break;
+        }
+      }
+
+      const supplierData = supplierMap.get(assignedSupplier);
+      if (supplierData) {
+        supplierData.products.push(product);
+        supplierData.totalCost += product.unit_price * product.total_quantity;
+        supplierData.totalWeight += product.total_weight_grams || 0;
+        supplierData.customerCount = Math.max(supplierData.customerCount, product.customer_breakdown.length);
+      }
+    });
+
+    return supplierMap;
+  }, [filteredProducts]);
+
   // Estados para controlar la visibilidad de secciones (Compact View)
   const [showSalesSummary, setShowSalesSummary] = useState(false);
   const [showOrdersList, setShowOrdersList] = useState(false);
@@ -1991,33 +2089,39 @@ export default function ListaComprasPage() {
 
 
 
-  // Exportar a Excel (CSV)
+  // Exportar a Excel (CSV) mejorado
   const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
 
-    // Crear CSV con BOM para Excel
     const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Cliente', 'Origen Pedido', 'Dirección', 'Cantidad Cliente', 'Peso Cliente'];
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones', 'Pedidos IDs'];
 
     const rows: string[][] = [];
 
     groupedProducts.forEach(product => {
+      const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
+      const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
+      const orderIds = product.customer_breakdown.map(c => c.order_id).join('; ');
+      const totalCost = product.unit_price * product.total_quantity;
+
       // Primera fila con el total del producto
       rows.push([
         product.product_name,
         product.variant_name || 'Sin variante',
         product.total_quantity.toString(),
         product.total_weight_display || '-',
-        '--- TOTAL ---',
-        '',
-        '',
-        '',
-        ''
+        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
+        totalCost > 0 ? formatPrice(totalCost) : '-',
+        customerNames,
+        addresses,
+        orderIds
       ]);
 
       // Filas con el desglose por cliente
       product.customer_breakdown.forEach(customer => {
         rows.push([
+          '',
+          '',
           '',
           '',
           '',
@@ -2049,11 +2153,11 @@ export default function ListaComprasPage() {
   };
 
   const handleCopyAll = async () => {
-    const allText = groupedProducts.map(p =>
+    const allText = filteredProducts.map(p =>
       `${p.display_name}\t${p.total_weight_display || p.total_quantity}`
     ).join('\n');
     await navigator.clipboard.writeText(allText);
-    setCopiedItems(new Set(groupedProducts.map(p => p.grouping_key)));
+    setCopiedItems(new Set(filteredProducts.map(p => p.grouping_key)));
     setTimeout(() => setCopiedItems(new Set()), 2000);
   };
 
@@ -2330,7 +2434,26 @@ export default function ListaComprasPage() {
                 </div>
               )}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {/* Barra de búsqueda */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Buscar producto..."
+                      value={productSearch}
+                      onChange={(e) => setProductSearch(e.target.value)}
+                      className="pl-9 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none w-48"
+                    />
+                    {productSearch && (
+                      <button
+                        onClick={() => setProductSearch('')}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </div>
                   <button
                     onClick={handleCopyAll}
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
@@ -2355,6 +2478,17 @@ export default function ListaComprasPage() {
                     Exportar CSV
                   </button>
                   <button
+                    onClick={() => setShowSupplierView(!showSupplierView)}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${showSupplierView
+                      ? 'bg-orange-100 dark:bg-orange-900 border-orange-300 dark:border-orange-600 text-orange-700 dark:text-orange-200 hover:bg-orange-200 dark:hover:bg-orange-800'
+                      : 'bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600'
+                      }`}
+                    title="Ver ruta de compra por bodega"
+                  >
+                    <Route size={16} />
+                    {showSupplierView ? 'Ver Tabla' : 'Ruta de Compra'}
+                  </button>
+                  <button
                     onClick={toggleHidePurchased}
                     className={`flex items-center gap-2 px-4 py-2 border rounded-lg text-sm font-medium transition-colors ${hidePurchased
                       ? 'bg-purple-100 dark:bg-purple-900 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-200 hover:bg-purple-200 dark:hover:bg-purple-800'
@@ -2375,10 +2509,57 @@ export default function ListaComprasPage() {
                     )}
                   </button>
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedOrders.size} pedidos seleccionados
+                <div className="flex flex-col items-end gap-1">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedOrders.size} pedidos seleccionados
+                  </div>
+                  {/* Barra de progreso de compra */}
+                  {groupedProducts.length > 0 && (
+                    <div className="flex items-center gap-2 w-48">
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-purple-500 to-green-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${purchaseProgress.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                        {purchaseProgress.purchased}/{purchaseProgress.total} ({purchaseProgress.percentage}%)
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Vista de Ruta de Compra por Bodega */}
+              {showSupplierView && selectedOrders.size > 0 && (
+                <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 animate-fadeIn">
+                  <SupplierView
+                    productsBySupplier={productsBySupplier}
+                    selectedOrdersCount={selectedOrders.size}
+                    onCopySupplierList={async (supplierId: string) => {
+                      const supplierData = productsBySupplier.get(supplierId);
+                      if (!supplierData) return;
+                      const text = supplierData.products.map(p =>
+                        `${p.total_quantity}x ${p.display_name}${p.total_weight_display ? ` (${p.total_weight_display})` : ''}`
+                      ).join('\n');
+                      await copyToClipboard(text, `supplier-${supplierId}`);
+                    }}
+                    onCopyAllLists={async () => {
+                      const allText = Array.from(productsBySupplier.entries())
+                        .filter(([, data]) => data.products.length > 0)
+                        .map(([id, data]) => {
+                          const supplier = SUPPLIERS.find(s => s.id === id);
+                          return `📍 ${supplier?.name || id}:\n${data.products.map(p =>
+                            `  ${p.total_quantity}x ${p.display_name}`
+                          ).join('\n')}`;
+                        }).join('\n\n');
+                      await navigator.clipboard.writeText(allText);
+                    }}
+                    copiedItems={copiedItems}
+                    formatPrice={formatPrice}
+                  />
+                </div>
+              )}
 
               <div className="overflow-x-auto">
                 <table className="w-full">
@@ -2396,7 +2577,7 @@ export default function ListaComprasPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {groupedProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
+                    {filteredProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
                       const isExpanded = expandedProducts.has(product.grouping_key);
                       const isPurchased = purchasedProducts.has(product.grouping_key);
                       const categoryStyle = getCategoryStyle(product.product_name);
@@ -2623,11 +2804,11 @@ export default function ListaComprasPage() {
               </div>
             </div>
             {/* Estado cuando hay pedidos seleccionados pero sin productos */}
-            {selectedOrders.size > 0 && groupedProducts.length === 0 && (
+            {selectedOrders.size > 0 && filteredProducts.length === 0 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
                 <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
                 <p className="text-yellow-800 font-medium">
-                  Los pedidos seleccionados no contienen productos
+                  {productSearch ? 'No se encontraron productos que coincidan con la búsqueda' : 'Los pedidos seleccionados no contienen productos'}
                 </p>
               </div>
             )}

@@ -1,6 +1,7 @@
 // Utility to generate professional order summaries for WhatsApp
 // Supports both registered orders and guest orders
 import type { AdminOrderType } from '@/lib/orders/operational';
+import { formatAddressToString } from './addressFormatter';
 
 export interface OrderItem {
   id: string;
@@ -239,38 +240,8 @@ export function generateOrderSummary(order: Order): string {
   }
 
   // Generate delivery address - extract complete address for guest orders
-  let deliveryAddress = order.delivery_address || 'N/A';
-
-  if (!order.delivery_address && order.shipping_address) {
-    if (typeof order.shipping_address === 'string') {
-      // Try to parse JSON string
-      try {
-        const parsed = JSON.parse(order.shipping_address);
-        // Build complete address with all fields
-        const parts = [];
-        if (parsed.street_address || parsed.address) parts.push(parsed.street_address || parsed.address);
-        if (parsed.neighborhood || parsed.barrio) parts.push(parsed.neighborhood || parsed.barrio);
-        if (parsed.city) parts.push(parsed.city);
-        if (parsed.state || parsed.department) parts.push(parsed.state || parsed.department);
-        if (parsed.postal_code) parts.push(`CP: ${parsed.postal_code}`);
-        if (parsed.additional_info || parsed.references) parts.push(`Ref: ${parsed.additional_info || parsed.references}`);
-        deliveryAddress = parts.join(', ') || order.shipping_address;
-      } catch {
-        deliveryAddress = order.shipping_address;
-      }
-    } else {
-      // It's already an object - build complete address
-      const addr = order.shipping_address;
-      const parts = [];
-      if (addr.street_address || addr.address) parts.push(addr.street_address || addr.address);
-      if ((addr as any).neighborhood || (addr as any).barrio) parts.push((addr as any).neighborhood || (addr as any).barrio);
-      if (addr.city) parts.push(addr.city);
-      if (addr.state || (addr as any).department) parts.push(addr.state || (addr as any).department);
-      if ((addr as any).postal_code) parts.push(`CP: ${(addr as any).postal_code}`);
-      if ((addr as any).additional_info || (addr as any).references) parts.push(`Ref: ${(addr as any).additional_info || (addr as any).references}`);
-      deliveryAddress = parts.join(', ') || (addr.address || addr.street_address || 'N/A');
-    }
-  }
+  const extractedAddress = formatAddressToString(order.shipping_address) || order.delivery_address;
+  let deliveryAddress = extractedAddress || 'N/A';
 
   // Build complete message with warm, personal tone
   const message = `🥑 *TUS AGUACATES*

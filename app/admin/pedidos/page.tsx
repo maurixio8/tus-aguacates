@@ -30,6 +30,7 @@ import {
   type AdminOrderType,
 } from '@/lib/orders/operational';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
+import { formatAddressToString } from '@/utils/addressFormatter';
 import EditOrderModal from '@/components/admin/EditOrderModal';
 import { Edit } from 'lucide-react';
 
@@ -190,16 +191,6 @@ interface OrderStats {
   delivered: number;
   cancelled: number;
   total: number;
-};
-
-interface OrderStats {
-  pending: number;
-  confirmed: number;
-  processing: number;
-  shipped: number;
-  delivered: number;
-  cancelled: number;
-  total: number;
 }
 
 export default function OrdersPage() {
@@ -249,41 +240,10 @@ export default function OrdersPage() {
     }
   };
 
-  // Extraer dirección como texto plano
+  // Extraer dirección como texto plano (usa utilidad compartida)
   const getAddressText = (order: Order): string => {
     const addr = order.shipping_address || order.delivery_address;
-    if (!addr) return '';
-
-    if (typeof addr === 'string') {
-      try {
-        const parsed = JSON.parse(addr);
-        return getAddressFromObject(parsed);
-      } catch {
-        return addr;
-      }
-    }
-
-    return getAddressFromObject(addr);
-  };
-
-  const getAddressFromObject = (addr: any): string => {
-    if (!addr || typeof addr !== 'object') return '';
-    const streetAddress = addr.street_address || addr.address || addr.street || '';
-    const neighborhood = addr.neighborhood || addr.barrio || addr.locality || '';
-    const city = addr.city || '';
-    const state = addr.state || addr.department || '';
-    const postalCode = addr.postal_code || addr.zip_code || '';
-    const additionalInfo = addr.additional_info || addr.references || addr.referencias || '';
-    
-    const parts: string[] = [];
-    if (streetAddress) parts.push(streetAddress);
-    if (neighborhood) parts.push(neighborhood);
-    if (city) parts.push(city);
-    if (state) parts.push(state);
-    if (postalCode) parts.push(`CP: ${postalCode}`);
-    if (additionalInfo) parts.push(`Ref: ${additionalInfo}`);
-    
-    return parts.join(', ');
+    return formatAddressToString(addr);
   };
 
   // Generar resumen del pedido para EMPAQUE (copiar al portapapeles)
@@ -1357,23 +1317,6 @@ export default function OrdersPage() {
 
                 const orderItems = extractItemsFromOrderData(order);
                 const customerInfo = getCustomerInfo(order);
-
-                // Debug log
-                console.log(`📦 [DEBUG] Pedido ${order.order_number}:`, {
-                  id: order.id,
-                  orderItemsCount: orderItems.length,
-                  orderItems: orderItems.map((item: any) => ({
-                    id: item.id,
-                    product_id: item.product_id,
-                    quantity: item.quantity,
-                    has_snapshot: !!item.product_snapshot,
-                    snapshot_name: item.product_snapshot?.name,
-                    has_products: !!item.products,
-                    products_name: item.products?.name,
-                    unit_price: item.unit_price,
-                    price: item.price
-                  }))
-                });
 
                 const normalizedStatus = normalizeOrderStatus(order.status);
                 const normalizedPaymentStatus = order.payment_status
