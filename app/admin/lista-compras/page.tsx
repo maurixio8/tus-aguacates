@@ -2745,18 +2745,16 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                             )}
                           </td>
 
-                          {/* Columna 3: Totales */}
-                          <td className="px-6 py-4 whitespace-nowrap text-right align-top">
-                            <div className="flex flex-col items-end gap-1">
-                {(() => {
-                  const boxInfo = formatBoxQuantity(product.display_name, product.total_quantity);
-                  return boxInfo ? (
+              {/* Columna 3: Totales */}
+              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
+                <div className="flex flex-col items-end gap-1">
+                  {formatBoxQuantity(product.display_name, product.total_quantity) ? (
                     <>
                       <p className="text-xl font-bold text-green-600 dark:text-green-400">
                         {product.total_quantity} cajas
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        ({boxInfo.totalUnits} unid. = {product.total_quantity} × {boxInfo.totalUnits / product.total_quantity})
+                        ({formatBoxQuantity(product.display_name, product.total_quantity)?.totalUnits} unid.)
                       </p>
                     </>
                   ) : product.total_weight_display ? (
@@ -2775,25 +2773,24 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                       <p className="text-xl font-bold text-green-600 dark:text-green-400">
                         {product.total_physical_units}
                       </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
-                                  </p>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                                    {product.total_quantity}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    unid.
-                                  </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {product.total_quantity}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        unid.
+                      </p>
                     </>
                   )}
-                })()}
-              </div>
-            </td>
-                        </tr>
-                      );
+                </div>
+              </td>
+            </tr>
+          );
                     })}
                   </tbody>
                 </table>
