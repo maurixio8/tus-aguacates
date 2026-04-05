@@ -1721,18 +1721,16 @@ export default function ListaComprasPage() {
             
             let displayName = displayBaseName;
 
-            // Use current catalog variant_name if available (e.g., "Peso", "Cantidad", "Volumen")
-            // instead of historical "Presentación"
-            const displayVariantName = variantResolution.currentVariantName || null;
+                // Use current catalog variant_name if available (e.g., "Peso", "Cantidad", "Volumen")
+                // instead of historical "Presentación"
+                const displayVariantName = variantResolution.currentVariantName || null;
 
-            // Si hay variante separada, agregarla con el nombre actual del catálogo
-            if (variantDisplay) {
-              if (displayVariantName && displayVariantName !== 'Presentación') {
-                displayName = `${displayBaseName} (${displayVariantName}: ${variantDisplay})`;
-              } else {
-                displayName = `${displayBaseName} (${variantDisplay})`;
-              }
-            }
+                // Si hay variante, agregarla al nombre a mostrar
+                // NOTA: No incluir el nombre del campo ("Cantidad:", "Peso:") porque se ve redundante
+                // Solo mostrar el valor de la variante entre paréntesis
+                if (variantDisplay) {
+                  displayName = `${displayBaseName} (${variantDisplay})`;
+                }
 
             // Calcular peso total inicial
             const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
