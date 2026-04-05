@@ -1834,7 +1834,6 @@ export default function ListaComprasPage() {
       customerCount: number;
     }>();
 
-    // Inicializar todos los suppliers
     SUPPLIERS.forEach(supplier => {
       supplierMap.set(supplier.id, {
         products: [],
@@ -1844,11 +1843,9 @@ export default function ListaComprasPage() {
       });
     });
 
-    // Asignar productos a suppliers basado en keywords
     const productSupplierMap: Record<string, string> = {
       'aguacate': 'corabastos',
       'hass': 'corabastos',
-      'injerto': 'corabastos',
       'fresa': 'corabastos',
       'arandano': 'corabastos',
       'arándano': 'corabastos',
@@ -1876,15 +1873,13 @@ export default function ListaComprasPage() {
 
     filteredProducts.forEach(product => {
       const name = product.product_name.toLowerCase();
-      let assignedSupplier = 'corabastos'; // default
-
+      let assignedSupplier = 'corabastos';
       for (const [keyword, supplierId] of Object.entries(productSupplierMap)) {
         if (name.includes(keyword)) {
           assignedSupplier = supplierId;
           break;
         }
       }
-
       const supplierData = supplierMap.get(assignedSupplier);
       if (supplierData) {
         supplierData.products.push(product);
@@ -2089,7 +2084,7 @@ export default function ListaComprasPage() {
 
 
 
-  // Exportar a Excel (CSV) mejorado
+  // Exportar a Excel (CSV)
   const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
 
@@ -2104,7 +2099,6 @@ export default function ListaComprasPage() {
       const orderIds = product.customer_breakdown.map(c => c.order_id).join('; ');
       const totalCost = product.unit_price * product.total_quantity;
 
-      // Primera fila con el total del producto
       rows.push([
         product.product_name,
         product.variant_name || 'Sin variante',
@@ -2117,7 +2111,6 @@ export default function ListaComprasPage() {
         orderIds
       ]);
 
-      // Filas con el desglose por cliente
       product.customer_breakdown.forEach(customer => {
         rows.push([
           '',
@@ -2140,7 +2133,6 @@ export default function ListaComprasPage() {
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
 
-    // Crear y descargar archivo
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -2448,7 +2440,7 @@ export default function ListaComprasPage() {
                     {productSearch && (
                       <button
                         onClick={() => setProductSearch('')}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                       >
                         ×
                       </button>
@@ -2458,7 +2450,7 @@ export default function ListaComprasPage() {
                     onClick={handleCopyAll}
                     className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
                   >
-                    {copiedItems.size === groupedProducts.length ? (
+                    {copiedItems.size === filteredProducts.length && filteredProducts.length > 0 ? (
                       <>
                         <Check size={16} className="text-green-600 dark:text-green-400" />
                         <span className="text-green-600 dark:text-green-400">Copiados</span>
@@ -2542,7 +2534,7 @@ export default function ListaComprasPage() {
                       const text = supplierData.products.map(p =>
                         `${p.total_quantity}x ${p.display_name}${p.total_weight_display ? ` (${p.total_weight_display})` : ''}`
                       ).join('\n');
-                      await copyToClipboard(text, `supplier-${supplierId}`);
+                      await navigator.clipboard.writeText(text);
                     }}
                     onCopyAllLists={async () => {
                       const allText = Array.from(productsBySupplier.entries())
@@ -2576,8 +2568,8 @@ export default function ListaComprasPage() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
                       const isExpanded = expandedProducts.has(product.grouping_key);
                       const isPurchased = purchasedProducts.has(product.grouping_key);
                       const categoryStyle = getCategoryStyle(product.product_name);
@@ -2803,15 +2795,15 @@ export default function ListaComprasPage() {
                 </table>
               </div>
             </div>
-            {/* Estado cuando hay pedidos seleccionados pero sin productos */}
-            {selectedOrders.size > 0 && filteredProducts.length === 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
-                <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
-                <p className="text-yellow-800 font-medium">
-                  {productSearch ? 'No se encontraron productos que coincidan con la búsqueda' : 'Los pedidos seleccionados no contienen productos'}
-                </p>
-              </div>
-            )}
+              {/* Estado cuando hay pedidos seleccionados pero sin productos */}
+              {selectedOrders.size > 0 && filteredProducts.length === 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center">
+                  <Package className="w-12 h-12 text-yellow-400 mx-auto mb-3" />
+                  <p className="text-yellow-800 font-medium">
+                    {productSearch ? 'No se encontraron productos que coincidan con la búsqueda' : 'Los pedidos seleccionados no contienen productos'}
+                  </p>
+                </div>
+              )}
           </>
         )}
     </div >
