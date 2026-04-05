@@ -2153,29 +2153,38 @@ export default function ListaComprasPage() {
     setTimeout(() => setCopiedItems(new Set()), 2000);
   };
 
-  // Extraer unidades por caja del nombre del producto
-  // Ej: "Caja de 24 unidades hass mediano" -> 24
-  // Ej: "caja de (24 unidades)" -> 24
-  const getUnitsPerBox = (productName: string): number | null => {
-    const name = productName.toLowerCase();
-    // Patrón 1: "caja de 24 unidades" o "caja de (24 unidades)"
-    const match = name.match(/caja\s+(?:de\s+)?\(?\s*(\d+)\s*\)?\s*unidad/i);
-    return match ? parseInt(match[1], 10) : null;
-  };
+// Extraer unidades por caja del nombre del producto
+// Ej: "Caja de 24 unidades hass mediano" -> 24
+// Ej: "Caja de 12 unidades Premium" -> 12
+// Ej: "caja de (24 unidades)" -> 24
+const getUnitsPerBox = (productName: string): number | null => {
+  const name = productName.toLowerCase();
+  
+  // Patrón 1: "caja de 24 unidades" o "caja de (24 unidades)"
+  const match = name.match(/caja\s+(?:de\s+)?\(?\s*(\d+)\s*\)?\s*unidad/i);
+  if (match) return parseInt(match[1], 10);
+  
+  // Patrón 2: "caja 24" sin "unidades"
+  const match2 = name.match(/caja\s+(\d+)/i);
+  if (match2) return parseInt(match2[1], 10);
+  
+  return null;
+};
 
-  // Calcular cajas reales desde cantidad total (detectando si se guardó mal)
-  // Si quantity parece ser unidades (multiplo del tamaño de caja), convertir a cajas
-  const calculateBoxCount = (productName: string, totalQuantity: number): number => {
-    const unitsPerBox = getUnitsPerBox(productName);
-    if (!unitsPerBox) return totalQuantity;
-    
-    // Si la cantidad es múltiplo exacto del tamaño de caja, probablemente son unidades
-    // Ej: 144 = 6 * 24, entonces eran 6 cajas guardadas como 144 unidades
-    if (totalQuantity % unitsPerBox === 0 && totalQuantity > unitsPerBox) {
-      return totalQuantity / unitsPerBox;
-    }
-    return totalQuantity;
+// Mostrar cantidad como cajas con información de unidades
+// NOTA: Las cantidades en pedidos YA son número de cajas (ej: 2 cajas = cantidad 2)
+// NO convertir unidades a cajas porque las cantidades ya son cajas
+const formatBoxQuantity = (productName: string, boxCount: number): { display: string; totalUnits: number } | null => {
+  const unitsPerBox = getUnitsPerBox(productName);
+  if (!unitsPerBox) return null;
+  
+  // boxCount ya es el número de cajas, no convertir
+  const totalUnits = boxCount * unitsPerBox;
+  return {
+    display: `${boxCount} cajas (${totalUnits} unid.)`,
+    totalUnits
   };
+};
 
   const handleDownloadCSV = exportToExcel;
 
@@ -2713,21 +2722,16 @@ export default function ListaComprasPage() {
                                           </a>
                                         </div>
                                       </div>
-                                      <div className="text-right flex-shrink-0">
-                                        <p className="font-bold text-gray-900 dark:text-white text-sm">
-                                        {getUnitsPerBox(product.display_name) ? (
-                                          (() => {
-                                            const boxCount = calculateBoxCount(product.display_name, customer.quantity);
-                                            const unitsPerBox = getUnitsPerBox(product.display_name)!;
-                                            return `${boxCount} cajas (${boxCount * unitsPerBox} unid.)`;
-                                          })()
-                                        ) : (
-                                          `${customer.quantity}x`
-                                        )}
-                                        </p>
-                                        <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                                          {customer.variant_name || 'Unidad'}
-                                        </p>
+                  <div className="text-right flex-shrink-0">
+                    <p className="font-bold text-gray-900 dark:text-white text-sm">
+                      {(() => {
+                        const boxInfo = formatBoxQuantity(product.display_name, customer.quantity);
+                        return boxInfo ? boxInfo.display : `${customer.quantity}x`;
+                      })()}
+                    </p>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
+                      {customer.variant_name || 'Unidad'}
+                    </p>
                                       </div>
                                     </div>
                                   );
@@ -2739,39 +2743,33 @@ export default function ListaComprasPage() {
                           {/* Columna 3: Totales */}
                           <td className="px-6 py-4 whitespace-nowrap text-right align-top">
                             <div className="flex flex-col items-end gap-1">
-                              {getUnitsPerBox(product.display_name) ? (
-                                <>
-                                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                                    {(() => {
-                                      const boxCount = calculateBoxCount(product.display_name, product.total_quantity);
-                                      return `${boxCount} cajas`;
-                                    })()}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                    {(() => {
-                                      const boxCount = calculateBoxCount(product.display_name, product.total_quantity);
-                                      const unitsPerBox = getUnitsPerBox(product.display_name)!;
-                                      const totalUnits = boxCount * unitsPerBox;
-                                      return `(${totalUnits} unid. = ${boxCount} × ${unitsPerBox})`;
-                                    })()}
-                                  </p>
-                                </>
-                              ) : product.total_weight_display ? (
-                                <>
-                                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                                    {product.total_weight_display}
-                                  </p>
-                                  {product.total_in_smallest_units && product.smallest_weight_grams && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                                      ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
-                                    </p>
-                                  )}
-                                </>
-                              ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
-                                <>
-                                  <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                                    {product.total_physical_units}
-                                  </p>
+                {(() => {
+                  const boxInfo = formatBoxQuantity(product.display_name, product.total_quantity);
+                  return boxInfo ? (
+                    <>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {product.total_quantity} cajas
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                        ({boxInfo.totalUnits} unid. = {product.total_quantity} × {boxInfo.totalUnits / product.total_quantity})
+                      </p>
+                    </>
+                  ) : product.total_weight_display ? (
+                    <>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {product.total_weight_display}
+                      </p>
+                      {product.total_in_smallest_units && product.smallest_weight_grams && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                          ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
+                        </p>
+                      )}
+                    </>
+                  ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
+                    <>
+                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                        {product.total_physical_units}
+                      </p>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
                                     {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
                                   </p>
@@ -2784,10 +2782,11 @@ export default function ListaComprasPage() {
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
                                     unid.
                                   </p>
-                                </>
-                              )}
-                            </div>
-                          </td>
+                    </>
+                  )}
+                })()}
+              </div>
+            </td>
                         </tr>
                       );
                     })}
