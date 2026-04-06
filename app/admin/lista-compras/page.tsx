@@ -2653,31 +2653,48 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
 
               {isExpanded && (
                 <div className="space-y-2 pl-2 border-l-2 border-gray-100 dark:border-gray-700">
-                  {product.customer_breakdown.map((customer, idx) => (
-                    <div key={`${customer.order_id}-${idx}`} className="flex items-center gap-2">
-                      <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                  {product.customer_breakdown.map((customer, idx) => {
+                    // Filtrar nombres de campo de variantes
+                    const fieldNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+                    const variantValue = customer.variant_name?.toLowerCase().trim() || '';
+                    const isFieldName = fieldNames.includes(variantValue);
+                    const showVariant = customer.variant_name && !isFieldName;
+                    const pricePerUnit = product.unit_price || 0;
+                    
+                    return (
+                      <div key={`${customer.order_id}-${idx}`} className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                          <User className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium text-gray-900 dark:text-white text-xs">
+                            {customer.customer_name}
+                          </span>
+                          <span className="text-gray-400 mx-1">·</span>
+                          <span className="text-xs text-green-700 dark:text-green-400 font-semibold">
+                            {customer.quantity}x
+                          </span>
+                          {showVariant && (
+                            <>
+                              <span className="text-gray-400 mx-1">·</span>
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {customer.variant_name}
+                              </span>
+                            </>
+                          )}
+                          {pricePerUnit > 0 && (
+                            <>
+                              <span className="text-gray-400 mx-1">·</span>
+                              <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
+                                ${pricePerUnit.toLocaleString('es-CO')}
+                              </span>
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-medium text-gray-900 dark:text-white text-xs">
-                          {customer.customer_name}
-                        </span>
-                        <span className="text-gray-400 mx-1">·</span>
-                        <span className="text-xs text-green-700 dark:text-green-400 font-semibold">
-                          {customer.quantity}x
-                        </span>
-                        {customer.variant_name && (
-                          <>
-                            <span className="text-gray-400 mx-1">·</span>
-                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                              {customer.variant_name}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
               )}
             </td>
 
