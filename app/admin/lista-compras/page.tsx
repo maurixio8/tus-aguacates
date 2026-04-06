@@ -853,22 +853,28 @@ export default function ListaComprasPage() {
       snapshot?.variant_value ||
       null;
 
-    // Handle case where variant_name contains both type and value (e.g., "Presentacion: 500 gr")
-    // This happens in some historical orders where the format was stored incorrectly
-    if (variantType && variantType.includes(':') && !variantValue) {
-      const parts = variantType.split(':').map((s: string) => s.trim());
-      if (parts.length === 2) {
-        variantType = parts[0]; // e.g., "Presentacion"
-        variantValue = parts[1]; // e.g., "500 gr"
-      }
+  // Handle case where variant_name contains both type and value (e.g., "Presentacion: 500 gr")
+  // This happens in some historical orders where the format was stored incorrectly
+  if (variantType && variantType.includes(':') && !variantValue) {
+    const parts = variantType.split(':').map((s: string) => s.trim());
+    if (parts.length === 2) {
+      variantType = parts[0]; // e.g., "Presentacion"
+      variantValue = parts[1]; // e.g., "500 gr"
     }
+  }
 
-    return {
-      variantType,
-      variantValue,
-      variantDisplay: variantValue || variantType || null,
-    };
+  // Solo mostrar variantDisplay si tiene un valor real (no solo el nombre del campo)
+  // Los nombres de campos como "Peso", "Cantidad", "Presentación" no son valores útiles
+  const fieldNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+  const isFieldName = variantValue && fieldNames.includes(variantValue.toLowerCase().trim());
+  const usefulVariantValue = isFieldName ? null : variantValue;
+
+  return {
+    variantType,
+    variantValue,
+    variantDisplay: usefulVariantValue || null, // Solo el valor, no el nombre del campo
   };
+};
 
   // Extraer items de order_data si no hay order_items
   // Extraer items de order_data si no hay order_items
@@ -1584,7 +1590,8 @@ const normalizeVariant = (variant: string | null): string => {
           }
 
           const variantResolution = resolveVariantForProduct(productName, item);
-          if (variantResolution.variantDisplay) {
+          // Solo sobrescribir si resolveVariantForProduct encontró algo útil
+          if (variantResolution.variantDisplay && variantResolution.variantDisplay !== 'Peso' && variantResolution.variantDisplay !== 'Cantidad') {
             variantDisplay = variantResolution.variantDisplay;
           }
 
