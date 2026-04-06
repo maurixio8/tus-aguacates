@@ -1742,12 +1742,12 @@ const normalizeVariant = (variant: string | null): string => {
               else if (lower.includes('paquete')) physicalUnitName = 'paquete';
             }
 
-            productMap.set(groupingKey, {
-              grouping_key: groupingKey,
-              product_name: displayBaseName,
-              variant_name: displayVariantName || variantDisplay || undefined,
-              variant_value: variantDisplay || undefined,
-              display_name: displayName,
+              productMap.set(groupingKey, {
+                grouping_key: groupingKey,
+                product_name: displayBaseName,
+                variant_name: variantDisplay || undefined,
+                variant_value: variantDisplay || undefined,
+                display_name: displayName,
               unit_price: unitPrice,
               total_quantity: item.quantity,
               // Siempre guardar unidades físicas si hay nombre de unidad (bandeja, etc.)
