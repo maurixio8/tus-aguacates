@@ -2644,66 +2644,34 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                               </button>
                             </div>
 
-                            {isExpanded && (
-                              <div className="space-y-3 pl-2 border-l-2 border-gray-100 dark:border-gray-700">
-                                {product.customer_breakdown.map((customer, idx) => {
-                                  const addressCopyId = `addr-${customer.order_id}-${idx}`;
-                                  const summaryCopyId = `sum-${customer.order_id}-${idx}`;
-                                  return (
-                                    <div key={`${customer.order_id}-${idx}`} className="flex items-start gap-3">
-                                      <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                        <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                                      </div>
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-gray-900 dark:text-white text-xs">
-                    {customer.customer_name}
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderTypeBadgeClass(customer.order_type)}`}>
-                      {getOrderTypeLabel(customer.order_type)}
-                    </span>
-                    <span className="text-xs font-medium text-green-700 dark:text-green-400">
-                      {customer.quantity}x
-                    </span>
-                    {customer.variant_name && (
-                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                        {customer.variant_name}
-                      </span>
-                    )}
-                  </div>
-                  {customer.customer_address && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">
-                      {customer.customer_address}
-                    </p>
-                  )}
-                                        <div className="flex gap-2 mt-1.5 flex-wrap">
-                                          {customer.customer_address && (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                copyToClipboard(customer.customer_address!, addressCopyId);
-                                              }}
-                                              className={`px-1.5 py-0.5 text-[10px] rounded flex items-center gap-1 transition-colors ${copiedItems.has(addressCopyId)
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-                                                }`}
-                                            >
-                                              {copiedItems.has(addressCopyId) ? <Check size={10} /> : <Copy size={10} />}
-                                              {copiedItems.has(addressCopyId) ? 'Copiado' : 'Dirección'}
-                                            </button>
-                                          )}
-                                          {customer.order_items && customer.order_items.length > 0 && (
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                copyToClipboard(generateOrderSummary(customer), summaryCopyId);
-                                              }}
-                                              className={`px-1.5 py-0.5 text-[10px] rounded flex items-center gap-1 transition-colors ${copiedItems.has(summaryCopyId)
-                                                ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-400'
-                                                : 'bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-800/50'
-                                                }`}
-                                            >
-                                              {copiedItems.has(summaryCopyId) ? <Check size={10} /> : <ClipboardList size={10} />}
+              {isExpanded && (
+                <div className="space-y-2 pl-2 border-l-2 border-gray-100 dark:border-gray-700">
+                  {product.customer_breakdown.map((customer, idx) => (
+                    <div key={`${customer.order_id}-${idx}`} className="flex items-center gap-2">
+                      <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="font-medium text-gray-900 dark:text-white text-xs">
+                          {customer.customer_name}
+                        </span>
+                        <span className="text-gray-400 mx-1">·</span>
+                        <span className="text-xs text-green-700 dark:text-green-400 font-semibold">
+                          {customer.quantity}x
+                        </span>
+                        {customer.variant_name && (
+                          <>
+                            <span className="text-gray-400 mx-1">·</span>
+                            <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                              {customer.variant_name}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
                                               {copiedItems.has(summaryCopyId) ? 'Copiado' : 'Resumen'}
                                             </button>
                                           )}
