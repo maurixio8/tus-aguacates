@@ -2669,43 +2669,12 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                ))}
+              </div>
               )}
-                                              {copiedItems.has(summaryCopyId) ? 'Copiado' : 'Resumen'}
-                                            </button>
-                                          )}
-                                          <a
-                                            href={`/admin/pedidos?id=${customer.order_id}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="px-1.5 py-0.5 text-[10px] rounded flex items-center gap-1 transition-colors bg-purple-100 text-purple-600 hover:bg-purple-200 dark:bg-purple-900/50 dark:text-purple-400 dark:hover:bg-purple-800/50"
-                                          >
-                                            <ExternalLink size={10} />
-                                            Pedido
-                                          </a>
-                                        </div>
-                                      </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="font-bold text-gray-900 dark:text-white text-sm">
-                      {(() => {
-                        const boxInfo = formatBoxQuantity(product.display_name, customer.quantity);
-                        return boxInfo ? boxInfo.display : `${customer.quantity}x`;
-                      })()}
-                    </p>
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400">
-                      {customer.variant_name || 'Unidad'}
-                    </p>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </td>
+            </td>
 
-              {/* Columna 3: Totales */}
+            {/* Columna 2: Desglose / Clientes */}
               <td className="px-6 py-4 whitespace-nowrap text-right align-top">
                 <div className="flex flex-col items-end gap-1">
                   {formatBoxQuantity(product.display_name, product.total_quantity) ? (
