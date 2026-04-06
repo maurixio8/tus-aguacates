@@ -1707,37 +1707,21 @@ const normalizeVariant = (variant: string | null): string => {
                 existing.total_in_smallest_units = Math.ceil(existing.total_weight_grams / existing.smallest_weight_grams);
               }
             }
-          } else {
-            // Crear nombre a mostrar (usando nombre normalizado)
-            let displayBaseName = variantResolution.catalogDisplayName || normalizedName;
-            
-            // Fallback: if catalog lookup failed (displayBaseName === normalizedName),
-            // try to use alias for display
-            if (displayBaseName === normalizedName) {
-              const stripAccents = (str: string) =>
-                str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-              const normalizedForAlias = stripAccents(productName)
-                .replace(/\s*\([^)]*\)\s*$/, '').trim()
-                .replace(/\s*\d+\s*(grs?|gramos?|kg|kilos?|unidades?|bandeja?s?)\b.*$/i, '').trim()
-                .replace(/\s+/g, ' ');
-              const alias = PRODUCT_NAME_ALIASES[normalizedForAlias];
-              if (alias) {
-                displayBaseName = alias;
-              }
-            }
-            
-            let displayName = displayBaseName;
+        } else {
+          // Usar el nombre del producto DEL PEDIDO, no del catálogo
+          // El catálogo puede tener nombres diferentes que no corresponden al pedido real
+          let displayBaseName = productName;
 
-                // Use current catalog variant_name if available (e.g., "Peso", "Cantidad", "Volumen")
-                // instead of historical "Presentación"
-                const displayVariantName = variantResolution.currentVariantName || null;
+          // Solo normalizar el nombre (quitar acentos, minusculas para comparación)
+          // Pero mantener el nombre original para mostrar
 
-                // Si hay variante, agregarla al nombre a mostrar
-                // NOTA: No incluir el nombre del campo ("Cantidad:", "Peso:") porque se ve redundante
-                // Solo mostrar el valor de la variante entre paréntesis
-                if (variantDisplay) {
-                  displayName = `${displayBaseName} (${variantDisplay})`;
-                }
+          let displayName = displayBaseName;
+
+          // Si hay variante con valor real, agregarla
+          // IMPORTANTE: Solo mostrar si la variante tiene un valor útil (no "Peso", "Cantidad", etc.)
+          if (variantDisplay && variantDisplay !== 'Peso' && variantDisplay !== 'Cantidad' && variantDisplay !== 'Volumen' && variantDisplay !== 'Presentación') {
+            displayName = `${displayBaseName} (${variantDisplay})`;
+          }
 
             // Calcular peso total inicial
             const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
@@ -2670,20 +2654,28 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                                       <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                                         <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                                       </div>
-                                      <div className="min-w-0 flex-1">
-                                        <p className="font-semibold text-gray-900 dark:text-white text-xs">
-                                          {customer.customer_name}
-                                        </p>
-                                        <div className="mt-1">
-                                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderTypeBadgeClass(customer.order_type)}`}>
-                                            {getOrderTypeLabel(customer.order_type)}
-                                          </span>
-                                        </div>
-                                        {customer.customer_address && (
-                                          <p className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">
-                                            {customer.customer_address}
-                                          </p>
-                                        )}
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-gray-900 dark:text-white text-xs">
+                    {customer.customer_name}
+                  </p>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${getOrderTypeBadgeClass(customer.order_type)}`}>
+                      {getOrderTypeLabel(customer.order_type)}
+                    </span>
+                    <span className="text-xs font-medium text-green-700 dark:text-green-400">
+                      {customer.quantity}x
+                    </span>
+                    {customer.variant_name && (
+                      <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                        {customer.variant_name}
+                      </span>
+                    )}
+                  </div>
+                  {customer.customer_address && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 break-words mt-0.5">
+                      {customer.customer_address}
+                    </p>
+                  )}
                                         <div className="flex gap-2 mt-1.5 flex-wrap">
                                           {customer.customer_address && (
                                             <button
