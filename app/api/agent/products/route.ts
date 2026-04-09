@@ -150,11 +150,21 @@ export async function GET(request: NextRequest) {
       .limit(limit);
 
     if (search) {
-      // Use normalized search for broader matching, then rank results
+      // Search with both original and accent-normalized term for broader matching
       const normalizedSearch = normalizeAccents(search);
-      
-      // Match against name and description (normalized comparison will happen in scoring)
-      query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+      const orConditions = [
+        `name.ilike.%${search}%`,
+        `description.ilike.%${search}%`,
+        `sku.ilike.%${search}%`,
+      ];
+      // Also search with normalized version if different (e.g., "limon" → "limon" matches "Limón")
+      if (normalizedSearch !== search.toLowerCase()) {
+        orConditions.push(
+          `name.ilike.%${normalizedSearch}%`,
+          `description.ilike.%${normalizedSearch}%`,
+        );
+      }
+      query = query.or(orConditions.join(','));
     }
 
     if (activeOnly) {
@@ -175,7 +185,19 @@ export async function GET(request: NextRequest) {
         .limit(limit);
 
       if (search) {
-        fallbackQuery = fallbackQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+        const normalizedSearch = normalizeAccents(search);
+        const orConditions = [
+          `name.ilike.%${search}%`,
+          `description.ilike.%${search}%`,
+          `sku.ilike.%${search}%`,
+        ];
+        if (normalizedSearch !== search.toLowerCase()) {
+          orConditions.push(
+            `name.ilike.%${normalizedSearch}%`,
+            `description.ilike.%${normalizedSearch}%`,
+          );
+        }
+        fallbackQuery = fallbackQuery.or(orConditions.join(','));
       }
 
       if (activeOnly) {
