@@ -48,17 +48,29 @@ function normalizeAccents(str: string): string {
 }
 
 // Check if product matches search term (accent-insensitive)
+// Supports multi-word: "aceite coco" matches "Aceite de coco" (all words must be present)
 function productMatchesSearch(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): boolean {
-  const normalizedSearch = normalizeAccents(searchTerm);
   const normalizedName = normalizeAccents(product.name);
   const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
   const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
 
-  return (
-    normalizedName.includes(normalizedSearch) ||
-    normalizedDesc.includes(normalizedSearch) ||
-    normalizedSku.includes(normalizedSearch)
-  );
+  // Try exact phrase first
+  const normalizedSearch = normalizeAccents(searchTerm);
+  if (normalizedName.includes(normalizedSearch) || normalizedDesc.includes(normalizedSearch) || normalizedSku.includes(normalizedSearch)) {
+    return true;
+  }
+
+  // Multi-word: all individual words must appear in name or description
+  const words = normalizedSearch.split(/\s+/).filter(w => w.length > 1);
+  if (words.length > 1) {
+    const allWordsInName = words.every(w => normalizedName.includes(w));
+    const allWordsInDesc = words.every(w => normalizedDesc.includes(w));
+    if (allWordsInName || allWordsInDesc) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 // Calculate search relevance score
@@ -87,6 +99,12 @@ function calculateSearchScore(product: { name: string; description?: string | nu
   // Contains in name = 60
   if (normalizedName.includes(normalizedSearch)) {
     return 60;
+  }
+
+  // Multi-word: all words in name = 55
+  const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 1);
+  if (searchWords.length > 1 && searchWords.every(w => normalizedName.includes(w))) {
+    return 55;
   }
 
   // SKU match = 50
