@@ -11,7 +11,7 @@ import { EmpresasFooter } from "@/components/layout/EmpresasFooter";
 import { CartDrawer } from "@/components/cart/CartDrawer";
 import { ChatBot } from "@/components/chat/ChatBot";
 import BottomNavigation from "@/components/layout/BottomNavigation";
-import { InstallPrompt, ServiceWorkerRegistration, PushNotificationPrompt } from "@/components/pwa";
+import { InstallPrompt, ServiceWorkerRegistration } from "@/components/pwa";
 import { SplashScreen } from "@/components/splash/SplashScreen";
 
 function ClientLayoutContent({ children }: { children: React.ReactNode }) {
@@ -89,7 +89,6 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
       {!isEmpresasRoute && <ChatBot />}
       {!isEmpresasRoute && <BottomNavigation />}
       <InstallPrompt />
-      <PushNotificationPrompt />
     </>
   );
 }

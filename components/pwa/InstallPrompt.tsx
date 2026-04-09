@@ -98,11 +98,12 @@ export function InstallPrompt() {
                 <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-xl pointer-events-none" />
                 <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-white/5 rounded-full blur-xl pointer-events-none" />
 
-                {/* Botón de cerrar */}
+                {/* Botón de cerrar - mejorado para ser más clickeable */}
                 <button
                     onClick={handleDismiss}
-                    className="absolute top-2 right-2 p-1 hover:bg-white/20 rounded-full transition-colors"
+                    className="absolute top-2 right-2 p-2 hover:bg-white/20 rounded-full transition-colors z-10"
                     aria-label="Cerrar"
+                    type="button"
                 >
                     <X className="w-5 h-5" />
                 </button>
