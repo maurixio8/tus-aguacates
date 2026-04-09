@@ -23,21 +23,73 @@ interface Product {
   stock: number;
   unit: string;
   is_active: boolean;
-  category: {
-    id: string;
-    name: string;
-  };
+  category: { id: string; name: string };
   image: string | null;
   description: string;
   has_variants: boolean;
+  _searchScore?: number;
 }
 
 function getCategoryValue(category: { id?: string; name?: string } | Array<{ id?: string; name?: string }> | null | undefined) {
   if (Array.isArray(category)) {
     return category[0] || null;
   }
-
   return category || null;
+}
+
+// Normalize accents: áéíóúüñ -> aeioun
+function normalizeAccents(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+    .replace(/ü/g, 'u')
+    .replace(/ñ/g, 'n');
+}
+
+// Calculate search relevance score
+function calculateSearchScore(product: { name: string; description?: string | null; sku?: string }, searchTerm: string): number {
+  const normalizedSearch = normalizeAccents(searchTerm);
+  const normalizedName = normalizeAccents(product.name);
+  const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
+  const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
+
+  // Exact match (case + accent insensitive) = 100
+  if (normalizedName === normalizedSearch) {
+    return 100;
+  }
+
+  // Starts with = 85
+  if (normalizedName.startsWith(normalizedSearch)) {
+    return 85;
+  }
+
+  // Word boundary match (product name contains search as a whole word) = 75
+  const wordBoundaryRegex = new RegExp(`\\b${escapeRegex(normalizedSearch)}\\b`, 'i');
+  if (wordBoundaryRegex.test(normalizedName)) {
+    return 75;
+  }
+
+  // Contains in name = 60
+  if (normalizedName.includes(normalizedSearch)) {
+    return 60;
+  }
+
+  // SKU match = 50
+  if (normalizedSku && normalizedSku.includes(normalizedSearch)) {
+    return 50;
+  }
+
+  // Contains in description = 20
+  if (normalizedDesc && normalizedDesc.includes(normalizedSearch)) {
+    return 20;
+  }
+
+  return 0;
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function getSupabaseClient() {
@@ -46,10 +98,7 @@ function getSupabaseClient() {
   const supabaseKey = rawKey.replace(/\\n/g, '').replace(/\\r/g, '').trim();
 
   if (!supabaseUrl || !supabaseKey) {
-    console.error('Missing Supabase environment variables:', {
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseKey
-    });
+    console.error('Missing Supabase environment variables:', { hasUrl: !!supabaseUrl, hasKey: !!supabaseKey });
     throw new Error('Missing Supabase configuration');
   }
 
@@ -64,7 +113,6 @@ function getSupabaseClient() {
 export async function GET(request: NextRequest) {
   try {
     const authResult = requireAgentAuth(request);
-
     if (!authResult.success) {
       return createUnauthorizedResponse();
     }
@@ -74,8 +122,10 @@ export async function GET(request: NextRequest) {
     const rawLimit = searchParams.get('limit');
     const rawActiveOnly = searchParams.get('active_only');
 
-    const limit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
+    // Increase limit for search to get enough results for ranking
+    const limit = search ? 200 : Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
     const activeOnly = rawActiveOnly === null ? true : rawActiveOnly !== 'false';
+    const finalLimit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
 
     let supabase;
     try {
@@ -83,48 +133,27 @@ export async function GET(request: NextRequest) {
     } catch (configError) {
       console.error('Supabase configuration error:', configError);
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'INTERNAL_ERROR',
-            message: 'Server configuration error',
-          },
-        },
+        { success: false, error: { code: 'INTERNAL_ERROR', message: 'Server configuration error' } },
         { status: 500 }
       );
     }
 
+    // Build query - get more results if searching to allow for ranking
     let query = supabase
       .from('products')
       .select(`
-        id,
-        name,
-        sku,
-        price,
-        discount_price,
-        stock,
-        unit,
-        is_active,
-        description,
-        main_image_url,
-        categories:category_id (
-          id,
-          name
-        ),
-        product_variants (
-          id,
-          variant_name,
-          variant_value,
-          price,
-          stock_quantity,
-          is_active
-        )
+        id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
+        categories:category_id ( id, name ),
+        product_variants ( id, variant_name, variant_value, price, stock_quantity, is_active )
       `)
       .order('created_at', { ascending: false })
       .limit(limit);
 
     if (search) {
-      // Search in product name, description, SKU, AND category name, AND variant values
+      // Use normalized search for broader matching, then rank results
+      const normalizedSearch = normalizeAccents(search);
+      
+      // Match against name and description (normalized comparison will happen in scoring)
       query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
     }
 
@@ -135,33 +164,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error && error.message?.includes('product_variants')) {
-      const fallbackQuery = supabase
+      // Fallback without variants
+      let fallbackQuery = supabase
         .from('products')
         .select(`
-          id,
-          name,
-          sku,
-          price,
-          discount_price,
-          stock,
-          unit,
-          is_active,
-          description,
-          main_image_url,
-          categories:category_id (
-            id,
-            name
-          )
+          id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
+          categories:category_id ( id, name )
         `)
         .order('created_at', { ascending: false })
         .limit(limit);
 
       if (search) {
-        fallbackQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
+        fallbackQuery = fallbackQuery.or(`name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`);
       }
 
       if (activeOnly) {
-        fallbackQuery.eq('is_active', true);
+        fallbackQuery = fallbackQuery.eq('is_active', true);
       }
 
       const fallbackResult = await fallbackQuery;
@@ -169,64 +187,54 @@ export async function GET(request: NextRequest) {
       if (fallbackResult.error) {
         console.error('Error fetching products:', fallbackResult.error);
         return NextResponse.json(
-          {
-            success: false,
-            error: {
-              code: 'INTERNAL_ERROR',
-              message: 'Failed to fetch products',
-            },
-          },
+          { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch products' } },
           { status: 500 }
         );
       }
 
-      const products: Product[] = (fallbackResult.data || []).map((item) => {
+      let products: Product[] = (fallbackResult.data || []).map((item) => {
         const category = getCategoryValue(item.categories);
-
         return {
-        id: item.id,
-        name: item.name,
-        sku: item.sku,
-        price: item.price,
-        discount_price: item.discount_price,
-        stock: item.stock,
-        unit: item.unit,
-        is_active: item.is_active,
-        category: {
-          id: category?.id || '',
-          name: category?.name || 'Uncategorized',
-        },
-        image: item.main_image_url,
-        description: item.description,
-        has_variants: false,
+          id: item.id,
+          name: item.name,
+          sku: item.sku,
+          price: item.price,
+          discount_price: item.discount_price,
+          stock: item.stock,
+          unit: item.unit,
+          is_active: item.is_active,
+          category: { id: category?.id || '', name: category?.name || 'Uncategorized' },
+          image: item.main_image_url,
+          description: item.description,
+          has_variants: false,
         };
       });
+
+      // Apply relevance scoring and sorting if searching
+      if (search) {
+        products = products
+          .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
+          .filter(p => p._searchScore! > 0)
+          .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
+          .slice(0, finalLimit);
+      }
 
       return NextResponse.json({
         success: true,
         data: products,
-        meta: {
-          query: search,
-          count: products.length,
-        },
+        meta: { query: search, count: products.length },
       });
     }
 
     if (error) {
       console.error('Error fetching products:', error);
       return NextResponse.json(
-        {
-          success: false,
-          error: {
-            code: 'INTERNAL_ERROR',
-            message: 'Failed to fetch products',
-          },
-        },
+        { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch products' } },
         { status: 500 }
       );
     }
 
-    const products: Product[] = (data || []).map((item) => {
+    let products: Product[] = (data || []).map((item) => {
       const variants = Array.isArray(item.product_variants) ? item.product_variants : [];
       const category = getCategoryValue(item.categories);
       const hasVariants = variants.length > 0;
@@ -240,34 +248,32 @@ export async function GET(request: NextRequest) {
         stock: item.stock,
         unit: item.unit,
         is_active: item.is_active,
-        category: {
-          id: category?.id || '',
-          name: category?.name || 'Uncategorized',
-        },
+        category: { id: category?.id || '', name: category?.name || 'Uncategorized' },
         image: item.main_image_url,
         description: item.description,
         has_variants: hasVariants,
       };
     });
 
+    // Apply relevance scoring and sorting if searching
+    if (search) {
+      products = products
+        .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
+        .filter(p => p._searchScore! > 0)
+        .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
+        .slice(0, finalLimit);
+    }
+
     return NextResponse.json({
       success: true,
       data: products,
-      meta: {
-        query: search,
-        count: products.length,
-      },
+      meta: { query: search, count: products.length },
     });
+
   } catch (error) {
     console.error('Unexpected error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: 'INTERNAL_ERROR',
-          message: 'Internal server error',
-        },
-      },
+      { success: false, error: { code: 'INTERNAL_ERROR', message: 'Internal server error' } },
       { status: 500 }
     );
   }
