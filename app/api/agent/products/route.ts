@@ -47,8 +47,22 @@ function normalizeAccents(str: string): string {
     .replace(/ñ/g, 'n');
 }
 
+// Check if product matches search term (accent-insensitive)
+function productMatchesSearch(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): boolean {
+  const normalizedSearch = normalizeAccents(searchTerm);
+  const normalizedName = normalizeAccents(product.name);
+  const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
+  const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
+
+  return (
+    normalizedName.includes(normalizedSearch) ||
+    normalizedDesc.includes(normalizedSearch) ||
+    normalizedSku.includes(normalizedSearch)
+  );
+}
+
 // Calculate search relevance score
-function calculateSearchScore(product: { name: string; description?: string | null; sku?: string }, searchTerm: string): number {
+function calculateSearchScore(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): number {
   const normalizedSearch = normalizeAccents(searchTerm);
   const normalizedName = normalizeAccents(product.name);
   const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
@@ -122,10 +136,8 @@ export async function GET(request: NextRequest) {
     const rawLimit = searchParams.get('limit');
     const rawActiveOnly = searchParams.get('active_only');
 
-    // Increase limit for search to get enough results for ranking
-    const limit = search ? 200 : Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
+    const limit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
     const activeOnly = rawActiveOnly === null ? true : rawActiveOnly !== 'false';
-    const finalLimit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
 
     let supabase;
     try {
@@ -138,7 +150,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query - get more results if searching to allow for ranking
+    // When searching, fetch ALL products and filter in JavaScript for accent-insensitive matching
+    // This is necessary because Supabase/PostgreSQL ilike doesn't handle accents properly
+    const fetchLimit = search ? 500 : limit;
+
     let query = supabase
       .from('products')
       .select(`
@@ -147,25 +162,7 @@ export async function GET(request: NextRequest) {
         product_variants ( id, variant_name, variant_value, price, stock_quantity, is_active )
       `)
       .order('created_at', { ascending: false })
-      .limit(limit);
-
-    if (search) {
-      // Search with both original and accent-normalized term for broader matching
-      const normalizedSearch = normalizeAccents(search);
-      const orConditions = [
-        `name.ilike.%${search}%`,
-        `description.ilike.%${search}%`,
-        `sku.ilike.%${search}%`,
-      ];
-      // Also search with normalized version if different (e.g., "limon" → "limon" matches "Limón")
-      if (normalizedSearch !== search.toLowerCase()) {
-        orConditions.push(
-          `name.ilike.%${normalizedSearch}%`,
-          `description.ilike.%${normalizedSearch}%`,
-        );
-      }
-      query = query.or(orConditions.join(','));
-    }
+      .limit(fetchLimit);
 
     if (activeOnly) {
       query = query.eq('is_active', true);
@@ -182,23 +179,7 @@ export async function GET(request: NextRequest) {
           categories:category_id ( id, name )
         `)
         .order('created_at', { ascending: false })
-        .limit(limit);
-
-      if (search) {
-        const normalizedSearch = normalizeAccents(search);
-        const orConditions = [
-          `name.ilike.%${search}%`,
-          `description.ilike.%${search}%`,
-          `sku.ilike.%${search}%`,
-        ];
-        if (normalizedSearch !== search.toLowerCase()) {
-          orConditions.push(
-            `name.ilike.%${normalizedSearch}%`,
-            `description.ilike.%${normalizedSearch}%`,
-          );
-        }
-        fallbackQuery = fallbackQuery.or(orConditions.join(','));
-      }
+        .limit(fetchLimit);
 
       if (activeOnly) {
         fallbackQuery = fallbackQuery.eq('is_active', true);
@@ -232,13 +213,13 @@ export async function GET(request: NextRequest) {
         };
       });
 
-      // Apply relevance scoring and sorting if searching
+      // Apply accent-insensitive search filtering and relevance ranking
       if (search) {
         products = products
+          .filter(p => productMatchesSearch(p, search))
           .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
-          .filter(p => p._searchScore! > 0)
           .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
-          .slice(0, finalLimit);
+          .slice(0, limit);
       }
 
       return NextResponse.json({
@@ -277,13 +258,13 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Apply relevance scoring and sorting if searching
+    // Apply accent-insensitive search filtering and relevance ranking
     if (search) {
       products = products
+        .filter(p => productMatchesSearch(p, search))
         .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
-        .filter(p => p._searchScore! > 0)
         .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
-        .slice(0, finalLimit);
+        .slice(0, limit);
     }
 
     return NextResponse.json({
