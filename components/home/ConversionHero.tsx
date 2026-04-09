@@ -1,16 +1,124 @@
 'use client'
 
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Clock, Star, CheckCircle, Truck, Shield, MessageCircle, ChefHat } from 'lucide-react'
+import { motion, useInView } from 'framer-motion'
+import { Clock, Star, CheckCircle, Truck, Shield, ChefHat } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { defaultScheduler } from '@/lib/services/delivery-scheduler'
 
 // Placeholder blur data URL para carga instantánea
 const HERO_BLUR = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAoHBwgHBgoICAgLCgoLDhgQDg0NDh0VFhEYIx8lJCIfIiEmKzcvJik0KSEiMEExNDk7Pj4+JS5ESUM8SDc9Pjv/2wBDAQoLCw4NDhwQEBw7KCIoOzs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozv/wAARCAAIAAoDASIAAhEBAxEB/8QAFgABAQEAAAAAAAAAAAAAAAAAAAUH/8QAIhAAAgEDAwUBAAAAAAAAAAAAAQIDAAQRBRIhBhMxQVFh/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAYEQEBAQEBAAAAAAAAAAAAAAAAARExQf/aAAwDAQACEQMRAD8A1a3s7c28beyCysAQSPVWKKKcsl//2Q=="
 
+/* ─── Typewriter Hook ─── */
+function useTypewriter(text: string, speed = 45, start = true) {
+    const [displayed, setDisplayed] = useState('')
+    const [done, setDone] = useState(false)
+
+    useEffect(() => {
+        if (!start) return
+        setDisplayed('')
+        setDone(false)
+        let i = 0
+        const interval = setInterval(() => {
+            i++
+            setDisplayed(text.slice(0, i))
+            if (i >= text.length) {
+                clearInterval(interval)
+                setDone(true)
+            }
+        }, speed)
+        return () => clearInterval(interval)
+    }, [text, speed, start])
+
+    return { displayed, done }
+}
+
+/* ─── Blinking Cursor ─── */
+function Cursor({ show }: { show: boolean }) {
+    if (!show) return null
+    return (
+        <motion.span
+            className="text-yellow-400 inline-block ml-[2px]"
+            animate={{ opacity: [1, 0] }}
+            transition={{ duration: 0.5, repeat: Infinity, repeatType: 'reverse' }}
+        >
+            |
+        </motion.span>
+    )
+}
+
+/* ─── Sparkle Star ─── */
+function Sparkle({ className, delay = 0 }: { className: string; delay?: number }) {
+    return (
+        <motion.span
+            className={`absolute text-yellow-400/30 select-none pointer-events-none ${className}`}
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{
+                opacity: [0, 0.7, 0],
+                scale: [0.5, 1.2, 0.5],
+                rotate: [0, 180],
+            }}
+            transition={{
+                duration: 3,
+                repeat: Infinity,
+                repeatDelay: 1,
+                delay,
+                ease: 'easeInOut',
+            }}
+        >
+            ✦
+        </motion.span>
+    )
+}
+
+/* ─── Animated CTA Button with Glow ─── */
+function GlowButton({ href, children, mobile = false }: { href: string; children: React.ReactNode; mobile?: boolean }) {
+    const baseClasses = mobile
+        ? "w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold transition-all transform hover:scale-105 border-2 border-verde-aguacate animate-glow-pulse hover:shadow-2xl relative overflow-visible"
+        : "group flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate animate-glow-pulse relative overflow-visible"
+
+    return (
+        <Link href={href} className={baseClasses}>
+            {/* Glow ring effect */}
+            <span className="absolute inset-0 rounded-full border-2 border-yellow-400/50 animate-glow-ring pointer-events-none" />
+            <span className="absolute inset-0 rounded-full border-2 border-yellow-400/30 animate-glow-ring pointer-events-none" style={{ animationDelay: '0.6s' }} />
+            <span className="relative z-10">{children}</span>
+        </Link>
+    )
+}
+
+/* ─── Main Component ─── */
 export function ConversionHero() {
     const { user, loading } = useAuth()
+    const ref = useRef(null)
+    const isInView = useInView(ref, { once: true, margin: '-100px' })
+
+    // Typewriter lines
+    const line1 = useTypewriter('Sabores Auténticos', 45, isInView)
+    const line2 = useTypewriter('de Colombia', 45, line1.done)
+
+    // Cursor logic: show cursor on line1 while typing, then on line2, then blink and hide
+    const [showCursor1, setShowCursor1] = useState(true)
+    const [showCursor2, setShowCursor2] = useState(false)
+
+    useEffect(() => {
+        if (line1.done && !line2.done) {
+            setShowCursor1(false)
+            setShowCursor2(true)
+        }
+    }, [line1.done, line2.done])
+
+    useEffect(() => {
+        if (line2.done) {
+            setShowCursor2(true)
+            const timeout = setTimeout(() => {
+                setShowCursor2(false)
+            }, 2000)
+            return () => clearTimeout(timeout)
+        }
+    }, [line2.done])
 
     // Solo mostrar para usuarios no autenticados (guests)
     if (loading || user) {
@@ -23,7 +131,7 @@ export function ConversionHero() {
     }
 
     return (
-        <>
+        <div ref={ref}>
             {/* ========== MÓVIL: Imagen completa arriba, contenido abajo ========== */}
             <section className="md:hidden flex flex-col bg-verde-bosque-600">
                 {/* Imagen completa sin recorte - optimizada */}
@@ -62,16 +170,27 @@ export function ConversionHero() {
                             </Link>
                         </div>
 
-                        {/* Headline */}
-                        <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight">
-                            <span className="text-yellow-400">Sabores Auténticos</span>
+                        {/* Headline con Typewriter */}
+                        <h1 className="text-4xl font-display font-bold text-white mb-3 leading-tight relative">
+                            <span className="text-yellow-400">
+                                {line1.displayed}
+                                <Cursor show={showCursor1} />
+                            </span>
                             <br />
-                            de Colombia
+                            <span>
+                                {line2.displayed}
+                                <Cursor show={showCursor2} />
+                            </span>
+
+                            {/* Decorative sparkles - mobile */}
+                            <Sparkle className="top-[-8px] right-4 text-sm" delay={0} />
+                            <Sparkle className="top-4 right-[-8px] text-xs" delay={1.2} />
+                            <Sparkle className="bottom-2 left-2 text-xs" delay={2.4} />
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-lg text-white/90 mb-4 leading-relaxed">
-                            Aguacates, frutas exóticas, aromáticas, especias y más. <strong className="text-yellow-400">Del campo a tu cocina</strong>.
+                            Aguacates, frutas exóticas, aromáticas, especias y más. <strong className="text-yellow-400">Del campo a tu casa</strong>.
                         </p>
 
                         {/* Social proof */}
@@ -84,14 +203,11 @@ export function ConversionHero() {
                             <span className="text-sm font-medium">4.8/5 • 500+ clientes</span>
                         </div>
 
-                        {/* CTAs */}
+                        {/* CTAs con glow animado */}
                         <div className="flex flex-col gap-3 mb-6">
-                            <Link
-                                href="/tienda"
-                                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-6 py-3 rounded-full text-lg font-bold shadow-xl transition-all transform hover:scale-105 border-2 border-verde-aguacate"
-                            >
+                            <GlowButton href="/tienda" mobile>
                                 🛒 Ver Productos
-                            </Link>
+                            </GlowButton>
                         </div>
 
                         {/* Trust badges */}
@@ -143,17 +259,30 @@ export function ConversionHero() {
                             </span>
                         </div>
 
-                        {/* Headline */}
-                        <h1 className="text-5xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight">
-                            <span className="text-yellow-400">Sabores Auténticos</span>
+                        {/* Headline con Typewriter */}
+                        <h1 className="text-5xl lg:text-7xl font-display font-bold text-white mb-4 leading-tight relative">
+                            <span className="text-yellow-400">
+                                {line1.displayed}
+                                <Cursor show={showCursor1} />
+                            </span>
                             <br />
-                            de Colombia
+                            <span>
+                                {line2.displayed}
+                                <Cursor show={showCursor2} />
+                            </span>
+
+                            {/* Decorative sparkles - desktop */}
+                            <Sparkle className="top-[-12px] right-8 text-xl" delay={0} />
+                            <Sparkle className="top-8 right-[-16px] text-base" delay={0.8} />
+                            <Sparkle className="top-[60%] left-[-20px] text-base" delay={1.6} />
+                            <Sparkle className="bottom-[-8px] right-16 text-sm" delay={2.4} />
+                            <Sparkle className="top-2 left-4 text-xs" delay={3.2} />
                         </h1>
 
                         {/* Subheadline */}
                         <p className="text-2xl lg:text-3xl text-white/90 mb-6 leading-relaxed">
                             Aguacates, frutas exóticas, hierbas aromáticas, especias y más.
-                            Del campo colombiano a tu cocina.
+                            Del campo colombiano a tu casa.
                         </p>
 
                         {/* Social proof */}
@@ -166,14 +295,11 @@ export function ConversionHero() {
                             <span className="text-lg font-medium">4.8/5 • 500+ familias en Bogotá</span>
                         </div>
 
-                        {/* CTAs */}
+                        {/* CTAs con glow animado */}
                         <div className="flex gap-4 mb-8">
-                            <Link
-                                href="/tienda"
-                                className="group flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 px-8 py-4 rounded-full text-xl font-bold transition-all shadow-xl hover:shadow-2xl transform hover:scale-105 border-2 border-verde-aguacate"
-                            >
+                            <GlowButton href="/tienda">
                                 🛒 Ver Productos
-                            </Link>
+                            </GlowButton>
 
                             <Link
                                 href="/recetas"
@@ -202,6 +328,6 @@ export function ConversionHero() {
                     </div>
                 </div>
             </section>
-        </>
+        </div>
     )
 }
