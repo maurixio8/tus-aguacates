@@ -63,18 +63,18 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
 
     const handleAddToCart = () => {
         // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna,
-        // buscar la variante más económica.
+        // buscar la variante más económica usando price_adjustment.
         let finalVariant = selectedVariant;
         if (variants.length > 0 && !finalVariant) {
             console.log('⚠️ No variant selected in QuickView, defaulting to cheapest');
-            const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
+            const cheapest = [...variants].sort((a, b) => a.price_adjustment - b.price_adjustment)[0];
             finalVariant = cheapest;
         }
 
         const itemToAdd = {
             ...product,
             variant: finalVariant,
-            finalPrice: finalVariant ? finalVariant.price : basePrice,
+            finalPrice: finalVariant ? (finalVariant as any).price || (basePrice + (finalVariant as any).price_adjustment) : basePrice,
         };
 
         // Pasar quantity como segundo parámetro
