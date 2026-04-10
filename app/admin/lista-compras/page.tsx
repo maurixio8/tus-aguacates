@@ -364,6 +364,9 @@ export default function ListaComprasPage() {
     'tomate chonto 500 gr': 'Tomate chonto',
     'tomate chonto 500gr': 'Tomate chonto',
     'tomate chonto 500grs': 'Tomate chonto',
+    'tomate chonto 1 kilo': 'Tomate chonto',
+    'tomate chonto 1 libra': 'Tomate chonto',
+    'tomate chonto 1lb': 'Tomate chonto',
 
     'tomate cherry': 'Tomate cherry',
     'tomate cereza': 'Tomate cherry',
@@ -374,6 +377,7 @@ export default function ListaComprasPage() {
 
     'tomate larga vida': 'Tomate larga vida',
     'tomate larga vida 500 gr': 'Tomate larga vida',
+    'tomate larga vida 1 kilo': 'Tomate larga vida',
 
     'tomate uvalina': 'Tomate Uvalina',
     'tomate uvilla': 'Tomate Uvalina',
@@ -1076,6 +1080,8 @@ export default function ListaComprasPage() {
       /(\d+(?:\.\d+)?)\s*(?:grs|gramas|gramos|gr)\b/i,
       // "1 kg", "0.5 kg", "2 kilos"
       /(\d+(?:\.\d+)?)\s*(?:kg|kilos?)\b/i,
+      // "1 lb", "1 libra", "2 libras"
+      /(\d+(?:\.\d+)?)\s*(?:lb|lbs|libra|libras)\b/i,
       // "1000grs" (sin espacio)
       /(\d+(?:\.\d+)?)grs/i,
       // "X250grs" (formato especial)
@@ -1086,10 +1092,17 @@ export default function ListaComprasPage() {
       const match = text.match(pattern);
       if (match) {
         const value = parseFloat(match[1]);
-        // Si está en kg, convertir a gramos
+        
+        // Si está en kg o kilos, convertir a gramos
         if (/kg|kilos?/i.test(text)) {
           return value * 1000;
         }
+        
+        // Si está en libras o lb, convertir a gramos (1 lb = 500 gr en este contexto)
+        if (/lb|libras?/i.test(text)) {
+          return value * 500;
+        }
+
         return value;
       }
     }
@@ -1123,7 +1136,7 @@ export default function ListaComprasPage() {
 
     // Remover información de cantidad redundante al final del nombre si ya está normalizada en la variante
     // Ej: "Arandanos 125gr" -> "arandanos"
-    normalized = normalized.replace(/\s*\d+\s*(grs?|gramos|kg|kilos?|unidades?|bandeja?s?)\b.*$/i, '').trim();
+    normalized = normalized.replace(/\s*\d+\s*(grs?|gramas|gramos|kg|kilos?|lb|libras?|unidades?|bandeja?s?)\b.*$/i, '').trim();
 
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
@@ -1231,8 +1244,8 @@ const normalizeVariant = (variant: string | null): string => {
       return `${unitsMatch[1]} unidades`;
     }
 
-    // Buscar peso en gramos o kilos
-    const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(gr|grs|kg|kilos?|gramos)/i);
+    // Buscar peso en gramos, kilos o libras
+    const weightMatch = productName.match(/(\d+(?:\.\d+)?)\s*(gr|grs|kg|kilos?|lb|libras?|gramos)/i);
     if (weightMatch) {
       const unit = weightMatch[2].toLowerCase();
       return `${weightMatch[1]} ${unit}`;
@@ -1690,6 +1703,8 @@ const normalizeVariant = (variant: string | null): string => {
                 if (lower.includes('bandeja')) existing.physical_unit_name = 'Bandeja';
                 else if (lower.includes('unidad')) existing.physical_unit_name = 'unidad';
                 else if (lower.includes('paquete')) existing.physical_unit_name = 'paquete';
+                else if (lower.includes('libra') || lower.includes('lb')) existing.physical_unit_name = 'libra';
+                else if (lower.includes('kilo') || lower.includes('kg')) existing.physical_unit_name = 'kilo';
               }
             }
 
@@ -1747,6 +1762,8 @@ const normalizeVariant = (variant: string | null): string => {
               if (lower.includes('bandeja')) physicalUnitName = 'Bandeja';
               else if (lower.includes('unidad')) physicalUnitName = 'unidad';
               else if (lower.includes('paquete')) physicalUnitName = 'paquete';
+              else if (lower.includes('libra') || lower.includes('lb')) physicalUnitName = 'libra';
+              else if (lower.includes('kilo') || lower.includes('kg')) physicalUnitName = 'kilo';
             }
 
               productMap.set(groupingKey, {

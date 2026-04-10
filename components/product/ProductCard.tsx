@@ -116,31 +116,35 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   };
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    const handleAddToCart = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-    const itemToAdd = {
-      ...product,
-      category_id: product.category_id || product.category || 'general',
-      variant: selectedVariant ?? undefined
+        // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna, 
+        // buscar la variante más económica en lugar de retornar null.
+        let finalVariant = selectedVariant;
+        if (variants.length > 0 && !finalVariant) {
+            console.log('⚠️ No variant selected, defaulting to the cheapest variant');
+            const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
+            finalVariant = cheapest;
+        }
+
+        const itemToAdd = {
+            ...product,
+            category_id: product.category_id || product.category || 'general',
+            variant: finalVariant ?? undefined
+        };
+
+        console.log('🛒 Adding to cart:', itemToAdd);
+
+        // Pasar quantity como segundo parámetro
+        addItem(itemToAdd as any, 1);
+        console.log('✅ Product added to cart successfully');
+
+        // Mostrar toast de éxito
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
     };
-
-    console.log('🛒 Adding to cart:', itemToAdd);
-
-    if (variants.length > 0 && !selectedVariant) {
-      console.log('⚠️ No variant selected, using first variant');
-      return;
-    }
-
-    // Pasar quantity como segundo parámetro
-    addItem(itemToAdd as any, 1);
-    console.log('✅ Product added to cart successfully');
-
-    // Mostrar toast de éxito
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-  };
 
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();

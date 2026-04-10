@@ -118,21 +118,30 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
   const displayPrice = selectedVariant ? selectedVariant.price : (product.discount_price || product.price);
 
-  const handleAddToCart = () => {
-    const itemToAdd = {
-      ...product,
-      category_id: product.category_id || product.category || 'general',
-      variant: selectedVariant ?? undefined
+    const handleAddToCart = () => {
+        // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna,
+        // buscar la variante más económica.
+        let finalVariant = selectedVariant;
+        if (variants.length > 0 && !finalVariant) {
+            console.log('⚠️ No variant selected in Modal, defaulting to cheapest');
+            const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
+            finalVariant = cheapest;
+        }
+
+        const itemToAdd = {
+            ...product,
+            category_id: product.category_id || product.category || 'general',
+            variant: finalVariant ?? undefined
+        };
+
+        // Pasar quantity como segundo parámetro, no como propiedad del objeto
+        addItem(itemToAdd as any, quantity);
+        setShowToast(true);
+        setTimeout(() => setShowToast(false), 2000);
+
+        // Resetear cantidad
+        setQuantity(1);
     };
-
-    // Pasar quantity como segundo parámetro, no como propiedad del objeto
-    addItem(itemToAdd as any, quantity);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 2000);
-
-    // Resetear cantidad
-    setQuantity(1);
-  };
 
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/productos/${product.id}`;

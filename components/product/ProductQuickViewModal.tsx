@@ -61,22 +61,31 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
   const basePrice = product.discount_price || product.price;
   const finalPrice = (selectedVariant as any)?.price || basePrice;
 
-  const handleAddToCart = () => {
-    const itemToAdd = {
-      ...product,
-      variant: selectedVariant,
-      finalPrice,
+    const handleAddToCart = () => {
+        // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna,
+        // buscar la variante más económica.
+        let finalVariant = selectedVariant;
+        if (variants.length > 0 && !finalVariant) {
+            console.log('⚠️ No variant selected in QuickView, defaulting to cheapest');
+            const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
+            finalVariant = cheapest;
+        }
+
+        const itemToAdd = {
+            ...product,
+            variant: finalVariant,
+            finalPrice: finalVariant ? finalVariant.price : basePrice,
+        };
+
+        // Pasar quantity como segundo parámetro
+        addItem(itemToAdd as any, quantity);
+        setShowToast(true);
+
+        setTimeout(() => {
+            setShowToast(false);
+            onClose(); // Cerrar modal después de agregar
+        }, 1500);
     };
-
-    // Pasar quantity como segundo parámetro, no como propiedad del objeto
-    addItem(itemToAdd as any, quantity);
-    setShowToast(true);
-
-    setTimeout(() => {
-      setShowToast(false);
-      onClose(); // Cerrar modal después de agregar
-    }, 1500);
-  };
 
   if (!isOpen) return null;
 
