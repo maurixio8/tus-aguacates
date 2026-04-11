@@ -331,48 +331,41 @@ export default function OrdersPage() {
     lines.push(`☑️ VERIFICAR PRODUCTOS (${totalProducts} items):`);
     lines.push('───────────────────────────────────');
 
-    // Función para asignar emoticón según el producto
+    // Tabla Maestra de emojis - Claves sin acentos para matching robusto
+    const EMOJI_TABLE: Record<string, string> = {
+      'aguacate':'🥑','fresa':'🍓','frambuesa':'🍓','mango':'🥭',
+      'banano':'🍌','banana':'🍌','platano':'🍌','pina':'🍍',
+      'uva':'🍇','limon':'🍋','naranja':'🍊','mandarina':'🍊',
+      'cereza':'🍒','coco':'🥥','kiwi':'🥝','pera':'🍐',
+      'durazno':'🍑','melocoton':'🍑','ciruela':'🍑','sandia':'🍉',
+      'melon':'🍈','manzana':'🍎','arandano':'🫐','mora':'🫐',
+      'granada':'🔴','maracuya':'🟡','lulo':'🟢','pitahaya':'🐉',
+      'pitaya':'🐉','uchuva':'🟡','tamarindo':'🟫','gulupa':'🟣',
+      'feijoa':'🍈','anon':'🍈','corozo':'🔴','mangostino':'🟣',
+      'rambutan':'🔴','borojo':'🟤','carambolo':'⭐','datil':'🟫',
+      'papaya':'🍈','guanabana':'🍈','granadilla':'🍈','guayaba':'🍈',
+      'cebolla':'🧅','ajo':'🧄','pasta de ajo':'🧄','tomate':'🍅',
+      'papa':'🥔','cubios':'🥔','zanahoria':'🥕','maiz':'🌽',
+      'mazorca':'🌽','pimenton':'🫑','pepino':'🥒','calabacin':'🥒',
+      'zucchini':'🥒','brocoli':'🥦','coliflor':'🥦','espinaca':'🥬',
+      'lechuga':'🥬','repollo':'🥬','apio':'🥬','berenjena':'🍆',
+      'arveja':'🫛','guisante':'🫛','habas':'🫛','frijol':'🫘',
+      'champinon':'🍄','hongo':'🍄','esparrago':'🌿','remolacha':'🟤',
+      'rabano':'🥕','ahuyama':'🎃','auyama':'🎃','batata':'🍠','yacon':'🍠',
+      'jengibre':'🫚','curcuma':'🫚','cilantro':'🌿','perejil':'🌿',
+      'albahaca':'🌿','romero':'🌿','tomillo':'🌿','oregano':'🌿',
+      'menta':'🌿','hierbabuena':'🌿','laurel':'🌿','canela':'🪵',
+      'pimienta':'⚫','chile':'🌶️','aji':'🌶️','jalapeno':'🌶️',
+      'semilla':'🌱','chia':'🌱','germinados':'🌱','quinoa':'🌾','linaza':'🌾',
+      'miel':'🍯','aceite':'🫒','zumo':'🥤','polen':'🐝','vino':'🍷',
+      'ancheta':'🎁','regalo':'🎁','caja':'📦','combo':'🛍️','paquete':'🛍️',
+      'cafe':'☕','huevo':'🥚','leche':'🥛','queso':'🧀',
+      'carne':'🥩','pollo':'🍗','pescado':'🐟','salmon':'🐟','camaron':'🦐',
+    };
     const getProductEmoji = (productName: string): string => {
-      const name = productName.toLowerCase();
-      if (name.includes('aguacate') || name.includes('hass')) return '🥑';
-      if (name.includes('limón') || name.includes('limon')) return '🍋';
-      if (name.includes('mango')) return '🥭';
-      if (name.includes('fresa')) return '🍓';
-      if (name.includes('piña') || name.includes('pina')) return '🍍';
-      if (name.includes('papaya')) return '🍈';
-      if (name.includes('banano') || name.includes('plátano') || name.includes('platano')) return '🍌';
-      if (name.includes('naranja') || name.includes('mandarina')) return '🍊';
-      if (name.includes('manzana')) return '🍎';
-      if (name.includes('uva')) return '🍇';
-      if (name.includes('sandía') || name.includes('sandia')) return '🍉';
-      if (name.includes('durazno') || name.includes('melocotón')) return '🍑';
-      if (name.includes('cereza')) return '🍒';
-      if (name.includes('pera')) return '🍐';
-      if (name.includes('coco')) return '🥥';
-      if (name.includes('kiwi')) return '🥝';
-      if (name.includes('arándano') || name.includes('arandano') || name.includes('mora')) return '💜';
-      if (name.includes('frambuesa')) return '🍓';
-      if (name.includes('cidra')) return '🍈';
-      if (name.includes('papa') || name.includes('patata')) return '🥔';
-      if (name.includes('cebolla')) return '🧅';
-      if (name.includes('ajo')) return '🧄';
-      if (name.includes('zanahoria')) return '🥕';
-      if (name.includes('maíz') || name.includes('maiz')) return '🌽';
-      if (name.includes('tomate')) return '🍅';
-      if (name.includes('lechuga') || name.includes('espinaca')) return '🥬';
-      if (name.includes('brócoli') || name.includes('brocoli')) return '🥦';
-      if (name.includes('champiñón') || name.includes('champinon') || name.includes('hongo')) return '🍄';
-      if (name.includes('café') || name.includes('cafe')) return '☕';
-      if (name.includes('miel')) return '🍯';
-      if (name.includes('huevo')) return '🥚';
-      if (name.includes('leche')) return '🥛';
-      if (name.includes('queso')) return '🧀';
-      if (name.includes('pan')) return '🥖';
-      if (name.includes('carne') || name.includes('res')) return '🥩';
-      if (name.includes('pollo')) return '🍗';
-      if (name.includes('pescado') || name.includes('salmón')) return '🐟';
-      if (name.includes('camarón') || name.includes('camaron')) return '🦐';
-      return '📦'; // Default para productos sin categoría
+      const n = productName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      for (const k of Object.keys(EMOJI_TABLE)) { if (n.includes(k)) return EMOJI_TABLE[k]; }
+      return '📦';
     };
 
     orderItems.forEach((item, index) => {

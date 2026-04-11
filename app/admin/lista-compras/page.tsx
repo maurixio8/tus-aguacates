@@ -547,139 +547,131 @@ export default function ListaComprasPage() {
   'yacon bandeja': 'Yacon',
   };
 
-  // Emoticones para cada producto
+  // Emoticones para cada producto - Tabla Maestra
+  // Claves sin acentos para matching robusto (getProductEmoji normaliza nombres antes de buscar)
   const PRODUCT_EMOJIS: Record<string, string> = {
+    // --- FRUTAS ---
     'aguacate': '🥑',
-    'aguacates': '🥑',
-    'aguacate hass': '🥑',
-    'aguacates hass': '🥑',
-    'aguacate injerto': '🥑',
-    'caja de 24 unidades': '🥑',
-    'caja de 12 unidades': '🥑',
-    'caja de 7 unidades': '🥑',
-    'caja de 35 unidades': '🥑',
-    'paquete 4 unidades': '🥑',
-    'paquete x 8 unidades': '🥑',
-    'paquete x 12 unidades': '🥑',
-
-    'arandano': '🫐',
-    'arandanos': '🫐',
-    'arándanos': '🫐',
-    'arandanos organicos': '🫐',
-    'arándanos orgánicos': '🫐',
-
     'fresa': '🍓',
-    'fresas': '🍓',
-    'fresa economica': '🍓',
-    'fresa económica': '🍓',
-    'fresas economicas': '🍓',
-    'fresas económicas': '🍓',
-    'fresa premium': '🍓',
-    'fresas premium': '🍓',
-
+    'frambuesa': '🍓',
+    'mango': '🥭',
     'banano': '🍌',
     'banana': '🍌',
-    'banano criollo': '🍌',
-    'banana criollo': '🍌',
-    'banano bocadillo': '🍌',
-    'banana bocadillo': '🍌',
+    'platano': '🍌',
+    'pina': '🍍',
+    'uva': '🍇',
+    'limon': '🍋',
+    'naranja': '🍊',
+    'mandarina': '🍊',
+    'cereza': '🍒',
+    'coco': '🥥',
+    'kiwi': '🥝',
+    'pera': '🍐',
+    'durazno': '🍑',
+    'melocoton': '🍑',
+    'ciruela': '🍑',
+    'sandia': '🍉',
+    'melon': '🍈',
+    'manzana': '🍎',
+    'arandano': '🫐',
+    'mora': '🫐',
+    'granada': '🔴',
+    'maracuya': '🟡',
+    'lulo': '🟢',
+    'pitahaya': '🐉',
+    'pitaya': '🐉',
+    'uchuva': '🟡',
+    'tamarindo': '🟫',
+    'gulupa': '🟣',
+    'feijoa': '🍈',
+    'anon': '🍈',
+    'corozo': '🔴',
+    'mangostino': '🟣',
+    'rambutan': '🔴',
+    'borojo': '🟤',
+    'carambolo': '⭐',
+    'datil': '🟫',
+    'papaya': '🍈',
+    'guanabana': '🍈',
+    'granadilla': '🍈',
+    'guayaba': '🍈',
 
-    'tomate': '🍅',
-    'tomate chonto': '🍅',
-    'tomate cherry': '🍅',
-    'tomate de arbol': '🍅',
-    'tomate de árbol': '🍅',
-    'tomate larga vida': '🍅',
-    'tomate uvalina': '🍅',
-    'tomate uvilla': '🍅',
-
+    // --- VERDURAS Y HORTALIZAS ---
     'cebolla': '🧅',
-    'cebolla cabezona': '🧅',
-
-    'pasta de ajo': '🧄',
-    'pasta ajo': '🧄',
     'ajo': '🧄',
-
-    'zanahoria': '🥕',
+    'pasta de ajo': '🧄',
+    'tomate': '🍅',
     'papa': '🥔',
-    'papa sabanera': '🥔',
-
+    'cubios': '🥔',
+    'zanahoria': '🥕',
+    'maiz': '🌽',
+    'mazorca': '🌽',
+    'pimenton': '🫑',
+    'pepino': '🥒',
+    'calabacin': '🥒',
+    'zucchini': '🥒',
+    'brocoli': '🥦',
+    'coliflor': '🥦',
+    'espinaca': '🥬',
+    'lechuga': '🥬',
+    'repollo': '🥬',
     'apio': '🥬',
-
     'berenjena': '🍆',
-    'champinones': '🍄',
+    'arveja': '🫛',
+    'guisante': '🫛',
+    'habas': '🫛',
+    'frijol': '🫘',
+    'champinon': '🍄',
+    'hongo': '🍄',
+    'esparrago': '🌿',
+    'remolacha': '🟤',
+    'rabano': '🥕',
+    'ahuyama': '🎃',
+    'auyama': '🎃',
+    'batata': '🍠',
+    'yacon': '🍠',
 
+    // --- HIERBAS Y ESPECIAS ---
+    'jengibre': '🫚',
+    'curcuma': '🫚',
     'cilantro': '🌿',
+    'perejil': '🌿',
+    'albahaca': '🌿',
+    'romero': '🌿',
+    'tomillo': '🌿',
+    'oregano': '🌿',
+    'menta': '🌿',
     'hierbabuena': '🌿',
     'laurel': '🌿',
-    'perejil': '🌿',
+    'canela': '🪵',
+    'pimienta': '⚫',
+    'chile': '🌶️',
+    'aji': '🌶️',
+    'jalapeno': '🌶️',
 
-    'lechuga': '🥬',
-    'lechuga romana': '🥬',
+    // --- SEMILLAS Y GRANOS ---
+    'semilla': '🌱',
+    'chia': '🌱',
+    'germinados': '🌱',
+    'quinoa': '🌾',
+    'linaza': '🌾',
 
-    'pepino': '🥒',
+    // --- PROCESADOS Y OTROS ---
+    'miel': '🍯',
+    'aceite': '🫒',
+    'zumo': '🥤',
+    'polen': '🐝',
+    'vino': '🍷',
 
-    'pimenton': '🫑',
+    // --- PRESENTACIONES ---
+    'ancheta': '🎁',
+    'regalo': '🎁',
+    'caja': '📦',
+    'combo': '🛍️',
+    'paquete': '🛍️',
 
-    'mandarina': '🍊',
-    'naranja': '🍊',
-
-    'limon': '🍋',
-    'limon tahiti': '🍋',
-
-    'uva': '🍇',
-    'uva isabelina': '🍇',
-    'uva chilena': '🍇',
-
-    'mango': '🥭',
-
-    'durazno': '🍑',
-    'duraznos': '🍑',
-
-    'manzana': '🍎',
-
-    'pera': '🍐',
-
-    'sandia': '🍉',
-    'sandia baby': '🍉',
-
-    'melocoton': '🍑',
-
-    'cereza': '🍒',
-
-    'piña': '🍍',
-    'pina': '🍍',
-
-    'papaya': '🍈',
-
-    'ciruela': '🍑',
-
-    'gulupa': '🍈',
-
-    'pitaya': '🌵',
-
-    'mazorca': '🌽',
-    'mazorca baby': '🌽',
-
-    'zucchini': '🍆',
-    'zucchini verde': '🍆',
-    'zucchini amarillo': '🍆',
-    'auyama': '🎃',
-
-    'remolacha': '🍠',
-
+    // --- OTROS ---
     'picados para sopa': '🥗',
-
-    'brocoli': '🥦',
-
-    'coliflor': '🥦',
-
-    'coco': '🥥',
-
-    'guanabana': '🍈',
-
-    'fruta': '🍎',
-    'verdura': '🥬',
   };
 
   // Inicializar con últimos 7 días por defecto
@@ -977,43 +969,15 @@ export default function ListaComprasPage() {
   };
 
   // Obtener emoji para el producto
+  // Usa la Tabla Maestra de emojis. Normaliza sin acentos para matching robusto.
   const getProductEmoji = (productName: string): string => {
-    let name = productName.toLowerCase();
-    const nameNoAccent = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const nameNoAccent = productName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Casos especiales directos usando nombre sin acentos
-    if (nameNoAccent.includes('arandano')) return '🫐';
-    if (nameNoAccent.includes('fresa')) return '🍓';
-    if (nameNoAccent.includes('combo')) return '📦';
-
-    // Buscar palabras clave en el nombre del producto
-    const keywords = Object.keys(PRODUCT_EMOJIS);
-
-    for (const keyword of keywords) {
-      if (name.includes(keyword) || nameNoAccent.includes(keyword)) {
+    // Buscar palabras clave en el nombre del producto (todas las claves ya están sin acentos)
+    for (const keyword of Object.keys(PRODUCT_EMOJIS)) {
+      if (nameNoAccent.includes(keyword)) {
         return PRODUCT_EMOJIS[keyword];
       }
-    }
-
-    // Si no encuentra emoji específico, usar uno genérico por categoría
-    if (name.includes('frut') || name.includes('fresa') || name.includes('manzana') ||
-      name.includes('banan') || name.includes('aguacat') || name.includes('durazn') ||
-      name.includes('mango') || name.includes('piña') || name.includes('papaya') ||
-      name.includes('ciruela') || name.includes('cereza') || name.includes('sandía') ||
-      name.includes('limón') || name.includes('naranja') || name.includes('mandarina') ||
-      name.includes('uva') || name.includes('mora') || name.includes('granadilla') ||
-      name.includes('maracuyá') || name.includes('guayaba') || name.includes('pitahaya') ||
-      name.includes('melón') || name.includes('arándano') || name.includes('arandano')) {
-      return '🍎';
-    }
-
-    if (name.includes('verd') || name.includes('tomat') || name.includes('ceboll') ||
-      name.includes('zanahoria') || name.includes('papa') || name.includes('lechuga') ||
-      name.includes('apio') || name.includes('brócoli') || name.includes('coliflor') ||
-      name.includes('pepino') || name.includes('pimentón') || name.includes('champiñon') ||
-      name.includes('cilantro') || name.includes('perejil') || name.includes('albahaca') ||
-      name.includes('hierbabuena') || name.includes('romero') || name.includes('orégano')) {
-      return '🥬';
     }
 
     return '📦';
