@@ -463,10 +463,23 @@ export default function CreateOrderPage() {
   }, [customerSearch, selectedCustomer]);
 
   const addToOrder = (product: Product, variant?: ProductVariant) => {
+    // Si no se proporcionó variante, pero el producto TIENE variantes activas,
+    // auto-seleccionar la más económica/primera para que no quede huerfano en la lista de compras.
+    let selectedVariant = variant;
+    if (!selectedVariant) {
+      const activeVariants = (product.variants || product.product_variants || []).filter(
+        (v) => v.is_active === true && (v.stock_quantity === undefined || v.stock_quantity > 0)
+      );
+      if (activeVariants.length > 0) {
+        // Ordenar asumiendo price_adjustment menor primero
+        selectedVariant = activeVariants.sort((a, b) => (a.price_adjustment || 0) - (b.price_adjustment || 0))[0];
+      }
+    }
+
     const existingItemIndex = selectedItems.findIndex(
       (item) =>
         item.product_id === product.id &&
-        ((!variant && !item.variant_id) || (variant && item.variant_id === variant.id))
+        ((!selectedVariant && !item.variant_id) || (selectedVariant && item.variant_id === selectedVariant.id))
     );
 
     if (existingItemIndex >= 0) {
@@ -478,17 +491,17 @@ export default function CreateOrderPage() {
         ...selectedItems,
         {
           product_id: product.id,
-          variant_id: variant?.id,
+          variant_id: selectedVariant?.id,
           quantity: 1,
           product,
-          variant,
+          variant: selectedVariant,
         },
       ]);
     }
 
     // Mostrar notificación de producto agregado
-    const notificationText = variant
-      ? `${product.name} (${variant.variant_value})`
+    const notificationText = selectedVariant
+      ? `${product.name} (${selectedVariant.variant_value})`
       : product.name;
     setAddedNotification(notificationText);
     setTimeout(() => setAddedNotification(null), 2000);
