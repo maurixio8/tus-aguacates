@@ -42,6 +42,7 @@ interface OrderItem {
     image?: string;
     variant_name?: string;
     variant_value?: string;
+    description?: string;
   };
   quantity: number;
   unit_price: number;
