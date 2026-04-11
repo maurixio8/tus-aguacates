@@ -18,6 +18,7 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   // --- UVAS ---
   'red globe': '🍇',
   'uva isabelina': '🍇',
+  'uva chilena': '🍇',
   'uva': '🍇',
 
   // --- FRUTAS ---
@@ -45,6 +46,7 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'melon': '🍈',
   'manzana': '🍎',
   'arandano': '🫐',
+  'mora real': '🫐',
   'mora': '🫐',
   'agraz': '🫐',
   'granada': '🔴',
