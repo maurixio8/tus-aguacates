@@ -2108,9 +2108,10 @@ const normalizeVariant = (variant: string | null): string => {
 
     const lines = [`Pedido para: ${customer.customer_name}`, `Origen: ${getOrderTypeLabel(customer.order_type)}`, ''];
     customer.order_items.forEach(item => {
+      const emoji = getProductEmoji(item.product_name);
       const variant = item.variant_name ? ` (${item.variant_name})` : '';
       const weight = item.weight_display ? ` - ${item.weight_display}` : '';
-      lines.push(`• ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
+      lines.push(`${emoji} ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
     });
 
     if (customer.customer_address) {
@@ -2616,7 +2617,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                       const supplierData = productsBySupplier.get(supplierId);
                       if (!supplierData) return;
                       const text = supplierData.products.map(p =>
-                        `${p.total_quantity}x ${p.display_name}${p.total_weight_display ? ` (${p.total_weight_display})` : ''}`
+                        `${getProductEmoji(p.product_name)} ${p.total_quantity}x ${p.display_name}${p.total_weight_display ? ` (${p.total_weight_display})` : ''}`
                       ).join('\n');
                       await navigator.clipboard.writeText(text);
                     }}
@@ -2626,7 +2627,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                         .map(([id, data]) => {
                           const supplier = SUPPLIERS.find(s => s.id === id);
                           return `📍 ${supplier?.name || id}:\n${data.products.map(p =>
-                            `  ${p.total_quantity}x ${p.display_name}`
+                            `  ${getProductEmoji(p.product_name)} ${p.total_quantity}x ${p.display_name}`
                           ).join('\n')}`;
                         }).join('\n\n');
                       await navigator.clipboard.writeText(allText);

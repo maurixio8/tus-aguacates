@@ -60,6 +60,46 @@ export interface Order {
 }
 
 export function generateOrderSummary(order: Order): string {
+  const PRODUCT_EMOJIS: Record<string, string> = {
+    'hass': '🥑', 'injerto': '🥑', 'caja de 24': '🥑', 'caja de 12': '🥑',
+    'caja de 7': '🥑', 'caja de 35': '🥑', 'nueva maya': '🥑', 'red globe': '🍇',
+    'aguacate': '🥑', 'fresa': '🍓', 'frambuesa': '🍓', 'mango': '🥭',
+    'banano': '🍌', 'banana': '🍌', 'platano': '🍌', 'pina': '🍍',
+    'uva': '🍇', 'limon': '🍋', 'naranja': '🍊', 'mandarina': '🍊',
+    'cereza': '🍒', 'coco': '🥥', 'kiwi': '🥝', 'pera': '🍐',
+    'durazno': '🍑', 'melocoton': '🍑', 'ciruela': '🍑', 'sandia': '🍉',
+    'melon': '🍈', 'manzana': '🍎', 'arandano': '🫐', 'mora': '🫐',
+    'granada': '🔴', 'maracuya': '🟡', 'lulo': '🟢', 'pitahaya': '🐉',
+    'pitaya': '🐉', 'uchuva': '🟡', 'tamarindo': '🟫', 'gulupa': '🟣',
+    'feijoa': '🍈', 'anon': '🍈', 'corozo': '🔴', 'mangostino': '🟣',
+    'rambutan': '🔴', 'borojo': '🟤', 'carambolo': '⭐', 'datil': '🟫',
+    'papaya': '🍈', 'guanabana': '🍈', 'granadilla': '🍈', 'guayaba': '🍈',
+    'cebolla': '🧅', 'ajo': '🧄', 'pasta de ajo': '🧄', 'tomate': '🍅',
+    'papa': '🥔', 'cubios': '🥔', 'zanahoria': '🥕', 'maiz': '🌽',
+    'mazorca': '🌽', 'pimenton': '🫑', 'pepino': '🥒', 'calabacin': '🥒',
+    'zucchini': '🥒', 'brocoli': '🥦', 'coliflor': '🥦', 'espinaca': '🥬',
+    'lechuga': '🥬', 'repollo': '🥬', 'apio': '🥬', 'berenjena': '🍆',
+    'arveja': '🫛', 'guisante': '🫛', 'habas': '🫛', 'frijol': '🫘',
+    'champinon': '🍄', 'hongo': '🍄', 'esparrago': '🌿', 'remolacha': '🟤',
+    'rabano': '🥕', 'ahuyama': '🎃', 'auyama': '🎃', 'batata': '🍠', 'yacon': '🍠',
+    'jengibre': '🫚', 'curcuma': '🫚', 'cilantro': '🌿', 'perejil': '🌿',
+    'albahaca': '🌿', 'romero': '🌿', 'tomillo': '🌿', 'oregano': '🌿',
+    'menta': '🌿', 'hierbabuena': '🌿', 'laurel': '🌿', 'canela': '🪵',
+    'pimienta': '⚫', 'chile': '🌶️', 'aji': '🌶️', 'jalapeno': '🌶️',
+    'semilla': '🌱', 'chia': '🌱', 'germinados': '🌱', 'quinoa': '🌾', 'linaza': '🌾',
+    'miel': '🍯', 'aceite': '🫒', 'zumo': '🥤', 'polen': '🐝', 'vino': '🍷',
+    'ancheta': '🎁', 'regalo': '🎁', 'caja': '📦', 'combo': '🛍️', 'paquete': '🛍️',
+    'picados para sopa': '🥗',
+  };
+
+  const getProductEmoji = (productName: string): string => {
+    const sortedKeys = Object.keys(PRODUCT_EMOJIS).sort((a, b) => b.length - a.length);
+    const nameNoAccent = productName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    for (const keyword of sortedKeys) {
+      if (nameNoAccent.includes(keyword)) return PRODUCT_EMOJIS[keyword];
+    }
+    return '📦';
+  };
   // Extract order items based on order type
   let items: OrderItem[] = [];
 
@@ -199,17 +239,17 @@ export function generateOrderSummary(order: Order): string {
   const firstName = getFirstName(order.customer_name);
   const greeting = getGreeting();
 
-  // Build product list with checkmark emojis
+  // Build product list with product-specific emojis
   const productList = items.map((item, index) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = item.variantName || (item as any).variant_value || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
     const description = item.product_snapshot?.description || item.products?.description || (item as any).description || '';
 
-    // Format: "✅ 2x Zanahoria (1 kg) - $10,000" or "✅ 1x Cebolla - $3,000"
+    const emoji = getProductEmoji(itemName);
     let productDisplay = variantName
-      ? `✅ ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
-      : `✅ ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
+      ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
+      : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
 
     // Add description if exists (important for combos)
     if (description) {
