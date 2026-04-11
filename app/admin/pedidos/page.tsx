@@ -333,6 +333,12 @@ export default function OrdersPage() {
 
     // Tabla Maestra de emojis - Claves sin acentos para matching robusto
     const EMOJI_TABLE: Record<string, string> = {
+      // Aguacates específicos (claves largas para ganar sobre 'caja' genérica)
+      'hass':'🥑','injerto':'🥑','caja de 24':'🥑','caja de 12':'🥑',
+      'caja de 7':'🥑','caja de 35':'🥑','nueva maya':'🥑',
+      // Uvas específicas
+      'red globe':'🍇',
+      // Frutas
       'aguacate':'🥑','fresa':'🍓','frambuesa':'🍓','mango':'🥭',
       'banano':'🍌','banana':'🍌','platano':'🍌','pina':'🍍',
       'uva':'🍇','limon':'🍋','naranja':'🍊','mandarina':'🍊',
@@ -344,6 +350,7 @@ export default function OrdersPage() {
       'feijoa':'🍈','anon':'🍈','corozo':'🔴','mangostino':'🟣',
       'rambutan':'🔴','borojo':'🟤','carambolo':'⭐','datil':'🟫',
       'papaya':'🍈','guanabana':'🍈','granadilla':'🍈','guayaba':'🍈',
+      // Verduras
       'cebolla':'🧅','ajo':'🧄','pasta de ajo':'🧄','tomate':'🍅',
       'papa':'🥔','cubios':'🥔','zanahoria':'🥕','maiz':'🌽',
       'mazorca':'🌽','pimenton':'🫑','pepino':'🥒','calabacin':'🥒',
@@ -352,19 +359,23 @@ export default function OrdersPage() {
       'arveja':'🫛','guisante':'🫛','habas':'🫛','frijol':'🫘',
       'champinon':'🍄','hongo':'🍄','esparrago':'🌿','remolacha':'🟤',
       'rabano':'🥕','ahuyama':'🎃','auyama':'🎃','batata':'🍠','yacon':'🍠',
+      // Hierbas y especias
       'jengibre':'🫚','curcuma':'🫚','cilantro':'🌿','perejil':'🌿',
       'albahaca':'🌿','romero':'🌿','tomillo':'🌿','oregano':'🌿',
       'menta':'🌿','hierbabuena':'🌿','laurel':'🌿','canela':'🪵',
       'pimienta':'⚫','chile':'🌶️','aji':'🌶️','jalapeno':'🌶️',
+      // Semillas, procesados, presentaciones
       'semilla':'🌱','chia':'🌱','germinados':'🌱','quinoa':'🌾','linaza':'🌾',
       'miel':'🍯','aceite':'🫒','zumo':'🥤','polen':'🐝','vino':'🍷',
       'ancheta':'🎁','regalo':'🎁','caja':'📦','combo':'🛍️','paquete':'🛍️',
       'cafe':'☕','huevo':'🥚','leche':'🥛','queso':'🧀',
       'carne':'🥩','pollo':'🍗','pescado':'🐟','salmon':'🐟','camaron':'🦐',
     };
+    // Ordenar claves de más larga a más corta para prioridad correcta
+    const sortedKeys = Object.keys(EMOJI_TABLE).sort((a, b) => b.length - a.length);
     const getProductEmoji = (productName: string): string => {
       const n = productName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      for (const k of Object.keys(EMOJI_TABLE)) { if (n.includes(k)) return EMOJI_TABLE[k]; }
+      for (const k of sortedKeys) { if (n.includes(k)) return EMOJI_TABLE[k]; }
       return '📦';
     };
 

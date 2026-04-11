@@ -550,6 +550,18 @@ export default function ListaComprasPage() {
   // Emoticones para cada producto - Tabla Maestra
   // Claves sin acentos para matching robusto (getProductEmoji normaliza nombres antes de buscar)
   const PRODUCT_EMOJIS: Record<string, string> = {
+    // --- AGUACATES (claves específicas primero para ganar sobre 'caja' genérica) ---
+    'hass': '🥑',
+    'injerto': '🥑',
+    'caja de 24': '🥑',
+    'caja de 12': '🥑',
+    'caja de 7': '🥑',
+    'caja de 35': '🥑',
+    'nueva maya': '🥑',
+
+    // --- UVAS (claves específicas) ---
+    'red globe': '🍇',
+
     // --- FRUTAS ---
     'aguacate': '🥑',
     'fresa': '🍓',
@@ -970,11 +982,12 @@ export default function ListaComprasPage() {
 
   // Obtener emoji para el producto
   // Usa la Tabla Maestra de emojis. Normaliza sin acentos para matching robusto.
+  // Ordena claves de más larga a más corta para que "caja de 24" gane sobre "caja"
+  const _sortedEmojiKeys = Object.keys(PRODUCT_EMOJIS).sort((a, b) => b.length - a.length);
   const getProductEmoji = (productName: string): string => {
     const nameNoAccent = productName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    // Buscar palabras clave en el nombre del producto (todas las claves ya están sin acentos)
-    for (const keyword of Object.keys(PRODUCT_EMOJIS)) {
+    for (const keyword of _sortedEmojiKeys) {
       if (nameNoAccent.includes(keyword)) {
         return PRODUCT_EMOJIS[keyword];
       }
