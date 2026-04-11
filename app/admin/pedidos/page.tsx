@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { getProductEmoji } from '@/utils/productEmojis';
 import { useSearchParams } from 'next/navigation';
 import {
   Filter,
@@ -331,48 +332,6 @@ export default function OrdersPage() {
     lines.push(`☑️ VERIFICAR PRODUCTOS (${totalProducts} items):`);
     lines.push('───────────────────────────────────');
 
-    // Tabla Maestra de emojis - Claves sin acentos para matching robusto
-    const EMOJI_TABLE: Record<string, string> = {
-    'hass': '🥑', 'injerto': '🥑', 'caja de 24': '🥑', 'caja de 12': '🥑',
-    'caja de 7': '🥑', 'caja de 35': '🥑', 'nueva maya': '🥑', 'red globe': '🍇', 'uva isabelina': '🍇',
-    'aguacate': '🥑', 'fresa': '🍓', 'frambuesa': '🍓', 'mango': '🥭',
-    'banano': '🍌', 'banana': '🍌', 'platano': '🍌', 'pina': '🍍',
-    'uva': '🍇', 'limon': '🍋', 'naranja': '🍊', 'mandarina': '🍊', 'toronja': '🍊',
-    'cereza': '🍒', 'coco': '🥥', 'kiwi': '🥝', 'pera': '🍐', 'cidra': '🍈',
-    'durazno': '🍑', 'melocoton': '🍑', 'ciruela': '🍑', 'sandia': '🍉',
-    'melon': '🍈', 'manzana': '🍎', 'arandano': '🫐', 'mora': '🫐', 'agraz': '🫐',
-    'granada': '🔴', 'maracuya': '🟡', 'lulo': '🟢', 'pitahaya': '🐉',
-    'pitaya': '🐉', 'uchuva': '🟡', 'tamarindo': '🟫', 'gulupa': '🟣',
-    'feijoa': '🍈', 'anon': '🍈', 'corozo': '🔴', 'mangostino': '🟣',
-    'rambutan': '🔴', 'borojo': '🟤', 'carambolo': '⭐', 'datil': '🟫',
-    'papaya': '🍈', 'guanabana': '🍈', 'granadilla': '🍈', 'guayaba': '🍈',
-    'cebolla': '🧅', 'cebollin': '🌿', 'ajo': '🧄', 'pasta de ajo': '🧄', 'tomate': '🍅',
-    'papa': '🥔', 'cubios': '🥔', 'zanahoria': '🥕', 'maiz': '🌽',
-    'mazorca': '🌽', 'pimenton': '🫑', 'pepino': '🥒', 'calabacin': '🥒',
-    'zucchini': '🥒', 'brocoli': '🥦', 'coliflor': '🥦', 'espinaca': '🥬',
-    'lechuga': '🥬', 'repollo': '🥬', 'apio': '🥬', 'berenjena': '🍆', 'acelga': '🥬',
-    'alcachofa': '🥬', 'col bruselas': '🥬', 'kale': '🥬', 'rucula': '🥬',
-    'arveja': '🫛', 'guisante': '🫛', 'habas': '🫛', 'frijol': '🫘', 'habichuela': '🫛', 'abichuelin': '🫛',
-    'champinon': '🍄', 'hongo': '🍄', 'esparrago': '🌿', 'remolacha': '🟤',
-    'rabano': '🥕', 'ahuyama': '🎃', 'auyama': '🎃', 'batata': '🍠', 'yacon': '🍠',
-    'jengibre': '🫚', 'curcuma': '🫚', 'cilantro': '🌿', 'perejil': '🌿', 'guasca': '🌿',
-    'albahaca': '🌿', 'romero': '🌿', 'tomillo': '🌿', 'oregano': '🌿', 'finas hierbas': '🌿',
-    'menta': '🌿', 'hierbabuena': '🌿', 'laurel': '🌿', 'canela': '🪵', 'moringa': '🌿', 'stevia': '🌿',
-    'pimienta': '⚫', 'chile': '🌶️', 'aji': '🌶️', 'jalapeno': '🌶️', 'achiote': '🔴', 'paprika': '🌶️', 'comino': '🟤',
-    'semilla': '🌱', 'chia': '🌱', 'germinados': '🌱', 'raices chinas': '🌱', 'quinoa': '🌾', 'linaza': '🌾',
-    'miel': '🍯', 'aceite': '🫒', 'zumo': '🥤', 'polen': '🐝', 'vino': '🍷',
-    'ancheta': '🎁', 'regalo': '🎁', 'caja': '📦', 'combo': '🛍️', 'paquete': '🛍️',
-    'picados para sopa': '🥗', 'sabila': '🌵', 'flor de jamaica': '🌺', 
-    'manzanilla': '🌼', 'calendula': '🌼', 'diente de leon': '🌼', 'eucalipto': '🌿',
-    'pistachos': '🥜', 'bicarbonato': '🧂'
-    };
-    // Ordenar claves de más larga a más corta para prioridad correcta
-    const sortedKeys = Object.keys(EMOJI_TABLE).sort((a, b) => b.length - a.length);
-    const getProductEmoji = (productName: string): string => {
-      const n = productName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      for (const k of sortedKeys) { if (n.includes(k)) return EMOJI_TABLE[k]; }
-      return '📦';
-    };
 
     orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';

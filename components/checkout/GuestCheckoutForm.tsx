@@ -7,6 +7,7 @@ import { useCartStore, type PaymentMethod } from '@/lib/cart-store';
 import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
+import { getProductEmoji } from '@/utils/productEmojis';
 import dynamic from 'next/dynamic';
 
 // Lazy load de modales pesados (framer-motion)
@@ -258,7 +259,7 @@ Acabo de hacer un pedido en su tienda:
 🔗 https://tus-aguacates.vercel.app
 
 📦 *Mi pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {
@@ -462,7 +463,7 @@ Acabo de hacer un pedido en su tienda:
 🔗 https://tus-aguacates.vercel.app
 
 📦 *Mi pedido:*
-${orderData.items.map(item => `• ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {

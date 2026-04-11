@@ -22,6 +22,7 @@ import {
   FileText,
   AlertCircle
 } from 'lucide-react';
+import { getProductEmoji } from '@/utils/productEmojis';
 
 interface B2BOrderItem {
   id: string;
@@ -241,7 +242,7 @@ export default function B2BOrdersPage() {
         ? JSON.parse(item.product_snapshot)
         : item.product_snapshot;
 
-      message += `\n${index + 1}. ${snapshot.name}`;
+      message += `\n${index + 1}. ${getProductEmoji(snapshot.name)} ${snapshot.name}`;
       message += `\n   Cantidad: ${item.quantity} ${item.applied_tier_name || ''}`;
       message += `\n   Subtotal: ${formatCurrency(item.subtotal)}`;
     });
