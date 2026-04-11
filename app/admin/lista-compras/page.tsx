@@ -1487,6 +1487,47 @@ const normalizeVariant = (variant: string | null): string => {
     return summaries;
   }, [orders, selectedOrders, catalogProducts]);
 
+  // Combos programados en los pedidos (para mostrar el resumen de los combos desglosados)
+  const orderedCombos = useMemo(() => {
+    const combos = new Map<string, { quantity: number, description: string, price: number }>();
+    const selectedOrdersList = orders.filter(order => selectedOrders.has(order.id));
+    
+    selectedOrdersList.forEach(order => {
+      const items = extractItemsFromOrder(order);
+      items.forEach(item => {
+        const productName =
+          item.product_snapshot?.name ||
+          item.products?.name ||
+          item.product_name ||
+          item.productName ||
+          'Producto sin nombre';
+          
+        const comboKey = productName.toLowerCase();
+        const comboComponents = COMBO_COMPONENTS[comboKey] ||
+          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
+          
+        if (comboComponents) {
+          const displayKey = productName;
+          const curr = combos.get(displayKey) || { 
+            quantity: 0, 
+            description: item.product_snapshot?.description || 'Ver componentes desglosados en la tabla de compras', 
+            price: item.unit_price || item.price || 0 
+          };
+          curr.quantity += item.quantity;
+          if (item.product_snapshot?.description) {
+            curr.description = item.product_snapshot.description;
+          }
+          combos.set(displayKey, curr);
+        }
+      });
+    });
+    
+    return Array.from(combos.entries()).map(([name, data]) => ({
+      name,
+      ...data
+    }));
+  }, [orders, selectedOrders]);
+
   // Calcular productos agrupados de los pedidos seleccionados
   const groupedProducts = useMemo(() => {
     const selectedOrdersList = orders.filter(order =>
@@ -1575,7 +1616,7 @@ const normalizeVariant = (variant: string | null): string => {
                 product_name: normalizedName,
                 variant_name: component.variant,
                 display_name: component.variant ? `${normalizedName} (${component.variant})` : normalizedName,
-                unit_price: 0, // No tiene precio individual
+                unit_price: (item.unit_price || item.price || 0) > 0 ? Math.round((item.unit_price || item.price || 0) / comboComponents.length) : 0, // Precio dividido entre componentes para que no sea 0
                 total_quantity: component.quantity * item.quantity,
                 has_missing_variants: false, // Combos siempre tienen variante definida
                 orders_count: 1,
@@ -2426,6 +2467,35 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               )}
             </div>
 
+            {/* Panel de Desglose de Combos */}
+            {orderedCombos.length > 0 && selectedOrders.size > 0 && (
+              <div className="bg-indigo-50 dark:bg-indigo-900/40 rounded-xl shadow-sm border border-indigo-200 dark:border-indigo-800 overflow-hidden mb-6">
+                <div className="p-4 border-b border-indigo-200 dark:border-indigo-800 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Package className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                    <h2 className="text-lg font-semibold text-indigo-900 dark:text-indigo-100">Desglose de Combos Originales</h2>
+                  </div>
+                  <span className="text-sm text-indigo-700 dark:text-indigo-300">
+                    Se empacarán según su configuración
+                  </span>
+                </div>
+                <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {orderedCombos.map((combo, idx) => (
+                    <div key={idx} className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-indigo-100 dark:border-gray-700">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-semibold text-gray-900 dark:text-white">{combo.name}</span>
+                        <span className="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-1 rounded dark:bg-indigo-900 dark:text-indigo-200">
+                          {combo.quantity} un.
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 whitespace-pre-line">{combo.description}</p>
+                      <p className="text-xs text-gray-500 font-medium">Original: {formatPrice(combo.price)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Tabla Principal */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
               {/* Alerta de Duplicados */}
@@ -2521,6 +2591,14 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                         Ocultar Comprados
                       </>
                     )}
+                  </button>
+                  <button
+                    onClick={clearAllPurchased}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium transition-colors hover:bg-red-100 dark:bg-red-900/30 dark:border-red-800/50 dark:text-red-400 dark:hover:bg-red-900/50"
+                    title="Limpiar todos los productos marcados"
+                  >
+                    <RotateCcw size={16} />
+                    Limpiar Marcados
                   </button>
                 </div>
                 <div className="flex flex-col items-end gap-1">

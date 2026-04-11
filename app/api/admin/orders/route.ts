@@ -602,7 +602,7 @@ export async function POST(request: NextRequest) {
       console.log(`🔍 API: Fetching product ${item.product_id}...`);
       const { data: product, error: productError } = await supabase
         .from('products')
-        .select('id, name, price')
+        .select('id, name, price, description')
         .eq('id', item.product_id)
         .single();
 
@@ -659,6 +659,7 @@ export async function POST(request: NextRequest) {
       orderItems.push({
         product_id: item.product_id,
         product_name: product.name,
+        product_description: product.description,
         quantity: item.quantity,
         price: itemPrice,
         total: itemTotal,
@@ -788,7 +789,8 @@ export async function POST(request: NextRequest) {
       product_snapshot: {
         name: item.product_name || 'Producto',
         variant_name: item.variant_name || null,
-        variant_value: item.variant_value || null
+        variant_value: item.variant_value || null,
+        description: item.product_description || null
       },
       created_at: new Date().toISOString()
     }));
