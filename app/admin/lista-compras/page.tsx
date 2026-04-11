@@ -978,13 +978,19 @@ export default function ListaComprasPage() {
 
   // Obtener emoji para el producto
   const getProductEmoji = (productName: string): string => {
-    const name = productName.toLowerCase();
+    let name = productName.toLowerCase();
+    const nameNoAccent = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    // Casos especiales directos usando nombre sin acentos
+    if (nameNoAccent.includes('arandano')) return '🫐';
+    if (nameNoAccent.includes('fresa')) return '🍓';
+    if (nameNoAccent.includes('combo')) return '📦';
 
     // Buscar palabras clave en el nombre del producto
     const keywords = Object.keys(PRODUCT_EMOJIS);
 
     for (const keyword of keywords) {
-      if (name.includes(keyword)) {
+      if (name.includes(keyword) || nameNoAccent.includes(keyword)) {
         return PRODUCT_EMOJIS[keyword];
       }
     }
@@ -997,7 +1003,7 @@ export default function ListaComprasPage() {
       name.includes('limón') || name.includes('naranja') || name.includes('mandarina') ||
       name.includes('uva') || name.includes('mora') || name.includes('granadilla') ||
       name.includes('maracuyá') || name.includes('guayaba') || name.includes('pitahaya') ||
-      name.includes('melón')) {
+      name.includes('melón') || name.includes('arándano') || name.includes('arandano')) {
       return '🍎';
     }
 
@@ -1394,9 +1400,9 @@ const normalizeVariant = (variant: string | null): string => {
       variantDisplay = Array.from(selectedHints.values())[0].display;
     }
 
-    if (!variantDisplay && catalogEntry && catalogEntry.variants.size === 1) {
+    if (!variantDisplay && catalogEntry && catalogEntry.variants.size > 0) {
       variantDisplay = Array.from(catalogEntry.variants.values())[0];
-      // Also get the variant_name for single-variant products
+      // Also get the variant_name for products
       const normalizedDisplay = normalizeVariant(variantDisplay);
       const catalogVariantName = catalogEntry.variantNames.get(normalizedDisplay);
       if (catalogVariantName) {
@@ -1614,9 +1620,9 @@ const normalizeVariant = (variant: string | null): string => {
             } else {
               productMap.set(componentKey, {
                 grouping_key: componentKey,
-                product_name: normalizedName,
+                product_name: component.name,
                 variant_name: component.variant,
-                display_name: component.variant ? `${normalizedName} (${component.variant})` : normalizedName,
+                display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
                 unit_price: (item.unit_price || item.price || 0) > 0 ? Math.round((item.unit_price || item.price || 0) / comboComponents.length) : 0, // Precio dividido entre componentes para que no sea 0
                 total_quantity: component.quantity * item.quantity,
                 has_missing_variants: false, // Combos siempre tienen variante definida
