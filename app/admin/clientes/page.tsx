@@ -40,7 +40,11 @@ interface Customer {
   last_order_date?: string;
   is_active: boolean;
   created_at: string;
-  is_guest?: boolean; // Flag para identificar clientes invitados
+  is_guest?: boolean;
+  segment?: 'champion' | 'loyal' | 'potential' | 'at_risk' | 'inactive' | 'new';
+  segmentLabel?: string;
+  tier?: 'platinum' | 'gold' | 'silver' | 'bronze';
+  tierLabel?: string;
 }
 
 interface Pagination {
@@ -62,7 +66,19 @@ interface CustomerStats {
   totalSpent: number;
   totalOrders: number;
   avgTicket: number;
-  recurring: number; // 2+ pedidos
+  recurring: number;
+  // Clasificaciones
+  champions: number;
+  loyal: number;
+  potential: number;
+  atRisk: number;
+  inactive: number;
+  new: number;
+  // Tiers
+  platinum: number;
+  gold: number;
+  silver: number;
+  bronze: number;
   // Fuentes de datos
   fromCustomers: number;
   fromProfiles: number;
@@ -81,19 +97,17 @@ export default function CustomersPage() {
     total: 0,
     totalPages: 1,
   });
-  const [stats, setStats] = useState<CustomerStats>({
-    total: 0,
-    registered: 0,
-    guests: 0,
-    withPhone: 0,
-    withEmail: 0,
-    withAddress: 0,
-    withName: 0,
-    incompleteData: 0,
-    totalSpent: 0,
-    totalOrders: 0,
-    avgTicket: 0,
     recurring: 0,
+    champions: 0,
+    loyal: 0,
+    potential: 0,
+    atRisk: 0,
+    inactive: 0,
+    new: 0,
+    platinum: 0,
+    gold: 0,
+    silver: 0,
+    bronze: 0,
     fromCustomers: 0,
     fromProfiles: 0,
     fromGuestOrders: 0
@@ -203,10 +217,23 @@ export default function CustomersPage() {
         const recurring = allCust.filter(c => c.total_orders >= 2).length;
         const avgTicket = totalOrders > 0 ? totalSpent / totalOrders : 0;
 
-        // Obtener fuentes de datos de la respuesta
         const fromCustomers = data.sources?.customers || allCust.filter(c => c.source === 'customers').length;
         const fromProfiles = data.sources?.profiles || allCust.filter(c => c.source === 'profiles').length;
         const fromGuestOrders = data.sources?.guests || allCust.filter(c => c.source === 'guest_orders').length;
+
+        // Estadísticas de Segmentos
+        const champions = allCust.filter(c => c.segment === 'champion').length;
+        const loyal = allCust.filter(c => c.segment === 'loyal').length;
+        const potential = allCust.filter(c => c.segment === 'potential').length;
+        const atRisk = allCust.filter(c => c.segment === 'at_risk').length;
+        const inactive = allCust.filter(c => c.segment === 'inactive').length;
+        const New = allCust.filter(c => c.segment === 'new').length;
+
+        // Estadísticas de Tiers
+        const platinum = allCust.filter(c => c.tier === 'platinum').length;
+        const gold = allCust.filter(c => c.tier === 'gold').length;
+        const silver = allCust.filter(c => c.tier === 'silver').length;
+        const bronze = allCust.filter(c => c.tier === 'bronze').length;
 
         setStats({
           total: data.pagination?.total || allCust.length,
@@ -221,6 +248,16 @@ export default function CustomersPage() {
           totalOrders,
           avgTicket,
           recurring,
+          champions,
+          loyal,
+          potential,
+          atRisk,
+          inactive,
+          new: New,
+          platinum,
+          gold,
+          silver,
+          bronze,
           fromCustomers,
           fromProfiles,
           fromGuestOrders
@@ -468,19 +505,168 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      {/* Filtros de Calidad de Datos */}
+          </button>
+        </div>
+      </div>
+
+      {/* Clasificación Inteligente de Clientes (RFM + Fidelidad) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-700">Filtros de Calidad de Datos</h3>
+        <div className="mb-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-green-600" />
+            <h3 className="font-bold text-gray-900">Clasificación Inteligente (RFM)</h3>
+          </div>
           {dataFilter && (
             <button
               onClick={() => setDataFilter('')}
               className="text-xs text-gray-500 hover:text-gray-700 underline"
             >
-              Limpiar filtro
+              Limpiar filtros
             </button>
           )}
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+          <button
+            onClick={() => setDataFilter(dataFilter === 'champion' ? '' : 'champion')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'champion'
+              ? 'bg-yellow-50 border-yellow-500 shadow-md ring-2 ring-yellow-200'
+              : 'bg-white border-gray-100 hover:border-yellow-200 hover:bg-yellow-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">🏆</span>
+              <span className={`text-lg font-bold ${dataFilter === 'champion' ? 'text-yellow-700' : 'text-gray-900'}`}>{stats.champions}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">Campeones</p>
+            <p className="text-[10px] text-gray-500 leading-tight">Gasto alto, frecuentes y recientes.</p>
+          </button>
+
+          <button
+            onClick={() => setDataFilter(dataFilter === 'loyal' ? '' : 'loyal')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'loyal'
+              ? 'bg-green-50 border-green-500 shadow-md ring-2 ring-green-200'
+              : 'bg-white border-gray-100 hover:border-green-200 hover:bg-green-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">✅</span>
+              <span className={`text-lg font-bold ${dataFilter === 'loyal' ? 'text-green-700' : 'text-gray-900'}`}>{stats.loyal}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">Fieles</p>
+            <p className="text-[10px] text-gray-500 leading-tight">Compran con regularidad.</p>
+          </button>
+
+          <button
+            onClick={() => setDataFilter(dataFilter === 'potential' ? '' : 'potential')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'potential'
+              ? 'bg-blue-50 border-blue-500 shadow-md ring-2 ring-blue-200'
+              : 'bg-white border-gray-100 hover:border-blue-200 hover:bg-blue-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">⭐</span>
+              <span className={`text-lg font-bold ${dataFilter === 'potential' ? 'text-blue-700' : 'text-gray-900'}`}>{stats.potential}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">Potenciales</p>
+            <p className="text-[10px] text-gray-500 leading-tight">Clientes nuevos muy recientes.</p>
+          </button>
+
+          <button
+            onClick={() => setDataFilter(dataFilter === 'at_risk' ? '' : 'at_risk')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'at_risk'
+              ? 'bg-orange-50 border-orange-500 shadow-md ring-2 ring-orange-200'
+              : 'bg-white border-gray-100 hover:border-orange-200 hover:bg-orange-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">⚠️</span>
+              <span className={`text-lg font-bold ${dataFilter === 'at_risk' ? 'text-orange-700' : 'text-gray-900'}`}>{stats.atRisk}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">En Riesgo</p>
+            <p className="text-[10px] text-gray-500 leading-tight">No han pedido en 15+ días.</p>
+          </button>
+
+          <button
+            onClick={() => setDataFilter(dataFilter === 'inactive' ? '' : 'inactive')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'inactive'
+              ? 'bg-red-50 border-red-500 shadow-md ring-2 ring-red-200'
+              : 'bg-white border-gray-100 hover:border-red-200 hover:bg-red-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">💤</span>
+              <span className={`text-lg font-bold ${dataFilter === 'inactive' ? 'text-red-700' : 'text-gray-900'}`}>{stats.inactive}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">Inactivos</p>
+            <p className="text-[10px] text-gray-500 leading-tight">No han pedido en 30+ días.</p>
+          </button>
+
+          <button
+            onClick={() => setDataFilter(dataFilter === 'new_customer' ? '' : 'new_customer')}
+            className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'new_customer'
+              ? 'bg-teal-50 border-teal-500 shadow-md ring-2 ring-teal-200'
+              : 'bg-white border-gray-100 hover:border-teal-200 hover:bg-teal-50/30'
+              }`}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xl">🌱</span>
+              <span className={`text-lg font-bold ${dataFilter === 'new_customer' ? 'text-teal-700' : 'text-gray-900'}`}>{stats.new}</span>
+            </div>
+            <p className="text-sm font-bold text-gray-800">Nuevos</p>
+            <p className="text-[10px] text-gray-500 leading-tight">Solo 1 pedido (no reciente).</p>
+          </button>
+        </div>
+
+        <div className="pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2 mb-3">
+            <DollarSign className="w-5 h-5 text-emerald-600" />
+            <h3 className="text-sm font-bold text-gray-700">Niveles de Fidelidad (Gasto Total)</h3>
+          </div>
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={() => setDataFilter(dataFilter === 'platinum' ? '' : 'platinum')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'platinum' ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'}`}
+            >
+              <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
+              <span className="text-xs font-bold uppercase tracking-wider">Platino (+1M)</span>
+              <span className="font-mono">{stats.platinum}</span>
+            </button>
+            <button
+              onClick={() => setDataFilter(dataFilter === 'gold' ? '' : 'gold')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'gold' ? 'bg-yellow-600 text-white border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'}`}
+            >
+              <div className="w-2 h-2 rounded-full bg-yellow-400" />
+              <span className="text-xs font-bold uppercase tracking-wider">Oro (500k+)</span>
+              <span className="font-mono">{stats.gold}</span>
+            </button>
+            <button
+              onClick={() => setDataFilter(dataFilter === 'silver' ? '' : 'silver')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'silver' ? 'bg-gray-600 text-white border-gray-700' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
+            >
+              <div className="w-2 h-2 rounded-full bg-gray-400" />
+              <span className="text-xs font-bold uppercase tracking-wider">Plata (200k+)</span>
+              <span className="font-mono">{stats.silver}</span>
+            </button>
+            <button
+              onClick={() => setDataFilter(dataFilter === 'bronze' ? '' : 'bronze')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'bronze' ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'}`}
+            >
+              <div className="w-2 h-2 rounded-full bg-orange-400" />
+              <span className="text-xs font-bold uppercase tracking-wider">Bronce</span>
+              <span className="font-mono">{stats.bronze}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros de Calidad de Datos */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="w-5 h-5 text-gray-500" />
+            <h3 className="text-sm font-semibold text-gray-700">Calidad de Datos</h3>
+          </div>
         <div className="flex flex-wrap gap-3 text-sm">
           {/* Con email */}
           <button
@@ -710,16 +896,37 @@ export default function CustomersPage() {
                 return hasName(customer.name);
               case 'noName':
                 return !hasName(customer.name);
-              case 'incomplete':
-                return !customer.email ||
-                  !customer.address ||
-                  !customer.phone ||
-                  customer.phone === 'Sin teléfono' ||
-                  !hasName(customer.name);
-              default:
-                return true;
-            }
-          }) : baseCustomers;
+               return !hasName(customer.name);
+               case 'incomplete':
+                 return !customer.email ||
+                   !customer.address ||
+                   !customer.phone ||
+                   customer.phone === 'Sin teléfono' ||
+                   !hasName(customer.name);
+               case 'champion':
+                 return customer.segment === 'champion';
+               case 'loyal':
+                 return customer.segment === 'loyal';
+               case 'potential':
+                 return customer.segment === 'potential';
+               case 'at_risk':
+                 return customer.segment === 'at_risk';
+               case 'inactive':
+                 return customer.segment === 'inactive';
+               case 'new_customer':
+                 return customer.segment === 'new';
+               case 'platinum':
+                 return customer.tier === 'platinum';
+               case 'gold':
+                 return customer.tier === 'gold';
+               case 'silver':
+                 return customer.tier === 'silver';
+               case 'bronze':
+                 return customer.tier === 'bronze';
+               default:
+                 return true;
+             }
+           }) : baseCustomers;
 
           return filteredCustomers.length === 0 ? (
             <div className="text-center py-12">
@@ -737,7 +944,26 @@ export default function CustomersPage() {
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-semibold text-gray-900">{customer.name}</p>
-                          {customer.total_orders >= 2 && (
+                          {customer.segmentLabel && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${customer.segment === 'champion' ? 'bg-yellow-100 text-yellow-800' :
+                                customer.segment === 'at_risk' ? 'bg-orange-100 text-orange-800' :
+                                  customer.segment === 'inactive' ? 'bg-red-100 text-red-800' :
+                                    customer.segment === 'loyal' ? 'bg-green-100 text-green-800' :
+                                      'bg-blue-100 text-blue-800'
+                              }`}>
+                              {customer.segmentLabel}
+                            </span>
+                          )}
+                          {customer.tierLabel && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${customer.tier === 'platinum' ? 'bg-indigo-600 text-white shadow-sm' :
+                                customer.tier === 'gold' ? 'bg-yellow-500 text-white shadow-sm' :
+                                  customer.tier === 'silver' ? 'bg-gray-400 text-white' :
+                                    'bg-gray-100 text-gray-600 border border-gray-200'
+                              }`}>
+                              {customer.tierLabel}
+                            </span>
+                          )}
+                          {!customer.segmentLabel && customer.total_orders >= 2 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                               <Star className="w-3 h-3" />
                               Cliente recurrente
@@ -758,15 +984,29 @@ export default function CustomersPage() {
                       <div className="flex gap-2">
                         {/* Botón de WhatsApp */}
                         {customer.phone && customer.phone !== 'Sin teléfono' && (
-                          <a
-                            href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
-                            target="_blank"
-                            rel="noopener noreferrer"
+                          <button
+                            onClick={() => {
+                              const phone = customer.phone.replace(/\D/g, '');
+                              const segment = customer.segment;
+                              let message = '';
+
+                              if (segment === 'at_risk') {
+                                message = `¡Hola ${customer.name}! 👋 En Tus Aguacates te extrañamos. Hace días que no recibimos un pedido tuyo y queríamos saludarte para ver si todo está bien. ¡Esperamos volver a verte pronto! 🥑✨`;
+                              } else if (segment === 'champion') {
+                                message = `¡Hola ${customer.name}! 🏆 Eres uno de nuestros clientes preferidos y queríamos agradecerte por tu confianza constante en Tus Aguacates. ¡Que tengas un excelente día! 🥑💚`;
+                              } else if (segment === 'inactive') {
+                                message = `¡Hola ${customer.name}! ✨ Hace tiempo que no sabemos de ti. Te invitamos a conocer nuestros nuevos productos en Tus Aguacates. ¡Te esperamos! 🥑📦`;
+                              } else {
+                                message = `¡Hola ${customer.name}! 👋 Te saludamos de Tus Aguacates. ¿En qué podemos ayudarte hoy? 🥑✨`;
+                              }
+
+                              window.open(`https://wa.me/${phone.startsWith('57') ? phone : '57' + phone}?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
                             className="p-2 bg-green-100 hover:bg-green-200 rounded-lg"
                             title="Abrir WhatsApp"
                           >
                             <Phone className="w-4 h-4 text-green-600" />
-                          </a>
+                          </button>
                         )}
                         <button
                           onClick={() => openEditModal(customer)}
@@ -818,9 +1058,30 @@ export default function CustomersPage() {
                     {filteredCustomers.map((customer) => (
                       <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 flex-wrap mb-1">
-                            <p className="font-semibold text-gray-900">{customer.name}</p>
-                            {customer.total_orders >= 2 && (
+                          <p className="font-semibold text-gray-900 mb-1">{customer.name}</p>
+                          <div className="flex flex-wrap gap-2 mb-1">
+                            {customer.segmentLabel && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                customer.segment === 'champion' ? 'bg-yellow-100 text-yellow-800' :
+                                customer.segment === 'at_risk' ? 'bg-orange-100 text-orange-800' :
+                                customer.segment === 'inactive' ? 'bg-red-100 text-red-800' :
+                                customer.segment === 'loyal' ? 'bg-green-100 text-green-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {customer.segmentLabel}
+                              </span>
+                            )}
+                            {customer.tierLabel && (
+                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                customer.tier === 'platinum' ? 'bg-indigo-600 text-white shadow-sm' :
+                                customer.tier === 'gold' ? 'bg-yellow-500 text-white shadow-sm' :
+                                customer.tier === 'silver' ? 'bg-gray-400 text-white' :
+                                'bg-gray-100 text-gray-600 border border-gray-200'
+                              }`}>
+                                {customer.tierLabel}
+                              </span>
+                            )}
+                            {!customer.segmentLabel && customer.total_orders >= 2 && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
                                 <Star className="w-3 h-3" />
                                 Recurrente
@@ -875,19 +1136,33 @@ export default function CustomersPage() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center justify-end gap-2">
-                            {/* Botón de WhatsApp */}
-                            {customer.phone && customer.phone !== 'Sin teléfono' && (
-                              <a
-                                href={`https://wa.me/57${customer.phone.replace(/\D/g, '')}?text=Hola ${customer.name}, te escribimos de Tus Aguacates`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
-                                title="Abrir WhatsApp"
-                              >
-                                <Phone className="w-4 h-4" />
-                                WhatsApp
-                              </a>
-                            )}
+                             {/* Botón de WhatsApp */}
+                             {customer.phone && customer.phone !== 'Sin teléfono' && (
+                               <button
+                                 onClick={() => {
+                                   const phone = customer.phone.replace(/\D/g, '');
+                                   const segment = customer.segment;
+                                   let message = '';
+
+                                   if (segment === 'at_risk') {
+                                     message = `¡Hola ${customer.name}! 👋 En Tus Aguacates te extrañamos. Hace días que no recibimos un pedido tuyo y queríamos saludarte para ver si todo está bien. ¡Esperamos volver a verte pronto! 🥑✨`;
+                                   } else if (segment === 'champion') {
+                                     message = `¡Hola ${customer.name}! 🏆 Eres uno de nuestros clientes preferidos y queríamos agradecerte por tu confianza constante en Tus Aguacates. ¡Que tengas un excelente día! 🥑💚`;
+                                   } else if (segment === 'inactive') {
+                                     message = `¡Hola ${customer.name}! ✨ Hace tiempo que no sabemos de ti. Te invitamos a conocer nuestros nuevos productos en Tus Aguacates. ¡Te esperamos! 🥑📦`;
+                                   } else {
+                                     message = `¡Hola ${customer.name}! 👋 Te saludamos de Tus Aguacates. ¿En qué podemos ayudarte hoy? 🥑✨`;
+                                   }
+
+                                   window.open(`https://wa.me/${phone.startsWith('57') ? phone : '57' + phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                 }}
+                                 className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
+                                 title="Abrir WhatsApp"
+                               >
+                                 <Phone className="w-4 h-4" />
+                                 WhatsApp
+                               </button>
+                             )}
                             <button
                               onClick={() => openEditModal(customer)}
                               className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"

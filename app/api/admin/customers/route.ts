@@ -107,6 +107,66 @@ const calculateSearchScore = (customer: CustomerForSearch, searchTerms: string[]
   return score;
 };
 
+// Clasificar cliente por comportamiento (RFM) y nivel de fidelidad
+interface CustomerClassification {
+  segment: 'champion' | 'loyal' | 'potential' | 'at_risk' | 'inactive' | 'new';
+  segmentLabel: string;
+  tier: 'platinum' | 'gold' | 'silver' | 'bronze';
+  tierLabel: string;
+}
+
+const calculateCustomerClassification = (totalOrders: number, totalSpent: number, lastOrderDate?: string): CustomerClassification => {
+  const now = new Date();
+  const lastOrder = lastOrderDate ? new Date(lastOrderDate) : null;
+  const daysSinceLast = lastOrder ? Math.floor((now.getTime() - lastOrder.getTime()) / (1000 * 60 * 60 * 24)) : 999;
+
+  let segment: CustomerClassification['segment'] = 'new';
+  let tier: CustomerClassification['tier'] = 'bronze';
+
+  // Determinar Nivel (Tier) por Gasto Total
+  if (totalSpent >= 1000000) tier = 'platinum';
+  else if (totalSpent >= 500000) tier = 'gold';
+  else if (totalSpent >= 200000) tier = 'silver';
+  else tier = 'bronze';
+
+  // Determinar Segmento (RFM)
+  if (totalOrders >= 5 && totalSpent >= 500000 && daysSinceLast <= 7) {
+    segment = 'champion';
+  } else if (totalOrders >= 3 && daysSinceLast <= 15) {
+    segment = 'loyal';
+  } else if (daysSinceLast <= 7) {
+    segment = 'potential';
+  } else if (totalOrders >= 2 && daysSinceLast > 15 && daysSinceLast <= 30) {
+    segment = 'at_risk';
+  } else if (daysSinceLast > 30) {
+    segment = 'inactive';
+  } else if (totalOrders === 1) {
+    segment = 'new';
+  }
+
+  const segmentLabels = {
+    champion: 'Campeón 🏆',
+    loyal: 'Fiel ✅',
+    potential: 'Potencial ⭐',
+    at_risk: 'En Riesgo ⚠️',
+    inactive: 'Inactivo 💤',
+    new: 'Nuevo 🌱'
+  };
+
+  const tierLabels = {
+    platinum: 'Platino',
+    gold: 'Oro',
+    silver: 'Plata',
+    bronze: 'Bronce'
+  };
+
+  return {
+    segment,
+    segmentLabel: segmentLabels[segment],
+    tier,
+    tierLabel: tierLabels[tier]
+  };
+};
 
 // GET - Listar clientes con búsqueda y paginación
 // Ahora lee de TODAS las fuentes: customers, profiles, y guest_orders
@@ -173,7 +233,12 @@ export async function GET(request: NextRequest) {
       for (const customer of allCustomersData) {
         const phoneKey = (customer.phone || '').trim().toLowerCase();
         if (phoneKey && !phonesSeen.has(phoneKey)) {
-          phonesSeen.add(phoneKey);
+          const classification = calculateCustomerClassification(
+            customer.total_orders || 0,
+            parseFloat(customer.total_spent) || 0,
+            customer.last_order_date
+          );
+
           allCustomers.push({
             id: customer.id,
             name: customer.name,
@@ -189,7 +254,8 @@ export async function GET(request: NextRequest) {
             is_active: customer.is_active !== false,
             created_at: customer.created_at,
             is_guest: false,
-            source: 'customers'
+            source: 'customers',
+            ...classification
           });
         }
       }
@@ -228,26 +294,7 @@ export async function GET(request: NextRequest) {
               .select('total, created_at')
               .eq('user_id', profile.id);
 
-            const totalOrders = orders?.length || 0;
-            const totalSpent = orders?.reduce((sum: number, o: any) => sum + (parseFloat(o.total) || 0), 0) || 0;
-            const lastOrderDate = orders?.[0]?.created_at || null;
-
-            // Obtener email de auth.users
-            let email = null;
-            try {
-              const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
-              email = authUser?.user?.email || null;
-            } catch (e) {
-              // Ignorar errores de auth
-            }
-
-            // Obtener dirección
-            const { data: addresses } = await supabase
-              .from('addresses')
-              .select('street_address, city, neighborhood')
-              .eq('user_id', profile.id)
-              .eq('is_default', true)
-              .limit(1);
+            const classification = calculateCustomerClassification(totalOrders, totalSpent, lastOrderDate);
 
             allCustomers.push({
               id: profile.id,
@@ -264,7 +311,8 @@ export async function GET(request: NextRequest) {
               is_active: true,
               created_at: profile.created_at,
               is_guest: false,
-              source: 'profiles'
+              source: 'profiles',
+              ...classification
             });
           }
         }
@@ -316,6 +364,11 @@ export async function GET(request: NextRequest) {
         for (const [phoneKey, guest] of guestMap) {
           phonesSeen.add(phoneKey);
 
+          const totalSpent = guest.orders.reduce((sum: number, o: any) => sum + o.total, 0);
+          const totalOrders = guest.orders.length;
+          const lastOrderDate = guest.orders[0]?.created_at || null;
+          const classification = calculateCustomerClassification(totalOrders, totalSpent, lastOrderDate);
+
           allCustomers.push({
             id: `guest-${guest.phone}`,
             name: guest.name,
@@ -325,13 +378,14 @@ export async function GET(request: NextRequest) {
             neighborhood: null,
             city: 'Bogotá',
             notes: 'Cliente invitado (sin cuenta)',
-            total_orders: guest.orders.length,
-            total_spent: guest.orders.reduce((sum: number, o: any) => sum + o.total, 0),
-            last_order_date: guest.orders[0]?.created_at || null,
+            total_orders: totalOrders,
+            total_spent: totalSpent,
+            last_order_date: lastOrderDate,
             is_active: true,
             created_at: guest.created_at,
             is_guest: true,
-            source: 'guest_orders'
+            source: 'guest_orders',
+            ...classification
           });
         }
       }
