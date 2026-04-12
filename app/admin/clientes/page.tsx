@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Search,
   Plus,
@@ -23,7 +23,9 @@ import {
   Users,
   TrendingUp,
   DollarSign,
-  UserCheck
+  UserCheck,
+  Copy,
+  MessageSquare
 } from 'lucide-react';
 
 interface Customer {
@@ -124,6 +126,56 @@ export default function CustomersPage() {
     fromProfiles: 0,
     fromGuestOrders: 0
   });
+
+  // Ref para scroll a la tabla
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
+  // Helper: al hacer clic en un segmento, resetear paginación y hacer scroll
+  const handleFilterClick = (filterKey: string) => {
+    const newFilter = dataFilter === filterKey ? '' : filterKey;
+    setDataFilter(newFilter);
+    setPagination(prev => ({ ...prev, page: 1 }));
+    if (newFilter && tableRef.current) {
+      setTimeout(() => {
+        tableRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
+
+  // Mensajes de difusión por segmento
+  const broadcastMessages: Record<string, { title: string; message: string; action: string }> = {
+    champion: {
+      title: '🏆 Mensaje para Campeones',
+      message: '¡Hola! 🥑 Queremos agradecerte por ser uno de nuestros clientes más fieles. Esta semana tenemos cosecha fresca y tú tienes prioridad para elegir primero. ¿Te reservamos tu pedido de siempre? 💚',
+      action: 'Fidelizar: Darles prioridad y trato VIP'
+    },
+    loyal: {
+      title: '✅ Mensaje para Fieles',
+      message: '¡Hola! 🥑 Esta semana tenemos productos frescos recién llegados. Como siempre cuentas con nosotros, queríamos avisarte primero. ¿Te enviamos el menú de esta semana? 📋✨',
+      action: 'Mantener: Enviar novedades y menú semanal'
+    },
+    potential: {
+      title: '⭐ Mensaje para Potenciales',
+      message: '¡Hola! 👋 Gracias por tu primer pedido con Tus Aguacates. Queremos que conozcas toda nuestra variedad: frutas, verduras, proteínas y más. ¿Te enviamos nuestro catálogo completo? 🥑📦',
+      action: 'Convertir: Mostrar catálogo completo y variedad'
+    },
+    at_risk: {
+      title: '⚠️ Mensaje para Clientes en Riesgo',
+      message: '¡Hola! 👋 Te extrañamos en Tus Aguacates. Hace días que no recibimos un pedido tuyo y queríamos saludarte. Esta semana tenemos cosecha fresca de temporada. ¿Te guardamos algo? 🥑✨',
+      action: 'Recuperar: Mensaje personal + oferta de temporada'
+    },
+    inactive: {
+      title: '💤 Mensaje para Inactivos',
+      message: '¡Hola! ✨ Hace tiempo que no sabemos de ti y te extrañamos. En Tus Aguacates hemos incorporado nuevos productos que te van a encantar. ¡Vuelve y te damos un descuento especial en tu próximo pedido! 🥑🎁',
+      action: 'Reactivar: Oferta de reenganche + nuevos productos'
+    },
+    new_customer: {
+      title: '🌱 Mensaje para Nuevos',
+      message: '¡Hola! 🥑 Gracias por confiar en Tus Aguacates para tu primer pedido. Esperamos que todo haya llegado perfecto. Recuerda que hacemos entregas los martes y viernes. ¿Te gustaría hacer tu segundo pedido? 📦💚',
+      action: 'Enganchar: Recordar días de entrega + segundo pedido'
+    }
+  };
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -536,7 +588,7 @@ export default function CustomersPage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           <button
-            onClick={() => setDataFilter(dataFilter === 'champion' ? '' : 'champion')}
+            onClick={() => handleFilterClick('champion')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'champion'
               ? 'bg-yellow-50 border-yellow-500 shadow-md ring-2 ring-yellow-200'
               : 'bg-white border-gray-100 hover:border-yellow-200 hover:bg-yellow-50/30'
@@ -548,10 +600,11 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">Campeones</p>
             <p className="text-[10px] text-gray-500 leading-tight">Gasto alto, frecuentes y recientes.</p>
+            <p className="text-[10px] text-yellow-600 font-semibold mt-1">→ Fidelizar con trato VIP</p>
           </button>
 
           <button
-            onClick={() => setDataFilter(dataFilter === 'loyal' ? '' : 'loyal')}
+            onClick={() => handleFilterClick('loyal')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'loyal'
               ? 'bg-green-50 border-green-500 shadow-md ring-2 ring-green-200'
               : 'bg-white border-gray-100 hover:border-green-200 hover:bg-green-50/30'
@@ -563,10 +616,11 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">Fieles</p>
             <p className="text-[10px] text-gray-500 leading-tight">Compran con regularidad.</p>
+            <p className="text-[10px] text-green-600 font-semibold mt-1">→ Mantener con novedades</p>
           </button>
 
           <button
-            onClick={() => setDataFilter(dataFilter === 'potential' ? '' : 'potential')}
+            onClick={() => handleFilterClick('potential')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'potential'
               ? 'bg-blue-50 border-blue-500 shadow-md ring-2 ring-blue-200'
               : 'bg-white border-gray-100 hover:border-blue-200 hover:bg-blue-50/30'
@@ -578,10 +632,11 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">Potenciales</p>
             <p className="text-[10px] text-gray-500 leading-tight">Clientes nuevos muy recientes.</p>
+            <p className="text-[10px] text-blue-600 font-semibold mt-1">→ Mostrar catálogo completo</p>
           </button>
 
           <button
-            onClick={() => setDataFilter(dataFilter === 'at_risk' ? '' : 'at_risk')}
+            onClick={() => handleFilterClick('at_risk')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'at_risk'
               ? 'bg-orange-50 border-orange-500 shadow-md ring-2 ring-orange-200'
               : 'bg-white border-gray-100 hover:border-orange-200 hover:bg-orange-50/30'
@@ -593,10 +648,11 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">En Riesgo</p>
             <p className="text-[10px] text-gray-500 leading-tight">No han pedido en 15+ días.</p>
+            <p className="text-[10px] text-orange-600 font-semibold mt-1">→ Recuperar con oferta</p>
           </button>
 
           <button
-            onClick={() => setDataFilter(dataFilter === 'inactive' ? '' : 'inactive')}
+            onClick={() => handleFilterClick('inactive')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'inactive'
               ? 'bg-red-50 border-red-500 shadow-md ring-2 ring-red-200'
               : 'bg-white border-gray-100 hover:border-red-200 hover:bg-red-50/30'
@@ -608,10 +664,11 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">Inactivos</p>
             <p className="text-[10px] text-gray-500 leading-tight">No han pedido en 30+ días.</p>
+            <p className="text-[10px] text-red-600 font-semibold mt-1">→ Reactivar con descuento</p>
           </button>
 
           <button
-            onClick={() => setDataFilter(dataFilter === 'new_customer' ? '' : 'new_customer')}
+            onClick={() => handleFilterClick('new_customer')}
             className={`p-3 rounded-xl border-2 transition-all text-left ${dataFilter === 'new_customer'
               ? 'bg-teal-50 border-teal-500 shadow-md ring-2 ring-teal-200'
               : 'bg-white border-gray-100 hover:border-teal-200 hover:bg-teal-50/30'
@@ -623,6 +680,7 @@ export default function CustomersPage() {
             </div>
             <p className="text-sm font-bold text-gray-800">Nuevos</p>
             <p className="text-[10px] text-gray-500 leading-tight">Solo 1 pedido (no reciente).</p>
+            <p className="text-[10px] text-teal-600 font-semibold mt-1">→ Enganchar segundo pedido</p>
           </button>
         </div>
 
@@ -633,7 +691,7 @@ export default function CustomersPage() {
           </div>
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={() => setDataFilter(dataFilter === 'platinum' ? '' : 'platinum')}
+              onClick={() => handleFilterClick('platinum')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'platinum' ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100'}`}
             >
               <div className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse" />
@@ -641,7 +699,7 @@ export default function CustomersPage() {
               <span className="font-mono">{stats.platinum}</span>
             </button>
             <button
-              onClick={() => setDataFilter(dataFilter === 'gold' ? '' : 'gold')}
+              onClick={() => handleFilterClick('gold')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'gold' ? 'bg-yellow-600 text-white border-yellow-700' : 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100'}`}
             >
               <div className="w-2 h-2 rounded-full bg-yellow-400" />
@@ -649,7 +707,7 @@ export default function CustomersPage() {
               <span className="font-mono">{stats.gold}</span>
             </button>
             <button
-              onClick={() => setDataFilter(dataFilter === 'silver' ? '' : 'silver')}
+              onClick={() => handleFilterClick('silver')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'silver' ? 'bg-gray-600 text-white border-gray-700' : 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'}`}
             >
               <div className="w-2 h-2 rounded-full bg-gray-400" />
@@ -657,7 +715,7 @@ export default function CustomersPage() {
               <span className="font-mono">{stats.silver}</span>
             </button>
             <button
-              onClick={() => setDataFilter(dataFilter === 'bronze' ? '' : 'bronze')}
+              onClick={() => handleFilterClick('bronze')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${dataFilter === 'bronze' ? 'bg-orange-600 text-white border-orange-700' : 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'}`}
             >
               <div className="w-2 h-2 rounded-full bg-orange-400" />
@@ -859,6 +917,63 @@ export default function CustomersPage() {
         }
         return null;
       })()}
+
+      {/* Banner de filtro activo + mensaje de difusión */}
+      {dataFilter && broadcastMessages[dataFilter] && (
+        <div ref={tableRef} className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="w-5 h-5 text-green-600" />
+              <h4 className="font-bold text-green-800">{broadcastMessages[dataFilter].title}</h4>
+            </div>
+            <button
+              onClick={() => setDataFilter('')}
+              className="text-xs px-3 py-1 bg-white border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600 font-medium"
+            >
+              ✕ Limpiar filtro
+            </button>
+          </div>
+          <p className="text-xs text-green-700 font-medium">
+            📋 Estrategia: {broadcastMessages[dataFilter].action}
+          </p>
+          <div className="bg-white rounded-lg border border-green-200 p-3">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm text-gray-700 flex-1">{broadcastMessages[dataFilter].message}</p>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(broadcastMessages[dataFilter].message);
+                  setCopiedMessage(true);
+                  setTimeout(() => setCopiedMessage(false), 2000);
+                }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                  copiedMessage
+                    ? 'bg-green-600 text-white'
+                    : 'bg-green-100 text-green-700 hover:bg-green-200'
+                }`}
+              >
+                <Copy className="w-3 h-3" />
+                {copiedMessage ? '¡Copiado!' : 'Copiar'}
+              </button>
+            </div>
+          </div>
+          <p className="text-[10px] text-green-600">💡 Copia este mensaje y envíalo por WhatsApp a los clientes de la lista de abajo, o úsalo en una lista de difusión.</p>
+        </div>
+      )}
+
+      {/* Indicador simple de filtro para filtros sin mensaje */}
+      {dataFilter && !broadcastMessages[dataFilter] && (
+        <div ref={tableRef} className="flex items-center justify-between bg-blue-50 rounded-xl border border-blue-200 px-4 py-3">
+          <p className="text-sm text-blue-800 font-medium">
+            🔍 Filtrando por: <span className="font-bold">{dataFilter}</span>
+          </p>
+          <button
+            onClick={() => setDataFilter('')}
+            className="text-xs px-3 py-1 bg-white border border-gray-300 rounded-full hover:bg-gray-50 text-gray-600 font-medium"
+          >
+            ✕ Limpiar
+          </button>
+        </div>
+      )}
 
       {/* Tabla de clientes */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
