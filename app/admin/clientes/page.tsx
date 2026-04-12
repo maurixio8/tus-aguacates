@@ -97,6 +97,18 @@ export default function CustomersPage() {
     total: 0,
     totalPages: 1,
   });
+  const [stats, setStats] = useState<CustomerStats>({
+    total: 0,
+    registered: 0,
+    guests: 0,
+    withPhone: 0,
+    withEmail: 0,
+    withAddress: 0,
+    withName: 0,
+    incompleteData: 0,
+    totalSpent: 0,
+    totalOrders: 0,
+    avgTicket: 0,
     recurring: 0,
     champions: 0,
     loyal: 0,
@@ -505,10 +517,6 @@ export default function CustomersPage() {
         </div>
       </div>
 
-          </button>
-        </div>
-      </div>
-
       {/* Clasificación Inteligente de Clientes (RFM + Fidelidad) */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
         <div className="mb-4 flex items-center justify-between">
@@ -662,11 +670,19 @@ export default function CustomersPage() {
 
       {/* Filtros de Calidad de Datos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">Calidad de Datos</h3>
           </div>
+          {dataFilter && (
+            <button
+              onClick={() => setDataFilter('')}
+              className="text-xs text-gray-500 hover:text-gray-700 underline"
+            >
+              Limpiar filtro
+            </button>
+          )}
+        </div>
         <div className="flex flex-wrap gap-3 text-sm">
           {/* Con email */}
           <button
@@ -896,37 +912,36 @@ export default function CustomersPage() {
                 return hasName(customer.name);
               case 'noName':
                 return !hasName(customer.name);
-               return !hasName(customer.name);
-               case 'incomplete':
-                 return !customer.email ||
-                   !customer.address ||
-                   !customer.phone ||
-                   customer.phone === 'Sin teléfono' ||
-                   !hasName(customer.name);
-               case 'champion':
-                 return customer.segment === 'champion';
-               case 'loyal':
-                 return customer.segment === 'loyal';
-               case 'potential':
-                 return customer.segment === 'potential';
-               case 'at_risk':
-                 return customer.segment === 'at_risk';
-               case 'inactive':
-                 return customer.segment === 'inactive';
-               case 'new_customer':
-                 return customer.segment === 'new';
-               case 'platinum':
-                 return customer.tier === 'platinum';
-               case 'gold':
-                 return customer.tier === 'gold';
-               case 'silver':
-                 return customer.tier === 'silver';
-               case 'bronze':
-                 return customer.tier === 'bronze';
-               default:
-                 return true;
-             }
-           }) : baseCustomers;
+              case 'incomplete':
+                return !customer.email ||
+                  !customer.address ||
+                  !customer.phone ||
+                  customer.phone === 'Sin teléfono' ||
+                  !hasName(customer.name);
+              case 'champion':
+                return customer.segment === 'champion';
+              case 'loyal':
+                return customer.segment === 'loyal';
+              case 'potential':
+                return customer.segment === 'potential';
+              case 'at_risk':
+                return customer.segment === 'at_risk';
+              case 'inactive':
+                return customer.segment === 'inactive';
+              case 'new_customer':
+                return customer.segment === 'new';
+              case 'platinum':
+                return customer.tier === 'platinum';
+              case 'gold':
+                return customer.tier === 'gold';
+              case 'silver':
+                return customer.tier === 'silver';
+              case 'bronze':
+                return customer.tier === 'bronze';
+              default:
+                return true;
+            }
+          }) : baseCustomers;
 
           return filteredCustomers.length === 0 ? (
             <div className="text-center py-12">

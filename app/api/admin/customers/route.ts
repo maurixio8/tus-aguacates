@@ -239,6 +239,7 @@ export async function GET(request: NextRequest) {
             customer.last_order_date
           );
 
+          phonesSeen.add(phoneKey);
           allCustomers.push({
             id: customer.id,
             name: customer.name,
@@ -293,6 +294,27 @@ export async function GET(request: NextRequest) {
               .from('orders')
               .select('total, created_at')
               .eq('user_id', profile.id);
+
+            const totalOrders = orders?.length || 0;
+            const totalSpent = orders?.reduce((sum: number, o: any) => sum + (parseFloat(o.total) || 0), 0) || 0;
+            const lastOrderDate = orders?.[0]?.created_at || null;
+
+            // Obtener email de auth.users
+            let email = null;
+            try {
+              const { data: authUser } = await supabase.auth.admin.getUserById(profile.id);
+              email = authUser?.user?.email || null;
+            } catch (e) {
+              // Ignorar errores de auth
+            }
+
+            // Obtener dirección
+            const { data: addresses } = await supabase
+              .from('addresses')
+              .select('street_address, city, neighborhood')
+              .eq('user_id', profile.id)
+              .eq('is_default', true)
+              .limit(1);
 
             const classification = calculateCustomerClassification(totalOrders, totalSpent, lastOrderDate);
 
