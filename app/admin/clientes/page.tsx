@@ -670,6 +670,7 @@ export default function CustomersPage() {
 
       {/* Filtros de Calidad de Datos */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <CheckCircle className="w-5 h-5 text-gray-500" />
             <h3 className="text-sm font-semibold text-gray-700">Calidad de Datos</h3>
