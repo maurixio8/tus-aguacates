@@ -2,9 +2,20 @@ import type { Metadata } from 'next';
 import HomeContent from './HomeContent';
 
 export const metadata: Metadata = {
-  title: 'Tus Aguacates | Aguacates Frescos a Domicilio en Bogotá',
-  description: 'Compra aguacates frescos de agricultores locales con envío a domicilio a Bogotá. Entregas martes y viernes. Calidad garantizada y productos cosechados el mismo día.',
-  keywords: ['aguacates', 'aguacates bogotá', 'compra online aguacates', 'frutas frescas', 'verduras frescas', 'envío a domicilio bogotá', 'agricultores locales', 'tienda online', 'aguacates hass', 'aguacates de alta calidad'],
+  title: 'Tus Aguacates | El #1 en Aguacates Premium del Eje Cafetero',
+  description: 'El proveedor líder de aguacates premium y productos frescos del Eje Cafetero. Más de 500 clientes satisfechos. Entrega el mismo día en Bogotá. Calidad garantizada.',
+  keywords: [
+    'aguacates premium',
+    'aguacates bogotá',
+    'mejores aguacates colombia',
+    'aguacates hass',
+    'frutas frescas domicilio',
+    'verduras frescas bogotá',
+    'compra online aguacates',
+    'entrega mismo día bogotá',
+    'aguacates eje cafetero',
+    'proveedor restaurantes bogotá'
+  ],
   authors: [{ name: 'Tus Aguacates' }],
   creator: 'Tus Aguacates',
   publisher: 'Tus Aguacates',
@@ -13,23 +24,32 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://tus-aguacates.vercel.app'),
+  metadataBase: new URL('https://tusaguacates.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'es_CO',
-    url: 'https://tus-aguacates.vercel.app',
-    title: 'Tus Aguacates | Aguacates Frescos a Domicilio en Bogotá',
-    description: 'Compra aguacates frescos de agricultores locales con envío a domicilio a Bogotá. Entregas martes y viernes.',
+    url: 'https://tusaguacates.com',
+    title: 'Tus Aguacates | El #1 en Aguacates Premium del Eje Cafetero',
+    description: 'El proveedor líder de aguacates premium. Más de 500 clientes satisfechos. Entrega el mismo día en Bogotá.',
     siteName: 'Tus Aguacates',
+    images: [
+      {
+        url: 'https://tusaguacates.com/images/og-social.png',
+        width: 1200,
+        height: 630,
+        alt: 'Tus Aguacates - Aguacates Premium del Eje Cafetero',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Tus Aguacates | Aguacates Frescos a Domicilio en Bogotá',
-    description: 'Compra aguacates frescos de agricultores locales con envío a domicilio a Bogotá.',
+    title: 'Tus Aguacates | El #1 en Aguacates Premium',
+    description: 'El proveedor líder de aguacates premium. +500 clientes satisfechos. Entrega mismo día Bogotá.',
     creator: '@tusaguacates',
+    images: ['https://tusaguacates.com/images/og-social.png'],
   },
   robots: {
     index: true,
