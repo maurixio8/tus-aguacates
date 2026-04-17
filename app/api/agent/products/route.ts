@@ -14,6 +14,15 @@ interface ProductVariant {
   is_active: boolean;
 }
 
+interface AgentVariant {
+  id: string;
+  variant_name: string;
+  variant_value: string;
+  price: number;
+  stock_quantity: number;
+  is_active: boolean;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -27,6 +36,7 @@ interface Product {
   image: string | null;
   description: string;
   has_variants: boolean;
+  variants: AgentVariant[];
   _searchScore?: number;
 }
 
@@ -228,6 +238,7 @@ export async function GET(request: NextRequest) {
           image: item.main_image_url,
           description: item.description,
           has_variants: false,
+          variants: [],
         };
       });
 
@@ -273,6 +284,16 @@ export async function GET(request: NextRequest) {
         image: item.main_image_url,
         description: item.description,
         has_variants: hasVariants,
+        variants: variants
+          .filter((variant) => variant?.is_active)
+          .map((variant) => ({
+            id: variant.id,
+            variant_name: variant.variant_name,
+            variant_value: variant.variant_value,
+            price: variant.price,
+            stock_quantity: variant.stock_quantity,
+            is_active: variant.is_active,
+          })),
       };
     });
 
