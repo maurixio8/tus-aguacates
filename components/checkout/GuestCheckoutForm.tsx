@@ -599,9 +599,9 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { id: 'efectivo', name: 'Efectivo', icon: '💵' },
-                  { id: 'daviplata', name: 'Daviplata', icon: '💳' },
-                  { id: 'nequi', name: 'Nequi', icon: '📲' },
-                  { id: 'tarjeta', name: 'Bold', icon: '💳' }
+                  { id: 'daviplata', name: 'Daviplata', icon: 'https://images.seeklogo.com/logo-png/38/1/daviplata-logo-png_seeklogo-382962.png' },
+                  { id: 'nequi', name: 'Nequi', icon: 'https://images.seeklogo.com/logo-png/37/1/nequi-logo-png_seeklogo-377455.png' },
+                  { id: 'tarjeta', name: 'Bold', icon: 'https://images.seeklogo.com/logo-png/47/1/bold-logo-png_seeklogo-479645.png' }
                 ].map((method) => (
                   <button
                     key={method.id}
