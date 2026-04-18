@@ -1101,35 +1101,30 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 </div>
               )}
 
-              <button
-                onClick={handlePaymentSuccess}
-                disabled={loading}
-                className={`w-full font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg border-2 
-                  ${formData.paymentMethod === 'tarjeta' 
-                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 border-verde-aguacate' 
-                    : 'bg-green-600 hover:bg-green-700 text-white border-green-600'
-                  }`}
-              >
-                {loading ? 'Procesando...' : 
-                  formData.paymentMethod === 'tarjeta' 
-                    ? `💳 Ir a Pasarela de Pagos - $${totals.total.toLocaleString('es-CO')}` 
-                    : `✅ Confirmar Pedido - $${totals.total.toLocaleString('es-CO')}`
-                }
-              </button>
+      {formData.paymentMethod === 'tarjeta' ? (
+        <BoldPayButton
+          orderId={orderId}
+          amount={totals.total}
+          description={`Pedido Tus Aguacates #${orderId.slice(0, 8)}`}
+          customerEmail={formData.email}
+          customerName={formData.name}
+          customerPhone={formData.phone}
+          customerAddress={formData.address}
+          redirectUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/checkout/success`}
+          disabled={loading}
+        />
+      ) : (
+        <button onClick={handlePaymentSuccess} disabled={loading} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg border-2 border-green-600">
+          {loading ? 'Procesando...' : `✅ Confirmar Pedido - $${totals.total.toLocaleString('es-CO')}`}
+        </button>
+      )}
+      {formData.paymentMethod !== 'tarjeta' && (
+        <p className="text-xs text-gray-500 text-center mt-2">Después de confirmar, envía el comprobante por WhatsApp</p>
+      )}
+      <button onClick={() => setStep('info')} className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all">
+        Volver
+      </button>
 
-              <p className="text-xs text-gray-500 text-center mt-2">
-                {formData.paymentMethod === 'tarjeta' 
-                  ? 'Serás redirigido a la pasarela segura de pagos (Bold)'
-                  : 'Después de confirmar, envía el comprobante por WhatsApp'
-                }
-              </p>
-
-              <button
-                onClick={() => setStep('info')}
-                className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all"
-              >
-                Volver
-              </button>
             </div>
           </div>
         </div>
