@@ -1107,10 +1107,25 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               <button
                 onClick={handlePaymentSuccess}
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl border-2 border-verde-aguacate"
+                className={`w-full font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg border-2 
+                  ${formData.paymentMethod === 'tarjeta' 
+                    ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 text-verde-bosque-700 border-verde-aguacate' 
+                    : 'bg-green-600 hover:bg-green-700 text-white border-green-600'
+                  }`}
               >
-                {loading ? 'Procesando...' : `Simular Pago Exitoso - $${totals.total.toLocaleString('es-CO')} COP`}
+                {loading ? 'Procesando...' : 
+                  formData.paymentMethod === 'tarjeta' 
+                    ? `💳 Ir a Pasarela de Pagos - $${totals.total.toLocaleString('es-CO')}` 
+                    : `✅ Confirmar Pedido - $${totals.total.toLocaleString('es-CO')}`
+                }
               </button>
+
+              <p className="text-xs text-gray-500 text-center mt-2">
+                {formData.paymentMethod === 'tarjeta' 
+                  ? 'Serás redirigido a la pasarela segura de pagos (Bold)'
+                  : 'Después de confirmar, envía el comprobante por WhatsApp'
+                }
+              </p>
 
               <button
                 onClick={() => setStep('info')}
@@ -1118,10 +1133,6 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               >
                 Volver
               </button>
-
-              <p className="text-xs text-gray-500 text-center mt-4">
-                Nota: Esta es una simulación de pago. En producción se integrará Stripe para pagos reales.
-              </p>
             </div>
           </div>
         </div>
