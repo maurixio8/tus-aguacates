@@ -766,6 +766,22 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
 
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-6xl mx-auto">
+            {/* BOTÓN GRANDE para seleccionar método de pago */}
+            <button
+              type="button"
+              onClick={() => setShowPaymentModal(true)}
+              className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-bold py-6 px-6 rounded-2xl shadow-lg flex items-center justify-center gap-3 text-lg mb-6 transition-all transform hover:scale-[1.02]"
+            >
+              <span className="text-3xl">💳</span>
+              <div className="text-left">
+                <div>¿Cómo quieres pagar?</div>
+                <div className="text-sm font-normal text-green-100">
+                  {formData.paymentMethod ? `Seleccionado: ${formData.paymentMethod === 'tarjeta' ? 'Tarjeta (+4%)' : formData.paymentMethod === 'efectivo' ? 'Efectivo' : formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}` : 'Toca aquí para seleccionar'}
+                </div>
+              </div>
+              <span className="text-2xl">→</span>
+            </button>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-6">
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
