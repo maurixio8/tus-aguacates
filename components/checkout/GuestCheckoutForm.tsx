@@ -1036,7 +1036,10 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold mb-2">Información de Pago</h3>
                 <p className="text-sm text-blue-800">
-                  Procesaremos tu pago de forma segura. Por ahora, haz clic en "Simular Pago Exitoso" para completar tu pedido.
+                  {formData.paymentMethod === 'tarjeta' 
+                    ? 'Serás redirigido a la pasarela segura de pagos (Bold)'
+                    : 'Por medio de WhatsApp te enviaremos las indicaciones para el pago'
+                  }
                 </p>
               </div>
 
