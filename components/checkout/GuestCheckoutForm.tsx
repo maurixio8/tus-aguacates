@@ -776,6 +776,41 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 </div>
 
                 <div className="space-y-3">
+                  {/* Si ya seleccionó en el modal, mostrar resumen */}
+                  {formData.paymentMethod && formData.paymentMethod !== 'daviplata' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <span className="text-2xl">
+                            {formData.paymentMethod === 'tarjeta' ? '💳' : 
+                             formData.paymentMethod === 'efectivo' ? '💵' : 
+                             formData.paymentMethod === 'nequi' ? '📱' : '📱'}
+                          </span>
+                          <div>
+                            <p className="font-semibold text-green-900">
+                              {formData.paymentMethod === 'tarjeta' ? 'Tarjeta Débito/Crédito/PSE' :
+                               formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' :
+                               formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
+                            </p>
+                            {formData.paymentMethod === 'tarjeta' && (
+                              <p className="text-sm text-orange-600">+4% cargo por procesamiento ($ {Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')})</p>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowPaymentModal(true)}
+                          className="text-sm text-green-600 hover:text-green-800 font-medium"
+                        >
+                          Cambiar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Solo mostrar botones si NO ha seleccionado método */}
+                  {!formData.paymentMethod && (
+                    <>
                   <h4 className="font-medium text-gray-900">¿Cómo prefieres pagar?</h4>
 
                    {/* Payment Method Buttons */}
@@ -860,6 +895,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                       <span className="text-xs font-medium">Efectivo</span>
                     </button>
                   </div>
+                  </>)}
 
                   {error && (
                     <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
