@@ -623,7 +623,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                   onClick={() => setShowPaymentModal(false)}
                   className="mt-4 w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700"
                 >
-                  Continuar →
+                  Finalizar Mi Pedido →
                 </button>
               )}
             </div>
