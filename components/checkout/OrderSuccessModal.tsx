@@ -59,8 +59,8 @@ export default function OrderSuccessModal({
                             </svg>
                         </motion.div>
 
-                        <h2 className="text-2xl font-bold text-white mb-1">¡Pedido Recibido!</h2>
-                        <p className="text-green-100 text-sm">Gracias por preferirnos, {customerName.split(' ')[0]}</p>
+                        <h2 className="text-2xl font-bold text-white mb-1">¡Pedido Confirmado!</h2>
+                        <p className="text-green-100 text-sm">Tu pedido ya está en nuestro sistema, {customerName.split(' ')[0]}</p>
                     </div>
 
                     {/* Body */}
@@ -88,8 +88,8 @@ export default function OrderSuccessModal({
                         </div>
 
                         <div className="space-y-3">
-                            <p className="text-sm text-center text-gray-500 font-medium">
-                                Envía este mensaje a nuestro departamento de entregas
+                            <p className="text-sm text-center text-gray-600 font-medium">
+                                Si deseas enviar el pedido a nuestro departamento de entregas para agilizar tu entrega, envía este mensaje por WhatsApp.
                             </p>
 
                             <Button
@@ -108,9 +108,9 @@ export default function OrderSuccessModal({
 
                             <button
                                 onClick={onClose}
-                                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2"
+                                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2 font-medium"
                             >
-                                Cerrar y seguir comprando
+                                Salir (pedido ya confirmado)
                             </button>
                         </div>
                     </div>
