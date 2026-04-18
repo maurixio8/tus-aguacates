@@ -43,7 +43,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
   const [step, setStep] = useState<CheckoutStep>('info'); // Start with form
   const [orderId, setOrderId] = useState<string>('');
-  const [showPaymentModal, setShowPaymentModal] = useState(true); // Show modal at start to select payment method FIRST
+  const [showPaymentModal, setShowPaymentModal] = useState(true); // Start with payment selection
+  
+  // Si no ha seleccionado método de pago, solo mostrar los botones
+  const showPaymentOnly = showPaymentModal;
 
   const [formData, setFormData] = useState({
     name: '',
@@ -579,6 +582,59 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
 
   // Paso 1: Información del cliente
   if (step === 'info') {
+    // Si no ha seleccionado método de pago, mostrar selección primero
+    if (showPaymentModal) {
+      return (
+        <div className="min-h-screen bg-gray-50 p-4">
+          <div className="max-w-md mx-auto">
+            {/* payment method inline */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-green-500">
+              <h3 className="text-xl font-bold text-green-800 mb-4 text-center">💳 ¿Cómo quieres pagar?</h3>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: 'efectivo', name: 'Efectivo', icon: '💵', fee: 'Sin cargo' },
+                  { id: 'daviplata', name: 'Daviplata', icon: '📱', fee: 'Sin cargo' },
+                  { id: 'nequi', name: 'Nequi', icon: '📲', fee: 'Sin cargo' },
+                  { id: 'tarjeta', name: 'Tarjeta/PSE', icon: '💳', fee: '+4%' }
+                ].map((method) => (
+                  <button
+                    key={method.id}
+                    type="button"
+                    onClick={() => handlePaymentMethodSelect(method.id)}
+                    className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 hover:scale-105
+                      ${formData.paymentMethod === method.id 
+                        ? 'border-green-500 bg-green-50 ring-2 ring-green-200' 
+                        : 'border-gray-200 hover:border-green-300'
+                      }`}
+                  >
+                    <span className="text-4xl">{method.icon}</span>
+                    <span className="font-bold text-gray-900">{method.name}</span>
+                    <span className={`text-sm font-medium ${method.fee.includes('+') ? 'text-orange-600' : 'text-green-600'}`}>
+                      {method.fee}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {formData.paymentMethod === 'tarjeta' && (
+                <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 text-center">
+                  ⚠️ <strong>Nota:</strong> El 4% adicional es requerido por la plataforma de pago.
+                </div>
+              )}
+              {formData.paymentMethod && (
+                <button
+                  type="button"
+                  onClick={() => setShowPaymentModal(false)}
+                  className="mt-4 w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700"
+                >
+                  Continuar con mis datos →
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gray-50">
         {/* Logo Header */}
@@ -1084,43 +1140,6 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
           paymentMethod={formData.paymentMethod}
           whatsappUrl={whatsappUrlForSuccess}
         />
-
-        {/* payment method inline - replaces modal */}
-        {showPaymentModal && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-green-500">
-            <h3 className="text-xl font-bold text-green-800 mb-4 text-center">💳 ¿Cómo quieres pagar?</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { id: 'efectivo', name: 'Efectivo', icon: '💵', fee: 'Sin cargo' },
-                { id: 'daviplata', name: 'Daviplata', icon: '📱', fee: 'Sin cargo' },
-                { id: 'nequi', name: 'Nequi', icon: '📲', fee: 'Sin cargo' },
-                { id: 'tarjeta', name: 'Tarjeta/PSE', icon: '💳', fee: '+4%' }
-              ].map((method) => (
-                <button
-                  key={method.id}
-                  type="button"
-                  onClick={() => handlePaymentMethodSelect(method.id)}
-                  className={`p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2 hover:scale-105
-                    ${formData.paymentMethod === method.id 
-                      ? 'border-green-500 bg-green-50 ring-2 ring-green-200' 
-                      : 'border-gray-200 hover:border-green-300'
-                    }`}
-                >
-                  <span className="text-4xl">{method.icon}</span>
-                  <span className="font-bold text-gray-900">{method.name}</span>
-                  <span className={`text-sm font-medium ${method.fee.includes('+') ? 'text-orange-600' : 'text-green-600'}`}>
-                    {method.fee}
-                  </span>
-                </button>
-              ))}
-            </div>
-            {formData.paymentMethod === 'tarjeta' && (
-              <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 text-center">
-                ⚠️ <strong>Nota:</strong> El 4% adicional es requerido por la plataforma de pago.
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   }
