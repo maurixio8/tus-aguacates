@@ -43,7 +43,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
   const [step, setStep] = useState<CheckoutStep>('info'); // Start with form
   const [orderId, setOrderId] = useState<string>('');
-  const [showPaymentModal, setShowPaymentModal] = useState(true); // Start with payment selection
+  const [showPaymentModal, setShowPaymentModal] = useState(false); // Show AFTER data
   
   // Si no ha seleccionado método de pago, solo mostrar los botones
   const showPaymentOnly = showPaymentModal;
@@ -237,9 +237,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
       console.log('✅ Pedido de invitado creado exitosamente:', guestOrder.id);
 
-      // Guardar order ID y pasar al paso de método de pago
+      // Guardar order ID y mostrar selección de método de pago
       setOrderId(guestOrder.id);
-      setStep('payment-method');
+      setShowPaymentModal(true);
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
@@ -582,12 +582,11 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
 
   // Paso 1: Información del cliente
   if (step === 'info') {
-    // Si no ha seleccionado método de pago, mostrar selección primero
+    // Si ya llenó datos, mostrar selección de método de pago
     if (showPaymentModal) {
       return (
         <div className="min-h-screen bg-gray-50 p-4">
           <div className="max-w-md mx-auto">
-            {/* payment method inline */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border-2 border-green-500">
               <h3 className="text-xl font-bold text-green-800 mb-4 text-center">💳 ¿Cómo quieres pagar?</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -612,15 +611,13 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                   </button>
                 ))}
               </div>
-              {formData.paymentMethod === 'tarjeta' && (
-                <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-3 text-sm text-orange-800 text-center">
-                  ⚠️ <strong>Nota:</strong> El 4% adicional es requerido por la plataforma de pago.
-                </div>
-              )}
               {formData.paymentMethod && (
                 <button
                   type="button"
-                  onClick={() => setShowPaymentModal(false)}
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setStep('payment');
+                  }}
                   className="mt-4 w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700"
                 >
                   Finalizar Mi Pedido →
