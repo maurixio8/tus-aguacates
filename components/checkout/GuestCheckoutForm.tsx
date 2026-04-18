@@ -1041,6 +1041,28 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                     : 'Por medio de WhatsApp te enviaremos las indicaciones para el pago'
                   }
                 </p>
+                {formData.paymentMethod === 'tarjeta' && (
+                  <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <p className="text-sm text-orange-700 font-medium">
+                      📝 Nota importante:
+                    </p>
+                    <p className="text-sm text-orange-600 mt-1">
+                      El 4% adicional es requerido por la plataforma de pago (Bold) y no es cobrado por nosotros.
+                    </p>
+                    <div className="mt-2 flex justify-between items-center text-sm">
+                      <span className="text-gray-600">Subtotal:</span>
+                      <span>${totals.subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-orange-600">
+                      <span>+4% cargo plataforma:</span>
+                      <span>+${Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="flex justify-between items-center font-bold text-lg text-verde-bosque mt-2 pt-2 border-t border-orange-200">
+                      <span>Total a pagar:</span>
+                      <span>${totals.total.toLocaleString('es-CO')}</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-white border border-gray-200 rounded-lg p-6">
