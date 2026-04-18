@@ -599,9 +599,9 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               <div className="grid grid-cols-2 gap-4">
                 {[
                   { id: 'efectivo', name: 'Efectivo', icon: '💵' },
-                  { id: 'daviplata', name: 'Daviplata', icon: '📱' },
-                  { id: 'nequi', name: 'Nequi', icon: '📲' },
-                  { id: 'tarjeta', name: 'Tarjeta/PSE', icon: '💳' }
+                  { id: 'daviplata', name: 'Daviplata', icon: 'https://www.lavaca.org/wp-content/uploads/2022/03/daviplata-logo.png' },
+                  { id: 'nequi', name: 'Nequi', icon: 'https://www.lavaca.org/wp-content/uploads/2022/03/nequi-logo.png' },
+                  { id: 'tarjeta', name: 'Tarjeta/PSE', icon: 'https://plazavea.vteximg.com.br/arquivos/ids/168218-300-300/bold-logo.png' }
                 ].map((method) => (
                   <button
                     key={method.id}
@@ -613,7 +613,17 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                         : 'border-gray-200 hover:border-green-300'
                       }`}
                   >
-                    <span className="text-4xl">{method.icon}</span>
+                    {method.icon.startsWith('http') ? (
+                      <Image 
+                        src={method.icon} 
+                        alt={method.name}
+                        width={80}
+                        height={40}
+                        className="object-contain"
+                      />
+                    ) : (
+                      <span className="text-4xl">{method.icon}</span>
+                    )}
                     <span className="font-bold text-gray-900">{method.name}</span>
                   </button>
                 ))}
