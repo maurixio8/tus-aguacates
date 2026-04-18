@@ -120,6 +120,13 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     }
   }, [calculateShipping, items.length]);
 
+  // Always scroll to top when step or payment modal changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [step, showPaymentModal]);
+
   // Initialize payment method in store when component mounts
   useEffect(() => {
     const methodMap: Record<string, PaymentMethod> = {
