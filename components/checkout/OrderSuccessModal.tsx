@@ -108,7 +108,7 @@ export default function OrderSuccessModal({
 
                             <button
                                 onClick={onClose}
-                                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2 font-medium"
+                                className="w-full text-center text-sm text-red-600 hover:text-red-800 py-2 font-medium border border-red-200 rounded-lg hover:bg-red-50"
                             >
                                 Salir (pedido ya confirmado)
                             </button>
