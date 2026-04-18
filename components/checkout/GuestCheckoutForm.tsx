@@ -1044,7 +1044,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 {formData.paymentMethod === 'tarjeta' && (
                   <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                     <div className="flex justify-between items-center text-sm font-bold text-gray-800">
-                      <span>Cargo por pago con tarjeta (Volt/PSE):</span>
+                      <span>Cargo por pago con tarjeta (Bold):</span>
                       <span>+${Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-600 mt-1">
