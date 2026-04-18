@@ -44,9 +44,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const { items, getTotal, clearCart, getTotals, calculateShipping, setPaymentMethod } = useCartStore();
   const totals = getTotals();
 
-  const [step, setStep] = useState<CheckoutStep>('payment-method'); // Start with payment method modal
+  const [step, setStep] = useState<CheckoutStep>('info'); // Start with form
   const [orderId, setOrderId] = useState<string>('');
-  const [showPaymentModal, setShowPaymentModal] = useState(true); // Show modal at start
+  const [showPaymentModal, setShowPaymentModal] = useState(true); // Show modal at start to select payment method FIRST
 
   const [formData, setFormData] = useState({
     name: '',
@@ -771,7 +771,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
                   <h3 className="text-lg font-semibold text-green-900">📋 Último paso: Elige cómo pagar</h3>
                   <p className="text-sm text-green-700 mt-1">
-                    Pedido #{orderId.slice(0, 8)} • {formData.name}
+                    {orderId ? `Pedido #${orderId.slice(0, 8)}` : 'Nuevo pedido'} • {formData.name || 'Cliente'}
                   </p>
                 </div>
 
