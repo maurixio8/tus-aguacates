@@ -621,13 +621,44 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 </div>
               )}
               {formData.paymentMethod && (
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="mt-4 w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700"
-                >
-                  Continuar con mis datos →
-                </button>
+                <div className="mt-4">
+                  {/* Info según método seleccionado */}
+                  {formData.paymentMethod === 'nequi' && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <p className="text-blue-800 font-medium">📱 Paga con Nequi:</p>
+                      <p className="text-blue-600 text-sm mt-1">Envía <strong>$ {totals.total.toLocaleString('es-CO')}</strong> al número:</p>
+                      <p className="text-2xl font-bold text-blue-900 mt-2">304 258 2777</p>
+                    </div>
+                  )}
+                  {formData.paymentMethod === 'daviplata' && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                      <p className="text-red-800 font-medium">📱 Paga con Daviplata:</p>
+                      <p className="text-red-600 text-sm mt-1">Envía <strong>$ {totals.total.toLocaleString('es-CO')}</strong> al número:</p>
+                      <p className="text-2xl font-bold text-red-900 mt-2">304 258 2777</p>
+                    </div>
+                  )}
+                  {formData.paymentMethod === 'efectivo' && (
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                      <p className="text-green-800 font-medium">💵 Pago en efectivo:</p>
+                      <p className="text-green-600 text-sm mt-1">Pagas cuando recibas tu pedido en la dirección indicada.</p>
+                    </div>
+                  )}
+                  {formData.paymentMethod === 'tarjeta' && (
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                      <p className="text-orange-800 font-medium">💳 Tarjeta Débito/Crédito:</p>
+                      <p className="text-orange-600 text-sm mt-1">Serás redirigido a la pasarela segura de pagos (Bold).</p>
+                      <p className="text-orange-700 text-sm mt-1">Total: <strong>$ {(totals.total).toLocaleString('es-CO')}</strong> (+4% cargo)</p>
+                    </div>
+                  )}
+                  
+                  <button
+                    type="button"
+                    onClick={() => setShowPaymentModal(false)}
+                    className="w-full bg-green-600 text-white font-bold py-3 px-6 rounded-xl hover:bg-green-700"
+                  >
+                    {formData.paymentMethod === 'tarjeta' ? 'Ir a Pasarela de Pagos →' : 'Confirmar Pedido →'}
+                  </button>
+                </div>
               )}
             </div>
           </div>
