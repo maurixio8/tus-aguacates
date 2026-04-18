@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useCartStore, type PaymentMethod } from '@/lib/cart-store';
@@ -21,6 +21,8 @@ const DuplicateOrderModal = dynamic(() => import('./DuplicateOrderModal'), {
 });
 
 // Cargar BoldPayButton dinámicamente para evitar errores de SSR
+import PaymentMethodModal from './PaymentMethodModal';
+
 const BoldPayButton = dynamic(() => import('./BoldPayButton'), {
   ssr: false,
   loading: () => (
@@ -42,8 +44,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const { items, getTotal, clearCart, getTotals, calculateShipping, setPaymentMethod } = useCartStore();
   const totals = getTotals();
 
-  const [step, setStep] = useState<CheckoutStep>('info');
+  const [step, setStep] = useState<CheckoutStep>('payment-method'); // Start with payment method modal
   const [orderId, setOrderId] = useState<string>('');
+  const [showPaymentModal, setShowPaymentModal] = useState(true); // Show modal at start
 
   const [formData, setFormData] = useState({
     name: '',
@@ -57,6 +60,23 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Handler for payment method selection
+  const handlePaymentMethodSelect = (method: string) => {
+    const methodMap: Record<string, PaymentMethod> = {
+      'efectivo': 'cash',
+      'daviplata': 'daviplata',
+      'nequi': 'nequi',
+      'tarjeta': 'card_visa_mastercard'
+    };
+    const storeMethod = methodMap[method] || 'cash';
+    setPaymentMethod(storeMethod);
+    setFormData(prev => ({ ...prev, paymentMethod: method }));
+    setStep('info'); // After selecting payment, go to info form
+  };
+
+  // Calculate totals based on current payment method
+  const currentTotals = useMemo(() => getTotals(), [totals, formData.paymentMethod]);
 
   // Estados para Modales
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -1030,6 +1050,14 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
           total={totals.total}
           paymentMethod={formData.paymentMethod}
           whatsappUrl={whatsappUrlForSuccess}
+        />
+
+        {/* Modal de Selección de Método de Pago - PRIMERO */}
+        <PaymentMethodModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          onSelectMethod={handlePaymentMethodSelect}
+          total={totals.subtotal}
         />
       </div>
     );
