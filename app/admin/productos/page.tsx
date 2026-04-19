@@ -1271,6 +1271,7 @@ export default function ProductsPage() {
                                             {isEditing ? (
                                               <input
                                                 type="number"
+                                                step="100"
                                                 value={editData.price ?? ''}
                                                 onChange={(e) => {
                                                   const val = e.target.value;
@@ -1492,6 +1493,7 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Precio Regular *</label>
                   <input
                     type="number"
+                    step="100"
                     value={editingProduct.price}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -1510,6 +1512,7 @@ export default function ProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Precio Oferta</label>
                   <input
                     type="number"
+                    step="100"
                     value={editingProduct.discount_price || ''}
                     onChange={(e) => {
                       const val = e.target.value;
