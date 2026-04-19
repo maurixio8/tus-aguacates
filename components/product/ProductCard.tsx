@@ -158,7 +158,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1 flex flex-col h-full">
         {/* Imagen con ProductImagePlaceholder - Clickable */}
         <div
           className="relative aspect-square overflow-hidden cursor-pointer"
@@ -204,8 +204,8 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
 
-        {/* Contenido - Padding reducido para tarjeta más compacta */}
-        <div className="p-3">
+        {/* Contenido - Se expande para llenar altura */}
+        <div className="p-3 flex flex-col flex-1">
           {/* Nombre centrado debajo de la imagen */}
           <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
             {product.name}
@@ -297,15 +297,17 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Botón Agregar al Carrito - Rectangular horizontal (más ancho, menos alto) */}
-          <button
-            onClick={handleAddToCart}
-            disabled={(product.stock || 0) === 0}
-            className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
-          </button>
+          {/* Botón Agregar - Empujado al fondo */}
+          <div className="mt-auto pt-2">
+            <button
+              onClick={handleAddToCart}
+              disabled={(product.stock || 0) === 0}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
+            </button>
+          </div>
         </div>
       </div>
 
