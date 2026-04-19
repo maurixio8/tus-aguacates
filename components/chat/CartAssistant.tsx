@@ -104,9 +104,9 @@ export function CartAssistant() {
           <div className="bg-white rounded-2xl shadow-xl border border-green-200 p-4 relative">
             <button
               onClick={(e) => { e.stopPropagation(); setHasBeenDismissed(true); }}
-              className="absolute -top-2 -right-2 bg-gray-100 hover:bg-gray-200 rounded-full w-6 h-6 flex items-center justify-center text-gray-400 text-xs"
+              className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 rounded-full w-8 h-8 flex items-center justify-center text-white shadow-lg transition-all hover:scale-110 z-10"
             >
-              <X className="w-3 h-3" />
+              <X className="w-4 h-4" />
             </button>
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center flex-shrink-0">
