@@ -9,7 +9,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { EmpresasFooter } from "@/components/layout/EmpresasFooter";
 import { CartDrawer } from "@/components/cart/CartDrawer";
-import { ChatBot } from "@/components/chat/ChatBot";
+import { CartAssistant } from "@/components/chat/CartAssistant";
 import BottomNavigation from "@/components/layout/BottomNavigation";
 import { InstallPrompt, ServiceWorkerRegistration } from "@/components/pwa";
 import { SplashScreen } from "@/components/splash/SplashScreen";
@@ -86,7 +86,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
       </main>
       {isEmpresasRoute ? <EmpresasFooter /> : <Footer />}
       <CartDrawer />
-      {!isEmpresasRoute && <ChatBot />}
+      {!isEmpresasRoute && <CartAssistant />}
       {!isEmpresasRoute && <BottomNavigation />}
       <InstallPrompt />
     </>
