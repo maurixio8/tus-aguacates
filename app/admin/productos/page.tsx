@@ -1271,11 +1271,15 @@ export default function ProductsPage() {
                                             {isEditing ? (
                                               <input
                                                 type="number"
-                                                value={editData.price || 0}
-                                                onChange={(e) => setEditingVariant({
-                                                  ...editingVariant,
-                                                  data: { ...editData, price: parseFloat(e.target.value) || 0 }
-                                                })}
+                                                value={editData.price ?? ''}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  if (val === '' || val === '-') return;
+                                                  setEditingVariant({
+                                                    ...editingVariant,
+                                                    data: { ...editData, price: parseFloat(val) || 0 }
+                                                  });
+                                                })
                                                 onFocus={handleNumericInputFocus}
                                                 onMouseUp={handleNumericInputMouseUp}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1294,11 +1298,15 @@ export default function ProductsPage() {
                                             {isEditing ? (
                                               <input
                                                 type="number"
-                                                value={editData.stock_quantity || 0}
-                                                onChange={(e) => setEditingVariant({
-                                                  ...editingVariant,
-                                                  data: { ...editData, stock_quantity: parseInt(e.target.value) || 0 }
-                                                })}
+                                                value={editData.stock_quantity ?? ''}
+                                                onChange={(e) => {
+                                                  const val = e.target.value;
+                                                  if (val === '' || val === '-') return;
+                                                  setEditingVariant({
+                                                    ...editingVariant,
+                                                    data: { ...editData, stock_quantity: parseInt(val) || 0 }
+                                                  });
+                                                })
                                                 onFocus={handleNumericInputFocus}
                                                 onMouseUp={handleNumericInputMouseUp}
                                                 className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -1485,7 +1493,11 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     value={editingProduct.price}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '' || val === '-') return; // permitir borrar sin forzar 0
+                      setEditingProduct({ ...editingProduct, price: parseFloat(val) || 0 });
+                    }}
                     onFocus={handleNumericInputFocus}
                     onMouseUp={handleNumericInputMouseUp}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
@@ -1499,7 +1511,14 @@ export default function ProductsPage() {
                   <input
                     type="number"
                     value={editingProduct.discount_price || ''}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, discount_price: parseFloat(e.target.value) || undefined })}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setEditingProduct({ ...editingProduct, discount_price: undefined });
+                      } else {
+                        setEditingProduct({ ...editingProduct, discount_price: parseFloat(val) || undefined });
+                      }
+                    }}
                     onFocus={handleNumericInputFocus}
                     onMouseUp={handleNumericInputMouseUp}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
