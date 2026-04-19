@@ -67,15 +67,39 @@ export async function POST(req: NextRequest) {
     if (audioBase64) {
       audioContent = audioBase64;
     } else if (audioUrl) {
-      // Download audio from URL
       const audioResponse = await fetch(audioUrl);
       if (!audioResponse.ok) {
         return NextResponse.json({ error: 'Failed to download audio: ' + audioResponse.status }, { status: 400 });
       }
       const audioBuffer = Buffer.from(await audioResponse.arrayBuffer());
       audioContent = audioBuffer.toString('base64');
+    } else if (body.mediaId) {
+      // Download from WhatsApp/YCloud using media ID
+      // Requires YCloud API key passed in header
+      const ycloudApiKey = request.headers.get('x-ycloud-api-key') || body.ycloudApiKey;
+      if (!ycloudApiKey) {
+        return NextResponse.json({ error: 'Provide ycloudApiKey or x-ycloud-api-key header for mediaId downloads' }, { status: 400 });
+      }
+      // First get the media URL
+      const mediaResp = await fetch(`https://api.ycloud.com/v2/whatsapp/media/${body.mediaId}`, {
+        headers: { 'X-API-Key': ycloudApiKey }
+      });
+      if (!mediaResp.ok) {
+        return NextResponse.json({ error: 'Failed to get media URL: ' + mediaResp.status }, { status: 400 });
+      }
+      const mediaData = await mediaResp.json();
+      const downloadUrl = mediaData.url;
+      if (!downloadUrl) {
+        return NextResponse.json({ error: 'No download URL in media response' }, { status: 400 });
+      }
+      const audioResp = await fetch(downloadUrl);
+      if (!audioResp.ok) {
+        return NextResponse.json({ error: 'Failed to download audio file' }, { status: 400 });
+      }
+      const audioBuffer = Buffer.from(await audioResp.arrayBuffer());
+      audioContent = audioBuffer.toString('base64');
     } else {
-      return NextResponse.json({ error: 'Provide audioUrl or audioBase64' }, { status: 400 });
+      return NextResponse.json({ error: 'Provide audioUrl, audioBase64, or mediaId' }, { status: 400 });
     }
 
     const accessToken = await getAccessToken();
