@@ -36,9 +36,21 @@ export function CartAssistant() {
   }, []);
 
   // Pulse cuando se agrega un item nuevo
+  const prevLengthRef = useRef(items.length);
   useEffect(() => {
-    if (items.length > 0 && !isOpen) {
+    if (items.length > prevLengthRef.current && !isOpen) {
       setPulseCount(prev => prev + 1);
+      setHasBeenDismissed(false); // Re-mostrar tooltip cuando agrega nuevo item
+    }
+    prevLengthRef.current = items.length;
+  }, [items.length]);
+
+  // Resetear cuando el carrito se vacía (compra completada)
+  useEffect(() => {
+    if (items.length === 0) {
+      setIsOpen(false);
+      setHasBeenDismissed(false);
+      setPulseCount(0);
     }
   }, [items.length]);
 
@@ -96,7 +108,7 @@ export function CartAssistant() {
   return (
     <>
       {/* Tooltip/burbuja cuando está cerrado y tiene items */}
-      {!isOpen && !hasBeenDismissed && step === 'has_items' && (
+      {!isOpen && !hasBeenDismissed && step === 'has_items' && pulseCount > 0 && (
         <div 
           className="fixed bottom-32 right-4 md:bottom-20 md:right-6 z-40 max-w-[280px] animate-in slide-in-from-bottom-4 fade-in duration-500 cursor-pointer"
           onClick={() => setIsOpen(true)}
