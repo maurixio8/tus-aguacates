@@ -626,7 +626,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                   </button>
                 ))}
               </div>
-              {formData.paymentMethod && (
+              {formData.paymentMethod && formData.paymentMethod !== 'tarjeta' && (
                 <button
                   type="button"
                   onClick={() => {
@@ -844,17 +844,17 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <span className="text-2xl">
-                            {formData.paymentMethod === 'bold' ? '💳' : 
+                            {formData.paymentMethod === 'tarjeta' ? '💳' : 
                              formData.paymentMethod === 'efectivo' ? '💵' : 
                              formData.paymentMethod === 'nequi' ? '📱' : '📱'}
                           </span>
                           <div>
                             <p className="font-semibold text-green-900">
-                              {formData.paymentMethod === 'bold' ? 'Tarjeta Débito/Crédito/PSE' :
+                              {formData.paymentMethod === 'tarjeta' ? 'Tarjeta Débito/Crédito/PSE' :
                                formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' :
                                formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
                             </p>
-                            {formData.paymentMethod === 'bold' && (
+                            {formData.paymentMethod === 'tarjeta' && (
                               <p className="text-sm text-orange-600">+4% cargo por procesamiento ($ {Math.round((totals.subtotal + totals.shipping) * 0.04).toLocaleString('es-CO')})</p>
                             )}
                           </div>
@@ -884,7 +884,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                         setFormData({ ...formData, paymentMethod: 'bold' });
                         setPaymentMethod('card_visa_mastercard');
                       }}
-                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'bold'
+                      className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${formData.paymentMethod === 'tarjeta'
                         ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-blue-300'
                         }`}
@@ -967,7 +967,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
 
                   <div className="space-y-3">
                     {/* Mostrar BoldPayButton o botón normal según el método seleccionado */}
-                    {formData.paymentMethod === 'bold' ? (
+                    {formData.paymentMethod === 'tarjeta' ? (
                       <>
                         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                           <p className="text-sm text-blue-800">
@@ -1051,12 +1051,12 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <h3 className="font-semibold mb-2">Información de Pago</h3>
                 <p className="text-sm text-blue-800">
-                  {formData.paymentMethod === 'bold' 
+                  {formData.paymentMethod === 'tarjeta' 
                     ? 'Serás redirigido a la pasarela segura de pagos (Bold)'
                     : 'Por medio de WhatsApp te enviaremos las indicaciones para el pago'
                   }
                 </p>
-                {formData.paymentMethod === 'bold' && (
+                {formData.paymentMethod === 'tarjeta' && (
                   <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
                     <div className="flex justify-between items-center text-sm text-gray-600">
                       <span>Tu pedido:</span>
@@ -1105,7 +1105,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 </div>
               )}
 
-      {formData.paymentMethod === 'bold' ? (
+      {formData.paymentMethod === 'tarjeta' ? (
         <BoldPayButton
           orderId={orderId}
           amount={totals.total}
@@ -1122,7 +1122,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
           {loading ? 'Procesando...' : `✅ Confirmar Pedido - $${totals.total.toLocaleString('es-CO')}`}
         </button>
       )}
-      {formData.paymentMethod !== 'bold' && (
+      {formData.paymentMethod !== 'tarjeta' && (
         <p className="text-xs text-gray-500 text-center mt-2">Después de confirmar, envía el comprobante por WhatsApp</p>
       )}
       <button onClick={() => setStep('info')} className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 font-medium py-3 px-6 rounded-lg transition-all">
