@@ -178,7 +178,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
         <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
           {/* Modal Content */}
           <div
-            className="w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl animation-in fade-in zoom-in-95"
+            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl animation-in fade-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header con botón cerrar */}
@@ -193,12 +193,12 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
             </div>
 
             {/* Content Grid - Responsive */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 p-6 md:p-8">
+            <div className="p-4 space-y-4">
 
               {/* Imagen - Lado Izquierdo */}
               <div className="flex flex-col gap-4">
                 {/* Imagen Principal */}
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 max-h-48">
                   <ProductImagePlaceholder
                     productName={product.name}
                     price={displayPrice}
@@ -210,44 +210,18 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 </div>
 
                 {/* Acciones en imagen (Mobile-friendly) */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={handleWishlistClick}
-                    disabled={isWishlistLoading}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 transition-all ${isWishlisted
-                      ? 'bg-red-50 border-red-300 text-red-600'
-                      : 'border-gray-300 text-gray-700 hover:border-red-300'
-                      } ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <Heart className={`w-5 h-5 ${isWishlisted ? 'fill-current' : ''}`} />
-                    <span className="hidden sm:inline text-sm font-medium">
-                      {isWishlistLoading ? 'Procesando...' : (isWishlisted ? 'Guardado' : 'Guardar')}
-                    </span>
-                  </button>
-
-                  <button
-                    onClick={handleShare}
-                    className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg border-2 border-gray-300 text-gray-700 hover:border-blue-300 transition-all"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    <span className="hidden sm:inline text-sm font-medium">Compartir</span>
-                  </button>
-                </div>
+                
               </div>
 
               {/* Información - Lado Derecho */}
               <div className="flex flex-col gap-6">
 
                 {/* Categoría */}
-                <div>
-                  <p className="text-sm text-gray-500 uppercase tracking-wide">
-                    {product.category || 'Producto'}
-                  </p>
-                </div>
+                
 
                 {/* Título y Descripción */}
                 <div>
-                  <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
+                  <h2 className="text-lg font-bold text-gray-900">
                     {product.name}
                   </h2>
                   <p className="text-gray-700 leading-relaxed text-sm md:text-base">
@@ -271,10 +245,9 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 )}
 
                 {/* Precio */}
-                <div className="py-4 border-t border-b border-gray-200">
-                  <p className="text-xs text-gray-500 mb-2">Precio</p>
+                <div className="py-2 border-t border-gray-200">
                   <div className="flex items-baseline gap-3">
-                    <span className="text-3xl md:text-4xl font-bold text-verde-bosque font-mono">
+                    <span className="text-2xl font-bold text-verde-bosque font-mono">
                       {formatPrice(displayPrice)}
                     </span>
                     {hasDiscount && (
@@ -358,15 +331,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 </button>
 
                 {/* Garantía y Confianza */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border-2 border-green-300">
-                  <div className="flex items-start gap-3">
-                    <span className="text-2xl">✅</span>
-                    <div>
-                      <p className="font-bold text-green-900">Productos Frescos Garantizados</p>
-                      <p className="text-sm text-green-700">Calidad premium verificada en cada envío</p>
-                    </div>
-                  </div>
-                </div>
+                
               </div>
             </div>
           </div>
