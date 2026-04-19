@@ -1058,13 +1058,17 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                 </p>
                 {formData.paymentMethod === 'bold' && (
                   <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex justify-between items-center text-sm font-bold text-gray-800">
-                      <span>Cargo por pago con tarjeta (Bold):</span>
-                      <span>+${Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-sm text-gray-600 mt-1">
+                    <div className="flex justify-between items-center text-sm text-gray-600">
                       <span>Tu pedido:</span>
                       <span>${totals.subtotal.toLocaleString('es-CO')}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm text-gray-600 mt-1">
+                      <span>Envío:</span>
+                      <span>{totals.shipping > 0 ? `$${totals.shipping.toLocaleString('es-CO')}` : 'GRATIS 🎉'}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-bold text-gray-800 mt-1">
+                      <span>Cargo por pago con tarjeta (Bold):</span>
+                      <span>+${Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')}</span>
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg text-verde-bosque mt-2 pt-2 border-t border-orange-200">
                       <span>Total a pagar:</span>
