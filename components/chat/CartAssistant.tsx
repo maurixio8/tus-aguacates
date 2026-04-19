@@ -192,7 +192,7 @@ export function CartAssistant() {
               </div>
               <button
                 onClick={() => setIsOpen(false)}
-                className="bg-white/20 hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center text-white transition-all hover:scale-110"
+                className="bg-red-500 hover:bg-red-600 rounded-full w-8 h-8 flex items-center justify-center text-white transition-all hover:scale-110"
               >
                 <X className="w-4 h-4" />
               </button>
