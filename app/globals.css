@@ -106,3 +106,63 @@ button {
 .animate-glow-ring {
   animation: glow-pulse-ring 2s ease-out infinite;
 }
+
+/* ========================================
+   LANDSCAPE MODE FIXES (mobile horizontal)
+   ======================================== */
+@media (orientation: landscape) and (max-height: 500px) {
+  /* Reducir todo para que quepa en landscape */
+  
+  /* Header más compacto */
+  header {
+    padding-top: 0.25rem !important;
+    padding-bottom: 0.25rem !important;
+  }
+  
+  /* Product cards: 3-4 columnas en landscape */
+  .grid.grid-cols-2 {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+  
+  /* Imágenes de producto más pequeñas */
+  .aspect-square {
+    aspect-ratio: 4/3 !important;
+  }
+  
+  /* Menos padding en cards */
+  .rounded-2xl .p-3 {
+    padding: 0.5rem !important;
+  }
+  
+  /* Textos más compactos */
+  .text-xl {
+    font-size: 1rem !important;
+  }
+  
+  .text-base {
+    font-size: 0.875rem !important;
+  }
+  
+  /* Hero más pequeño */
+  .h-\\[70vh\\], .h-\\[80vh\\], .h-\\[60vh\\] {
+    height: 100vh !important;
+  }
+  
+  /* Botones más compactos */
+  .py-4 {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  
+  .py-3 {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+  }
+  
+  /* Modal compacto en landscape */
+  .max-w-sm {
+    max-width: 360px !important;
+    max-height: 95vh !important;
+  }
+}

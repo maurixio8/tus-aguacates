@@ -87,7 +87,7 @@ const FeaturedProductsCarousel = dynamic(
   () => import('@/components/home/FeaturedProductsCarousel').then(mod => ({ default: mod.FeaturedProductsCarousel })),
   {
     loading: () => (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:landscape:grid-cols-3 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         {[1, 2, 3, 4].map((i) => (
           <div key={i} className="animate-pulse">
             <div className="bg-gray-200 rounded-2xl h-64 mb-4"></div>
