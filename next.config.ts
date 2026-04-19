@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-    optimizeCss: true,
+    optimizeCss: false,
     scrollRestoration: true,
     webVitalsAttribution: ['CLS', 'LCP'],
   },
