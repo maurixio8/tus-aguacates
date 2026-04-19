@@ -324,7 +324,7 @@ export const useCartStore = create<CartState>()(
         const shipping = state.shipping.cost;
         
         const fee = BOLD_FEES[state.paymentMethod];
-        const paymentFee = Math.round(subtotal * fee.rate + fee.fixed);
+        const paymentFee = Math.round((subtotal + shipping) * fee.rate + fee.fixed);
 
         return {
           subtotal,

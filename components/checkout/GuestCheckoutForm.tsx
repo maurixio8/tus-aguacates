@@ -855,7 +855,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                                formData.paymentMethod === 'nequi' ? 'Nequi' : 'Daviplata'}
                             </p>
                             {formData.paymentMethod === 'bold' && (
-                              <p className="text-sm text-orange-600">+4% cargo por procesamiento ($ {Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')})</p>
+                              <p className="text-sm text-orange-600">+4% cargo por procesamiento ($ {Math.round((totals.subtotal + totals.shipping) * 0.04).toLocaleString('es-CO')})</p>
                             )}
                           </div>
                         </div>
@@ -1068,7 +1068,7 @@ ${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.q
                     </div>
                     <div className="flex justify-between items-center text-sm font-bold text-gray-800 mt-1">
                       <span>Cargo por pago con tarjeta (Bold):</span>
-                      <span>+${Math.round(totals.subtotal * 0.04).toLocaleString('es-CO')}</span>
+                      <span>+${Math.round((totals.subtotal + totals.shipping) * 0.04).toLocaleString('es-CO')}</span>
                     </div>
                     <div className="flex justify-between items-center font-bold text-lg text-verde-bosque mt-2 pt-2 border-t border-orange-200">
                       <span>Total a pagar:</span>
