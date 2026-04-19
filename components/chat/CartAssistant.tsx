@@ -85,6 +85,8 @@ export function CartAssistant() {
   };
 
   const handleAction = () => {
+    setIsOpen(false);
+    setHasBeenDismissed(true);
     router.push('/checkout');
   };
 
