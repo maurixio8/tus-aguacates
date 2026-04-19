@@ -1,14 +1,14 @@
 // Service Worker para Tus Aguacates PWA
-const CACHE_NAME = 'tus-aguacates-v1';
+// IMPORTANTE: Cambiar versión en cada deploy para forzar actualización
+const CACHE_NAME = 'tus-aguacates-v2-20260419';
 const STATIC_ASSETS = [
-    '/',
     '/favicon.png',
     '/manifest.json',
 ];
 
 // Instalar: cachear recursos estáticos
 self.addEventListener('install', (event) => {
-    console.log('[SW] Installing...');
+    console.log('[SW] Installing version:', CACHE_NAME);
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             console.log('[SW] Caching static assets');
@@ -21,7 +21,7 @@ self.addEventListener('install', (event) => {
 
 // Activar: limpiar caches antiguos
 self.addEventListener('activate', (event) => {
-    console.log('[SW] Activating...');
+    console.log('[SW] Activating version:', CACHE_NAME);
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
@@ -34,11 +34,11 @@ self.addEventListener('activate', (event) => {
             );
         })
     );
-    // Tomar control inmediatamente
+    // Tomar control inmediatamente de TODAS las pestañas
     self.clients.claim();
 });
 
-// Fetch: estrategia Network First con fallback a cache
+// Fetch: estrategia inteligente
 self.addEventListener('fetch', (event) => {
     // Solo manejar requests GET
     if (event.request.method !== 'GET') return;
@@ -47,10 +47,54 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (url.origin !== self.location.origin) return;
 
+    // ESTRATEGIA 1: HTML/Navegación → SIEMPRE desde red (sin cache)
+    if (event.request.mode === 'navigate' || 
+        event.request.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    // Cachear para offline pero SIEMPRE mostrar la versión nueva
+                    const responseClone = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => {
+                        cache.put(event.request, responseClone);
+                    });
+                    return response;
+                })
+                .catch(() => {
+                    // Solo usar cache si no hay red
+                    return caches.match(event.request).then((cachedResponse) => {
+                        return cachedResponse || caches.match('/');
+                    });
+                })
+        );
+        return;
+    }
+
+    // ESTRATEGIA 2: Assets estáticos (_next/static/*) → Cache First (inmutable)
+    if (url.pathname.startsWith('/_next/static/')) {
+        event.respondWith(
+            caches.match(event.request).then((cachedResponse) => {
+                if (cachedResponse) {
+                    return cachedResponse;
+                }
+                return fetch(event.request).then((response) => {
+                    if (response && response.status === 200) {
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then((cache) => {
+                            cache.put(event.request, responseClone);
+                        });
+                    }
+                    return response;
+                });
+            })
+        );
+        return;
+    }
+
+    // ESTRATEGIA 3: Todo lo demás → Network First
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Si la respuesta es válida, cachearla
                 if (response && response.status === 200) {
                     const responseClone = response.clone();
                     caches.open(CACHE_NAME).then((cache) => {
@@ -60,16 +104,8 @@ self.addEventListener('fetch', (event) => {
                 return response;
             })
             .catch(() => {
-                // Si falla la red, buscar en cache
                 return caches.match(event.request).then((cachedResponse) => {
-                    if (cachedResponse) {
-                        return cachedResponse;
-                    }
-                    // Para navegación, mostrar página principal
-                    if (event.request.mode === 'navigate') {
-                        return caches.match('/');
-                    }
-                    return new Response('Offline', { status: 503 });
+                    return cachedResponse || new Response('Offline', { status: 503 });
                 });
             })
     );
