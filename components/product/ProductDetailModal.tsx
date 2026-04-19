@@ -167,182 +167,111 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   return (
     <>
       {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 z-40 transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
-      {/* Modal Container - Responsive */}
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
-          {/* Modal Content */}
-          <div
-            className="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-xl bg-white shadow-2xl animation-in fade-in zoom-in-95"
-            onClick={(e) => e.stopPropagation()}
+      {/* Modal Compacto */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+        <div
+          className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl relative"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Cerrar */}
+          <button
+            onClick={onClose}
+            className="absolute top-2 right-2 z-10 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
           >
-            {/* Header con botón cerrar */}
-            <div className="flex justify-end p-4 border-b border-gray-200">
-              <button
-                onClick={onClose}
-                className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-full shadow-lg transition-all transform hover:scale-110 font-bold"
-                aria-label="Cerrar"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+            <X className="w-4 h-4" />
+          </button>
 
-            {/* Content Grid - Responsive */}
-            <div className="p-4 space-y-4">
+          {/* Imagen */}
+          <div className="w-full aspect-[4/3] bg-gray-100 rounded-t-2xl overflow-hidden">
+            <ProductImagePlaceholder
+              productName={product.name}
+              price={displayPrice}
+              category={product.category || 'productos'}
+              imageUrl={product.main_image_url}
+              showPrice={false}
+              className="w-full h-full object-cover"
+            />
+          </div>
 
-              {/* Imagen - Lado Izquierdo */}
-              <div className="flex flex-col gap-4">
-                {/* Imagen Principal */}
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 max-h-48">
-                  <ProductImagePlaceholder
-                    productName={product.name}
-                    price={displayPrice}
-                    category={product.category || 'productos'}
-                    imageUrl={product.main_image_url}
-                    showPrice={false}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-
-                {/* Acciones en imagen (Mobile-friendly) */}
-                
-              </div>
-
-              {/* Información - Lado Derecho */}
-              <div className="flex flex-col gap-6">
-
-                {/* Categoría */}
-                
-
-                {/* Título y Descripción */}
-                <div>
-                  <h2 className="text-lg font-bold text-gray-900">
-                    {product.name}
-                  </h2>
-                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">
-                    {product.description || 'Producto de alta calidad de Tus Aguacates'}
-                  </p>
-                </div>
-
-                {/* Rating */}
-                {(product.review_count ?? 0) > 0 && (
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1">
-                      <span className="text-yellow-500 text-lg">★</span>
-                      <span className="font-semibold text-gray-900">
-                        {(product.rating ?? 0).toFixed(1)}
-                      </span>
-                      <span className="text-gray-500 text-sm">
-                        ({product.review_count ?? 0} opiniones)
-                      </span>
-                    </div>
-                  </div>
+          {/* Info */}
+          <div className="p-3 space-y-2">
+            {/* Nombre + Precio */}
+            <div className="flex items-start justify-between gap-2">
+              <h2 className="font-bold text-base text-gray-900 leading-tight flex-1">
+                {product.name}
+              </h2>
+              <div className="text-right flex-shrink-0">
+                <span className="text-lg font-bold text-verde-bosque font-mono">
+                  {formatPrice(displayPrice)}
+                </span>
+                {hasDiscount && (
+                  <span className="block text-xs text-gray-400 line-through">
+                    {formatPrice(product.price)}
+                  </span>
                 )}
-
-                {/* Precio */}
-                <div className="py-2 border-t border-gray-200">
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-2xl font-bold text-verde-bosque font-mono">
-                      {formatPrice(displayPrice)}
-                    </span>
-                    {hasDiscount && (
-                      <>
-                        <span className="text-lg text-gray-500 line-through">
-                          {formatPrice(product.price)}
-                        </span>
-                        <span className="bg-naranja-frutal text-white px-3 py-1 rounded-full text-sm font-bold">
-                          -{discount}%
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">Por {product.unit || 'unidad'}</p>
-                </div>
-
-                {/* Selector de Variantes */}
-                {variants.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
-                      Presentación
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {variants.map((variant) => (
-                        <button
-                          key={variant.id}
-                          onClick={() => setSelectedVariant(variant)}
-                          className={`px-3 py-2 rounded-lg border-2 font-medium transition-all text-sm ${selectedVariant?.id === variant.id
-                            ? 'bg-verde-bosque text-white border-verde-bosque'
-                            : 'border-gray-300 text-gray-700 hover:border-verde-bosque'
-                            }`}
-                        >
-                          <div className="font-semibold">{variant.variant_value}</div>
-                          <div className="text-xs opacity-80">{formatPrice(variant.price)}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-
-
-                {/* Selector de Cantidad */}
-                {(product.stock || 0) > 0 && (
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-900 mb-3">
-                      Cantidad
-                    </label>
-                    <div className="flex items-center border border-gray-300 rounded-lg w-fit">
-                      <button
-                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition"
-                      >
-                        −
-                      </button>
-                      <input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                        className="w-16 text-center font-semibold border-0 focus:outline-none"
-                      />
-                      <button
-                        onClick={() => setQuantity(quantity + 1)}
-                        className="px-4 py-2 text-gray-600 hover:bg-gray-100 transition"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Botón Agregar al Carrito */}
-                <button
-                  onClick={handleAddToCart}
-                  disabled={(product.stock || 0) === 0}
-                  className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-4 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-500 text-lg"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {(product.stock || 0) > 0 ? '🛒 Agregar al Carrito' : '❌ Agotado'}
-                </button>
-
-                {/* Garantía y Confianza */}
-                
               </div>
             </div>
+
+            <p className="text-xs text-gray-500 line-clamp-2">
+              {product.description || 'Producto fresco de Tus Aguacates'}
+            </p>
+
+            <p className="text-xs text-gray-400">Por {product.unit || 'unidad'}</p>
+
+            {/* Variantes */}
+            {variants.length > 0 && (
+              <div>
+                <p className="text-xs font-semibold text-gray-700 mb-1">Presentación:</p>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {variants.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={() => setSelectedVariant(variant)}
+                      className={`px-2 py-1.5 rounded-lg border text-xs font-medium transition-all
+                        ${selectedVariant?.id === variant.id
+                          ? 'bg-verde-bosque text-white border-verde-bosque'
+                          : 'border-gray-200 text-gray-700 hover:border-verde-bosque'
+                        }`}
+                    >
+                      <span className="font-semibold">{variant.variant_value}</span>
+                      <span className="block opacity-70">{formatPrice(variant.price)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Cantidad */}
+            {(product.stock || 0) > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-700">Cantidad:</span>
+                <div className="flex items-center border border-gray-200 rounded-lg">
+                  <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="px-3 py-1 text-gray-600 hover:bg-gray-100 text-sm">−</button>
+                  <span className="px-3 py-1 font-semibold text-sm">{quantity}</span>
+                  <button onClick={() => setQuantity(quantity + 1)} className="px-3 py-1 text-gray-600 hover:bg-gray-100 text-sm">+</button>
+                </div>
+              </div>
+            )}
+
+            {/* Botón Agregar */}
+            <button
+              onClick={handleAddToCart}
+              disabled={(product.stock || 0) === 0}
+              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate text-base"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Toast Notification */}
+      {/* Toast */}
       {showToast && (
-        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
-          <span className="text-lg">🛒</span>
-          <span className="font-medium">¡Agregado al carrito!</span>
+        <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-[60] flex items-center gap-2 text-sm">
+          🛒 ¡Agregado al carrito!
         </div>
       )}
     </>
