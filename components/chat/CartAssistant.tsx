@@ -174,20 +174,28 @@ export function CartAssistant() {
         <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-50 w-80 max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100 animate-in slide-in-from-bottom-10 fade-in duration-300">
           {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-green-700 p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <Image
-                  src="https://i.ibb.co/WWj50Qdy/logo.png"
-                  alt="Tus Aguacates"
-                  width={30}
-                  height={30}
-                  className="object-contain"
-                />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                  <Image
+                    src="https://i.ibb.co/WWj50Qdy/logo.png"
+                    alt="Tus Aguacates"
+                    width={30}
+                    height={30}
+                    className="object-contain"
+                  />
+                </div>
+                <div>
+                  <h3 className="font-bold text-white text-sm">Asistente de Compra</h3>
+                  <p className="text-green-100 text-xs">Te ayudo a completar tu pedido</p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-bold text-white text-sm">Asistente de Compra</h3>
-                <p className="text-green-100 text-xs">Te ayudo a completar tu pedido</p>
-              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="bg-white/20 hover:bg-red-500 rounded-full w-8 h-8 flex items-center justify-center text-white transition-all hover:scale-110"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
 
