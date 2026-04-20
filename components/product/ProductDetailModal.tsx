@@ -214,9 +214,22 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               </div>
             </div>
 
-            <p className="text-xs text-gray-500 line-clamp-2">
-              {product.description || 'Producto fresco de Tus Aguacates'}
-            </p>
+            {/* Descripción: expandida para combos */}
+            {product.description ? (
+              product.name.toLowerCase().includes('combo') || product.description.includes('Qué Incluye') || product.description.includes('Qué incluye') ? (
+                <div className="text-xs text-gray-600 space-y-0.5">
+                  {product.description.split('\n').filter((line: string) => line.trim()).map((line: string, i: number) => (
+                    <p key={i} className={line.startsWith('⭐') || line.startsWith('Qué') || line.startsWith('Envío') || line.startsWith('✨') ? 'font-semibold text-gray-700' : ''}>
+                      {line}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
+              )
+            ) : (
+              <p className="text-xs text-gray-500">Producto fresco de Tus Aguacates</p>
+            )}
 
             <p className="text-xs text-gray-400">Por {product.unit || 'unidad'}</p>
 

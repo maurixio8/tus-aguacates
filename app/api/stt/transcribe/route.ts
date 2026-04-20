@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
     } else if (body.mediaId) {
       // Download from WhatsApp/YCloud using media ID
       // Requires YCloud API key passed in header
-      const ycloudApiKey = request.headers.get('x-ycloud-api-key') || body.ycloudApiKey;
+      const ycloudApiKey = req.headers.get('x-ycloud-api-key') || body.ycloudApiKey;
       if (!ycloudApiKey) {
         return NextResponse.json({ error: 'Provide ycloudApiKey or x-ycloud-api-key header for mediaId downloads' }, { status: 400 });
       }
