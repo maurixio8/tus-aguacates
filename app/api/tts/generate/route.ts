@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
       },
       body: JSON.stringify({
         input: { ssml: `<speak>${text}<break time="150ms"/></speak>` },
-        voice: { languageCode: 'es-US', name: 'es-US-Chirp3-HD-Callirrhoe' },
+        voice: { languageCode: 'es-US', name: 'es-US-Neural2-A' },
         audioConfig: { audioEncoding: 'OGG_OPUS' }
       })
     });
