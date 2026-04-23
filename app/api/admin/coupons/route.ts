@@ -181,7 +181,6 @@ export async function POST(request: NextRequest) {
         times_used: 0,
         is_active: true,
         is_welcome_coupon: body.is_welcome_coupon || false,
-        free_shipping: body.free_shipping || false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })

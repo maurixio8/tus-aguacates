@@ -136,7 +136,7 @@ export async function PUT(
     const allowedFields = [
       'code', 'description', 'discount_type', 'discount_value',
       'min_purchase', 'max_discount', 'valid_from', 'valid_until',
-      'usage_limit', 'is_active', 'is_welcome_coupon', 'free_shipping'
+      'usage_limit', 'is_active', 'is_welcome_coupon'
     ];
 
     allowedFields.forEach(field => {
