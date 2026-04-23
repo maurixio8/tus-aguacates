@@ -117,7 +117,10 @@ export default function ProductsPage() {
 
   const handleNumericInputFocus = (event: React.FocusEvent<HTMLInputElement>) => {
     requestAnimationFrame(() => {
-      event.currentTarget.select();
+      const input = event.currentTarget;
+      if (input && typeof input.select === 'function' && document.contains(input)) {
+        input.select();
+      }
     });
   };
 
@@ -381,7 +384,7 @@ export default function ProductsPage() {
       main_image_url: editingProduct.main_image_url,
       category_id: editingProduct.category_id,
       variants: editingProduct.variants || editingProduct.product_variants || [],
-      unit: editingProduct.unit || 'unidad',
+      unit: editingProduct.unit || 'unit',
     };
 
 
@@ -706,7 +709,7 @@ export default function ProductsPage() {
       is_featured: false,
       main_image_url: '',
       category_id: selectedCategory || defaultCategoryId, // Asignar categoría por defecto
-      unit: 'unidad',
+      unit: 'unit',
       variants: [],
       hasVariants: false
     });
