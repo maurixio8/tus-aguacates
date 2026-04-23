@@ -191,7 +191,13 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('❌ API: Error creating coupon:', error);
       return NextResponse.json(
-        { error: 'Error al crear el cupón' },
+        {
+          error: 'Error al crear el cupón',
+          details: error.message,
+          code: error.code,
+          hint: error.hint,
+          details_full: JSON.stringify(error)
+        },
         { status: 500 }
       );
     }
