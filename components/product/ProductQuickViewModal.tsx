@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { X, ShoppingCart, CheckCircle } from 'lucide-react';
 import type { Product, ProductVariant } from '@/lib/productStorage';
+import { dedupeVariants } from '@/lib/product-variants';
 import { useCartStore } from '@/lib/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
@@ -37,11 +38,12 @@ export function ProductQuickViewModal({ product, isOpen, onClose }: ProductQuick
           console.error('Error loading variants:', error);
           setVariants([]);
         } else {
-          console.log('Variants loaded:', data?.length || 0, 'variants');
-          setVariants(data || []);
+          const dedupedVariants = dedupeVariants(data || []);
+          console.log('Variants loaded:', dedupedVariants.length, 'variants');
+          setVariants(dedupedVariants);
           // Auto-seleccionar primera variante si hay disponibles
-          if (data && data.length > 0) {
-            setSelectedVariant(data[0]);
+          if (dedupedVariants.length > 0) {
+            setSelectedVariant(dedupedVariants[0]);
           }
         }
       } catch (error) {

@@ -5,6 +5,44 @@
 
 import { supabase } from './supabase';
 
+function normalizeText(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+export function normalizeVariantValue(value?: string | null): string {
+  const raw = normalizeText(value || '')
+    .replace(/\(ahorro\)/g, '')
+    .replace(/^x\s*/g, '')
+    .replace(/\s+/g, '');
+
+  if (/^(1kg|1kilo|1000gr|1000grs)$/.test(raw)) return '1000grs';
+  if (/^(500gr|500grs)$/.test(raw)) return '500grs';
+  if (/^(250gr|250grs)$/.test(raw)) return '250grs';
+  if (/^(400gr|400grs)$/.test(raw)) return '400grs';
+  if (/^(800gr|800grs)$/.test(raw)) return '800grs';
+
+  return raw;
+}
+
+export function dedupeVariants<T extends { variant_name?: string | null; variant_value?: string | null }>(variants: T[]): T[] {
+  const seen = new Set<string>();
+  const deduped: T[] = [];
+
+  for (const variant of variants) {
+    const key = `${normalizeText(variant.variant_name || '')}:${normalizeVariantValue(variant.variant_value || variant.variant_name || '')}`;
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(variant);
+  }
+
+  return deduped;
+}
+
 export interface ProductVariant {
   id: string;
   product_id: string;
@@ -42,7 +80,7 @@ export async function getProductVariants(productId: string): Promise<ProductVari
     return [];
   }
 
-  return data || [];
+  return dedupeVariants(data || []);
 }
 
 /**

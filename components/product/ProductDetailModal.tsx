@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from 'lucide-react';
 import type { Product } from '@/lib/productStorage';
+import { dedupeVariants } from '@/lib/product-variants';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
@@ -44,7 +45,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
       // Si el producto ya tiene variantes cargadas
       if (product.variants && product.variants.length > 0) {
         // ✅ Usar el precio de la variante directamente si existe
-        const variantsWithPrice = product.variants.map((v: any) => ({
+        const variantsWithPrice = dedupeVariants(product.variants).map((v: any) => ({
           ...v,
           price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
         }));
@@ -66,7 +67,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
         if (data && data.length > 0) {
           // ✅ Usar el precio de la variante directamente si existe
-          const variantsWithPrice = data.map((v: any) => ({
+          const variantsWithPrice = dedupeVariants(data).map((v: any) => ({
             ...v,
             price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
           }));

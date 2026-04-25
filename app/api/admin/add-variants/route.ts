@@ -58,14 +58,14 @@ const VARIANTS_TO_ADD: VariantSeed[] = [
     productSearchNames: ['mango azucar'],
     variants: [
       { variant_name: 'Peso', variant_value: '500grs', price_adjustment: 5000 },
-      { variant_name: 'Peso', variant_value: '1 kg', price_adjustment: 9000 },
+      { variant_name: 'Peso', variant_value: '1000grs', price_adjustment: 9300 },
     ],
   },
   {
     productSearchNames: ['mango comun', 'mango commun'],
     variants: [
       { variant_name: 'Peso', variant_value: '500grs', price_adjustment: 3700 },
-      { variant_name: 'Peso', variant_value: '1 kg', price_adjustment: 6500 },
+      { variant_name: 'Peso', variant_value: '1000grs', price_adjustment: 6900 },
     ],
   },
   {
@@ -87,6 +87,19 @@ const VARIANTS_TO_ADD: VariantSeed[] = [
 
 function normalizeText(value: string) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+}
+
+function normalizeVariantValue(value: string) {
+  const raw = normalizeText(value)
+    .replace(/\(ahorro\)/g, '')
+    .replace(/^x\s*/g, '')
+    .replace(/\s+/g, '');
+
+  if (/^(1kg|1kilo|1000gr|1000grs)$/.test(raw)) return '1000grs';
+  if (/^(500gr|500grs)$/.test(raw)) return '500grs';
+  if (/^(250gr|250grs)$/.test(raw)) return '250grs';
+
+  return raw;
 }
 
 function getErrorMessage(error: unknown) {
@@ -146,11 +159,11 @@ async function buildVariantPlan() {
     }
 
     const existingVariantValues = new Set(
-      (existingVariants || []).map((variant) => normalizeText(variant.variant_value))
+      (existingVariants || []).map((variant) => normalizeVariantValue(variant.variant_value))
     );
 
     const newVariants = item.variants.filter(
-      (variant) => !existingVariantValues.has(normalizeText(variant.variant_value))
+      (variant) => !existingVariantValues.has(normalizeVariantValue(variant.variant_value))
     );
 
     if (newVariants.length === 0) {

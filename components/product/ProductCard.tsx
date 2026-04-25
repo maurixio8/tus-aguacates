@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
 import type { UnifiedProduct } from '@/lib/types';
+import { dedupeVariants } from '@/lib/product-variants';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { getProductImageUrl } from '@/lib/types';
 import { useCartStore } from '@/lib/cart-store';
@@ -47,7 +48,7 @@ export function ProductCard({ product }: ProductCardProps) {
       console.log('📦 Usando variantes del producto:', product.name, product.variants);
 
       // ✅ Usar el precio de la variante directamente si existe, no recalcular
-      const variantsWithPrice = product.variants.map(v => ({
+      const variantsWithPrice = dedupeVariants(product.variants).map(v => ({
         ...v,
         // Si la variante ya tiene precio, usarlo; si no, calcular con price_adjustment
         price: (v as any).price || ((product.discount_price || product.price) + ((v as any).price_adjustment || 0))
@@ -67,7 +68,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
           if (data && data.length > 0) {
             // ✅ Usar el precio de la variante directamente si existe
-            const variantsWithPrice = data.map(v => ({
+            const variantsWithPrice = dedupeVariants(data).map(v => ({
               ...v,
               price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
             }));

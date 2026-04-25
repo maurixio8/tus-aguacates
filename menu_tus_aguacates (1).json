@@ -780,16 +780,12 @@
           "description": "El mango es una fruta versátil, su ingesta diaria puede ayudar a prevenir cáncer de seno, de la sangre (leucemia), de próstata y de colon, combate la sequedad ocular, ayuda a la absorción de hierro,",
           "variants": [
             {
-              "name": "x1000grs (Ahorro)",
-              "price": 6900
-            },
-            {
-              "name": "x1000grs (Ahorro)",
-              "price": 6000
-            },
-            {
               "name": "x500grs",
               "price": 3700
+            },
+            {
+              "name": "x1000grs (Ahorro)",
+              "price": 6900
             }
           ]
         },
