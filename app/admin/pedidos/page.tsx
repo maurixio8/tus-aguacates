@@ -84,7 +84,7 @@ interface Order {
   order_items?: OrderItem[];
   items?: OrderItem[];
   user_id?: string;
-  shipping_address?: unknown;
+  shipping_address?: string | { street_address?: string; address?: string; city?: string; state?: string; department?: string; postal_code?: string; phone?: string; } | undefined;
   order_type?: AdminOrderType;
   order_data?: any;
   operational_flags?: string[];
