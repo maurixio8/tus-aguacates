@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { findExistingCustomerByPhones, getComparablePhone, normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,88 @@ const normalizeText = (text: string): string => {
     .replace(/[\u0300-\u036f]/g, '') // Quitar acentos
     .replace(/\s+/g, ' ')
     .trim();
+};
+
+const buildPhoneCandidates = (...phones: Array<string | null | undefined>): string[] => {
+  const candidates = new Set<string>();
+
+  phones.forEach((phone) => {
+    if (!phone) return;
+
+    const digits = phone.replace(/\D/g, '');
+    const normalized = normalizePhone(phone);
+
+    if (digits) candidates.add(digits);
+    if (normalized) {
+      candidates.add(normalized);
+      const last10 = normalized.slice(-10);
+      if (last10) candidates.add(last10);
+    }
+  });
+
+  return Array.from(candidates);
+};
+
+const isActiveGuestOrderStatus = (status?: string | null): boolean => {
+  const normalized = normalizeText(status || '');
+  return !['cancelado', 'cancelled', 'entregado', 'delivered', 'completado', 'completed'].includes(normalized);
+};
+
+const syncGuestOrdersForCustomer = async (
+  supabase: any,
+  payload: {
+    phones: Array<string | null | undefined>;
+    name?: string | null;
+    email?: string | null;
+    address?: string | null;
+  }
+) => {
+  const phoneCandidates = buildPhoneCandidates(...payload.phones);
+  if (phoneCandidates.length === 0) return 0;
+
+  const { data: guestOrders, error: guestOrdersError } = await supabase
+    .from('guest_orders')
+    .select('id, guest_phone, status, created_at')
+    .order('created_at', { ascending: false })
+    .limit(500);
+
+  if (guestOrdersError) {
+    console.error('Error consultando guest_orders para sincronizar cliente:', guestOrdersError);
+    return 0;
+  }
+
+  const matchingIds = (guestOrders || [])
+    .filter((order: any) => {
+      if (!isActiveGuestOrderStatus(order.status)) return false;
+
+      const normalizedStoredPhone = normalizePhone(order.guest_phone || '');
+      const storedLast10 = normalizedStoredPhone.slice(-10);
+
+      return phoneCandidates.includes(normalizedStoredPhone) || phoneCandidates.includes(storedLast10);
+    })
+    .map((order: any) => order.id);
+
+  if (matchingIds.length === 0) return 0;
+
+  const primaryPhone = payload.phones.find((phone) => !!phone);
+  const updateData: Record<string, any> = {};
+
+  if (payload.name !== undefined) updateData.guest_name = payload.name || null;
+  if (payload.email !== undefined) updateData.guest_email = payload.email || null;
+  if (payload.address !== undefined) updateData.guest_address = payload.address || null;
+  if (primaryPhone) updateData.guest_phone = normalizePhone(primaryPhone);
+
+  const { error: syncError } = await supabase
+    .from('guest_orders')
+    .update(updateData)
+    .in('id', matchingIds);
+
+  if (syncError) {
+    console.error('Error sincronizando guest_orders con datos del cliente:', syncError);
+    return 0;
+  }
+
+  return matchingIds.length;
 };
 
 // Calcular score de relevancia para búsqueda inteligente
@@ -231,7 +314,7 @@ export async function GET(request: NextRequest) {
       console.log(`✅ Total encontrados: ${allCustomersData.length} clientes en tabla customers`);
 
       for (const customer of allCustomersData) {
-        const phoneKey = (customer.phone || '').trim().toLowerCase();
+        const phoneKey = getComparablePhone(customer.phone || '');
         if (phoneKey && !phonesSeen.has(phoneKey)) {
           const classification = calculateCustomerClassification(
             customer.total_orders || 0,
@@ -283,7 +366,7 @@ export async function GET(request: NextRequest) {
         console.log(`✅ Encontrados ${profilesData.length} perfiles registrados`);
 
         for (const profile of profilesData) {
-          const phoneKey = (profile.phone || '').trim().toLowerCase();
+          const phoneKey = getComparablePhone(profile.phone || '');
 
           // Solo agregar si no existe ya (por teléfono)
           if (!phoneKey || !phonesSeen.has(phoneKey)) {
@@ -359,7 +442,7 @@ export async function GET(request: NextRequest) {
         const guestMap = new Map<string, any>();
 
         for (const order of guestOrders) {
-          const phoneKey = (order.guest_phone || '').trim().toLowerCase();
+          const phoneKey = getComparablePhone(order.guest_phone || '');
           if (!phoneKey) continue;
 
           // Solo procesar si no existe en otras fuentes
@@ -510,12 +593,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = createSupabaseClient();
 
-    // Verificar si ya existe un cliente con ese teléfono en la tabla customers
-    const { data: existingCustomer } = await supabase
-      .from('customers')
-      .select('id, name')
-      .eq('phone', body.phone)
-      .single();
+    // Normalizar teléfono antes de cualquier operación
+    const normPhone = body.phone ? normalizePhoneForDB(body.phone) : null;
+
+    const existingCustomer = await findExistingCustomerByPhones(supabase, [body.phone, normPhone]);
 
     if (existingCustomer) {
       return NextResponse.json(
@@ -524,12 +605,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Crear cliente en la tabla customers
+    // Crear cliente en la tabla customers con teléfono normalizado
     const { data: newCustomer, error: insertError } = await supabase
       .from('customers')
       .insert({
         name: body.name,
-        phone: normalizePhone(body.phone),
+        phone: normPhone || normalizePhone(body.phone),
         email: body.email || null,
         address: body.address || null,
         neighborhood: body.neighborhood || null,
@@ -550,9 +631,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
+      phones: [body.phone, normPhone, newCustomer?.phone],
+      name: body.name,
+      email: body.email,
+      address: body.address,
+    });
+
     return NextResponse.json({
       success: true,
       data: newCustomer,
+      guestOrdersSynced,
       message: 'Cliente creado exitosamente'
     }, { status: 201 });
 
@@ -588,35 +677,39 @@ export async function PATCH(request: NextRequest) {
 
     // Si es un cliente invitado (ID empieza con 'guest-')
     if (customerId.startsWith('guest-')) {
-      const phone = customerId.replace('guest-', '');
+      const guestPhone = customerId.replace('guest-', '');
+      const masterCustomer = await upsertCustomerMasterRecord(supabase, {
+        name: body.name,
+        phone: body.phone || guestPhone,
+        email: body.email,
+        address: body.address,
+        neighborhood: body.neighborhood,
+        city: body.city,
+        notes: body.notes,
+        is_active: body.is_active ?? true,
+      });
 
-      // Crear nuevo cliente en la tabla customers
-      const { data: newCustomer, error: insertError } = await supabase
-        .from('customers')
-        .insert({
-          name: body.name,
-          phone: normalizePhone(phone),
-          email: body.email || null,
-          address: body.address || null,
-          neighborhood: body.neighborhood || null,
-          city: body.city || 'Bogotá',
-          notes: body.notes || null,
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (insertError) {
+      if (!masterCustomer) {
         return NextResponse.json(
-          { error: 'Error al convertir cliente invitado', details: insertError.message },
+          { error: 'Error al convertir cliente invitado' },
           { status: 500 }
         );
       }
 
+      const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
+        phones: [guestPhone, body.phone, masterCustomer.customer.phone],
+        name: body.name,
+        email: body.email,
+        address: body.address,
+      });
+
       return NextResponse.json({
         success: true,
-        data: newCustomer,
-        message: 'Cliente invitado convertido exitosamente'
+        data: masterCustomer.customer,
+        guestOrdersSynced,
+        message: masterCustomer.isNew
+          ? 'Cliente invitado convertido exitosamente'
+          : 'Cliente invitado vinculado a ficha existente'
       });
     }
 
@@ -626,7 +719,7 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (body.name !== undefined) updateData.name = body.name;
-    if (body.phone !== undefined) updateData.phone = normalizePhone(body.phone);
+    if (body.phone !== undefined) updateData.phone = normalizePhoneForDB(body.phone);
     if (body.email !== undefined) updateData.email = body.email || null;
     if (body.address !== undefined) updateData.address = body.address || null;
     if (body.neighborhood !== undefined) updateData.neighborhood = body.neighborhood || null;
@@ -643,11 +736,13 @@ export async function PATCH(request: NextRequest) {
 
     if (updateError) {
       // Si no existe en customers, intentar en profiles
+      const normalizedProfilePhone = body.phone !== undefined ? normalizePhoneForDB(body.phone) : body.phone;
+
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: body.name,
-          phone: body.phone,
+          phone: normalizedProfilePhone,
           updated_at: new Date().toISOString()
         })
         .eq('id', customerId)
@@ -661,16 +756,44 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
+      const masterCustomer = await upsertCustomerMasterRecord(supabase, {
+        name: body.name,
+        phone: normalizedProfilePhone,
+        email: body.email,
+        address: body.address,
+        neighborhood: body.neighborhood,
+        city: body.city,
+        notes: body.notes,
+        is_active: body.is_active,
+      });
+
+      const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
+        phones: [body.phone, normalizedProfilePhone, masterCustomer?.customer?.phone],
+        name: body.name,
+        email: body.email,
+        address: body.address,
+      });
+
       return NextResponse.json({
         success: true,
         data: profileData,
+        masterCustomer: masterCustomer?.customer || null,
+        guestOrdersSynced,
         message: 'Perfil actualizado exitosamente'
       });
     }
 
+    const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
+      phones: [body.phone, updatedCustomer?.phone],
+      name: body.name,
+      email: body.email,
+      address: body.address,
+    });
+
     return NextResponse.json({
       success: true,
       data: updatedCustomer,
+      guestOrdersSynced,
       message: 'Cliente actualizado exitosamente'
     });
 

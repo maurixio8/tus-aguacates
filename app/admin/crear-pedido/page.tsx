@@ -78,6 +78,19 @@ interface Customer {
   notes?: string;
 }
 
+function normalizePhone(phone: string) {
+  if (!phone) return '';
+
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 12 && digits.startsWith('57')) return digits;
+
+  const local10 = digits.length >= 10 ? digits.slice(-10) : digits;
+  if (local10.length === 10 && local10.startsWith('3')) return `57${local10}`;
+
+  return digits.startsWith('57') ? digits : `57${local10}`;
+}
+
 export default function CreateOrderPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
@@ -464,16 +477,19 @@ export default function CreateOrderPage() {
   }, [customerSearch, selectedCustomer]);
 
   const addToOrder = (product: Product, variant?: ProductVariant) => {
-    // Si no se proporcionó variante, pero el producto TIENE variantes activas,
-    // auto-seleccionar la más económica/primera para que no quede huerfano en la lista de compras.
+    // Si no se proporcionó variante, solo auto-seleccionar cuando exista UNA sola opción activa.
+    // Si hay varias, exigir selección explícita para no mezclar presentaciones incorrectas.
     let selectedVariant = variant;
     if (!selectedVariant) {
       const activeVariants = (product.variants || product.product_variants || []).filter(
         (v) => v.is_active === true && (v.stock_quantity === undefined || v.stock_quantity > 0)
       );
-      if (activeVariants.length > 0) {
-        // Ordenar asumiendo price_adjustment menor primero
-        selectedVariant = activeVariants.sort((a, b) => (a.price_adjustment || 0) - (b.price_adjustment || 0))[0];
+      if (activeVariants.length === 1) {
+        selectedVariant = activeVariants[0];
+      } else if (activeVariants.length > 1) {
+        setError(`Selecciona la presentación de ${product.name} antes de agregarlo.`);
+        setTimeout(() => setError(''), 3000);
+        return;
       }
     }
 
@@ -684,9 +700,11 @@ export default function CreateOrderPage() {
       const shipping = calculateShipping();
       const total = subtotal + shipping;
 
+      const normalizedCustomerPhone = normalizePhone(customerPhone.trim());
+
       const orderData = {
         customer_name: customerName.trim(),
-        customer_phone: customerPhone.trim(),
+        customer_phone: normalizedCustomerPhone,
         customer_email: customerEmail.trim() || null,
         delivery_address: deliveryAddress.trim(),
         delivery_notes: deliveryNotes.trim() || null,
@@ -715,80 +733,23 @@ export default function CreateOrderPage() {
       const data = await response.json();
 
       if (data.success) {
-        // Verificar si hay cambios en los datos del cliente y actualizar
-        let customerUpdated = false;
-        if (selectedCustomer) {
-          // Detectar cambios comparando con los datos originales
-          const hasChanges =
-            customerName.trim() !== selectedCustomer.name ||
-            customerPhone.trim() !== selectedCustomer.phone ||
-            (customerEmail.trim() || null) !== (selectedCustomer.email || null) ||
-            deliveryAddress.trim() !== (selectedCustomer.address || '') ||
-            (deliveryNotes.trim() || null) !== (selectedCustomer.notes || null);
+        const syncedCustomer = data.masterCustomer || null;
+        const customerUpdated = !!syncedCustomer;
 
-          if (hasChanges) {
-            try {
-              const updateResponse = await fetch(`/api/admin/customers?id=${selectedCustomer.id}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                  name: customerName.trim(),
-                  phone: customerPhone.trim(),
-                  email: customerEmail.trim() || null,
-                  address: deliveryAddress.trim(),
-                  notes: deliveryNotes.trim() || null,
-                }),
-              });
-
-              const updateData = await updateResponse.json();
-              if (updateData.success) {
-                customerUpdated = true;
-                // Actualizar el cliente seleccionado en el estado local
-                setSelectedCustomer({
-                  ...selectedCustomer,
-                  name: customerName.trim(),
-                  phone: customerPhone.trim(),
-                  email: customerEmail.trim() || undefined,
-                  address: deliveryAddress.trim(),
-                  notes: deliveryNotes.trim() || undefined,
-                });
-              }
-            } catch (customerErr) {
-              // Si falla actualizar el cliente, no es crítico - el pedido ya se creó
-              console.log('No se pudo actualizar cliente existente:', customerErr);
-            }
-          }
-        } else {
-          // Guardar cliente nuevo si no estaba seleccionado de la lista
-          try {
-            const newCustomerResponse = await fetch('/api/admin/customers', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
-              body: JSON.stringify({
-                name: customerName.trim(),
-                phone: customerPhone.trim(),
-                email: customerEmail.trim() || null,
-                address: deliveryAddress.trim(),
-                notes: deliveryNotes.trim() || null,
-              }),
-            });
-            const newCustomerData = await newCustomerResponse.json();
-            if (newCustomerData.success) {
-              setSelectedCustomer(newCustomerData.data);
-              customerUpdated = true;
-            }
-          } catch (customerErr) {
-            // Si falla guardar el cliente, no es crítico - el pedido ya se creó
-            console.log('No se pudo guardar cliente nuevo:', customerErr);
-          }
+        if (syncedCustomer) {
+          setSelectedCustomer({
+            id: syncedCustomer.id,
+            name: syncedCustomer.name || customerName.trim(),
+            phone: syncedCustomer.phone || normalizedCustomerPhone,
+            email: syncedCustomer.email || customerEmail.trim() || undefined,
+            address: syncedCustomer.address || deliveryAddress.trim(),
+            neighborhood: syncedCustomer.neighborhood || undefined,
+            city: syncedCustomer.city || undefined,
+            notes: syncedCustomer.notes || deliveryNotes.trim() || undefined,
+          });
         }
 
-        // Mostrar mensaje de éxito indicando si el cliente fue actualizado
-        const customerStatus = customerUpdated
-          ? (selectedCustomer ? 'y el cliente fue actualizado' : 'y el cliente fue creado')
-          : '';
+        const customerStatus = customerUpdated ? 'y el cliente quedó sincronizado' : '';
 
         console.log(`Pedido creado exitosamente ${customerStatus}`);
         // Guardar datos del pedido para WhatsApp

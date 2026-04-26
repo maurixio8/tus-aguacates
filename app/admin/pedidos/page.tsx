@@ -31,7 +31,7 @@ import {
   type AdminOrderType,
 } from '@/lib/orders/operational';
 import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
-import { formatAddressToString } from '@/utils/addressFormatter';
+import { extractCustomerDataFromShippingAddress, formatAddressToString } from '@/utils/addressFormatter';
 import EditOrderModal from '@/components/admin/EditOrderModal';
 import { Edit } from 'lucide-react';
 
@@ -84,7 +84,7 @@ interface Order {
   order_items?: OrderItem[];
   items?: OrderItem[];
   user_id?: string;
-  shipping_address?: string;
+  shipping_address?: unknown;
   order_type?: AdminOrderType;
   order_data?: any;
   operational_flags?: string[];
@@ -706,27 +706,30 @@ export default function OrdersPage() {
 
   // Función para obtener datos del cliente
   const getCustomerInfo = (order: Order) => {
-    // Primero intentar con los datos directos del pedido
-    if (order.customer_name) {
+    const shippingData = order.shipping_address
+      ? extractCustomerDataFromShippingAddress(order.shipping_address)
+      : {
+          customer_name: null,
+          customer_phone: null,
+          customer_email: null,
+          delivery_address: null,
+        };
+
+    // Primero intentar con los datos directos del pedido, pero completar huecos con shipping_address
+    if (order.customer_name || order.customer_phone || order.customer_email) {
       return {
-        name: order.customer_name,
-        phone: order.customer_phone,
-        email: order.customer_email
+        name: order.customer_name || shippingData.customer_name || 'Cliente',
+        phone: order.customer_phone || shippingData.customer_phone || null,
+        email: order.customer_email || shippingData.customer_email || null
       };
     }
 
-    // Si hay shipping_address, extraer de allí
     if (order.shipping_address) {
-      try {
-        const address = JSON.parse(order.shipping_address);
-        return {
-          name: 'Cliente',
-          phone: address.phone || null,
-          email: order.customer_email
-        };
-      } catch {
-        // Error parseando JSON
-      }
+      return {
+        name: shippingData.customer_name || 'Cliente',
+        phone: shippingData.customer_phone || null,
+        email: shippingData.customer_email || null
+      };
     }
 
     // Valor por defecto

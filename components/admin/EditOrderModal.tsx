@@ -19,6 +19,7 @@ import {
     FileText
 } from 'lucide-react';
 import type { AdminOrderType } from '@/lib/orders/operational';
+import { formatAddressToString } from '@/utils/addressFormatter';
 
 interface Category {
     id: string;
@@ -76,7 +77,7 @@ interface Order {
     customer_email?: string;
     delivery_address?: string;
     delivery_notes?: string;
-    shipping_address?: string;
+    shipping_address?: unknown;
     total: number;
     order_items?: OrderItem[];
     order_type?: AdminOrderType;
@@ -123,14 +124,9 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
         if (order.delivery_address) {
             return order.delivery_address;
         }
-        // Luego con shipping_address (puede ser JSON)
+        // Luego con shipping_address (puede venir como string JSON o JSONB)
         if (order.shipping_address) {
-            try {
-                const parsed = JSON.parse(order.shipping_address);
-                return parsed.street_address || parsed.address || '';
-            } catch {
-                return order.shipping_address;
-            }
+            return formatAddressToString(order.shipping_address);
         }
         return '';
     };

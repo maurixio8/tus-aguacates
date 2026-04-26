@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import {
   buildOperationalFlags,
   normalizeOrderStatus,
   normalizePaymentStatus,
 } from '@/lib/orders/operational';
+import { normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
+import { extractCustomerDataFromShippingAddress } from '@/utils/addressFormatter';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,31 +67,35 @@ async function getCustomerData(order: any, supabase: any): Promise<{
 }> {
   console.log('🔍 Getting customer data for order:', order.id);
 
+  const shippingData = order.shipping_address
+    ? extractCustomerDataFromShippingAddress(order.shipping_address)
+    : {
+        customer_name: null,
+        customer_phone: null,
+        customer_email: null,
+        delivery_address: null,
+      };
+
   // Intento 1: Campos directos de la tabla orders (pedidos manuales del admin)
-  if (order.customer_name || order.customer_phone || order.customer_email) {
+  // Si faltan datos, completar con shipping_address.
+  if (order.customer_name || order.customer_phone || order.customer_email || order.delivery_address) {
     console.log('✅ Found customer data in direct fields');
     return {
-      customer_name: order.customer_name || null,
-      customer_email: order.customer_email || null,
-      customer_phone: order.customer_phone || null,
-      delivery_address: order.delivery_address || null
+      customer_name: order.customer_name || shippingData.customer_name || null,
+      customer_email: order.customer_email || shippingData.customer_email || null,
+      customer_phone: order.customer_phone || shippingData.customer_phone || null,
+      delivery_address: order.delivery_address || shippingData.delivery_address || null
     };
   }
 
-  // Intento 2: Extraer de shipping_address (JSON)
+  // Intento 2: Extraer de shipping_address (JSON string o JSONB)
+  if (shippingData.customer_name || shippingData.customer_phone || shippingData.customer_email || shippingData.delivery_address) {
+    console.log('✅ Found customer data in shipping_address');
+    return shippingData;
+  }
+
   if (order.shipping_address) {
-    try {
-      const shipping = JSON.parse(order.shipping_address);
-      console.log('✅ Found customer data in shipping_address');
-      return {
-        customer_name: shipping.full_name || null,
-        customer_phone: shipping.phone || null,
-        customer_email: shipping.email || null,
-        delivery_address: shipping.street_address || null
-      };
-    } catch (e) {
-      console.log('❌ Error parsing shipping_address:', e);
-    }
+    console.log('⚠️ shipping_address present but no usable customer data found');
   }
 
   // Intento 3: Buscar en auth.users por user_id (para pedidos de clientes registrados)
@@ -689,9 +694,11 @@ export async function POST(request: NextRequest) {
       : finalTotal - subtotal;
 
     // Create the order - user_id es null para pedidos manuales de admin
+    const normalizedCreatePhone = normalizePhoneForDB(body.customer_phone?.trim() || '');
+
     const orderInsertData: Record<string, unknown> = {
       customer_name: body.customer_name?.trim(),
-      customer_phone: body.customer_phone?.trim(),
+      customer_phone: normalizedCreatePhone,
       customer_email: body.customer_email?.trim() || null,
       delivery_address: body.delivery_address?.trim(),
       shipping_address: {
@@ -834,7 +841,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log('✅ API: Order created successfully:', order);
+    const masterCustomer = await upsertCustomerMasterRecord(supabase, {
+      name: typeof orderInsertData.customer_name === 'string' ? orderInsertData.customer_name : null,
+      phone: typeof orderInsertData.customer_phone === 'string' ? orderInsertData.customer_phone : null,
+      email: typeof orderInsertData.customer_email === 'string' ? orderInsertData.customer_email : null,
+      address: typeof orderInsertData.delivery_address === 'string' ? orderInsertData.delivery_address : null,
+      city: address.city || 'Bogotá',
+      notes: typeof orderInsertData.delivery_notes === 'string' ? orderInsertData.delivery_notes : null,
+    });
+
+    console.log('✅ API: Order created successfully:', order, {
+      masterCustomerSynced: !!masterCustomer,
+    });
 
     return NextResponse.json({
       success: true,
@@ -842,6 +860,7 @@ export async function POST(request: NextRequest) {
         ...order,
         order_items: items
       },
+      masterCustomer: masterCustomer?.customer || null,
       message: 'Pedido creado exitosamente'
     }, { status: 201, headers: corsHeaders });
 
@@ -911,12 +930,18 @@ export async function PATCH(request: NextRequest) {
       if (isGuestOrder) {
         const { data: currentGuestOrder } = await supabase
           .from('guest_orders')
-          .select('order_data')
+          .select('guest_name, guest_phone, guest_email, guest_address, order_data')
           .eq('id', orderId)
           .single();
 
         const nextOrderData = parseJsonObject(currentGuestOrder?.order_data);
         const nextCustomer = {
+          name: currentGuestOrder?.guest_name || '',
+          full_name: currentGuestOrder?.guest_name || '',
+          phone: currentGuestOrder?.guest_phone || '',
+          email: currentGuestOrder?.guest_email || '',
+          address: currentGuestOrder?.guest_address || '',
+          delivery_address: currentGuestOrder?.guest_address || '',
           ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
         };
         // Para guest_orders, los campos son: guest_name, guest_phone, guest_email, guest_address
@@ -927,7 +952,7 @@ export async function PATCH(request: NextRequest) {
           nextCustomer.full_name = value;
         }
         if (customerData.customer_phone !== undefined) {
-          const value = customerData.customer_phone.trim();
+          const value = normalizePhoneForDB(customerData.customer_phone.trim());
           updateData.guest_phone = value;
           nextCustomer.phone = value;
         }
@@ -937,18 +962,30 @@ export async function PATCH(request: NextRequest) {
           nextCustomer.email = value;
         }
         if (customerData.delivery_address !== undefined) {
-          updateData.guest_address = customerData.delivery_address.trim();
+          const value = customerData.delivery_address.trim();
+          updateData.guest_address = value;
+          nextCustomer.address = value;
+          nextCustomer.delivery_address = value;
         }
+
+        nextOrderData.customer = nextCustomer;
+        updateData.order_data = nextOrderData;
       } else {
         // Para orders, usar campos normales
         const { data: currentOrder } = await supabase
           .from('orders')
-          .select('order_data')
+          .select('customer_name, customer_phone, customer_email, delivery_address, order_data')
           .eq('id', orderId)
           .single();
 
         const nextOrderData = parseJsonObject(currentOrder?.order_data);
         const nextCustomer = {
+          name: currentOrder?.customer_name || '',
+          full_name: currentOrder?.customer_name || '',
+          phone: currentOrder?.customer_phone || '',
+          email: currentOrder?.customer_email || '',
+          address: currentOrder?.delivery_address || '',
+          delivery_address: currentOrder?.delivery_address || '',
           ...(nextOrderData.customer && typeof nextOrderData.customer === 'object' ? nextOrderData.customer : {})
         };
 
@@ -958,8 +995,9 @@ export async function PATCH(request: NextRequest) {
           nextCustomer.full_name = customerData.customer_name.trim();
         }
         if (customerData.customer_phone !== undefined) {
-          updateData.customer_phone = customerData.customer_phone.trim();
-          nextCustomer.phone = customerData.customer_phone.trim();
+          const value = normalizePhoneForDB(customerData.customer_phone.trim());
+          updateData.customer_phone = value;
+          nextCustomer.phone = value;
         }
         if (customerData.customer_email !== undefined) {
           const value = customerData.customer_email.trim() || null;
@@ -967,9 +1005,10 @@ export async function PATCH(request: NextRequest) {
           nextCustomer.email = value;
         }
         if (customerData.delivery_address !== undefined) {
-          updateData.delivery_address = customerData.delivery_address.trim();
-          nextCustomer.address = customerData.delivery_address.trim();
-          nextCustomer.delivery_address = customerData.delivery_address.trim();
+          const value = customerData.delivery_address.trim();
+          updateData.delivery_address = value;
+          nextCustomer.address = value;
+          nextCustomer.delivery_address = value;
         }
         if (customerData.delivery_notes !== undefined) {
           const value = customerData.delivery_notes.trim() || null;
@@ -994,7 +1033,17 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      console.log('✅ API: Customer data updated successfully');
+      const masterCustomer = await upsertCustomerMasterRecord(supabase, {
+        name: customerData.customer_name,
+        phone: customerData.customer_phone,
+        email: customerData.customer_email,
+        address: customerData.delivery_address,
+        notes: customerData.delivery_notes,
+      });
+
+      console.log('✅ API: Customer data updated successfully', {
+        masterCustomerSynced: !!masterCustomer,
+      });
     }
 
     if (customerData) {

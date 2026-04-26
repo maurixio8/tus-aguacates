@@ -103,6 +103,19 @@ function getAvatarInitials(name: string) {
   return { initials, gradient: gradients[colorIndex] };
 }
 
+function normalizePhone(phone: string) {
+  if (!phone) return '';
+
+  const digits = phone.replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits.length === 12 && digits.startsWith('57')) return digits;
+
+  const local10 = digits.length >= 10 ? digits.slice(-10) : digits;
+  if (local10.length === 10 && local10.startsWith('3')) return `57${local10}`;
+
+  return digits.startsWith('57') ? digits : `57${local10}`;
+}
+
 export default function CuentaPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuth();
@@ -301,18 +314,20 @@ export default function CuentaPage() {
 
     setSavingProfile(true);
     try {
+      const normalizedPhone = normalizePhone(data.phone);
+
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: data.full_name,
           preferred_name: data.preferred_name,
-          phone: data.phone,
+          phone: normalizedPhone,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
 
       if (!error) {
-        setProfile((prev) => prev ? { ...prev, ...data } : null);
+        setProfile((prev) => prev ? { ...prev, ...data, phone: normalizedPhone } : null);
       }
     } catch (error) {
       console.error('Error guardando perfil:', error);

@@ -5,29 +5,65 @@
 export function formatAddressToString(addr: unknown): string {
   if (!addr) return '';
 
-  // Si es string, intentar parsear JSON
+  const parsed = parseAddressValue(addr);
+  if (!parsed) {
+    return typeof addr === 'string' ? addr : '';
+  }
+
+  return formatAddressObject(parsed);
+}
+
+export function parseAddressValue(addr: unknown): Record<string, unknown> | null {
+  if (!addr) return null;
+
   if (typeof addr === 'string') {
     try {
       const parsed = JSON.parse(addr);
-      return formatAddressObject(parsed);
+      return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
     } catch {
-      return addr; // Es texto plano, devolverlo tal cual
+      return null;
     }
   }
 
-  return formatAddressObject(addr);
+  return typeof addr === 'object' ? (addr as Record<string, unknown>) : null;
 }
 
-function formatAddressObject(addr: unknown): string {
-  if (!addr || typeof addr !== 'object') return '';
+export function extractCustomerDataFromShippingAddress(addr: unknown): {
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  delivery_address: string | null;
+} {
+  const parsed = parseAddressValue(addr);
+  if (!parsed) {
+    return {
+      customer_name: null,
+      customer_phone: null,
+      customer_email: null,
+      delivery_address: null,
+    };
+  }
 
-  const obj = addr as Record<string, unknown>;
-  const streetAddress = (obj.street_address || obj.address || obj.street || '') as string;
-  const neighborhood = (obj.neighborhood || obj.barrio || obj.locality || '') as string;
-  const city = (obj.city || '') as string;
-  const state = (obj.state || obj.department || '') as string;
-  const postalCode = (obj.postal_code || obj.zip_code || '') as string;
-  const additionalInfo = (obj.additional_info || obj.references || obj.referencias || '') as string;
+  return {
+    customer_name: getFirstString(parsed.full_name, parsed.name),
+    customer_phone: getFirstString(parsed.phone, parsed.telefono),
+    customer_email: getFirstString(parsed.email),
+    delivery_address: getFirstString(
+      parsed.street_address,
+      parsed.address,
+      parsed.street,
+      formatAddressObject(parsed)
+    ),
+  };
+}
+
+function formatAddressObject(addr: Record<string, unknown>): string {
+  const streetAddress = getFirstString(addr.street_address, addr.address, addr.street) || '';
+  const neighborhood = getFirstString(addr.neighborhood, addr.barrio, addr.locality) || '';
+  const city = getFirstString(addr.city) || '';
+  const state = getFirstString(addr.state, addr.department) || '';
+  const postalCode = getFirstString(addr.postal_code, addr.zip_code) || '';
+  const additionalInfo = getFirstString(addr.additional_info, addr.references, addr.referencias) || '';
 
   const parts: string[] = [];
   if (streetAddress) parts.push(streetAddress);
@@ -38,4 +74,13 @@ function formatAddressObject(addr: unknown): string {
   if (additionalInfo) parts.push(`Ref: ${additionalInfo}`);
 
   return parts.join(', ');
+}
+
+function getFirstString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return null;
 }
