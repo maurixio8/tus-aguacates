@@ -4,6 +4,22 @@ import { getProductEmoji } from './productEmojis';
 import type { AdminOrderType } from '@/lib/orders/operational';
 import { formatAddressToString } from './addressFormatter';
 
+const WHATSAPP_SAFE_EMOJIS: Record<string, string> = {
+  '🫐': '🍇',
+  '🫑': '🌶️',
+  '🫛': '🌿',
+  '🫘': '🌱',
+  '🫚': '🌿',
+  '🫒': '🥑',
+  '🛍️': '🛒',
+  '🟫': '🟤',
+};
+
+const getWhatsAppSafeEmoji = (productName: string): string => {
+  const emoji = getProductEmoji(productName);
+  return WHATSAPP_SAFE_EMOJIS[emoji] || emoji;
+};
+
 export interface OrderItem {
   id: string;
   product_id: string;
@@ -175,12 +191,11 @@ export function generateOrderSummary(order: Order): string {
 
   const formattedDeliveryDate = getDeliveryDate();
 
-  // Get first name only from customer name
-  const getFirstName = (fullName: string | undefined): string => {
-    if (!fullName) return 'Cliente';
-    const firstName = fullName.trim().split(' ')[0];
-    // Capitalize first letter
-    return firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+  // Customer name must come from the order/dashboard data. Never fall back to "Cliente".
+  const getCustomerDisplayName = (fullName: string | undefined): string => {
+    const cleanName = fullName?.trim();
+    if (!cleanName || cleanName.toLowerCase() === 'cliente') return '';
+    return cleanName;
   };
 
   // Get greeting based on current hour (Colombia timezone UTC-5)
@@ -198,74 +213,51 @@ export function generateOrderSummary(order: Order): string {
     }
   };
 
-  const firstName = getFirstName(order.customer_name);
+  const customerDisplayName = getCustomerDisplayName(order.customer_name);
   const greeting = getGreeting();
+  const greetingLine = customerDisplayName
+    ? `${greeting}, ${customerDisplayName}!`
+    : `${greeting}!`;
 
-  // Build product list with product-specific emojis
-  const productList = items.map((item, index) => {
+  // Build compact product list for customer WhatsApp message.
+  // Keep emojis, but normalize newer ones that can render as question marks on some devices.
+  const productList = items.map((item) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = item.variantName || (item as any).variant_value || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
-    const description = item.product_snapshot?.description || item.products?.description || (item as any).description || '';
+    const emoji = getWhatsAppSafeEmoji(itemName);
 
-    const emoji = getProductEmoji(itemName);
-    let productDisplay = variantName
+    return variantName
       ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
       : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
-
-    // Add description if exists (important for combos)
-    if (description) {
-      productDisplay += `\n    📋 Incluye: ${description}`;
-    }
-
-    return productDisplay;
   }).join('\n');
 
-  // Total items count
-  const totalItemsCount = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  // Build financial summary based on whether there's a discount
-  let financialSummary = '';
-
-  if (hasDiscount && discount > 0) {
-    financialSummary = `💰 *Resumen:*
-✅ Subtotal: ${formatCurrency(subtotal)}
-✅ Envío: ${shippingCost > 0 ? formatCurrency(shippingCost) : 'GRATIS 🎉'}
-🎁 Descuento: -${formatCurrency(discount)}
-💚 *TOTAL:* ${formatCurrency(total)}`;
-  } else {
-    const shippingText = shippingCost === 0 ? 'GRATIS 🎉' : formatCurrency(shippingCost);
-    financialSummary = `💰 *Resumen:*
-✅ Subtotal: ${formatCurrency(subtotal)}
-✅ Envío: ${shippingText}
-💚 *TOTAL:* ${formatCurrency(total)}`;
+  // Build compact financial summary.
+  const financialLines = [`💚 *Total:* ${formatCurrency(total)}`];
+  if (shippingCost > 0) {
+    financialLines.push(`🚚 Domicilio: ${formatCurrency(shippingCost)}`);
   }
+  if (hasDiscount && discount > 0) {
+    financialLines.push(`🎁 Descuento aplicado: -${formatCurrency(discount)}`);
+  }
+  const financialSummary = financialLines.join('\n');
 
   // Generate delivery address - extract complete address for guest orders
   const extractedAddress = formatAddressToString(order.shipping_address) || order.delivery_address;
   let deliveryAddress = extractedAddress || 'N/A';
 
-  // Build complete message with warm, personal tone
-  const message = `🥑 *TUS AGUACATES*
+  // Compact customer-facing WhatsApp summary from dashboard.
+  const message = `${greetingLine} 👋
 
-${greeting}, ${firstName}! 👋
+🥑 Te compartimos tu pedido #${orderNumber}:
 
-Gracias por confiar en nosotros. Aquí está el resumen de tu pedido:
-
-📋 *Pedido #${orderNumber}*
-📦 ${totalItemsCount} producto${totalItemsCount !== 1 ? 's' : ''}
-
-*Productos:*
 ${productList}
 
 ${financialSummary}
+📅 Entrega: ${formattedDeliveryDate}
+📍 Dirección: ${deliveryAddress}
 
-📍 *Entrega:* ${deliveryAddress}
-📅 *Fecha estimada:* ${formattedDeliveryDate}
-
-¿Tienes alguna duda o necesitas modificar algo? Responde a este mensaje y con gusto te ayudamos. 💬
-
-¡Gracias por elegirnos, ${firstName}! Nos alegra tenerte como cliente 💚🥑`;
+¿Está todo correcto? ✅`;
 
   return message;
 }

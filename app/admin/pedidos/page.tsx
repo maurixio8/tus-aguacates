@@ -706,6 +706,19 @@ export default function OrdersPage() {
 
   // Función para obtener datos del cliente
   const getCustomerInfo = (order: Order) => {
+    const parseJson = (value: any) => {
+      if (!value) return null;
+      if (typeof value === 'object') return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    };
+
     const shippingData = order.shipping_address
       ? extractCustomerDataFromShippingAddress(order.shipping_address)
       : {
@@ -714,29 +727,31 @@ export default function OrdersPage() {
           customer_email: null,
           delivery_address: null,
         };
+    const orderData = typeof order.order_data === 'string' ? parseJson(order.order_data) : order.order_data;
 
-    // Primero intentar con los datos directos del pedido, pero completar huecos con shipping_address
-    if (order.customer_name || order.customer_phone || order.customer_email) {
-      return {
-        name: order.customer_name || shippingData.customer_name || 'Cliente',
-        phone: order.customer_phone || shippingData.customer_phone || null,
-        email: order.customer_email || shippingData.customer_email || null
-      };
-    }
+    const name =
+      order.customer_name?.trim() ||
+      shippingData.customer_name ||
+      orderData?.customer?.name?.trim() ||
+      orderData?.customerName?.trim() ||
+      '';
 
-    if (order.shipping_address) {
-      return {
-        name: shippingData.customer_name || 'Cliente',
-        phone: shippingData.customer_phone || null,
-        email: shippingData.customer_email || null
-      };
-    }
+    const phone =
+      order.customer_phone ||
+      shippingData.customer_phone ||
+      orderData?.customer?.phone ||
+      null;
 
-    // Valor por defecto
+    const email =
+      order.customer_email ||
+      shippingData.customer_email ||
+      orderData?.customer?.email ||
+      null;
+
     return {
-      name: 'Cliente',
-      phone: null,
-      email: order.customer_email
+      name: name || 'Sin nombre registrado',
+      phone,
+      email
     };
   };
 
@@ -746,14 +761,14 @@ export default function OrdersPage() {
 
     switch (filterType) {
       case 'noName':
-        return !customerInfo.name || customerInfo.name === 'Cliente';
+        return !customerInfo.name || customerInfo.name === 'Sin nombre registrado';
       case 'noEmail':
         return !customerInfo.email;
       case 'noPhone':
         return !customerInfo.phone;
       case 'incomplete':
         return !customerInfo.name ||
-          customerInfo.name === 'Cliente' ||
+          customerInfo.name === 'Sin nombre registrado' ||
           !customerInfo.email ||
           !customerInfo.phone;
       default:
