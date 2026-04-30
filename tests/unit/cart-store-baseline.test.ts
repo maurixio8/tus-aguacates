@@ -46,7 +46,8 @@ describe('cart-store baseline', () => {
     store.addItem(baseProduct, 1);
 
     store.setPaymentMethod('pse');
-    expect(store.getTotals().paymentFee).toBe(340);
+    // Bold fee is calculated over subtotal + shipping.
+    expect(store.getTotals().paymentFee).toBe(636);
 
     store.setPaymentMethod('cash');
     expect(store.getTotals().paymentFee).toBe(0);
