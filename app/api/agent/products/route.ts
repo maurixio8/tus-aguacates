@@ -57,6 +57,8 @@ function normalizeAccents(str: string): string {
     .replace(/ñ/g, 'n');
 }
 
+const STOP_WORDS = new Set(['de','la','el','en','del','las','los','para','por','con','un','una','al','que','es','se','su','lo','y','a','e','o','le','les','mis','tus','sus','nos','os']);
+
 // Check if product matches search term (accent-insensitive)
 // Supports multi-word: "aceite coco" matches "Aceite de coco" (all words must be present)
 function productMatchesSearch(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): boolean {
@@ -71,11 +73,18 @@ function productMatchesSearch(product: { name: string; description?: string | nu
   }
 
   // Multi-word: all individual words must appear in name or description
-  const words = normalizedSearch.split(/\s+/).filter(w => w.length > 1);
+  const words = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
   if (words.length > 1) {
     const allWordsInName = words.every(w => normalizedName.includes(w));
     const allWordsInDesc = words.every(w => normalizedDesc.includes(w));
     if (allWordsInName || allWordsInDesc) {
+      return true;
+    }
+  }
+  
+  // Single meaningful word: check if at least one non-stop word matches
+  if (words.length === 1) {
+    if (normalizedName.includes(words[0]) || normalizedDesc.includes(words[0])) {
       return true;
     }
   }
@@ -112,7 +121,7 @@ function calculateSearchScore(product: { name: string; description?: string | nu
   }
 
   // Multi-word: all words in name = 55
-  const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 1);
+  const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
   if (searchWords.length > 1 && searchWords.every(w => normalizedName.includes(w))) {
     return 55;
   }
