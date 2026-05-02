@@ -161,11 +161,90 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const productId = searchParams.get('id') || '';
     const rawLimit = searchParams.get('limit');
     const rawActiveOnly = searchParams.get('active_only');
 
     const limit = Math.min(Math.max(parseInt(rawLimit || '50', 10), 1), 500);
     const activeOnly = rawActiveOnly === null ? true : rawActiveOnly !== 'false';
+
+    // Fast path: lookup by exact product UUID (no search needed)
+    if (productId) {
+      let supabase;
+      try {
+        supabase = getSupabaseClient();
+      } catch (configError) {
+        console.error('Supabase configuration error:', configError);
+        return NextResponse.json(
+          { success: false, error: { code: 'INTERNAL_ERROR', message: 'Server configuration error' } },
+          { status: 500 }
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
+          categories:category_id ( id, name ),
+          product_variants ( id, variant_name, variant_value, price, stock_quantity, is_active )
+        `)
+        .eq('id', productId)
+        .single();
+
+      if (error || !data) {
+        // Try without variants
+        const fallback = await supabase
+          .from('products')
+          .select(`
+            id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
+            categories:category_id ( id, name )
+          `)
+          .eq('id', productId)
+          .single();
+
+        if (fallback.error || !fallback.data) {
+          return NextResponse.json(
+            { success: false, error: { code: 'NOT_FOUND', message: 'Product not found' } },
+            { status: 404 }
+          );
+        }
+
+        const item = fallback.data;
+        const category = getCategoryValue(item.categories);
+        return NextResponse.json({
+          success: true,
+          data: [{
+            id: item.id, name: item.name, sku: item.sku, price: item.price,
+            discount_price: item.discount_price, stock: item.stock, unit: item.unit,
+            is_active: item.is_active,
+            category: { id: category?.id || '', name: category?.name || 'Uncategorized' },
+            image: item.main_image_url, description: item.description,
+            has_variants: false, variants: [],
+          }],
+          meta: { query: '', id: productId, count: 1 },
+        });
+      }
+
+      const item = data;
+      const variants = Array.isArray(item.product_variants) ? item.product_variants : [];
+      const category = getCategoryValue(item.categories);
+      return NextResponse.json({
+        success: true,
+        data: [{
+          id: item.id, name: item.name, sku: item.sku, price: item.price,
+          discount_price: item.discount_price, stock: item.stock, unit: item.unit,
+          is_active: item.is_active,
+          category: { id: category?.id || '', name: category?.name || 'Uncategorized' },
+          image: item.main_image_url, description: item.description,
+          has_variants: variants.length > 0,
+          variants: variants.filter(v => v?.is_active).map(v => ({
+            id: v.id, variant_name: v.variant_name, variant_value: v.variant_value,
+            price: v.price, stock_quantity: v.stock_quantity, is_active: v.is_active,
+          })),
+        }],
+        meta: { query: '', id: productId, count: 1 },
+      });
+    }
 
     let supabase;
     try {
