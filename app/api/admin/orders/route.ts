@@ -609,7 +609,7 @@ export async function POST(request: NextRequest) {
         .from('products')
         .select('id, name, price, description')
         .eq('id', item.product_id)
-        .single();
+        .maybeSingle();
 
       console.log(`📊 API: Product fetch result:`, {
         found: !!product,
@@ -635,7 +635,7 @@ export async function POST(request: NextRequest) {
           .select('*')
           .eq('id', item.variant_id)
           .eq('product_id', item.product_id)
-          .single();
+          .maybeSingle();
 
         if (variantError || !variant) {
           console.log('⚠️ Variant not found, using item price:', item.price);
@@ -749,7 +749,7 @@ export async function POST(request: NextRequest) {
       .from('orders')
       .insert(orderInsertData)
       .select('id, order_number, status, total_amount, created_at')
-      .single();
+      .maybeSingle();
 
     console.log('📊 API: Order insert result:', {
       success: !orderError,
@@ -903,12 +903,15 @@ export async function PATCH(request: NextRequest) {
     // Determinar si el pedido es de invitado o registrado
     // Primero verificar en guest_orders, si no existe, buscar en orders
     let isGuestOrder = false;
-    const { data: guestOrderCheck } = await supabase
+    const { data: guestOrderCheck, error: guestCheckErr } = await supabase
       .from('guest_orders')
       .select('id')
       .eq('id', orderId)
-      .single();
+      .maybeSingle();
 
+    if (guestCheckErr) {
+      console.log('⚠️ API: Error checking guest_orders:', guestCheckErr.message);
+    }
     if (guestOrderCheck) {
       isGuestOrder = true;
       console.log('📝 API: Detected guest order:', orderId);
@@ -932,7 +935,7 @@ export async function PATCH(request: NextRequest) {
           .from('guest_orders')
           .select('guest_name, guest_phone, guest_email, guest_address, order_data')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
 
         const nextOrderData = parseJsonObject(currentGuestOrder?.order_data);
         const nextCustomer = {
@@ -976,7 +979,7 @@ export async function PATCH(request: NextRequest) {
           .from('orders')
           .select('customer_name, customer_phone, customer_email, delivery_address, order_data')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
 
         const nextOrderData = parseJsonObject(currentOrder?.order_data);
         const nextCustomer = {
@@ -1061,7 +1064,7 @@ export async function PATCH(request: NextRequest) {
           .from('guest_orders')
           .select('order_data')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
 
         let orderData = currentGuestOrder?.order_data || {};
         if (typeof orderData === 'string') {
@@ -1240,7 +1243,7 @@ export async function PATCH(request: NextRequest) {
         })
         .eq('id', orderId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ API: Error updating order:', error);

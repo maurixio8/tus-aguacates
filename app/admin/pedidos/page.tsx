@@ -1338,12 +1338,26 @@ export default function OrdersPage() {
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${orderTypeInfo.bgColor} ${orderTypeInfo.textColor} border`}>
                                 {getOrderTypeLabel(orderType)}
                               </span>
-                              {normalizedPaymentStatus && paymentStatusConfig[normalizedPaymentStatus] && (
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium ${paymentStatusConfig[normalizedPaymentStatus].bgColor} ${paymentStatusConfig[normalizedPaymentStatus].color} border`}>
-                                  {paymentStatusConfig[normalizedPaymentStatus].icon && React.createElement(paymentStatusConfig[normalizedPaymentStatus].icon, { className: 'w-3 h-3 mr-1' })}
-                                  {paymentStatusConfig[normalizedPaymentStatus].label}
-                                </span>
-                              )}
+                              {/* Badge de pago - SIEMPRE visible */}
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium border ${
+                                (normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed')
+                                  ? 'bg-green-100 text-green-700 border-green-200'
+                                  : normalizedPaymentStatus === 'failed'
+                                  ? 'bg-red-100 text-red-700 border-red-200'
+                                  : normalizedPaymentStatus === 'refunded'
+                                  ? 'bg-blue-100 text-blue-700 border-blue-200'
+                                  : 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                              }`}>
+                                {(normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') ? (
+                                  <><CheckCircle className="w-3 h-3 mr-1" />💰 Pagado</>
+                                ) : normalizedPaymentStatus === 'failed' ? (
+                                  <><XCircle className="w-3 h-3 mr-1" />❌ Fallido</>
+                                ) : normalizedPaymentStatus === 'refunded' ? (
+                                  <><AlertTriangle className="w-3 h-3 mr-1" />↩️ Reembolsado</>
+                                ) : (
+                                  <><Clock className="w-3 h-3 mr-1" />⏳ Pendiente pago</>
+                                )}
+                              </span>
                               {hasOperationalWarnings && (
                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium bg-amber-100 text-amber-700 border border-amber-200">
                                   Revisar datos
@@ -1782,70 +1796,55 @@ export default function OrdersPage() {
                           </button>
                         </div>
 
-                        {/* WhatsApp buttons wrapper */}
+                        {/* WhatsApp - Menú dropdown compacto */}
                         {customerInfo.phone && (
-                          <div className="flex gap-2">
-                            {/* Basic WhatsApp button */}
-                            <a
-                              href={(() => {
-                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
-                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                                return `https://wa.me/${fullPhone}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`;
-                              })()}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm text-center"
-                            >
-                              WhatsApp
-                            </a>
-
-                            {/* Order Summary WhatsApp button */}
-                            <a
-                              href={generateWhatsAppURL(
-                                customerInfo.phone,
-                                generateOrderSummary({
-                                  ...order,
-                                  order_type: order.user_id ? 'registered' : 'guest',
-                                  customer_name: customerInfo.name,
-                                  customer_phone: customerInfo.phone
-                                })
-                              )}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm text-center flex items-center gap-2"
-                              title="Enviar resumen por WhatsApp"
-                            >
-                              <FileText className="w-4 h-4" />
-                              WA Resumen
-                            </a>
-
-                            <a
-                              href={(() => {
-                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
-                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                                return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, buenos días. Tu pedido está próximo a llegar. Ya está en la ruta de entrega para hoy y será entregado en el transcurso del día.`)}`;
-                              })()}
-                              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Enviar mensaje de pedido en ruta"
-                            >
-                              🚚 En ruta
-                            </a>
-
-                            <a
-                              href={(() => {
-                                const cleanPhone = customerInfo.phone.replace(/\D/g, '');
-                                const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
-                                return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, tu pedido está próximo a llegar. Llegará muy pronto.`)}`;
-                              })()}
-                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm flex items-center gap-1"
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              title="Enviar mensaje de llegada inminente"
-                            >
-                              📍 Llegando
-                            </a>
+                          <div className="relative group">
+                            <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
+                              <span>💬 WhatsApp</span>
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 hidden group-hover:block z-10">
+                              <a
+                                href={(() => {
+                                  const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                  const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                  return `https://wa.me/${fullPhone}?text=Hola ${customerInfo.name}, te escribimos de Tus Aguacates sobre tu pedido #${order.order_number || order.id.substring(0, 8)}`;
+                                })()}
+                                target="_blank" rel="noopener noreferrer"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                💬 Mensaje directo
+                              </a>
+                              <a
+                                href={generateWhatsAppURL(customerInfo.phone, generateOrderSummary({ ...order, order_type: order.user_id ? 'registered' : 'guest', customer_name: customerInfo.name, customer_phone: customerInfo.phone }))}
+                                target="_blank" rel="noopener noreferrer"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                📋 Enviar resumen
+                              </a>
+                              <a
+                                href={(() => {
+                                  const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                  const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, buenos días. Tu pedido está próximo a llegar. Ya está en la ruta de entrega para hoy y será entregado en el transcurso del día.`)}`;
+                                })()}
+                                target="_blank" rel="noopener noreferrer"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                🚚 En ruta
+                              </a>
+                              <a
+                                href={(() => {
+                                  const cleanPhone = customerInfo.phone.replace(/\D/g, '');
+                                  const fullPhone = cleanPhone.startsWith('57') ? cleanPhone : `57${cleanPhone}`;
+                                  return `https://wa.me/${fullPhone}?text=${encodeURIComponent(`Hola ${customerInfo.name}, tu pedido está próximo a llegar. Llegará muy pronto.`)}`;
+                                })()}
+                                target="_blank" rel="noopener noreferrer"
+                                className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              >
+                                📍 Llegando
+                              </a>
+                            </div>
                           </div>
                         )}
 
@@ -1886,13 +1885,17 @@ export default function OrdersPage() {
                           Editar
                         </button>
 
-                        {/* Delete button */}
+                        {/* Delete button - oculto por defecto, solo con Shift+Click */}
                         <button
-                          onClick={() => deleteOrder(order.id, order.id.substring(0, 8))}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2"
+                          onClick={(e) => {
+                            if (e.shiftKey || confirm('¿Seguro que deseas eliminar este pedido?')) {
+                              deleteOrder(order.id, order.id.substring(0, 8));
+                            }
+                          }}
+                          className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors text-sm"
+                          title="Eliminar (requiere confirmación)"
                         >
                           <Trash2 className="w-4 h-4" />
-                          Eliminar
                         </button>
                       </div>
                     </div>
