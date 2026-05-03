@@ -1340,7 +1340,7 @@ export default function OrdersPage() {
                               </span>
                               {/* Badge de pago - SIEMPRE visible */}
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] lg:text-xs font-medium border ${
-                                (normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed')
+                                normalizedPaymentStatus === 'paid'
                                   ? 'bg-green-100 text-green-700 border-green-200'
                                   : normalizedPaymentStatus === 'failed'
                                   ? 'bg-red-100 text-red-700 border-red-200'
@@ -1348,7 +1348,7 @@ export default function OrdersPage() {
                                   ? 'bg-blue-100 text-blue-700 border-blue-200'
                                   : 'bg-yellow-100 text-yellow-700 border-yellow-200'
                               }`}>
-                                {(normalizedPaymentStatus === 'paid' || normalizedPaymentStatus === 'completed') ? (
+                                {normalizedPaymentStatus === 'paid' ? (
                                   <><CheckCircle className="w-3 h-3 mr-1" />💰 Pagado</>
                                 ) : normalizedPaymentStatus === 'failed' ? (
                                   <><XCircle className="w-3 h-3 mr-1" />❌ Fallido</>
