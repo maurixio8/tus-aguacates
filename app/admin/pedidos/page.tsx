@@ -22,7 +22,10 @@ import {
   FileText,
   Copy,
   Check,
-  ClipboardList
+  ClipboardList,
+  CreditCard,
+  Building,
+  Wallet
 } from 'lucide-react';
 import {
   getOrderTypeLabel,
@@ -71,6 +74,7 @@ interface Order {
   notes?: string;
   status: string;
   payment_status?: string;
+  payment_method?: string;
   total: number;
   total_amount?: number;
   subtotal?: number;
@@ -81,6 +85,11 @@ interface Order {
   coupon_code?: string;
   created_at: string;
   delivery_date?: string;
+  paid_at?: string;
+  bold_transaction_id?: string;
+  bold_payment_method?: string;
+  card_last_four?: string;
+  card_brand?: string;
   order_items?: OrderItem[];
   items?: OrderItem[];
   user_id?: string;
@@ -1476,6 +1485,74 @@ export default function OrdersPage() {
                               )}
                             </div>
                           </div>
+
+                          {/* 💳 Pago Bold - Datos de confirmación */}
+                          {(order.payment_method === 'bold' || order.bold_transaction_id || order.paid_at) && (
+                            <div className="border-t border-gray-200 pt-4">
+                              <div className="flex items-center gap-2 mb-3">
+                                <CreditCard className="w-4 h-4 text-purple-600" />
+                                <p className="text-sm font-semibold text-purple-900">Datos de Pago Bold</p>
+                                {order.bold_transaction_id && (
+                                  <span className="text-[10px] font-mono bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
+                                    {order.bold_transaction_id}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-3 bg-purple-50/50 p-3 rounded-lg border border-purple-100">
+                                {/* Referencia de transacción */}
+                                {order.bold_transaction_id && (
+                                  <div className="col-span-2 sm:col-span-1">
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Transacción Bold</p>
+                                    <p className="font-mono text-xs text-gray-900 break-all">{order.bold_transaction_id}</p>
+                                  </div>
+                                )}
+                                {/* Método de pago */}
+                                {(order.bold_payment_method || order.payment_method) && (
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Método</p>
+                                    <div className="flex items-center gap-1">
+                                      {((order.bold_payment_method || order.payment_method || '').includes('card') || (order.bold_payment_method || order.payment_method || '').includes('tarjeta')) ? (
+                                        <CreditCard className="w-3.5 h-3.5 text-gray-600" />
+                                      ) : (order.bold_payment_method || order.payment_method || '') === 'pse' ? (
+                                        <Building className="w-3.5 h-3.5 text-gray-600" />
+                                      ) : (
+                                        <Wallet className="w-3.5 h-3.5 text-gray-600" />
+                                      )}
+                                      <p className="font-medium text-sm text-gray-900 capitalize">
+                                        {order.bold_payment_method || order.payment_method}
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
+                                {/* Tarjeta: últimos 4 dígitos */}
+                                {order.card_last_four && (
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Tarjeta</p>
+                                    <p className="font-semibold text-sm text-gray-900">
+                                      {order.card_brand && `${order.card_brand} `}•••• {order.card_last_four}
+                                    </p>
+                                  </div>
+                                )}
+                                {/* Fecha de pago */}
+                                {order.paid_at && (
+                                  <div>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Fecha de Pago</p>
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                                      <p className="font-medium text-sm text-green-700">{formatDate(order.paid_at)}</p>
+                                    </div>
+                                  </div>
+                                )}
+                                {/* Email del cliente */}
+                                {order.customer_email && (
+                                  <div className="col-span-2">
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">Correo Bold</p>
+                                    <p className="text-sm text-gray-900">{order.customer_email}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Productos */}
                           {orderItems.length > 0 && (
