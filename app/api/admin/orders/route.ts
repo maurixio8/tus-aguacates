@@ -786,6 +786,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
+    if (!order) {
+      return NextResponse.json(
+        { error: 'No se pudo crear el pedido — insert no devolvió registro' },
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
     // Columnas de order_items: order_id, product_id, quantity, unit_price, subtotal, product_snapshot, created_at
     const itemsToInsert = orderItems.map(item => ({
       order_id: order.id,
