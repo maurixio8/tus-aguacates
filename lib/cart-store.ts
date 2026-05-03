@@ -5,8 +5,8 @@ import type { UnifiedProduct, Product } from './types';
 export type PaymentMethod = 'cash' | 'daviplata' | 'nequi' | 'pse' | 'card_visa_mastercard' | 'card_other';
 
 const BOLD_FEES = {
-  card_visa_mastercard: { rate: 0.04, fixed: 0 },
-  card_other: { rate: 0.04, fixed: 0 },
+  card_visa_mastercard: { rate: 0.049, fixed: 0 },
+  card_other: { rate: 0.049, fixed: 0 },
   pse: { rate: 0.04, fixed: 0 },
   nequi: { rate: 0, fixed: 0 },
   daviplata: { rate: 0, fixed: 0 },
