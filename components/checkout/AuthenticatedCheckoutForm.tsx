@@ -10,7 +10,7 @@ import { AddressSelector } from './AddressSelector';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import CheckoutSummary from './CheckoutSummary';
-import { getProductEmoji } from '@/utils/productEmojis';
+import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import CouponInput from './CouponInput';
 
 interface AuthenticatedCheckoutFormProps {
@@ -156,7 +156,7 @@ Acabo de hacer un pedido en su tienda:
 🔗 https://tus-aguacates.vercel.app
 
 📦 *Mi pedido:*
-${orderData.items.map(item => `• ${getProductEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown
       if (totals.discount > 0 || totals.shipping > 0) {

@@ -1,24 +1,10 @@
 // Utility to generate professional order summaries for WhatsApp
 // Supports both registered orders and guest orders
-import { getProductEmoji } from './productEmojis';
+import { getWhatsAppSafeEmoji } from './productEmojis';
 import type { AdminOrderType } from '@/lib/orders/operational';
 import { formatAddressToString } from './addressFormatter';
 
-const WHATSAPP_SAFE_EMOJIS: Record<string, string> = {
-  '🫐': '🍇',
-  '🫑': '🌶️',
-  '🫛': '🌿',
-  '🫘': '🌱',
-  '🫚': '🌿',
-  '🫒': '🥑',
-  '🛍️': '🛒',
-  '🟫': '🟤',
-};
-
-const getWhatsAppSafeEmoji = (productName: string): string => {
-  const emoji = getProductEmoji(productName);
-  return WHATSAPP_SAFE_EMOJIS[emoji] || emoji;
-};
+// Usa getWhatsAppSafeEmoji desde productEmojis.ts
 
 export interface OrderItem {
   id: string;

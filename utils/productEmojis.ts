@@ -189,3 +189,33 @@ export const getProductEmoji = (productName: string): string => {
 
   return '📦';
 };
+
+// Emojis que no renderizan bien en WhatsApp en ciertos dispositivos (Android/iOS antiguos)
+// Se reemplazan por emojis más universales
+const WHATSAPP_SAFE_EMOJIS: Record<string, string> = {
+  '🫐': '🍇',
+  '🫑': '🌶️',
+  '🫛': '🌿',
+  '🫘': '🌱',
+  '🫚': '🌿',
+  '🫒': '🥑',
+  '🛍️': '🛒',
+  '🟫': '🟤',
+  '🟡': '🍋',
+  '🟢': '✅',
+  '🟣': '🔮',
+  '🐉': '🐲',
+  '🌼': '🌸',
+  '🌺': '🌸',
+  '🌵': '🌿',
+  '⭐': '✨',
+};
+
+/**
+ * Obtiene un emoji seguro para WhatsApp.
+ * Reemplaza emojis nuevos de Unicode que no renderizan en dispositivos antiguos.
+ */
+export const getWhatsAppSafeEmoji = (productName: string): string => {
+  const emoji = getProductEmoji(productName);
+  return WHATSAPP_SAFE_EMOJIS[emoji] || emoji;
+};
