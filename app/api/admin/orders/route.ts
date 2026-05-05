@@ -696,6 +696,25 @@ export async function POST(request: NextRequest) {
     // Create the order - user_id es null para pedidos manuales de admin
     const normalizedCreatePhone = normalizePhoneForDB(body.customer_phone?.trim() || '');
 
+    // Construir order_data con los items (requerido por trigger de Supabase)
+    const orderData = {
+      items: body.items.map((item: any) => ({
+        product_id: item.product_id,
+        product_name: item.product_name || 'Producto',
+        quantity: item.quantity,
+        price: item.price,
+        variant_id: item.variant_id || null,
+        variant_name: item.variant_name || null
+      })),
+      subtotal,
+      shipping: shippingCost,
+      discount: 0,
+      total: finalTotal,
+      customer_name: body.customer_name?.trim(),
+      customer_phone: normalizedCreatePhone,
+      delivery_address: body.delivery_address?.trim()
+    };
+
     const orderInsertData: Record<string, unknown> = {
       customer_name: body.customer_name?.trim(),
       customer_phone: normalizedCreatePhone,
@@ -709,6 +728,7 @@ export async function POST(request: NextRequest) {
         additional_info: body.delivery_notes?.trim() || null
       },
       delivery_notes: body.delivery_notes?.trim() || null,
+      order_data: orderData, // Campo requerido por trigger de Supabase
       subtotal: subtotal,
       tax: 0, // Valor por defecto para pedidos manuales
       discount: 0, // Valor por defecto para pedidos manuales
