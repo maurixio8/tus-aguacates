@@ -59,24 +59,58 @@ function normalizeAccents(str: string): string {
 
 const STOP_WORDS = new Set(['de','la','el','en','del','las','los','para','por','con','un','una','al','que','es','se','su','lo','y','a','e','o','le','les','mis','tus','sus','nos','os']);
 
-// Check if product matches search term (accent-insensitive)
+// Get singular and plural variants of a word (simple Spanish rules)
+// Returns array with both forms for matching
+function getSingularPluralVariants(word: string): string[] {
+  if (word.length <= 2) return [word];
+  
+  const variants = new Set<string>();
+  variants.add(word);
+  
+  // If ends in 's', add singular form (remove 's')
+  if (word.endsWith('s')) {
+    const singular = word.slice(0, -1);
+    if (singular.length > 1) variants.add(singular);
+    // Also try removing 'es' for words like "flores" -> "flor"
+    if (word.endsWith('es') && word.length > 3) {
+      variants.add(word.slice(0, -2));
+    }
+  } else {
+    // If doesn't end in 's', add plural form (add 's')
+    variants.add(word + 's');
+  }
+  
+  return Array.from(variants);
+}
+
+// Check if product matches search term (accent-insensitive, plural/singular aware)
 // Supports multi-word: "aceite coco" matches "Aceite de coco" (all words must be present)
 function productMatchesSearch(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): boolean {
   const normalizedName = normalizeAccents(product.name);
   const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
   const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
 
-  // Try exact phrase first
+  // Try exact phrase first (with plural/singular variants)
   const normalizedSearch = normalizeAccents(searchTerm);
-  if (normalizedName.includes(normalizedSearch) || normalizedDesc.includes(normalizedSearch) || normalizedSku.includes(normalizedSearch)) {
-    return true;
+  const searchVariants = getSingularPluralVariants(normalizedSearch);
+  
+  for (const variant of searchVariants) {
+    if (normalizedName.includes(variant) || normalizedDesc.includes(variant) || normalizedSku.includes(variant)) {
+      return true;
+    }
   }
 
-  // Multi-word: all individual words must appear in name or description
+  // Multi-word: all individual words must appear in name or description (with variants)
   const words = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
   if (words.length > 1) {
-    const allWordsInName = words.every(w => normalizedName.includes(w));
-    const allWordsInDesc = words.every(w => normalizedDesc.includes(w));
+    const allWordsInName = words.every(w => {
+      const variants = getSingularPluralVariants(w);
+      return variants.some(v => normalizedName.includes(v));
+    });
+    const allWordsInDesc = words.every(w => {
+      const variants = getSingularPluralVariants(w);
+      return variants.some(v => normalizedDesc.includes(v));
+    });
     if (allWordsInName || allWordsInDesc) {
       return true;
     }
@@ -92,12 +126,12 @@ function productMatchesSearch(product: { name: string; description?: string | nu
   return false;
 }
 
-// Calculate search relevance score
 function calculateSearchScore(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): number {
   const normalizedSearch = normalizeAccents(searchTerm);
   const normalizedName = normalizeAccents(product.name);
   const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
   const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
+  const searchVariants = getSingularPluralVariants(normalizedSearch);
 
   // Exact match (case + accent insensitive) = 100
   if (normalizedName === normalizedSearch) {
@@ -105,25 +139,36 @@ function calculateSearchScore(product: { name: string; description?: string | nu
   }
 
   // Starts with = 85
-  if (normalizedName.startsWith(normalizedSearch)) {
+  const startsWithVariant = searchVariants.find(v => normalizedName.startsWith(v));
+  if (startsWithVariant) {
     return 85;
   }
 
   // Word boundary match (product name contains search as a whole word) = 75
-  const wordBoundaryRegex = new RegExp(`\\b${escapeRegex(normalizedSearch)}\\b`, 'i');
-  if (wordBoundaryRegex.test(normalizedName)) {
+  const boundaryVariant = searchVariants.find(v => {
+    const wordBoundaryRegex = new RegExp(`\\b${escapeRegex(v)}\\b`, 'i');
+    return wordBoundaryRegex.test(normalizedName);
+  });
+  if (boundaryVariant) {
     return 75;
   }
 
   // Contains in name = 60
-  if (normalizedName.includes(normalizedSearch)) {
+  const containsVariant = searchVariants.find(v => normalizedName.includes(v));
+  if (containsVariant) {
     return 60;
   }
 
-  // Multi-word: all words in name = 55
+  // Multi-word: all words in name = 55 (with singular/plural)
   const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
-  if (searchWords.length > 1 && searchWords.every(w => normalizedName.includes(w))) {
-    return 55;
+  if (searchWords.length > 1) {
+    const allWordsInName = searchWords.every(w => {
+      const wVariants = getSingularPluralVariants(w);
+      return wVariants.some(v => normalizedName.includes(v));
+    });
+    if (allWordsInName) {
+      return 55;
+    }
   }
 
   // SKU match = 50
