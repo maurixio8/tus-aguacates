@@ -1,0 +1,241 @@
+{
+  "title": "ANÁLISIS API BÚSQUEDA + TESTING - Tus Aguacates",
+  "date": "2026-05-07T14:48:00Z",
+  "executive_summary": "Se analizaron 2 endpoints de búsqueda: (1) Vercel API (/api/agent/products) y (2) PostgreSQL directo en workflow n8n. La Vercel API tiene mejor manejo de acentos, plurales y scoring, pero NO es usada por el workflow de producción. El workflow usa PostgreSQL LIKE directo que es ACENTO-SENSIBLE, lo que causa que productos con acentos (ñ, é, ó) NO sean encontrables por clientes que escriben sin acentos (~30%+ del catálogo). Se identificaron 8 gaps incluyendo un bug crítico en el manejo de stop words de la API y falsos positivos por substring matching.",
+
+  "architecture_findings": [
+    {
+      "component": "Vercel API (/api/agent/products)",
+      "url": "https://tusaguacates.com/api/agent/products",
+      "auth": "x-agent-key header (old key: 4d8cfb14fba5451c875ac515fa047f9b - still working)",
+      "params": "search (NOT 'q'!), id, limit, active_only",
+      "strengths": [
+        "Acento-insensitive (NFD normalization en búsqueda y producto)",
+        "Singular/plural matching via getSingularPluralVariants()",
+        "Relevance scoring (0-100) para ordenar resultados",
+        "Stop word filtering para multi-word queries"
+      ],
+      "weaknesses": [
+        "BUG: Stop words + single-word path = no variant matching (GAP-1)",
+        "No fuzzy/typo tolerance",
+        "No synonym/regional mapping",
+        "False positives en substrings cortos (piña→Espinaca, papa→Papaya)"
+      ]
+    },
+    {
+      "component": "n8n Workflow (PRODUCCION - YKd9FQHLCvUiePAf)",
+      "node_1_name": "3. Búsqueda Automática Productos",
+      "node_1_type": "PostgreSQL query (NO HTTP Request)",
+      "node_1_sql": "LIKE matching en productos_tienda con singularización básica",
+      "node_1_issues": [
+        "CRÍTICO: PostgreSQL LIKE es acento-sensitive. Customer dice 'champinones', pre-processing normaliza NFD → 'champinones', SQL busca LIKE '%champinones%' contra 'Champiñones enteros' → FALLA (ñ≠n)",
+        "Solo singularización simple (saca 's'/'es'), no plural handling bidireccional",
+        "No accent normalization a nivel DB (solo en pre-processing JS)",
+        "No relevance scoring (solo CASE priority 1-5)"
+      ],
+      "node_2_name": "TOOL_BuscarProductos (AI fallback)",
+      "node_2_type": "postgresTool",
+      "node_2_query": "ILIKE con $1 replacement from AI model",
+      "node_2_issues": [
+        "Mismo problema de acentos (ILIKE también es accent-sensitive)",
+        "Usa credenciales 'Postgres account' diferente al 'Mi PostgreSQL Docker' principal",
+        "Tiene hardcoded exclusion de 'Fresa Premium 250g'"
+      ]
+    }
+  ],
+
+  "key_apis_difference": {
+    "n8n_postgresql": "SQL LIKE (accent-sensitive) → fails with accents",
+    "vercel_api": "normalizeAccents() (accent-insensitive) → works with accents",
+    "conclusion": "The Vercel API is objectively superior for search. The workflow should use it."
+  },
+
+  "test_matrix_results": [
+    {"term":"caja 18","count":1,"found":"Caja Selección 18","status":"✅"},
+    {"term":"caja seleccion 18","count":1,"found":"Caja Selección 18","status":"✅"},
+    {"term":"caja de 18","count":1,"found":"Caja Selección 18","status":"✅"},
+    {"term":"aguacate","count":10,"found":"All aguacate products","status":"✅"},
+    {"term":"hass","count":4,"found":"Hass products","status":"✅"},
+    {"term":"tomate","count":6,"found":"All tomato variants","status":"✅"},
+    {"term":"tomates","count":6,"found":"Same as tomate","status":"✅"},
+    {"term":"naranja","count":2,"found":"Naranja valencia + Zumo","status":"✅"},
+    {"term":"naranjas","count":2,"found":"Same as naranja","status":"✅"},
+    {"term":"manzana roja","count":1,"found":"Manzana roja","status":"✅"},
+    {"term":"champinones","count":2,"found":"Champiñones","status":"✅ (accent-insensitive)"},
+    {"term":"champinon","count":2,"found":"Champiñones","status":"✅ (accent-insensitive)"},
+    {"term":"fresas","count":5,"found":"Fresas + Fresa Económica","status":"✅"},
+    {"term":"fresa","count":5,"found":"Same as fresas","status":"✅"},
+    {"term":"limon","count":4,"found":"Limón + variants","status":"✅ (accent-insensitive)"},
+    {"term":"cebolla","count":6,"found":"All cebolla variants","status":"✅"},
+    {"term":"cebollas","count":6,"found":"Same as cebolla","status":"✅"},
+    {"term":"papa","count":4,"found":"Papa criolla + sabanera (+ Papaya false positive)","status":"⚠️ (false positive: Papaya)"},
+    {"term":"platano","count":1,"found":"Platano verde","status":"✅"},
+    {"term":"mango","count":4,"found":"All mango variants","status":"✅"},
+    {"term":"zanahoria","count":3,"found":"Zanahoria + baby","status":"✅"},
+    {"term":"pimenton","count":2,"found":"Pimentón + amarillo","status":"✅"},
+    {"term":"lechuga","count":4,"found":"All lechuga types","status":"✅"},
+    {"term":"brocoli","count":1,"found":"Brocoli","status":"✅"},
+    {"term":"tomate cherry","count":1,"found":"Tomate cherry","status":"✅"},
+    {"term":"ajos","count":7,"found":"All ajo products","status":"✅"},
+    {"term":"ajo","count":7,"found":"Same as ajos","status":"✅"},
+    {"term":"arbeja","count":0,"found":"ZERO - common typo","status":"❌ (typo not handled)"},
+    {"term":"arveja","count":3,"found":"All arveja products","status":"✅"},
+    {"term":"habichuela","count":1,"found":"Habichuela","status":"✅"},
+    {"term":"remolacha","count":2,"found":"Remolacha + germinados","status":"✅"},
+    {"term":"zanahoria baby","count":1,"found":"Zanahoria baby","status":"✅"},
+    {"term":"repollo","count":2,"found":"Repollo + germinados","status":"✅"},
+    {"term":"coliflor","count":1,"found":"Coliflor","status":"✅"},
+    {"term":"berenjena","count":1,"found":"Berenjena","status":"✅"},
+    {"term":"calabaza","count":0,"found":"ZERO - regional synonym","status":"❌ (calabaza≠auyama)"},
+    {"term":"auyama","count":1,"found":"Auyama sakata","status":"✅"},
+    {"term":"batata","count":1,"found":"Batata Rosada","status":"✅"},
+    {"term":"coco","count":3,"found":"Coco + Aceite de coco","status":"✅"},
+    {"term":"piña","count":1,"found":"Espinaca (WRONG!)","status":"❌ (false positive)"},
+    {"term":"yuca","count":0,"found":"No product exists","status":"⚠️ (missing product)"},
+    {"term":"combo","count":5,"found":"All combos","status":"✅"},
+    {"term":"combo ahorro","count":3,"found":"Combo Ahorro #1,#2,#3","status":"✅"},
+    {"term":"combo mercado","count":1,"found":"Combo Mercado Semanal","status":"✅"}
+  ],
+
+  "special_tests": [
+    {"test":"'las naranjas'","result":"0 results","verdict":"❌ BUG (should be 2)"},
+    {"test":"'naranjas' vs 'las naranjas'","result":"2 vs 0","verdict":"❌ Stop word collapse bug"},
+    {"test":"'un aguacate'","result":"5 results","verdict":"✅ Works"},
+    {"test":"'unas fresas'","result":"0 results","verdict":"❌ BUG (should be 5)"},
+    {"test":"'el tomate'","result":"5 results","verdict":"✅ Works (tomate is already singular)"},
+    {"test":"'12 unidades'","result":"2","verdict":"✅"},
+    {"test":"'6 piezas'","result":"0","verdict":"⚠️ No product with that description"},
+    {"test":"prefix 'champin'","result":"2","verdict":"✅"},
+    {"test":"prefix 'aguac'","result":"5","verdict":"✅"},
+    {"test":"'paquete'","result":"5","verdict":"⚠️ False positives: Apio, Cilantro"}
+  ],
+
+  "gaps": [
+    {
+      "id": "GAP-1",
+      "type": "BUG - Code",
+      "severity": "HIGH",
+      "title": "Stop words + single word path = no variant matching",
+      "description": "When 'las naranjas' is searched, stop word 'las' is stripped, leaving 'naranjas' as a single word. The single-word path checks `name.includes('naranjas')` but doesn't try the singular variant 'naranja'. Result: 'Naranja valencia' is NOT matched.",
+      "fix": "In productMatchesSearch(), the single-word check should also check getSingularPluralVariants() of the word.",
+      "location": "products/route.ts → productMatchesSearch()",
+      "current_code": "if (words.length === 1) { if (normalizedName.includes(words[0]) || ... ) }",
+      "fix_code": "if (words.length === 1) { const variants = getSingularPluralVariants(words[0]); if (variants.some(v => normalizedName.includes(v)) || ...) }"
+    },
+    {
+      "id": "GAP-2",
+      "type": "INFRASTRUCTURE",
+      "severity": "CRITICAL",
+      "title": "n8n PostgreSQL search is accent-sensitive — productos con acentos NO son encontrables",
+      "description": "The PRODUCCION workflow searches products via PostgreSQL LIKE. PostgreSQL LIKE is accent-sensitive. The n8n pre-processing strips accents (NFD). Result: customer types 'champinones' → pre-processing → 'champinones' → SQL `LIKE '%champinones%'` → DB has 'Champiñones enteros' → 'ñ'≠'n' → NO MATCH. This affects ~30%+ of the catalog.",
+      "fix": "Migrate '3. Búsqueda Automática Productos' from PostgreSQL to Vercel API HTTP Request. The Vercel API normalizes accents before comparing.",
+      "affected_products_examples": ["Champiñones enteros", "Champiñones tajados", "Cebolla Ocañera", "Limón tahiti", "Pimentón", "Tomate de Árbol", "Germinados Rábano"]
+    },
+    {
+      "id": "GAP-3",
+      "type": "FEATURE MISSING",
+      "severity": "MEDIUM",
+      "title": "No typo tolerance",
+      "description": "'arbeja' (typo for 'arveja') returns 0 results. No fuzzy matching, no Levenshtein fallback.",
+      "fix": "Add Levenshtein distance check when search returns 0 results, try alternatives within 1-2 edits."
+    },
+    {
+      "id": "GAP-4",
+      "type": "FEATURE MISSING",
+      "severity": "MEDIUM",
+      "title": "No regional synonym mapping",
+      "description": "'calabaza' returns 0, but 'auyama' (used in Colombia) returns 1. Other affected: 'elote'→'maíz', 'judías'→'habichuela', 'patatas'→'papas'.",
+      "fix": "Add a synonym dictionary and normalize search terms through it."
+    },
+    {
+      "id": "GAP-5",
+      "type": "BUG - Search Quality",
+      "severity": "MEDIUM",
+      "title": "False positives from substring matching",
+      "description": "No word boundary enforcement: 'piña'→'Espinaca', 'papa'→'Papaya', 'mora'→'Lechuga morada'. Short substrings in longer words cause irrelevant matches.",
+      "fix": "Use word boundary regex for words <5 chars, or enforce minimum match ratio."
+    },
+    {
+      "id": "GAP-6",
+      "type": "CONFIGURATION",
+      "severity": "MEDIUM",
+      "title": "AGENT_OPS_API_KEY not configured in production tools",
+      "description": "TOOL_BuscarProductos in lab workflow references 'CONFIGURAR_AQUI_NUEVA_AGENT_OPS_API_KEY' placeholder. Old key (4d8cfb14fba5451c875ac515fa047f9b) works but should use a proper configured key.",
+      "fix": "Generate/configure new AGENT_OPS_API_KEY in Vercel env vars and n8n tools."
+    },
+    {
+      "id": "GAP-7",
+      "type": "FEATURE MISSING",
+      "severity": "LOW",
+      "title": "Missing products in catalog",
+      "description": "'yuca' returns 0 results. Customer may expect this product.",
+      "fix": "Add product or create alias."
+    },
+    {
+      "id": "GAP-8",
+      "type": "IMPROVEMENT",
+      "severity": "LOW",
+      "title": "Search scoring not used by workflow",
+      "description": "Vercel API returns _searchScore but workflow ignores it. AI agent could use it for better relevance decisions.",
+      "fix": "Pass _searchScore to AI context."
+    }
+  ],
+
+  "recommendations": [
+    {
+      "priority": "P0 - CRITICAL",
+      "action": "Migrate '3. Búsqueda Automática Productos' from PostgreSQL to Vercel API HTTP Request",
+      "why": "The PostgreSQL LIKE search is fundamentally broken for accented characters. ~30%+ of products (Champiñones, Limón, Pimentón, etc.) are unfindable when customers type without accents.",
+      "how": "Replace PostgreSQL node with HTTP Request: GET /api/agent/products?search={{terminoBusqueda}}&limit=10&active_only=true with x-agent-key header. Adjust response parsing in '4. Merge Datos + Productos'.",
+      "effort": "Medium (1-2 horas)"
+    },
+    {
+      "priority": "P1 - HIGH",
+      "action": "Fix GAP-1: Stop word + single-word variant matching",
+      "why": "Searches with articles like 'las naranjas' or 'unas fresas' return 0 results when they should find products.",
+      "how": "Modify productMatchesSearch() in products/route.ts: in the single-word path (words.length===1), check getSingularPluralVariants() of the word.",
+      "effort": "Low (15 minutos)"
+    },
+    {
+      "priority": "P2 - MEDIUM",
+      "action": "Add synonym dictionary for regional terms",
+      "why": "'calabaza'→'auyama', 'elote'→'maíz dulce', 'judías'→'habichuela', 'patatas'→'papas'.",
+      "how": "Add const SYNONYMS in products/route.ts and apply normalizeSearchTerm() before matching.",
+      "effort": "Low (30 minutos)"
+    },
+    {
+      "priority": "P2 - MEDIUM",
+      "action": "Add word boundary enforcement for short substrings",
+      "why": "Eliminate false positives: 'piña'→'Espinaca', 'papa'→'Papaya'.",
+      "how": "For terms <5 chars, use word boundary regex instead of includes().",
+      "effort": "Medium (1 hora + testing)"
+    },
+    {
+      "priority": "P3 - LOW",
+      "action": "Add basic typo tolerance (Levenshtein fallback)",
+      "why": "'arbeja'→'arveja', etc.",
+      "how": "When search returns 0, try within 2 edits of the search term.",
+      "effort": "Medium (2 horas)"
+    },
+    {
+      "priority": "P3 - LOW",
+      "action": "Configure AGENT_OPS_API_KEY properly",
+      "why": "Remove placeholder keys from production workflow.",
+      "how": "Set AGENT_OPS_API_KEY in Vercel env vars, reference in n8n code node.",
+      "effort": "Low (15 minutos)"
+    }
+  ],
+
+  "workflow_node_details": {
+    "node_3_search": {
+      "actual_type": "PostgreSQL (NOT HTTP Request as assumed)",
+      "sql_query": "WITH search_terms AS (...), productos_match AS (...) SELECT ... FROM productos_tienda ... WHERE is_active = true AND (LOWER(name) LIKE ... ) ORDER BY match_priority LIMIT 10",
+      "singularization": "CASE WHEN term ~ 'es$' AND length>4 THEN trim(trailing 'es') WHEN term ~ 's$' AND length>3 THEN trim(trailing 's')",
+      "sorting": "CASE WHEN name LIKE term||'%' THEN 1, category LIKE '%'||term||'%' THEN 2, name LIKE '%'||term||'%' THEN 3, description THEN 4"
+    },
+    "node_TOOL_BuscarProductos": {
+      "sql_query": "SELECT id, name, COALESCE(discount_price, price) as precio, description, category_name FROM productos_tienda WHERE is_active=true AND price>0 AND stock>0 AND (name ILIKE '%'||$1||'%' OR description ILIKE... ) ORDER BY is_featured, name LIMIT 3",
+      "note": "Uses 'Postgres account' credentials (different from 'Mi PostgreSQL Docker')"
+    }
+  }
+}

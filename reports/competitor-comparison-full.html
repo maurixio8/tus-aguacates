@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Informe ejecutivo competencia — Tus Aguacates</title>
+<style>
+:root {
+  --bg:#07111f; --bg2:#0b1627; --panel:#0f1b2d; --panel2:#13243a; --line:#243653; --text:#eaf2ff; --muted:#95a7c7;
+  --red:#f87171; --green:#34d399; --yellow:#fbbf24; --blue:#60a5fa; --cyan:#22d3ee;
+}
+*{box-sizing:border-box} html,body{margin:0;padding:0;background:linear-gradient(180deg,var(--bg),var(--bg2));color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+.wrap{max-width:1600px;margin:0 auto;padding:24px}
+.card{background:rgba(15,27,45,.94);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 40px rgba(0,0,0,.24)}
+.hero{padding:28px 28px 22px;position:relative;overflow:hidden}
+.hero:before{content:"";position:absolute;top:-120px;right:-80px;width:320px;height:320px;border-radius:999px;background:radial-gradient(circle, rgba(34,211,238,.18), transparent 62%)}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--cyan)}
+h1{font-size:40px;line-height:1.06;margin:10px 0 8px}
+.sub{max-width:80ch;color:var(--muted);line-height:1.55;font-size:15px}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.chip{padding:9px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.03);font-size:13px;color:#dce8ff}
+.stats{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-top:22px}
+.stat{padding:16px;border-radius:18px;background:rgba(255,255,255,.03);border:1px solid var(--line)}
+.stat .k{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.stat .v{font-size:30px;font-weight:800;margin-top:8px}
+.section{margin-top:18px}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:18px}
+input,select,button{background:#0b1525;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;font:inherit}
+input{min-width:260px;flex:1}
+button{cursor:pointer}
+button.active{border-color:var(--cyan);box-shadow:0 0 0 1px rgba(34,211,238,.3) inset}
+.table-card{overflow:hidden}
+.table-wrap{overflow:auto;max-height:72vh;border-top:1px solid rgba(255,255,255,.06)}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:1520px}
+th,td{padding:12px 10px;border-bottom:1px solid rgba(255,255,255,.06);vertical-align:top;text-align:left}
+th{position:sticky;top:0;background:#0d192c;color:#bfd0ef;font-size:12px;text-transform:uppercase;letter-spacing:.04em;z-index:2}
+tr:hover td{background:rgba(255,255,255,.02)}
+.muted{color:var(--muted)}
+.product{font-weight:700;font-size:14px}
+.badge{display:inline-block;padding:7px 10px;border-radius:999px;font-weight:800;font-size:12px;border:1px solid transparent}
+.badge.red{color:#ffd0d0;background:rgba(248,113,113,.12);border-color:rgba(248,113,113,.35)}
+.badge.green{color:#c6ffe8;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.35)}
+.badge.gray{color:#dbe7ff;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.08)}
+.empty{padding:26px;color:var(--muted)}
+.note{padding:16px 18px;color:var(--muted);font-size:13px;border-top:1px solid rgba(255,255,255,.06)}
+.footer{padding:16px 2px 0;color:var(--muted);font-size:12px}
+@media (max-width:1100px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="card hero">
+    <div class="eyebrow">Tus Aguacates · Informe ejecutivo interactivo</div>
+    <h1>Comparación completa de precios<br>frente a la competencia</h1>
+    <div class="sub">Aquí no estás viendo porcentajes como dato principal: estás viendo <strong>precio TA</strong>, <strong>precio competencia</strong>, <strong>precio por kilo de ambos</strong> y la <strong>diferencia real en pesos</strong> para cada producto comparable. La tabla se puede buscar, filtrar y ordenar.</div>
+    <div class="chips">
+      <div class="chip">🕒 Generado: 2026-04-24T03:43:35.530Z</div>
+      <div class="chip">🏪 Competidores: Carulla, Éxito</div>
+      <div class="chip">🥑 Alcance: frutas, verduras y aguacates frescos</div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">Productos evaluados</div><div class="v">72</div></div>
+      <div class="stat"><div class="k">Comparables útiles</div><div class="v">35</div></div>
+      <div class="stat"><div class="k">Sin match</div><div class="v">109</div></div>
+      <div class="stat"><div class="k">TA más caro</div><div class="v">7</div></div>
+      <div class="stat"><div class="k">TA más barato</div><div class="v">28</div></div>
+      <div class="stat"><div class="k">Competidores</div><div class="v">2</div></div>
+    </div>
+  </section>
+
+  <section class="section card table-card">
+    <div class="tools">
+      <input id="q" placeholder="Buscar producto, categoría o competidor..." />
+      <select id="competitor"><option value="all">Todos los competidores</option></select>
+      <select id="status">
+        <option value="all">Todos los estados</option>
+        <option value="TA más caro">Solo TA más caro</option>
+        <option value="TA más barato">Solo TA más barato</option>
+        <option value="Igual">Solo iguales</option>
+        <option value="unmatched">Solo sin match</option>
+      </select>
+      <button data-sort="expensive" class="active">Ordenar: TA más caro</button>
+      <button data-sort="cheaper">Ordenar: TA más barato</button>
+      <button data-sort="alpha">Ordenar: alfabético</button>
+    </div>
+    <div class="table-wrap" id="tableWrap"></div>
+    <div class="note">📌 La decisión de “TA más caro / más barato” se calcula con el <strong>precio por kilo</strong>, porque varias presentaciones no pesan lo mismo. Igual te dejamos al frente el precio de cada presentación para que lo veas sin humo.</div>
+  </section>
+  <div class="footer">Archivos generados junto a este HTML: CSV completo con todas las filas comparadas y listado de productos sin match.</div>
+</div>
+<script>
+const payload = {"summary": {"generatedAt": "2026-04-24T03:43:35.530Z", "productsEvaluated": 72, "matches": 35, "unmatched": 109, "ta_more_expensive": 7, "ta_cheaper": 28}, "rows": [{"Producto TA": "Cebolla roja mediana", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 6200.0, "TA $/kg": 12400.0, "Competidor": "Carulla", "Producto competencia": "CEBOLLA ROJA  1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 9000.0, "Competencia $/kg": 9000.0, "Diferencia presentación": -2800.0, "Diferencia $/kg": 3400.0, "Estado": "TA más caro"}, {"Producto TA": "Uva verde importada sin semilla", "Categoría": "Frutas Rojas", "Presentación TA": "500g", "Precio TA": 20000.0, "TA $/kg": 40000.0, "Competidor": "Carulla", "Producto competencia": "Uva verde sin semilla estuche  500  gr", "Presentación competencia": "500 g", "Precio competencia": 18380.0, "Competencia $/kg": 36760.0, "Diferencia presentación": 1620.0, "Diferencia $/kg": 3240.0, "Estado": "TA más caro"}, {"Producto TA": "Berenjena", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 6500.0, "TA $/kg": 13000.0, "Competidor": "Carulla", "Producto competencia": "BERENJENA SELECTA  500  gr", "Presentación competencia": "500 g", "Precio competencia": 4920.0, "Competencia $/kg": 9840.0, "Diferencia presentación": 1580.0, "Diferencia $/kg": 3160.0, "Estado": "TA más caro"}, {"Producto TA": "Zanahoria", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 3400.0, "TA $/kg": 6800.0, "Competidor": "Éxito", "Producto competencia": "Zanahoria  1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 4280.0, "Competencia $/kg": 4280.0, "Diferencia presentación": -880.0, "Diferencia $/kg": 2520.0, "Estado": "TA más caro"}, {"Producto TA": "Limón tahiti", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 3700.0, "TA $/kg": 7400.0, "Competidor": "Éxito", "Producto competencia": "Limón Tahití Malla TAEQ 1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 6600.0, "Competencia $/kg": 6600.0, "Diferencia presentación": -2900.0, "Diferencia $/kg": 800.0, "Estado": "TA más caro"}, {"Producto TA": "Ciruela nacional", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 4200.0, "TA $/kg": 8400.0, "Competidor": "Éxito", "Producto competencia": "Ciruela Roja Bja   500  gr", "Presentación competencia": "500 g", "Precio competencia": 4140.0, "Competencia $/kg": 8280.0, "Diferencia presentación": 60.0, "Diferencia $/kg": 120.0, "Estado": "TA más caro"}, {"Producto TA": "Ajo Nacional", "Categoría": "Gourmet", "Presentación TA": "200g", "Precio TA": 4200.0, "TA $/kg": 21000.0, "Competidor": "Carulla", "Producto competencia": "AJO SELECCIONADO  180  gr", "Presentación competencia": "180 g", "Precio competencia": 3760.0, "Competencia $/kg": 20888.89, "Diferencia presentación": 440.0, "Diferencia $/kg": 111.11, "Estado": "TA más caro"}, {"Producto TA": "Brocoli", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 5500.0, "TA $/kg": 11000.0, "Competidor": "Carulla", "Producto competencia": "Brocoli En Vinipel  450  gr", "Presentación competencia": "450 g", "Precio competencia": 5160.0, "Competencia $/kg": 11466.67, "Diferencia presentación": 340.0, "Diferencia $/kg": -466.67, "Estado": "TA más barato"}, {"Producto TA": "Acelga", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 3300.0, "TA $/kg": 6600.0, "Competidor": "Carulla", "Producto competencia": "Acelga  500  gr", "Presentación competencia": "500 g", "Precio competencia": 4080.0, "Competencia $/kg": 8160.0, "Diferencia presentación": -780.0, "Diferencia $/kg": -1560.0, "Estado": "TA más barato"}, {"Producto TA": "Limón tahiti", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 3700.0, "TA $/kg": 7400.0, "Competidor": "Carulla", "Producto competencia": "Limón Tahití Malla TAEQ 1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 9480.0, "Competencia $/kg": 9480.0, "Diferencia presentación": -5780.0, "Diferencia $/kg": -2080.0, "Estado": "TA más barato"}, {"Producto TA": "Apio tallos", "Categoría": "Gourmet", "Presentación TA": "250", "Precio TA": 4500.0, "TA $/kg": 18000.0, "Competidor": "Éxito", "Producto competencia": "Apio Tallos TAEQ 250  gr", "Presentación competencia": "250 g", "Precio competencia": 5100.0, "Competencia $/kg": 20400.0, "Diferencia presentación": -600.0, "Diferencia $/kg": -2400.0, "Estado": "TA más barato"}, {"Producto TA": "Acelga", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 3300.0, "TA $/kg": 6600.0, "Competidor": "Éxito", "Producto competencia": "Acelga  500  gr", "Presentación competencia": "500 g", "Precio competencia": 4540.0, "Competencia $/kg": 9080.0, "Diferencia presentación": -1240.0, "Diferencia $/kg": -2480.0, "Estado": "TA más barato"}, {"Producto TA": "Gulupa", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 3700.0, "TA $/kg": 7400.0, "Competidor": "Carulla", "Producto competencia": "Caja de gulupa x Kg  1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 10380.0, "Competencia $/kg": 10380.0, "Diferencia presentación": -6680.0, "Diferencia $/kg": -2980.0, "Estado": "TA más barato"}, {"Producto TA": "Mora", "Categoría": "Frutas Rojas", "Presentación TA": "500g", "Precio TA": 4500.0, "TA $/kg": 9000.0, "Competidor": "Carulla", "Producto competencia": "Mora  500  gr", "Presentación competencia": "500 g", "Precio competencia": 7180.0, "Competencia $/kg": 14360.0, "Diferencia presentación": -2680.0, "Diferencia $/kg": -5360.0, "Estado": "TA más barato"}, {"Producto TA": "Datiles", "Categoría": "Frutas Tropicales", "Presentación TA": "X125grs", "Precio TA": 13900.0, "TA $/kg": 111200.0, "Competidor": "Carulla", "Producto competencia": "Dátiles  Dátiles (300  gr)", "Presentación competencia": "300 g", "Precio competencia": 35000.0, "Competencia $/kg": 116666.67, "Diferencia presentación": -21100.0, "Diferencia $/kg": -5466.67, "Estado": "TA más barato"}, {"Producto TA": "Agraz", "Categoría": "Frutas Rojas", "Presentación TA": "120 grs", "Precio TA": 5500.0, "TA $/kg": 45833.33, "Competidor": "Carulla", "Producto competencia": "AGRAZ  250  gr", "Presentación competencia": "250 g", "Precio competencia": 13120.0, "Competencia $/kg": 52480.0, "Diferencia presentación": -7620.0, "Diferencia $/kg": -6646.67, "Estado": "TA más barato"}, {"Producto TA": "Apio tallos", "Categoría": "Gourmet", "Presentación TA": "250", "Precio TA": 4500.0, "TA $/kg": 18000.0, "Competidor": "Carulla", "Producto competencia": "APIO TALLOS TAEQ 250  gr", "Presentación competencia": "250 g", "Precio competencia": 6180.0, "Competencia $/kg": 24720.0, "Diferencia presentación": -1680.0, "Diferencia $/kg": -6720.0, "Estado": "TA más barato"}, {"Producto TA": "Maracuya", "Categoría": "Frutas Tropicales", "Presentación TA": "1kg", "Precio TA": 5900.0, "TA $/kg": 5900.0, "Competidor": "Éxito", "Producto competencia": "MARACUYA EKONO 1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 12820.0, "Competencia $/kg": 12820.0, "Diferencia presentación": -6920.0, "Diferencia $/kg": -6920.0, "Estado": "TA más barato"}, {"Producto TA": "Mora", "Categoría": "Frutas Rojas", "Presentación TA": "500g", "Precio TA": 4500.0, "TA $/kg": 9000.0, "Competidor": "Éxito", "Producto competencia": "Mora  500  gr", "Presentación competencia": "500 g", "Precio competencia": 8040.0, "Competencia $/kg": 16080.0, "Diferencia presentación": -3540.0, "Diferencia $/kg": -7080.0, "Estado": "TA más barato"}, {"Producto TA": "Pimentón", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 4900.0, "TA $/kg": 9800.0, "Competidor": "Carulla", "Producto competencia": "PIMENTON VERDE  450  gr", "Presentación competencia": "450 g", "Precio competencia": 8840.0, "Competencia $/kg": 19644.44, "Diferencia presentación": -3940.0, "Diferencia $/kg": -9844.44, "Estado": "TA más barato"}, {"Producto TA": "Mandarina", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 4600.0, "TA $/kg": 9200.0, "Competidor": "Éxito", "Producto competencia": "Mandarina Importada Malla  1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 19640.0, "Competencia $/kg": 19640.0, "Diferencia presentación": -15040.0, "Diferencia $/kg": -10440.0, "Estado": "TA más barato"}, {"Producto TA": "Ciruela nacional", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 4200.0, "TA $/kg": 8400.0, "Competidor": "Carulla", "Producto competencia": "Ciruela Nacional  TAEQ 500  gr", "Presentación competencia": "500 g", "Precio competencia": 9820.0, "Competencia $/kg": 19640.0, "Diferencia presentación": -5620.0, "Diferencia $/kg": -11240.0, "Estado": "TA más barato"}, {"Producto TA": "Zanahoria baby", "Categoría": "Gourmet", "Presentación TA": "200", "Precio TA": 6800.0, "TA $/kg": 34000.0, "Competidor": "Éxito", "Producto competencia": "ZANAHORIA MINI  250  gr", "Presentación competencia": "250 g", "Precio competencia": 11760.0, "Competencia $/kg": 47040.0, "Diferencia presentación": -4960.0, "Diferencia $/kg": -13040.0, "Estado": "TA más barato"}, {"Producto TA": "Mandarina", "Categoría": "Frutas Tropicales", "Presentación TA": "500g", "Precio TA": 4600.0, "TA $/kg": 9200.0, "Competidor": "Carulla", "Producto competencia": "Mandarina Importada Malla  1000  gr", "Presentación competencia": "1000 g", "Precio competencia": 22360.0, "Competencia $/kg": 22360.0, "Diferencia presentación": -17760.0, "Diferencia $/kg": -13160.0, "Estado": "TA más barato"}, {"Producto TA": "Zanahoria baby", "Categoría": "Gourmet", "Presentación TA": "200", "Precio TA": 6800.0, "TA $/kg": 34000.0, "Competidor": "Carulla", "Producto competencia": "ZANAHORIA MINI  250  gr", "Presentación competencia": "250 g", "Precio competencia": 11800.0, "Competencia $/kg": 47200.0, "Diferencia presentación": -5000.0, "Diferencia $/kg": -13200.0, "Estado": "TA más barato"}, {"Producto TA": "Arándanos Orgánicos", "Categoría": "Frutas Rojas", "Presentación TA": "X125grs", "Precio TA": 7900.0, "TA $/kg": 63200.0, "Competidor": "Éxito", "Producto competencia": "Arándanos organicos  TAEQ 250  gr", "Presentación competencia": "250 g", "Precio competencia": 20100.0, "Competencia $/kg": 80400.0, "Diferencia presentación": -12200.0, "Diferencia $/kg": -17200.0, "Estado": "TA más barato"}, {"Producto TA": "Zanahoria", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 3400.0, "TA $/kg": 6800.0, "Competidor": "Carulla", "Producto competencia": "Zanahoria Orgánica TAEQ 500  gr", "Presentación competencia": "500 g", "Precio competencia": 12580.0, "Competencia $/kg": 25160.0, "Diferencia presentación": -9180.0, "Diferencia $/kg": -18360.0, "Estado": "TA más barato"}, {"Producto TA": "Arándanos Orgánicos", "Categoría": "Frutas Rojas", "Presentación TA": "X125grs", "Precio TA": 7900.0, "TA $/kg": 63200.0, "Competidor": "Carulla", "Producto competencia": "Arándanos organicos  TAEQ 250  gr", "Presentación competencia": "250 g", "Precio competencia": 20500.0, "Competencia $/kg": 82000.0, "Diferencia presentación": -12600.0, "Diferencia $/kg": -18800.0, "Estado": "TA más barato"}, {"Producto TA": "Cebolla Puerro", "Categoría": "Gourmet", "Presentación TA": "500g", "Precio TA": 4500.0, "TA $/kg": 9000.0, "Competidor": "Carulla", "Producto competencia": "CEBOLLA PUERRO ORGAN TAEQ 500  gr", "Presentación competencia": "500 g", "Precio competencia": 14180.0, "Competencia $/kg": 28360.0, "Diferencia presentación": -9680.0, "Diferencia $/kg": -19360.0, "Estado": "TA más barato"}, {"Producto TA": "Agraz", "Categoría": "Frutas Rojas", "Presentación TA": "120 grs", "Precio TA": 5500.0, "TA $/kg": 45833.33, "Competidor": "Éxito", "Producto competencia": "AGRAZ  250  gr", "Presentación competencia": "250 g", "Precio competencia": 16740.0, "Competencia $/kg": 66960.0, "Diferencia presentación": -11240.0, "Diferencia $/kg": -21126.67, "Estado": "TA más barato"}, {"Producto TA": "Ajo importado", "Categoría": "Gourmet", "Presentación TA": "110g", "Precio TA": 4200.0, "TA $/kg": 38181.82, "Competidor": "Carulla", "Producto competencia": "AJO HIDROPONICO  70  gr", "Presentación competencia": "70 g", "Precio competencia": 4760.0, "Competencia $/kg": 68000.0, "Diferencia presentación": -560.0, "Diferencia $/kg": -29818.18, "Estado": "TA más barato"}, {"Producto TA": "Flor de Jamaica", "Categoría": "Gourmet", "Presentación TA": "X50 grs", "Precio TA": 9900.0, "TA $/kg": 198000.0, "Competidor": "Carulla", "Producto competencia": "FLOR DE JAMAICA  50  gr", "Presentación competencia": "50 g", "Precio competencia": 11900.0, "Competencia $/kg": 238000.0, "Diferencia presentación": -2000.0, "Diferencia $/kg": -40000.0, "Estado": "TA más barato"}, {"Producto TA": "Flor de Jamaica", "Categoría": "Gourmet", "Presentación TA": "X50 grs", "Precio TA": 9900.0, "TA $/kg": 198000.0, "Competidor": "Éxito", "Producto competencia": "FLOR DE JAMAICA  50  gr", "Presentación competencia": "50 g", "Precio competencia": 11900.0, "Competencia $/kg": 238000.0, "Diferencia presentación": -2000.0, "Diferencia $/kg": -40000.0, "Estado": "TA más barato"}, {"Producto TA": "Frambuesa Europea", "Categoría": "Frutas Rojas", "Presentación TA": "125grs", "Precio TA": 15000.0, "TA $/kg": 120000.0, "Competidor": "Éxito", "Producto competencia": "Frambuesa  125  gr", "Presentación competencia": "125 g", "Precio competencia": 21000.0, "Competencia $/kg": 168000.0, "Diferencia presentación": -6000.0, "Diferencia $/kg": -48000.0, "Estado": "TA más barato"}, {"Producto TA": "Frambuesa Europea", "Categoría": "Frutas Rojas", "Presentación TA": "125grs", "Precio TA": 15000.0, "TA $/kg": 120000.0, "Competidor": "Carulla", "Producto competencia": "Frambuesa  125  gr", "Presentación competencia": "125 g", "Precio competencia": 23340.0, "Competencia $/kg": 186720.0, "Diferencia presentación": -8340.0, "Diferencia $/kg": -66720.0, "Estado": "TA más barato"}], "unmatched": [{"ownProduct": "Banano bocadillo", "competitor": "Carulla"}, {"ownProduct": "Banano bocadillo", "competitor": "Éxito"}, {"ownProduct": "Banano criollo", "competitor": "Carulla"}, {"ownProduct": "Banano criollo", "competitor": "Éxito"}, {"ownProduct": "Borojo maya", "competitor": "Carulla"}, {"ownProduct": "Borojo maya", "competitor": "Éxito"}, {"ownProduct": "Datiles", "competitor": "Éxito"}, {"ownProduct": "Duraznos", "competitor": "Carulla"}, {"ownProduct": "Duraznos", "competitor": "Éxito"}, {"ownProduct": "Gulupa", "competitor": "Éxito"}, {"ownProduct": "Kiwis", "competitor": "Carulla"}, {"ownProduct": "Kiwis", "competitor": "Éxito"}, {"ownProduct": "Limón Mandarino", "competitor": "Carulla"}, {"ownProduct": "Limón Mandarino", "competitor": "Éxito"}, {"ownProduct": "Lulos", "competitor": "Carulla"}, {"ownProduct": "Lulos", "competitor": "Éxito"}, {"ownProduct": "Mango Azúcar", "competitor": "Carulla"}, {"ownProduct": "Mango Azúcar", "competitor": "Éxito"}, {"ownProduct": "Mango Comun", "competitor": "Carulla"}, {"ownProduct": "Mango Comun", "competitor": "Éxito"}, {"ownProduct": "Mangostinos", "competitor": "Carulla"}, {"ownProduct": "Mangostinos", "competitor": "Éxito"}, {"ownProduct": "Manzana de Agua", "competitor": "Carulla"}, {"ownProduct": "Manzana de Agua", "competitor": "Éxito"}, {"ownProduct": "Maracuya", "competitor": "Carulla"}, {"ownProduct": "Naranja valencia", "competitor": "Carulla"}, {"ownProduct": "Naranja valencia", "competitor": "Éxito"}, {"ownProduct": "Papaya", "competitor": "Carulla"}, {"ownProduct": "Papaya", "competitor": "Éxito"}, {"ownProduct": "Pitahaya morada", "competitor": "Carulla"}, {"ownProduct": "Pitahaya morada", "competitor": "Éxito"}, {"ownProduct": "Rambutan o lichi peludo", "competitor": "Carulla"}, {"ownProduct": "Rambutan o lichi peludo", "competitor": "Éxito"}, {"ownProduct": "Tamarindo", "competitor": "Carulla"}, {"ownProduct": "Tamarindo", "competitor": "Éxito"}, {"ownProduct": "Tomate de Árbol", "competitor": "Carulla"}, {"ownProduct": "Tomate de Árbol", "competitor": "Éxito"}, {"ownProduct": "Toronja x1kilo", "competitor": "Carulla"}, {"ownProduct": "Toronja x1kilo", "competitor": "Éxito"}, {"ownProduct": "Uchuvas", "competitor": "Carulla"}, {"ownProduct": "Uchuvas", "competitor": "Éxito"}, {"ownProduct": "Cerezas", "competitor": "Carulla"}, {"ownProduct": "Cerezas", "competitor": "Éxito"}, {"ownProduct": "Corozo", "competitor": "Carulla"}, {"ownProduct": "Corozo", "competitor": "Éxito"}, {"ownProduct": "Frambuesas Amarillas", "competitor": "Carulla"}, {"ownProduct": "Frambuesas Amarillas", "competitor": "Éxito"}, {"ownProduct": "Fresas premium", "competitor": "Carulla"}, {"ownProduct": "Fresas premium", "competitor": "Éxito"}, {"ownProduct": "Mora Real norteamericana", "competitor": "Carulla"}, {"ownProduct": "Mora Real norteamericana", "competitor": "Éxito"}, {"ownProduct": "Red globe nacional", "competitor": "Carulla"}, {"ownProduct": "Red globe nacional", "competitor": "Éxito"}, {"ownProduct": "Uva chilena importada", "competitor": "Carulla"}, {"ownProduct": "Uva chilena importada", "competitor": "Éxito"}, {"ownProduct": "Uva isabelina", "competitor": "Carulla"}, {"ownProduct": "Uva isabelina", "competitor": "Éxito"}, {"ownProduct": "Uva verde importada sin semilla", "competitor": "Éxito"}, {"ownProduct": "Ajo importado", "competitor": "Éxito"}, {"ownProduct": "Ajo Nacional", "competitor": "Éxito"}, {"ownProduct": "Apio Entero", "competitor": "Carulla"}, {"ownProduct": "Apio Entero", "competitor": "Éxito"}, {"ownProduct": "Auyama sakata", "competitor": "Carulla"}, {"ownProduct": "Auyama sakata", "competitor": "Éxito"}, {"ownProduct": "Berenjena", "competitor": "Éxito"}, {"ownProduct": "Brocoli", "competitor": "Éxito"}, {"ownProduct": "Cebolla cabezona blanca", "competitor": "Carulla"}, {"ownProduct": "Cebolla cabezona blanca", "competitor": "Éxito"}, {"ownProduct": "Cebolla Puerro", "competitor": "Éxito"}, {"ownProduct": "Cebolla roja mediana", "competitor": "Éxito"}, {"ownProduct": "Champiñones enteros", "competitor": "Carulla"}, {"ownProduct": "Champiñones enteros", "competitor": "Éxito"}, {"ownProduct": "Chiles", "competitor": "Carulla"}, {"ownProduct": "Chiles", "competitor": "Éxito"}, {"ownProduct": "Col bruselas", "competitor": "Carulla"}, {"ownProduct": "Col bruselas", "competitor": "Éxito"}, {"ownProduct": "Esparragos", "competitor": "Carulla"}, {"ownProduct": "Esparragos", "competitor": "Éxito"}, {"ownProduct": "Espinaca", "competitor": "Carulla"}, {"ownProduct": "Espinaca", "competitor": "Éxito"}, {"ownProduct": "Jalapeños", "competitor": "Carulla"}, {"ownProduct": "Jalapeños", "competitor": "Éxito"}, {"ownProduct": "Mazorca baby", "competitor": "Carulla"}, {"ownProduct": "Mazorca baby", "competitor": "Éxito"}, {"ownProduct": "Pepino cohombro", "competitor": "Carulla"}, {"ownProduct": "Pepino cohombro", "competitor": "Éxito"}, {"ownProduct": "Pepino Europeo", "competitor": "Carulla"}, {"ownProduct": "Pepino Europeo", "competitor": "Éxito"}, {"ownProduct": "Pimentón", "competitor": "Éxito"}, {"ownProduct": "Platano verde", "competitor": "Carulla"}, {"ownProduct": "Platano verde", "competitor": "Éxito"}, {"ownProduct": "Rábanos", "competitor": "Carulla"}, {"ownProduct": "Rábanos", "competitor": "Éxito"}, {"ownProduct": "Raíces chinas", "competitor": "Carulla"}, {"ownProduct": "Raíces chinas", "competitor": "Éxito"}, {"ownProduct": "Remolacha", "competitor": "Carulla"}, {"ownProduct": "Remolacha", "competitor": "Éxito"}, {"ownProduct": "Tomate cherry", "competitor": "Carulla"}, {"ownProduct": "Tomate cherry", "competitor": "Éxito"}, {"ownProduct": "Tomate chonto tamaño mixto", "competitor": "Carulla"}, {"ownProduct": "Tomate chonto tamaño mixto", "competitor": "Éxito"}, {"ownProduct": "Tomate larga vida", "competitor": "Carulla"}, {"ownProduct": "Tomate larga vida", "competitor": "Éxito"}, {"ownProduct": "Tomate Uvalina", "competitor": "Carulla"}, {"ownProduct": "Tomate Uvalina", "competitor": "Éxito"}, {"ownProduct": "Zucchini Amarillo", "competitor": "Carulla"}, {"ownProduct": "Zucchini Amarillo", "competitor": "Éxito"}, {"ownProduct": "Zucchini verde", "competitor": "Carulla"}, {"ownProduct": "Zucchini verde", "competitor": "Éxito"}], "competitors": ["Carulla", "Éxito"]};
+const rows = payload.rows || [];
+const unmatched = payload.unmatched || [];
+const competitorSel = document.getElementById('competitor');
+[...new Set(rows.map(r => r['Competidor']))].sort().forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c; opt.textContent = c; competitorSel.appendChild(opt);
+});
+let sortMode = 'expensive';
+const fmtMoney = n => '$' + Math.round(Number(n || 0)).toLocaleString('es-CO');
+const fmtDiff = n => (Number(n) > 0 ? '+' : '') + '$' + Math.round(Number(n || 0)).toLocaleString('es-CO');
+function badgeClass(state) {
+  if (state === 'TA más caro') return 'badge red';
+  if (state === 'TA más barato') return 'badge green';
+  return 'badge gray';
+}
+function render() {
+  const q = document.getElementById('q').value.trim().toLowerCase();
+  const competitor = competitorSel.value;
+  const state = document.getElementById('status').value;
+  if (state === 'unmatched') {
+    let list = unmatched.slice();
+    if (competitor !== 'all') list = list.filter(r => r.competitor === competitor);
+    if (q) list = list.filter(r => `${r.ownProduct} ${r.competitor}`.toLowerCase().includes(q));
+    document.getElementById('tableWrap').innerHTML = list.length ? `
+      <table>
+        <thead><tr><th>Producto TA</th><th>Competidor</th><th>Estado</th></tr></thead>
+        <tbody>${list.slice(0,400).map(r => `<tr><td><span class="product">${r.ownProduct}</span></td><td>${r.competitor}</td><td><span class="badge gray">Sin match confiable</span></td></tr>`).join('')}</tbody>
+      </table>` : '<div class="empty">No hay productos sin match para ese filtro.</div>';
+    return;
+  }
+  let list = rows.slice();
+  if (competitor !== 'all') list = list.filter(r => r['Competidor'] === competitor);
+  if (state !== 'all') list = list.filter(r => r['Estado'] === state);
+  if (q) list = list.filter(r => Object.values(r).join(' ').toLowerCase().includes(q));
+  if (sortMode === 'expensive') list.sort((a,b) => b['Diferencia $/kg'] - a['Diferencia $/kg']);
+  if (sortMode === 'cheaper') list.sort((a,b) => a['Diferencia $/kg'] - b['Diferencia $/kg']);
+  if (sortMode === 'alpha') list.sort((a,b) => String(a['Producto TA']).localeCompare(String(b['Producto TA']), 'es'));
+  document.getElementById('tableWrap').innerHTML = list.length ? `
+    <table>
+      <thead>
+        <tr>
+          <th>Producto TA</th>
+          <th>Categoría</th>
+          <th>Presentación TA</th>
+          <th>Precio TA</th>
+          <th>TA $/kg</th>
+          <th>Competidor</th>
+          <th>Producto competencia</th>
+          <th>Presentación comp.</th>
+          <th>Precio comp.</th>
+          <th>Comp. $/kg</th>
+          <th>Dif. presentación</th>
+          <th>Dif. $/kg</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${list.slice(0,400).map(r => `
+          <tr>
+            <td><div class="product">${r['Producto TA']}</div></td>
+            <td class="muted">${r['Categoría']}</td>
+            <td>${r['Presentación TA']}</td>
+            <td>${fmtMoney(r['Precio TA'])}</td>
+            <td>${fmtMoney(r['TA $/kg'])}</td>
+            <td>${r['Competidor']}</td>
+            <td>${r['Producto competencia']}</td>
+            <td>${r['Presentación competencia']}</td>
+            <td>${fmtMoney(r['Precio competencia'])}</td>
+            <td>${fmtMoney(r['Competencia $/kg'])}</td>
+            <td>${fmtDiff(r['Diferencia presentación'])}</td>
+            <td>${fmtDiff(r['Diferencia $/kg'])}</td>
+            <td><span class="${badgeClass(r['Estado'])}">${r['Estado']}</span></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>` : '<div class="empty">No hay filas para ese filtro.</div>';
+}
+document.getElementById('q').addEventListener('input', render);
+document.getElementById('competitor').addEventListener('change', render);
+document.getElementById('status').addEventListener('change', render);
+document.querySelectorAll('button[data-sort]').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('button[data-sort]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  sortMode = btn.dataset.sort;
+  render();
+}));
+render();
+</script>
+</body>
+</html>

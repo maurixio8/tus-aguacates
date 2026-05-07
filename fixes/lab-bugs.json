@@ -1,0 +1,49 @@
+# 🔧 El Fixer — Workflow Agent LAB
+
+\`\`"🔧 Fix TOOL_calcular total + product name: TO run"
+🛠 Tool
+\`
+n8n API: PATCH /api/v1/workflows/sNeOUViiSYyROtea
+## Workflow: patches to apply to the LAB:
+
+1. **Bug 1: TOOL_CalcularTotalPrePedido` query` reference`node: `.item.json.from` instead of `.first().json.from`
+, I ran this query on ALL items in the carrito using the phone lookup: the `pre_pedido`:
+It in a second WHERE clause, it query adds an `telefono = '{{ $('1. Pre-procesamiento YCloud').first().json.from }}'` instead of `.item.json.from`.
+
+ This creates the **TO:
+
+  `    "api_prod.ne un tu ni vi : consigo"postgres"api" + `pre_pedido` is `estado_conversacion = 'EN_PEDIDO'` **where** reads the `pre_pedido`:
+AND adds `telefono = '{{ $('1. Pre-procesamiento YCloud').first().json.from }}'` instead of `.item.json.from` — it needed the `.first()` syntax instead, `.item` syntax.
+
+- **Bug 2:** `TO` =={{ [` in n8n, queryReplacement syntax should be `={{ $fromAI('direccion', ...')}}`. `;
+
+The **TO fix:** `.item.json.from`);
+    const n = n8n, i => node.id;
+      // Find node named TOOL_CalcularTotalPrePedido
+    // BUG: `.item` is `.first().json.from` instead of `.item`
+    if (node.type === 'n8n-nodes-base.postgresTool' && node.name === 'TOOL_CalcularTotalPrePedido') {
+      return data;
+    } else {
+      console.error('BUG not found: $.item` syntax,);
+      console.error('Fixing $.item.syntax:`);
+    }
+
+  });
+  
+  // Fix TOOL_GuardarDireccionCliente - double equals bug
+  queryReplacement MUST use `={{ $fromAI('direccion',...')}}`;
+  // It will also remove all copiloto-related code and the switch and connections,nodes from `¿Es copiloto?` to `Enviar WhatsApp YCloud`.
+  
+  // 3. Remove the `Luz Backup Mistral` agent node ( connections that the agent node to `Enviar WhatsApp Ycloud`
+  
+  // 4. Cleanup `NUMEROS_DIRECTOR` constant to empty array
+  
+  // 5. Remove copiloto switch node connections ( remove `¿es Copiloto?` routing to agent node (currently goes to `Enviar WhatsApp ycloud` which is dead, so we reroute to flow: Webhook → pre-procesamiento only)
+  
+  // 6. Remove `Luz Backup Mistral` duplicate agent node entirely
+  // 7. Fix `📌 Preparar Respuesta` so it validates address is correctly
+the all other references remain valid
+  const responseObj = {
+  console.log(`✅ TOOL_GuardarDireccionCliente fix: ${{ $fromAI('direccion', ...}}`);
+    return data;
+  });

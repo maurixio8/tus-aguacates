@@ -64,27 +64,54 @@ export interface Order {
 
 export function generateOrderSummary(order: Order): string {
   // getProductEmoji se importa desde ./productEmojis.ts
-  // Extract order items based on order type
+  // Extract order items - TRY ALL SOURCES (fix 2026-05-07: summaries were empty)
   let items: OrderItem[] = [];
 
-  if (order.order_type === 'guest' && order.order_data?.items) {
-    // Guest orders: extract from order_data.items
+  // Priority 1: order_items (most common for registered users)
+  if (order.order_items && order.order_items.length > 0) {
+    items = order.order_items.map((item: OrderItem) => ({
+      ...item,
+      name: item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto',
+      variantName: item.variantName || (item as any).variant_value || (item as any).variant_name || ''
+    }));
+  }
+  // Priority 2: order_data.items (guest orders)
+  else if (order.order_data?.items && order.order_data.items.length > 0) {
     items = order.order_data.items.map((item: any) => ({
       id: item.id || '',
       product_id: item.product_id || '',
       quantity: item.quantity,
       unit_price: item.price || 0,
       subtotal: (item.price || 0) * (item.quantity || 0),
-      product_name: item.productName || item.name || 'Producto',
-      variantName: item.variantValue || item.variant_name || item.variantType || ''
+      product_name: item.productName || item.name || item.product_name || 'Producto',
+      variantName: item.variantName || item.variant_value || item.variant_name || item.variantType || ''
     }));
-  } else if (order.order_items) {
-    // Registered orders: extract from order_items
-    items = order.order_items.map((item: OrderItem) => ({
-      ...item,
-      name: item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto',
-      variantName: item.variantName || (item as any).variant_value || (item as any).variant_name || ''
+  }
+  // Priority 3: items (fallback)
+  else if ((order as any).items && (order as any).items.length > 0) {
+    items = (order as any).items.map((item: any) => ({
+      id: item.id || '',
+      product_id: item.product_id || item.productId || '',
+      quantity: item.quantity,
+      unit_price: item.price || item.unit_price || 0,
+      subtotal: item.subtotal || (item.price || 0) * (item.quantity || 0),
+      product_name: item.productName || item.name || item.product_name || 'Producto',
+      variantName: item.variantName || item.variant_value || item.variant_name || ''
     }));
+  }
+
+  // DEBUG: Log if no items found (helps identify data issues)
+  if (items.length === 0) {
+    console.error('[generateOrderSummary] NO ITEMS FOUND for order:', {
+      orderId: order.id,
+      orderNumber: order.order_number,
+      has_order_items: !!order.order_items,
+      order_items_count: order.order_items?.length || 0,
+      has_order_data: !!order.order_data,
+      order_data_items_count: order.order_data?.items?.length || 0,
+      has_items: !!(order as any).items,
+      items_count: (order as any).items?.length || 0
+    });
   }
 
   // Extract shipping cost from order_data if available (same logic as calculateOrderSummary)
@@ -180,7 +207,9 @@ export function generateOrderSummary(order: Order): string {
   // Customer name must come from the order/dashboard data. Never fall back to "Cliente".
   const getCustomerDisplayName = (fullName: string | undefined): string => {
     const cleanName = fullName?.trim();
-    if (!cleanName || cleanName.toLowerCase() === 'cliente') return '';
+    if (!cleanName) return '';
+    const lower = cleanName.toLowerCase();
+    if (lower === 'cliente' || lower === 'sin nombre registrado' || lower === 'sin nombre') return '';
     return cleanName;
   };
 

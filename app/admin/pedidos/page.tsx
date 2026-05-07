@@ -758,7 +758,7 @@ export default function OrdersPage() {
       null;
 
     return {
-      name: name || 'Sin nombre registrado',
+      name: name || '',
       phone,
       email
     };

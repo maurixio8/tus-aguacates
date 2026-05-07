@@ -1,0 +1,36 @@
+Producto TA,Categoría,Presentación TA,Precio TA,TA $/kg,Competidor,Producto competencia,Presentación competencia,Precio competencia,Competencia $/kg,Diferencia presentación,Diferencia $/kg,Estado
+Cebolla roja mediana,Gourmet,500g,6200.0,12400.0,Carulla,CEBOLLA ROJA  1000  gr,1000 g,9000.0,9000.0,-2800.0,3400.0,TA más caro
+Uva verde importada sin semilla,Frutas Rojas,500g,20000.0,40000.0,Carulla,Uva verde sin semilla estuche  500  gr,500 g,18380.0,36760.0,1620.0,3240.0,TA más caro
+Berenjena,Gourmet,500g,6500.0,13000.0,Carulla,BERENJENA SELECTA  500  gr,500 g,4920.0,9840.0,1580.0,3160.0,TA más caro
+Zanahoria,Gourmet,500g,3400.0,6800.0,Éxito,Zanahoria  1000  gr,1000 g,4280.0,4280.0,-880.0,2520.0,TA más caro
+Limón tahiti,Frutas Tropicales,500g,3700.0,7400.0,Éxito,Limón Tahití Malla TAEQ 1000  gr,1000 g,6600.0,6600.0,-2900.0,800.0,TA más caro
+Ciruela nacional,Frutas Tropicales,500g,4200.0,8400.0,Éxito,Ciruela Roja Bja   500  gr,500 g,4140.0,8280.0,60.0,120.0,TA más caro
+Ajo Nacional,Gourmet,200g,4200.0,21000.0,Carulla,AJO SELECCIONADO  180  gr,180 g,3760.0,20888.89,440.0,111.11,TA más caro
+Brocoli,Gourmet,500g,5500.0,11000.0,Carulla,Brocoli En Vinipel  450  gr,450 g,5160.0,11466.67,340.0,-466.67,TA más barato
+Acelga,Gourmet,500g,3300.0,6600.0,Carulla,Acelga  500  gr,500 g,4080.0,8160.0,-780.0,-1560.0,TA más barato
+Limón tahiti,Frutas Tropicales,500g,3700.0,7400.0,Carulla,Limón Tahití Malla TAEQ 1000  gr,1000 g,9480.0,9480.0,-5780.0,-2080.0,TA más barato
+Apio tallos,Gourmet,250,4500.0,18000.0,Éxito,Apio Tallos TAEQ 250  gr,250 g,5100.0,20400.0,-600.0,-2400.0,TA más barato
+Acelga,Gourmet,500g,3300.0,6600.0,Éxito,Acelga  500  gr,500 g,4540.0,9080.0,-1240.0,-2480.0,TA más barato
+Gulupa,Frutas Tropicales,500g,3700.0,7400.0,Carulla,Caja de gulupa x Kg  1000  gr,1000 g,10380.0,10380.0,-6680.0,-2980.0,TA más barato
+Mora,Frutas Rojas,500g,4500.0,9000.0,Carulla,Mora  500  gr,500 g,7180.0,14360.0,-2680.0,-5360.0,TA más barato
+Datiles,Frutas Tropicales,X125grs,13900.0,111200.0,Carulla,Dátiles  Dátiles (300  gr),300 g,35000.0,116666.67,-21100.0,-5466.67,TA más barato
+Agraz,Frutas Rojas,120 grs,5500.0,45833.33,Carulla,AGRAZ  250  gr,250 g,13120.0,52480.0,-7620.0,-6646.67,TA más barato
+Apio tallos,Gourmet,250,4500.0,18000.0,Carulla,APIO TALLOS TAEQ 250  gr,250 g,6180.0,24720.0,-1680.0,-6720.0,TA más barato
+Maracuya,Frutas Tropicales,1kg,5900.0,5900.0,Éxito,MARACUYA EKONO 1000  gr,1000 g,12820.0,12820.0,-6920.0,-6920.0,TA más barato
+Mora,Frutas Rojas,500g,4500.0,9000.0,Éxito,Mora  500  gr,500 g,8040.0,16080.0,-3540.0,-7080.0,TA más barato
+Pimentón,Gourmet,500g,4900.0,9800.0,Carulla,PIMENTON VERDE  450  gr,450 g,8840.0,19644.44,-3940.0,-9844.44,TA más barato
+Mandarina,Frutas Tropicales,500g,4600.0,9200.0,Éxito,Mandarina Importada Malla  1000  gr,1000 g,19640.0,19640.0,-15040.0,-10440.0,TA más barato
+Ciruela nacional,Frutas Tropicales,500g,4200.0,8400.0,Carulla,Ciruela Nacional  TAEQ 500  gr,500 g,9820.0,19640.0,-5620.0,-11240.0,TA más barato
+Zanahoria baby,Gourmet,200,6800.0,34000.0,Éxito,ZANAHORIA MINI  250  gr,250 g,11760.0,47040.0,-4960.0,-13040.0,TA más barato
+Mandarina,Frutas Tropicales,500g,4600.0,9200.0,Carulla,Mandarina Importada Malla  1000  gr,1000 g,22360.0,22360.0,-17760.0,-13160.0,TA más barato
+Zanahoria baby,Gourmet,200,6800.0,34000.0,Carulla,ZANAHORIA MINI  250  gr,250 g,11800.0,47200.0,-5000.0,-13200.0,TA más barato
+Arándanos Orgánicos,Frutas Rojas,X125grs,7900.0,63200.0,Éxito,Arándanos organicos  TAEQ 250  gr,250 g,20100.0,80400.0,-12200.0,-17200.0,TA más barato
+Zanahoria,Gourmet,500g,3400.0,6800.0,Carulla,Zanahoria Orgánica TAEQ 500  gr,500 g,12580.0,25160.0,-9180.0,-18360.0,TA más barato
+Arándanos Orgánicos,Frutas Rojas,X125grs,7900.0,63200.0,Carulla,Arándanos organicos  TAEQ 250  gr,250 g,20500.0,82000.0,-12600.0,-18800.0,TA más barato
+Cebolla Puerro,Gourmet,500g,4500.0,9000.0,Carulla,CEBOLLA PUERRO ORGAN TAEQ 500  gr,500 g,14180.0,28360.0,-9680.0,-19360.0,TA más barato
+Agraz,Frutas Rojas,120 grs,5500.0,45833.33,Éxito,AGRAZ  250  gr,250 g,16740.0,66960.0,-11240.0,-21126.67,TA más barato
+Ajo importado,Gourmet,110g,4200.0,38181.82,Carulla,AJO HIDROPONICO  70  gr,70 g,4760.0,68000.0,-560.0,-29818.18,TA más barato
+Flor de Jamaica,Gourmet,X50 grs,9900.0,198000.0,Carulla,FLOR DE JAMAICA  50  gr,50 g,11900.0,238000.0,-2000.0,-40000.0,TA más barato
+Flor de Jamaica,Gourmet,X50 grs,9900.0,198000.0,Éxito,FLOR DE JAMAICA  50  gr,50 g,11900.0,238000.0,-2000.0,-40000.0,TA más barato
+Frambuesa Europea,Frutas Rojas,125grs,15000.0,120000.0,Éxito,Frambuesa  125  gr,125 g,21000.0,168000.0,-6000.0,-48000.0,TA más barato
+Frambuesa Europea,Frutas Rojas,125grs,15000.0,120000.0,Carulla,Frambuesa  125  gr,125 g,23340.0,186720.0,-8340.0,-66720.0,TA más barato

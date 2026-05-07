@@ -190,28 +190,69 @@ export async function POST(request: NextRequest) {
             
             if (n8nWebhookUrl) {
                 try {
-                    // Enviar datos del pago a n8n para notificación
+                    // FIX 2026-05-07: Obtener el pedido COMPLETO de Supabase ANTES de enviar a n8n
+                    // Antes solo se enviaban payment + customer, causando resúmenes vacíos
+                    const { data: fullOrder, error: orderFetchError } = await supabase
+                        .from('guest_orders')
+                        .select('*')
+                        .eq('id', orderId)
+                        .single();
+                    
+                    let orderDataForN8N: any = {
+                        event_type: payload.event_type,
+                        event_id: payload.event_id,
+                        timestamp: payload.timestamp,
+                        payment: {
+                            transaction_id: payment.transaction_id,
+                            order_id: orderId,
+                            amount_in_cents: payment.amount_in_cents,
+                            amount: payment.amount_in_cents / 100,
+                            payment_method: payment.payment_method,
+                            status: payment.status,
+                            card_last_four: payment.card_last_four,
+                            card_brand: payment.card_brand,
+                        },
+                        customer: payload.customer
+                    };
+                    
+                    // Si encontramos el pedido completo, agregar todos los datos para el resumen
+                    if (fullOrder && !orderFetchError) {
+                        orderDataForN8N = {
+                            ...orderDataForN8N,
+                            // Datos completos del pedido para generar resumen
+                            order_number: fullOrder.order_number || fullOrder.id,
+                            customer_name: fullOrder.guest_name || payload.customer?.name || '',
+                            customer_phone: fullOrder.guest_phone || payload.customer?.phone || '',
+                            customer_email: fullOrder.guest_email || payload.customer?.email || '',
+                            shipping_address: fullOrder.shipping_address,
+                            delivery_address: fullOrder.delivery_address,
+                            delivery_date: fullOrder.delivery_date,
+                            delivery_notes: fullOrder.delivery_notes,
+                            order_data: fullOrder.order_data,
+                            items: fullOrder.order_data?.items || [],
+                            subtotal: fullOrder.subtotal,
+                            total: fullOrder.total_amount || fullOrder.total,
+                            shipping_cost: fullOrder.shipping_cost,
+                            discount: fullOrder.discount,
+                            status: newStatus,
+                            payment_status: paymentStatus,
+                        };
+                        console.log('[Bold Webhook] 📦 Datos completos del pedido obtenidos para n8n:', {
+                            orderId,
+                            hasItems: (fullOrder.order_data?.items?.length || 0) > 0,
+                            itemsCount: fullOrder.order_data?.items?.length || 0,
+                            customerName: orderDataForN8N.customer_name,
+                        });
+                    } else {
+                        console.error('[Bold Webhook] ⚠️ No se pudo obtener el pedido completo de Supabase:', orderFetchError);
+                    }
+                    
                     await fetch(n8nWebhookUrl, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            event_type: payload.event_type,
-                            event_id: payload.event_id,
-                            timestamp: payload.timestamp,
-                            payment: {
-                                transaction_id: payment.transaction_id,
-                                order_id: orderId,
-                                amount_in_cents: payment.amount_in_cents,
-                                amount: payment.amount_in_cents / 100,
-                                payment_method: payment.payment_method,
-                                status: payment.status,
-                                card_last_four: payment.card_last_four,
-                                card_brand: payment.card_brand,
-                            },
-                            customer: payload.customer
-                        })
+                        body: JSON.stringify(orderDataForN8N)
                     });
-                    console.log('[Bold Webhook] ✅ Notificación enviada a n8n');
+                    console.log('[Bold Webhook] ✅ Notificación enviada a n8n con datos completos del pedido');
                 } catch (n8nError) {
                     console.error('[Bold Webhook] ⚠️ Error enviando a n8n:', n8nError);
                 }

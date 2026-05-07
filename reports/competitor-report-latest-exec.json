@@ -1,0 +1,1495 @@
+{
+  "generatedAt": "2026-04-24T03:43:35.530Z",
+  "competitors": [
+    "Carulla",
+    "Éxito"
+  ],
+  "productsEvaluated": 72,
+  "matches": 35,
+  "topMoreExpensive": [
+    {
+      "ownProduct": "Zanahoria",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3400,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Zanahoria  1000  gr",
+      "competitorPrice": 4280,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 6800,
+      "competitorPricePerKg": 4280,
+      "gapPct": 58.9,
+      "matchScore": 2.61,
+      "query": "zanahoria"
+    },
+    {
+      "ownProduct": "Cebolla roja mediana",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 6200,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "CEBOLLA ROJA  1000  gr",
+      "competitorPrice": 9000,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 12400,
+      "competitorPricePerKg": 9000,
+      "gapPct": 37.8,
+      "matchScore": 4.61,
+      "query": "cebolla roja mediana"
+    },
+    {
+      "ownProduct": "Berenjena",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 6500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "BERENJENA SELECTA  500  gr",
+      "competitorPrice": 4920,
+      "competitorGrams": 500,
+      "ourPricePerKg": 13000,
+      "competitorPricePerKg": 9840,
+      "gapPct": 32.1,
+      "matchScore": 3.3,
+      "query": "berenjena"
+    },
+    {
+      "ownProduct": "Limón tahiti",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 3700,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Limón Tahití Malla TAEQ 1000  gr",
+      "competitorPrice": 6600,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 7400,
+      "competitorPricePerKg": 6600,
+      "gapPct": 12.1,
+      "matchScore": 4.61,
+      "query": "limon tahiti"
+    },
+    {
+      "ownProduct": "Uva verde importada sin semilla",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 20000,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Uva verde sin semilla estuche  500  gr",
+      "competitorPrice": 18380,
+      "competitorGrams": 500,
+      "ourPricePerKg": 40000,
+      "competitorPricePerKg": 36760,
+      "gapPct": 8.8,
+      "matchScore": 7.3,
+      "query": "uva verde semilla"
+    },
+    {
+      "ownProduct": "Ciruela nacional",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4200,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Ciruela Roja Bja   500  gr",
+      "competitorPrice": 4140,
+      "competitorGrams": 500,
+      "ourPricePerKg": 8400,
+      "competitorPricePerKg": 8280,
+      "gapPct": 1.4,
+      "matchScore": 3.3,
+      "query": "ciruela"
+    },
+    {
+      "ownProduct": "Ajo Nacional",
+      "ownCategory": "Gourmet",
+      "ownVariant": "200g",
+      "ownPrice": 4200,
+      "ownGrams": 200,
+      "competitor": "Carulla",
+      "competitorProduct": "AJO SELECCIONADO  180  gr",
+      "competitorPrice": 3760,
+      "competitorGrams": 180,
+      "ourPricePerKg": 21000,
+      "competitorPricePerKg": 20888.89,
+      "gapPct": 0.5,
+      "matchScore": 3.19,
+      "query": "ajo"
+    },
+    {
+      "ownProduct": "Brocoli",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 5500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Brocoli En Vinipel  450  gr",
+      "competitorPrice": 5160,
+      "competitorGrams": 450,
+      "ourPricePerKg": 11000,
+      "competitorPricePerKg": 11466.67,
+      "gapPct": -4.1,
+      "matchScore": 3.19,
+      "query": "brocoli"
+    },
+    {
+      "ownProduct": "Datiles",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "X125grs",
+      "ownPrice": 13900,
+      "ownGrams": 125,
+      "competitor": "Carulla",
+      "competitorProduct": "Dátiles  Dátiles (300  gr)",
+      "competitorPrice": 35000,
+      "competitorGrams": 300,
+      "ourPricePerKg": 111200,
+      "competitorPricePerKg": 116666.67,
+      "gapPct": -4.7,
+      "matchScore": 2.42,
+      "query": "datiles"
+    },
+    {
+      "ownProduct": "Apio tallos",
+      "ownCategory": "Gourmet",
+      "ownVariant": "250",
+      "ownPrice": 4500,
+      "ownGrams": 250,
+      "competitor": "Éxito",
+      "competitorProduct": "Apio Tallos TAEQ 250  gr",
+      "competitorPrice": 5100,
+      "competitorGrams": 250,
+      "ourPricePerKg": 18000,
+      "competitorPricePerKg": 20400,
+      "gapPct": -11.8,
+      "matchScore": 5.3,
+      "query": "apio tallos"
+    },
+    {
+      "ownProduct": "Agraz",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "120 grs",
+      "ownPrice": 5500,
+      "ownGrams": 120,
+      "competitor": "Carulla",
+      "competitorProduct": "AGRAZ  250  gr",
+      "competitorPrice": 13120,
+      "competitorGrams": 250,
+      "ourPricePerKg": 45833.33,
+      "competitorPricePerKg": 52480,
+      "gapPct": -12.7,
+      "matchScore": 2.57,
+      "query": "agraz"
+    },
+    {
+      "ownProduct": "Flor de Jamaica",
+      "ownCategory": "Gourmet",
+      "ownVariant": "X50 grs",
+      "ownPrice": 9900,
+      "ownGrams": 50,
+      "competitor": "Carulla",
+      "competitorProduct": "FLOR DE JAMAICA  50  gr",
+      "competitorPrice": 11900,
+      "competitorGrams": 50,
+      "ourPricePerKg": 198000,
+      "competitorPricePerKg": 238000,
+      "gapPct": -16.8,
+      "matchScore": 5.3,
+      "query": "flor jamaica"
+    },
+    {
+      "ownProduct": "Flor de Jamaica",
+      "ownCategory": "Gourmet",
+      "ownVariant": "X50 grs",
+      "ownPrice": 9900,
+      "ownGrams": 50,
+      "competitor": "Éxito",
+      "competitorProduct": "FLOR DE JAMAICA  50  gr",
+      "competitorPrice": 11900,
+      "competitorGrams": 50,
+      "ourPricePerKg": 198000,
+      "competitorPricePerKg": 238000,
+      "gapPct": -16.8,
+      "matchScore": 5.3,
+      "query": "flor jamaica"
+    },
+    {
+      "ownProduct": "Acelga",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3300,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Acelga  500  gr",
+      "competitorPrice": 4080,
+      "competitorGrams": 500,
+      "ourPricePerKg": 6600,
+      "competitorPricePerKg": 8160,
+      "gapPct": -19.1,
+      "matchScore": 3.3,
+      "query": "acelga"
+    },
+    {
+      "ownProduct": "Arándanos Orgánicos",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "X125grs",
+      "ownPrice": 7900,
+      "ownGrams": 125,
+      "competitor": "Éxito",
+      "competitorProduct": "Arándanos organicos  TAEQ 250  gr",
+      "competitorPrice": 20100,
+      "competitorGrams": 250,
+      "ourPricePerKg": 63200,
+      "competitorPricePerKg": 80400,
+      "gapPct": -21.4,
+      "matchScore": 4.61,
+      "query": "arandanos organicos"
+    }
+  ],
+  "topCheaper": [
+    {
+      "ownProduct": "Zanahoria",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3400,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Zanahoria Orgánica TAEQ 500  gr",
+      "competitorPrice": 12580,
+      "competitorGrams": 500,
+      "ourPricePerKg": 6800,
+      "competitorPricePerKg": 25160,
+      "gapPct": -73,
+      "matchScore": 3.3,
+      "query": "zanahoria"
+    },
+    {
+      "ownProduct": "Cebolla Puerro",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "CEBOLLA PUERRO ORGAN TAEQ 500  gr",
+      "competitorPrice": 14180,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 28360,
+      "gapPct": -68.3,
+      "matchScore": 5.3,
+      "query": "cebolla puerro"
+    },
+    {
+      "ownProduct": "Mandarina",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4600,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Mandarina Importada Malla  1000  gr",
+      "competitorPrice": 22360,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 9200,
+      "competitorPricePerKg": 22360,
+      "gapPct": -58.9,
+      "matchScore": 2.61,
+      "query": "mandarina"
+    },
+    {
+      "ownProduct": "Ciruela nacional",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4200,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Ciruela Nacional  TAEQ 500  gr",
+      "competitorPrice": 9820,
+      "competitorGrams": 500,
+      "ourPricePerKg": 8400,
+      "competitorPricePerKg": 19640,
+      "gapPct": -57.2,
+      "matchScore": 3.3,
+      "query": "ciruela"
+    },
+    {
+      "ownProduct": "Maracuya",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "1kg",
+      "ownPrice": 5900,
+      "ownGrams": 1000,
+      "competitor": "Éxito",
+      "competitorProduct": "MARACUYA EKONO 1000  gr",
+      "competitorPrice": 12820,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 5900,
+      "competitorPricePerKg": 12820,
+      "gapPct": -54,
+      "matchScore": 3.3,
+      "query": "maracuya"
+    },
+    {
+      "ownProduct": "Mandarina",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4600,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Mandarina Importada Malla  1000  gr",
+      "competitorPrice": 19640,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 9200,
+      "competitorPricePerKg": 19640,
+      "gapPct": -53.2,
+      "matchScore": 2.61,
+      "query": "mandarina"
+    },
+    {
+      "ownProduct": "Pimentón",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 4900,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "PIMENTON VERDE  450  gr",
+      "competitorPrice": 8840,
+      "competitorGrams": 450,
+      "ourPricePerKg": 9800,
+      "competitorPricePerKg": 19644.44,
+      "gapPct": -50.1,
+      "matchScore": 3.19,
+      "query": "pimenton"
+    },
+    {
+      "ownProduct": "Mora",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Mora  500  gr",
+      "competitorPrice": 8040,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 16080,
+      "gapPct": -44,
+      "matchScore": 3.3,
+      "query": "mora"
+    },
+    {
+      "ownProduct": "Ajo importado",
+      "ownCategory": "Gourmet",
+      "ownVariant": "110g",
+      "ownPrice": 4200,
+      "ownGrams": 110,
+      "competitor": "Carulla",
+      "competitorProduct": "AJO HIDROPONICO  70  gr",
+      "competitorPrice": 4760,
+      "competitorGrams": 70,
+      "ourPricePerKg": 38181.82,
+      "competitorPricePerKg": 68000,
+      "gapPct": -43.9,
+      "matchScore": 2.85,
+      "query": "ajo"
+    },
+    {
+      "ownProduct": "Mora",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Mora  500  gr",
+      "competitorPrice": 7180,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 14360,
+      "gapPct": -37.3,
+      "matchScore": 3.3,
+      "query": "mora"
+    },
+    {
+      "ownProduct": "Frambuesa Europea",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "125grs",
+      "ownPrice": 15000,
+      "ownGrams": 125,
+      "competitor": "Carulla",
+      "competitorProduct": "Frambuesa  125  gr",
+      "competitorPrice": 23340,
+      "competitorGrams": 125,
+      "ourPricePerKg": 120000,
+      "competitorPricePerKg": 186720,
+      "gapPct": -35.7,
+      "matchScore": 3.3,
+      "query": "frambuesa"
+    },
+    {
+      "ownProduct": "Agraz",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "120 grs",
+      "ownPrice": 5500,
+      "ownGrams": 120,
+      "competitor": "Éxito",
+      "competitorProduct": "AGRAZ  250  gr",
+      "competitorPrice": 16740,
+      "competitorGrams": 250,
+      "ourPricePerKg": 45833.33,
+      "competitorPricePerKg": 66960,
+      "gapPct": -31.6,
+      "matchScore": 2.57,
+      "query": "agraz"
+    },
+    {
+      "ownProduct": "Gulupa",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 3700,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Caja de gulupa x Kg  1000  gr",
+      "competitorPrice": 10380,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 7400,
+      "competitorPricePerKg": 10380,
+      "gapPct": -28.7,
+      "matchScore": 2.61,
+      "query": "gulupa"
+    },
+    {
+      "ownProduct": "Frambuesa Europea",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "125grs",
+      "ownPrice": 15000,
+      "ownGrams": 125,
+      "competitor": "Éxito",
+      "competitorProduct": "Frambuesa  125  gr",
+      "competitorPrice": 21000,
+      "competitorGrams": 125,
+      "ourPricePerKg": 120000,
+      "competitorPricePerKg": 168000,
+      "gapPct": -28.6,
+      "matchScore": 3.3,
+      "query": "frambuesa"
+    },
+    {
+      "ownProduct": "Zanahoria baby",
+      "ownCategory": "Gourmet",
+      "ownVariant": "200",
+      "ownPrice": 6800,
+      "ownGrams": 200,
+      "competitor": "Carulla",
+      "competitorProduct": "ZANAHORIA MINI  250  gr",
+      "competitorPrice": 11800,
+      "competitorGrams": 250,
+      "ourPricePerKg": 34000,
+      "competitorPricePerKg": 47200,
+      "gapPct": -28,
+      "matchScore": 3.08,
+      "query": "zanahoria"
+    }
+  ],
+  "unmatched": [
+    {
+      "ownProduct": "Banano bocadillo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Banano bocadillo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Banano criollo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Banano criollo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Borojo maya",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Borojo maya",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Datiles",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Duraznos",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Duraznos",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Gulupa",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Kiwis",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Kiwis",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Limón Mandarino",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Limón Mandarino",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Lulos",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Lulos",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Mango Azúcar",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Mango Azúcar",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Mango Comun",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Mango Comun",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Mangostinos",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Mangostinos",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Manzana de Agua",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Manzana de Agua",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Maracuya",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Naranja valencia",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Naranja valencia",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Papaya",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Papaya",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Pitahaya morada",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Pitahaya morada",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Rambutan o lichi peludo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Rambutan o lichi peludo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tamarindo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tamarindo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tomate de Árbol",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tomate de Árbol",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Toronja x1kilo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Toronja x1kilo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Uchuvas",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Uchuvas",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Cerezas",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Cerezas",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Corozo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Corozo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Frambuesas Amarillas",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Frambuesas Amarillas",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Fresas premium",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Fresas premium",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Mora Real norteamericana",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Mora Real norteamericana",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Red globe nacional",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Red globe nacional",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Uva chilena importada",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Uva chilena importada",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Uva isabelina",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Uva isabelina",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Uva verde importada sin semilla",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Ajo importado",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Ajo Nacional",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Apio Entero",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Apio Entero",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Auyama sakata",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Auyama sakata",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Berenjena",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Brocoli",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Cebolla cabezona blanca",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Cebolla cabezona blanca",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Cebolla Puerro",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Cebolla roja mediana",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Champiñones enteros",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Champiñones enteros",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Chiles",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Chiles",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Col bruselas",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Col bruselas",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Esparragos",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Esparragos",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Espinaca",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Espinaca",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Jalapeños",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Jalapeños",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Mazorca baby",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Mazorca baby",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Pepino cohombro",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Pepino cohombro",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Pepino Europeo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Pepino Europeo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Pimentón",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Platano verde",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Platano verde",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Rábanos",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Rábanos",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Raíces chinas",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Raíces chinas",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Remolacha",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Remolacha",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tomate cherry",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tomate cherry",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tomate chonto tamaño mixto",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tomate chonto tamaño mixto",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tomate larga vida",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tomate larga vida",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Tomate Uvalina",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Tomate Uvalina",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Zucchini Amarillo",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Zucchini Amarillo",
+      "competitor": "Éxito"
+    },
+    {
+      "ownProduct": "Zucchini verde",
+      "competitor": "Carulla"
+    },
+    {
+      "ownProduct": "Zucchini verde",
+      "competitor": "Éxito"
+    }
+  ],
+  "rows": [
+    {
+      "ownProduct": "Ciruela nacional",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4200,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Ciruela Nacional  TAEQ 500  gr",
+      "competitorPrice": 9820,
+      "competitorGrams": 500,
+      "ourPricePerKg": 8400,
+      "competitorPricePerKg": 19640,
+      "gapPct": -57.2,
+      "matchScore": 3.3,
+      "query": "ciruela"
+    },
+    {
+      "ownProduct": "Ciruela nacional",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4200,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Ciruela Roja Bja   500  gr",
+      "competitorPrice": 4140,
+      "competitorGrams": 500,
+      "ourPricePerKg": 8400,
+      "competitorPricePerKg": 8280,
+      "gapPct": 1.4,
+      "matchScore": 3.3,
+      "query": "ciruela"
+    },
+    {
+      "ownProduct": "Datiles",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "X125grs",
+      "ownPrice": 13900,
+      "ownGrams": 125,
+      "competitor": "Carulla",
+      "competitorProduct": "Dátiles  Dátiles (300  gr)",
+      "competitorPrice": 35000,
+      "competitorGrams": 300,
+      "ourPricePerKg": 111200,
+      "competitorPricePerKg": 116666.67,
+      "gapPct": -4.7,
+      "matchScore": 2.42,
+      "query": "datiles"
+    },
+    {
+      "ownProduct": "Gulupa",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 3700,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Caja de gulupa x Kg  1000  gr",
+      "competitorPrice": 10380,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 7400,
+      "competitorPricePerKg": 10380,
+      "gapPct": -28.7,
+      "matchScore": 2.61,
+      "query": "gulupa"
+    },
+    {
+      "ownProduct": "Limón tahiti",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 3700,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Limón Tahití Malla TAEQ 1000  gr",
+      "competitorPrice": 9480,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 7400,
+      "competitorPricePerKg": 9480,
+      "gapPct": -21.9,
+      "matchScore": 4.61,
+      "query": "limon tahiti"
+    },
+    {
+      "ownProduct": "Limón tahiti",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 3700,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Limón Tahití Malla TAEQ 1000  gr",
+      "competitorPrice": 6600,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 7400,
+      "competitorPricePerKg": 6600,
+      "gapPct": 12.1,
+      "matchScore": 4.61,
+      "query": "limon tahiti"
+    },
+    {
+      "ownProduct": "Mandarina",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4600,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Mandarina Importada Malla  1000  gr",
+      "competitorPrice": 22360,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 9200,
+      "competitorPricePerKg": 22360,
+      "gapPct": -58.9,
+      "matchScore": 2.61,
+      "query": "mandarina"
+    },
+    {
+      "ownProduct": "Mandarina",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "500g",
+      "ownPrice": 4600,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Mandarina Importada Malla  1000  gr",
+      "competitorPrice": 19640,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 9200,
+      "competitorPricePerKg": 19640,
+      "gapPct": -53.2,
+      "matchScore": 2.61,
+      "query": "mandarina"
+    },
+    {
+      "ownProduct": "Maracuya",
+      "ownCategory": "Frutas Tropicales",
+      "ownVariant": "1kg",
+      "ownPrice": 5900,
+      "ownGrams": 1000,
+      "competitor": "Éxito",
+      "competitorProduct": "MARACUYA EKONO 1000  gr",
+      "competitorPrice": 12820,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 5900,
+      "competitorPricePerKg": 12820,
+      "gapPct": -54,
+      "matchScore": 3.3,
+      "query": "maracuya"
+    },
+    {
+      "ownProduct": "Agraz",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "120 grs",
+      "ownPrice": 5500,
+      "ownGrams": 120,
+      "competitor": "Carulla",
+      "competitorProduct": "AGRAZ  250  gr",
+      "competitorPrice": 13120,
+      "competitorGrams": 250,
+      "ourPricePerKg": 45833.33,
+      "competitorPricePerKg": 52480,
+      "gapPct": -12.7,
+      "matchScore": 2.57,
+      "query": "agraz"
+    },
+    {
+      "ownProduct": "Agraz",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "120 grs",
+      "ownPrice": 5500,
+      "ownGrams": 120,
+      "competitor": "Éxito",
+      "competitorProduct": "AGRAZ  250  gr",
+      "competitorPrice": 16740,
+      "competitorGrams": 250,
+      "ourPricePerKg": 45833.33,
+      "competitorPricePerKg": 66960,
+      "gapPct": -31.6,
+      "matchScore": 2.57,
+      "query": "agraz"
+    },
+    {
+      "ownProduct": "Arándanos Orgánicos",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "X125grs",
+      "ownPrice": 7900,
+      "ownGrams": 125,
+      "competitor": "Carulla",
+      "competitorProduct": "Arándanos organicos  TAEQ 250  gr",
+      "competitorPrice": 20500,
+      "competitorGrams": 250,
+      "ourPricePerKg": 63200,
+      "competitorPricePerKg": 82000,
+      "gapPct": -22.9,
+      "matchScore": 4.61,
+      "query": "arandanos organicos"
+    },
+    {
+      "ownProduct": "Arándanos Orgánicos",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "X125grs",
+      "ownPrice": 7900,
+      "ownGrams": 125,
+      "competitor": "Éxito",
+      "competitorProduct": "Arándanos organicos  TAEQ 250  gr",
+      "competitorPrice": 20100,
+      "competitorGrams": 250,
+      "ourPricePerKg": 63200,
+      "competitorPricePerKg": 80400,
+      "gapPct": -21.4,
+      "matchScore": 4.61,
+      "query": "arandanos organicos"
+    },
+    {
+      "ownProduct": "Frambuesa Europea",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "125grs",
+      "ownPrice": 15000,
+      "ownGrams": 125,
+      "competitor": "Carulla",
+      "competitorProduct": "Frambuesa  125  gr",
+      "competitorPrice": 23340,
+      "competitorGrams": 125,
+      "ourPricePerKg": 120000,
+      "competitorPricePerKg": 186720,
+      "gapPct": -35.7,
+      "matchScore": 3.3,
+      "query": "frambuesa"
+    },
+    {
+      "ownProduct": "Frambuesa Europea",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "125grs",
+      "ownPrice": 15000,
+      "ownGrams": 125,
+      "competitor": "Éxito",
+      "competitorProduct": "Frambuesa  125  gr",
+      "competitorPrice": 21000,
+      "competitorGrams": 125,
+      "ourPricePerKg": 120000,
+      "competitorPricePerKg": 168000,
+      "gapPct": -28.6,
+      "matchScore": 3.3,
+      "query": "frambuesa"
+    },
+    {
+      "ownProduct": "Mora",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Mora  500  gr",
+      "competitorPrice": 7180,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 14360,
+      "gapPct": -37.3,
+      "matchScore": 3.3,
+      "query": "mora"
+    },
+    {
+      "ownProduct": "Mora",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Mora  500  gr",
+      "competitorPrice": 8040,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 16080,
+      "gapPct": -44,
+      "matchScore": 3.3,
+      "query": "mora"
+    },
+    {
+      "ownProduct": "Uva verde importada sin semilla",
+      "ownCategory": "Frutas Rojas",
+      "ownVariant": "500g",
+      "ownPrice": 20000,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Uva verde sin semilla estuche  500  gr",
+      "competitorPrice": 18380,
+      "competitorGrams": 500,
+      "ourPricePerKg": 40000,
+      "competitorPricePerKg": 36760,
+      "gapPct": 8.8,
+      "matchScore": 7.3,
+      "query": "uva verde semilla"
+    },
+    {
+      "ownProduct": "Acelga",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3300,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Acelga  500  gr",
+      "competitorPrice": 4080,
+      "competitorGrams": 500,
+      "ourPricePerKg": 6600,
+      "competitorPricePerKg": 8160,
+      "gapPct": -19.1,
+      "matchScore": 3.3,
+      "query": "acelga"
+    },
+    {
+      "ownProduct": "Acelga",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3300,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Acelga  500  gr",
+      "competitorPrice": 4540,
+      "competitorGrams": 500,
+      "ourPricePerKg": 6600,
+      "competitorPricePerKg": 9080,
+      "gapPct": -27.3,
+      "matchScore": 3.3,
+      "query": "acelga"
+    },
+    {
+      "ownProduct": "Ajo importado",
+      "ownCategory": "Gourmet",
+      "ownVariant": "110g",
+      "ownPrice": 4200,
+      "ownGrams": 110,
+      "competitor": "Carulla",
+      "competitorProduct": "AJO HIDROPONICO  70  gr",
+      "competitorPrice": 4760,
+      "competitorGrams": 70,
+      "ourPricePerKg": 38181.82,
+      "competitorPricePerKg": 68000,
+      "gapPct": -43.9,
+      "matchScore": 2.85,
+      "query": "ajo"
+    },
+    {
+      "ownProduct": "Ajo Nacional",
+      "ownCategory": "Gourmet",
+      "ownVariant": "200g",
+      "ownPrice": 4200,
+      "ownGrams": 200,
+      "competitor": "Carulla",
+      "competitorProduct": "AJO SELECCIONADO  180  gr",
+      "competitorPrice": 3760,
+      "competitorGrams": 180,
+      "ourPricePerKg": 21000,
+      "competitorPricePerKg": 20888.89,
+      "gapPct": 0.5,
+      "matchScore": 3.19,
+      "query": "ajo"
+    },
+    {
+      "ownProduct": "Apio tallos",
+      "ownCategory": "Gourmet",
+      "ownVariant": "250",
+      "ownPrice": 4500,
+      "ownGrams": 250,
+      "competitor": "Carulla",
+      "competitorProduct": "APIO TALLOS TAEQ 250  gr",
+      "competitorPrice": 6180,
+      "competitorGrams": 250,
+      "ourPricePerKg": 18000,
+      "competitorPricePerKg": 24720,
+      "gapPct": -27.2,
+      "matchScore": 5.3,
+      "query": "apio tallos"
+    },
+    {
+      "ownProduct": "Apio tallos",
+      "ownCategory": "Gourmet",
+      "ownVariant": "250",
+      "ownPrice": 4500,
+      "ownGrams": 250,
+      "competitor": "Éxito",
+      "competitorProduct": "Apio Tallos TAEQ 250  gr",
+      "competitorPrice": 5100,
+      "competitorGrams": 250,
+      "ourPricePerKg": 18000,
+      "competitorPricePerKg": 20400,
+      "gapPct": -11.8,
+      "matchScore": 5.3,
+      "query": "apio tallos"
+    },
+    {
+      "ownProduct": "Berenjena",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 6500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "BERENJENA SELECTA  500  gr",
+      "competitorPrice": 4920,
+      "competitorGrams": 500,
+      "ourPricePerKg": 13000,
+      "competitorPricePerKg": 9840,
+      "gapPct": 32.1,
+      "matchScore": 3.3,
+      "query": "berenjena"
+    },
+    {
+      "ownProduct": "Brocoli",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 5500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Brocoli En Vinipel  450  gr",
+      "competitorPrice": 5160,
+      "competitorGrams": 450,
+      "ourPricePerKg": 11000,
+      "competitorPricePerKg": 11466.67,
+      "gapPct": -4.1,
+      "matchScore": 3.19,
+      "query": "brocoli"
+    },
+    {
+      "ownProduct": "Cebolla Puerro",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 4500,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "CEBOLLA PUERRO ORGAN TAEQ 500  gr",
+      "competitorPrice": 14180,
+      "competitorGrams": 500,
+      "ourPricePerKg": 9000,
+      "competitorPricePerKg": 28360,
+      "gapPct": -68.3,
+      "matchScore": 5.3,
+      "query": "cebolla puerro"
+    },
+    {
+      "ownProduct": "Cebolla roja mediana",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 6200,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "CEBOLLA ROJA  1000  gr",
+      "competitorPrice": 9000,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 12400,
+      "competitorPricePerKg": 9000,
+      "gapPct": 37.8,
+      "matchScore": 4.61,
+      "query": "cebolla roja mediana"
+    },
+    {
+      "ownProduct": "Flor de Jamaica",
+      "ownCategory": "Gourmet",
+      "ownVariant": "X50 grs",
+      "ownPrice": 9900,
+      "ownGrams": 50,
+      "competitor": "Carulla",
+      "competitorProduct": "FLOR DE JAMAICA  50  gr",
+      "competitorPrice": 11900,
+      "competitorGrams": 50,
+      "ourPricePerKg": 198000,
+      "competitorPricePerKg": 238000,
+      "gapPct": -16.8,
+      "matchScore": 5.3,
+      "query": "flor jamaica"
+    },
+    {
+      "ownProduct": "Flor de Jamaica",
+      "ownCategory": "Gourmet",
+      "ownVariant": "X50 grs",
+      "ownPrice": 9900,
+      "ownGrams": 50,
+      "competitor": "Éxito",
+      "competitorProduct": "FLOR DE JAMAICA  50  gr",
+      "competitorPrice": 11900,
+      "competitorGrams": 50,
+      "ourPricePerKg": 198000,
+      "competitorPricePerKg": 238000,
+      "gapPct": -16.8,
+      "matchScore": 5.3,
+      "query": "flor jamaica"
+    },
+    {
+      "ownProduct": "Pimentón",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 4900,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "PIMENTON VERDE  450  gr",
+      "competitorPrice": 8840,
+      "competitorGrams": 450,
+      "ourPricePerKg": 9800,
+      "competitorPricePerKg": 19644.44,
+      "gapPct": -50.1,
+      "matchScore": 3.19,
+      "query": "pimenton"
+    },
+    {
+      "ownProduct": "Zanahoria",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3400,
+      "ownGrams": 500,
+      "competitor": "Carulla",
+      "competitorProduct": "Zanahoria Orgánica TAEQ 500  gr",
+      "competitorPrice": 12580,
+      "competitorGrams": 500,
+      "ourPricePerKg": 6800,
+      "competitorPricePerKg": 25160,
+      "gapPct": -73,
+      "matchScore": 3.3,
+      "query": "zanahoria"
+    },
+    {
+      "ownProduct": "Zanahoria",
+      "ownCategory": "Gourmet",
+      "ownVariant": "500g",
+      "ownPrice": 3400,
+      "ownGrams": 500,
+      "competitor": "Éxito",
+      "competitorProduct": "Zanahoria  1000  gr",
+      "competitorPrice": 4280,
+      "competitorGrams": 1000,
+      "ourPricePerKg": 6800,
+      "competitorPricePerKg": 4280,
+      "gapPct": 58.9,
+      "matchScore": 2.61,
+      "query": "zanahoria"
+    },
+    {
+      "ownProduct": "Zanahoria baby",
+      "ownCategory": "Gourmet",
+      "ownVariant": "200",
+      "ownPrice": 6800,
+      "ownGrams": 200,
+      "competitor": "Carulla",
+      "competitorProduct": "ZANAHORIA MINI  250  gr",
+      "competitorPrice": 11800,
+      "competitorGrams": 250,
+      "ourPricePerKg": 34000,
+      "competitorPricePerKg": 47200,
+      "gapPct": -28,
+      "matchScore": 3.08,
+      "query": "zanahoria"
+    },
+    {
+      "ownProduct": "Zanahoria baby",
+      "ownCategory": "Gourmet",
+      "ownVariant": "200",
+      "ownPrice": 6800,
+      "ownGrams": 200,
+      "competitor": "Éxito",
+      "competitorProduct": "ZANAHORIA MINI  250  gr",
+      "competitorPrice": 11760,
+      "competitorGrams": 250,
+      "ourPricePerKg": 34000,
+      "competitorPricePerKg": 47040,
+      "gapPct": -27.7,
+      "matchScore": 3.08,
+      "query": "zanahoria"
+    }
+  ],
+  "summary_text": "📋 Competencia frescos TA\n\n📊 Evaluados: 72 | Matches: 35\n📌 Competidores: Carulla, Éxito\n\n🔴 Más caros:\n1. Zanahoria vs Éxito: +58.9%\n2. Cebolla roja mediana vs Carulla: +37.8%\n3. Berenjena vs Carulla: +32.1%\n\n✅ Más baratos:\n1. Zanahoria vs Carulla: -73%\n2. Cebolla Puerro vs Carulla: -68.3%\n3. Mandarina vs Carulla: -58.9%",
+  "telegram_sent": true
+}
