@@ -364,6 +364,20 @@ export default function CreateOrderPage() {
     });
   }, []);
 
+  // Recargar catálogo cuando el usuario vuelve a la página (ej: después de cambiar precios)
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log('🔄 [CrearPedido] Window focused, reloading product catalog...');
+      setGlobalProductCatalogLoaded(false);
+      loadGlobalProductCatalog().catch((error) => {
+        console.error('Error recargando catalogo:', error);
+      });
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, []);
+
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
       if (!globalSearchContainerRef.current?.contains(event.target as Node)) {
