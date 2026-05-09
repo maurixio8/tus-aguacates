@@ -631,6 +631,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Sync address to addresses table if customer has a registered account
+    let addressSynced = false;
+    if (newCustomer?.phone) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone', newCustomer.phone)
+        .maybeSingle();
+
+      if (profileData?.id && body.address) {
+        const { error: addressError } = await supabase
+          .from('addresses')
+          .upsert({
+            user_id: profileData.id,
+            label: 'Principal',
+            full_name: body.name || newCustomer.name || '',
+            phone: body.phone || newCustomer.phone || '',
+            street_address: body.address,
+            city: body.city || 'Bogotá',
+            state: 'Cundinamarca',
+            is_default: true,
+          }, {
+            onConflict: 'user_id,label'
+          });
+        if (!addressError) addressSynced = true;
+      }
+    }
+
     const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
       phones: [body.phone, normPhone, newCustomer?.phone],
       name: body.name,
@@ -642,6 +670,7 @@ export async function POST(request: NextRequest) {
       success: true,
       data: newCustomer,
       guestOrdersSynced,
+      addressSynced,
       message: 'Cliente creado exitosamente'
     }, { status: 201 });
 
@@ -783,6 +812,35 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
+    // Sync address to addresses table if customer has a registered account
+    let addressSynced = false;
+    if (updatedCustomer?.phone) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('phone', updatedCustomer.phone)
+        .maybeSingle();
+
+      if (profileData?.id) {
+        const { error: addressError } = await supabase
+          .from('addresses')
+          .upsert({
+            user_id: profileData.id,
+            label: body.address ? 'Principal' : '',
+            full_name: body.name || updatedCustomer.name || '',
+            phone: body.phone || updatedCustomer.phone || '',
+            street_address: body.address || updatedCustomer.address || '',
+            city: body.city || updatedCustomer.city || 'Bogotá',
+            state: 'Cundinamarca',
+            is_default: true,
+          }, {
+            onConflict: 'user_id,label'
+          });
+        if (!addressError) addressSynced = true;
+        else console.warn('⚠️ Error sincronizando dirección a addresses:', addressError.message);
+      }
+    }
+
     const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {
       phones: [body.phone, updatedCustomer?.phone],
       name: body.name,
@@ -794,6 +852,7 @@ export async function PATCH(request: NextRequest) {
       success: true,
       data: updatedCustomer,
       guestOrdersSynced,
+      addressSynced,
       message: 'Cliente actualizado exitosamente'
     });
 
