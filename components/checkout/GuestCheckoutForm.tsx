@@ -44,6 +44,15 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   const [step, setStep] = useState<CheckoutStep>('info'); // Start with form
   const [orderId, setOrderId] = useState<string>('');
   const [showPaymentModal, setShowPaymentModal] = useState(false); // Show AFTER data
+  // Detectar si venimos de un reintento de pago (desde DuplicateOrderModal)
+  useEffect(() => {
+    const retryOrderId = sessionStorage.getItem('retry_order_id');
+    if (retryOrderId) {
+      sessionStorage.removeItem('retry_order_id');
+      setOrderId(retryOrderId);
+      setShowPaymentModal(true);
+    }
+  }, []);
   
   // Si no ha seleccionado método de pago, solo mostrar los botones
   const showPaymentOnly = showPaymentModal;
@@ -81,7 +90,13 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   // Estados para Modales
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{ id: string, time: string } | null>(null);
+  // Estado para el modal de duplicado (ahora con status y payment method)
+  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{
+    id: string;
+    time: string;
+    status?: string;
+    paymentMethod?: string;
+  } | null>(null);
   const [whatsappUrlForSuccess, setWhatsappUrlForSuccess] = useState('');
 
   // Función mejorada para extraer mensaje de error de Supabase
@@ -157,7 +172,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
       const { data: existingOrders, error: checkError } = await supabase
         .from('guest_orders')
-        .select('id, created_at, status, order_data, guest_phone')
+        .select('id, created_at, status, payment_method, order_data, guest_phone')
         .gte('created_at', today + 'T00:00:00.000Z')
         .lte('created_at', today + 'T23:59:59.999Z')
         .order('created_at', { ascending: false })
@@ -187,7 +202,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         // Activar Modal de Duplicado en lugar de lanzar error
         setDuplicateOrderInfo({
           id: order.id,
-          time: orderTime
+          time: orderTime,
+          status: order.status,
+          paymentMethod: order.payment_method,
         });
         setShowDuplicateModal(true);
         setLoading(false);
@@ -602,6 +619,8 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
       existingOrderId={duplicateOrderInfo?.id || ''}
       existingOrderTime={duplicateOrderInfo?.time || ''}
       customerName={formData.name || 'cliente'}
+      existingOrderStatus={duplicateOrderInfo?.status}
+      existingPaymentMethod={duplicateOrderInfo?.paymentMethod}
     />
   );
 

@@ -30,9 +30,9 @@ export function CartDrawer() {
         />
       )}
 
-      {/* Drawer */}
+      {/* Drawer - usando 100dvh para mobile (considera chrome del navegador) */}
       <div
-        className={`fixed top-0 right-0 h-full w-full sm:w-[420px] bg-white z-50 transform transition-transform duration-300 ease-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        className={`fixed top-0 right-0 h-dvh w-full sm:w-[420px] bg-white z-50 transform transition-transform duration-300 ease-out shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -56,8 +56,8 @@ export function CartDrawer() {
             </button>
           </div>
 
-          {/* Items */}
-          <div className="flex-1 overflow-y-auto">
+          {/* Items - scrollables */}
+          <div className="flex-1 overflow-y-auto overscroll-contain">
             {items.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
                 <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -154,9 +154,9 @@ export function CartDrawer() {
             )}
           </div>
 
-          {/* Footer */}
+          {/* Footer - con safe area padding para iOS */}
           {items.length > 0 && (
-            <div className="border-t border-gray-100 p-5 space-y-4 bg-white">
+            <div className="border-t border-gray-100 p-5 space-y-4 bg-white" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 0px))' }}>
               {/* Subtotal + Envío */}
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">

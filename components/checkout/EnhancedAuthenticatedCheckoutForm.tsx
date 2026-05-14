@@ -79,9 +79,24 @@ export function EnhancedAuthenticatedCheckoutForm({
     email: ''
   });
 
-  // Estado para modal de pedido duplicado (usuarios autenticados)
+  // Detectar si venimos de un reintento de pago (desde DuplicateOrderModal)
+  useEffect(() => {
+    const retryOrderId = sessionStorage.getItem('retry_order_id');
+    if (retryOrderId) {
+      sessionStorage.removeItem('retry_order_id');
+      setOrderId(retryOrderId);
+      setStep('payment-method');
+    }
+  }, []);
+
+  // Estado para modal de pedido duplicado (usuarios autenticados) - ahora con status
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{ id: string, time: string } | null>(null);
+  const [duplicateOrderInfo, setDuplicateOrderInfo] = useState<{
+    id: string;
+    time: string;
+    status?: string;
+    paymentMethod?: string;
+  } | null>(null);
 
 
   // Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
@@ -269,14 +284,15 @@ export function EnhancedAuthenticatedCheckoutForm({
       today: today
     });
 
-    const { data: existingOrder, error: checkError } = await supabase
-      .from('orders')
-      .select('id, created_at, status, order_data')
-      .eq('user_id', user.id)
-      .gte('created_at', today + 'T00:00:00.000Z')
-      .lte('created_at', today + 'T23:59:59.999Z')
-      .order('created_at', { ascending: false })
-      .limit(1);
+      // Buscar también payment_method para saber si fue con Bold
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('orders')
+        .select('id, created_at, status, payment_method, order_data')
+        .eq('user_id', user.id)
+        .gte('created_at', today + 'T00:00:00.000Z')
+        .lte('created_at', today + 'T23:59:59.999Z')
+        .order('created_at', { ascending: false })
+        .limit(1);
 
     console.log('🔍 Resultado búsqueda pedidos autenticados:', {
       error: checkError,
@@ -296,7 +312,9 @@ export function EnhancedAuthenticatedCheckoutForm({
       // Activar Modal de Duplicado en lugar de lanzar error
       setDuplicateOrderInfo({
         id: order.id,
-        time: orderTime
+        time: orderTime,
+        status: order.status,
+        paymentMethod: order.payment_method,
       });
       setShowDuplicateModal(true);
       setLoading(false);
@@ -1069,6 +1087,8 @@ ${orderData.appliedCoupon.description}
         existingOrderId={duplicateOrderInfo?.id || ''}
         existingOrderTime={duplicateOrderInfo?.time || ''}
         customerName={profile?.full_name || profile?.preferred_name || 'Cliente'}
+        existingOrderStatus={duplicateOrderInfo?.status}
+        existingPaymentMethod={duplicateOrderInfo?.paymentMethod}
       />
 
       {/* Modal de Configuración de Suscripción */}
