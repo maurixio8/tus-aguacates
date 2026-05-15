@@ -251,8 +251,9 @@ export default function OrdersPage() {
   };
 
   // Extraer dirección como texto plano (usa utilidad compartida)
+  // ⚠️ Prioriza delivery_address (actualizado desde el modal) sobre shipping_address (JSONB original)
   const getAddressText = (order: Order): string => {
-    const addr = order.shipping_address || order.delivery_address;
+    const addr = order.delivery_address || order.shipping_address;
     return formatAddressToString(addr);
   };
 

@@ -258,7 +258,8 @@ export function generateOrderSummary(order: Order): string {
   const financialSummary = financialLines.join('\n');
 
   // Generate delivery address - extract complete address for guest orders
-  const extractedAddress = formatAddressToString(order.shipping_address) || order.delivery_address;
+  // ⚠️ delivery_address (actualizado desde dashboard) tiene prioridad sobre shipping_address
+  const extractedAddress = order.delivery_address || formatAddressToString(order.shipping_address);
   let deliveryAddress = extractedAddress || 'N/A';
 
   // Compact customer-facing WhatsApp summary from dashboard.
