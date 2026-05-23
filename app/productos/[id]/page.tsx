@@ -20,7 +20,7 @@ const isUUID = (id: string): boolean => {
 };
 
 async function getProductById(id: string) {
-  // Si es un UUID, consultar directamente Supabase (más rápido y preciso)
+  // 1. Si es un UUID, consultar directamente Supabase (más rápido y preciso)
   if (isUUID(id)) {
     const { data, error } = await supabase
       .from('products')
@@ -37,7 +37,23 @@ async function getProductById(id: string) {
     return data;
   }
 
-  // Fallback: buscar en la lista completa (para IDs tipo 'product-1')
+  // 2. Intentar buscar por slug en Supabase (para URLs tipo '/productos/caja-de-24-unidades-hass-mediano-xxx')
+  try {
+    const { data: slugResult, error: slugError } = await supabase
+      .from('products')
+      .select('*')
+      .eq('slug', id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (!slugError && slugResult) {
+      return slugResult;
+    }
+  } catch (e) {
+    console.warn('⚠️ Slug lookup failed (non-critical):', e);
+  }
+
+  // 3. Fallback: buscar en la lista completa (para IDs tipo 'product-1')
   const allProducts = await getProducts();
   return allProducts.find(p => p.id === id);
 }

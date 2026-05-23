@@ -89,7 +89,7 @@ export function RecommendedProducts() {
               key={product.id}
               className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all overflow-hidden group"
             >
-              <Link href={`/productos/${product.slug}`}>
+              <Link href={`/productos/${product.slug || product.id}`}>
                 <div className="relative h-48 bg-gray-100 overflow-hidden">
                   {product.main_image_url ? (
                     <Image
@@ -112,7 +112,7 @@ export function RecommendedProducts() {
               </Link>
 
               <div className="p-4">
-                <Link href={`/productos/${product.slug}`}>
+                <Link href={`/productos/${product.slug || product.id}`}>
                   <h3 className="font-semibold text-lg text-verde-bosque-700 mb-2 hover:text-verde-aguacate transition-colors">
                     {product.name}
                   </h3>
