@@ -29,6 +29,9 @@ export interface OrderItem {
   variantName?: string;
   price?: number;
   description?: string;
+  // Peso y unidad para empaque
+  weight?: number | null;
+  unit?: string | null;
 }
 
 export interface Order {
@@ -84,7 +87,9 @@ export function generateOrderSummary(order: Order): string {
       unit_price: item.price || 0,
       subtotal: (item.price || 0) * (item.quantity || 0),
       product_name: item.productName || item.name || item.product_name || 'Producto',
-      variantName: item.variantName || item.variant_value || item.variant_name || item.variantType || ''
+      variantName: item.variantName || item.variant_value || item.variant_name || item.variantType || '',
+      weight: item.weight || null,
+      unit: item.unit || null
     }));
   }
   // Priority 3: items (fallback)
@@ -96,7 +101,9 @@ export function generateOrderSummary(order: Order): string {
       unit_price: item.price || item.unit_price || 0,
       subtotal: item.subtotal || (item.price || 0) * (item.quantity || 0),
       product_name: item.productName || item.name || item.product_name || 'Producto',
-      variantName: item.variantName || item.variant_value || item.variant_name || ''
+      variantName: item.variantName || item.variant_value || item.variant_name || '',
+      weight: item.weight || null,
+      unit: item.unit || null
     }));
   }
 
@@ -241,11 +248,21 @@ export function generateOrderSummary(order: Order): string {
     const variantName = item.variantName || (item as any).variant_value || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
     const emoji = getWhatsAppSafeEmoji(itemName);
+    const weight = item.weight || null;
+    const unit = item.unit || null;
+
+    // Build weight/unit suffix
+    let weightSuffix = '';
+    if (weight) {
+      weightSuffix = ` | ${weight}${unit || 'g'}`;
+    } else if (unit) {
+      weightSuffix = ` | ${unit}`;
+    }
 
     return variantName
-      ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}`
-      : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}`;
-  }).join('\n');
+      ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}${weightSuffix}`
+      : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}${weightSuffix}`;
+  }).join('\\n');
 
   // Build compact financial summary.
   const financialLines = [`💚 *Total:* ${formatCurrency(total)}`];

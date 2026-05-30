@@ -346,17 +346,32 @@ export default function OrdersPage() {
     orderItems.forEach((item, index) => {
       const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
       const variant = item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || item.variantName || '';
-      const description = item.product_snapshot?.description || item.products?.description || item.description || '';
+      const unitPrice = item.unit_price || item.product_snapshot?.price || item.price || 0;
+      const weight = item.weight || null;
+      const unit = item.unit || null;
       const emoji = getProductEmoji(itemName);
       
-      // Variante más visible en línea separada
-      lines.push(`   ☐ ${emoji} ${item.quantity}x ${itemName}`);
+      // Mostrar producto: cantidad x nombre - precio unitario
+      let line = `   ☐ ${emoji} ${item.quantity}x ${itemName}`;
+      if (unitPrice > 0) {
+        line += ` - ${formatMoney(unitPrice)} c/u`;
+      }
+      lines.push(line);
+      
+      // Peso/unidad si existe (CRÍTICO para empaque)
+      if (weight) {
+        const totalWeight = weight * item.quantity;
+        const weightStr = totalWeight >= 1000
+          ? `${(totalWeight / 1000).toFixed(2)} kg`
+          : `${totalWeight} g`;
+        lines.push(`      ⚖️ ${item.quantity}x ${weight}${unit || 'g'} = ${weightStr}`);
+      } else if (unit) {
+        lines.push(`      📦 Unidad: ${unit}`);
+      }
+      
+      // Variante (si existe)
       if (variant) {
         lines.push(`      ↳ Variante: ${variant}`);
-      }
-      // Mostrar descripción si existe (importante para combos)
-      if (description) {
-        lines.push(`      📋 Incluye: ${description}`);
       }
       lines.push('');
     });
@@ -1294,7 +1309,10 @@ export default function OrdersPage() {
                       },
                       quantity: item.quantity,
                       unit_price: item.price,
-                      subtotal: item.quantity * item.price
+                      subtotal: item.quantity * item.price,
+                      weight: item.weight || null,
+                      unit: item.unit || null,
+                      variantName: item.variantName || null
                     }));
                   }
 

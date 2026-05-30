@@ -57,6 +57,8 @@ interface OrderItem {
   variantName?: string;
   variant_value?: string;
   price?: number;
+  weight?: number | null;
+  unit?: string | null;
 }
 
 interface Order {
@@ -771,7 +773,9 @@ export default function ListaComprasPage() {
           unit_price: item.price || item.unit_price || 0,
           subtotal: (item.quantity || 0) * (item.price || item.unit_price || 0),
           variantName: variantInfo.variantDisplay,
-          variant_value: variantInfo.variantValue
+          variant_value: variantInfo.variantValue,
+          weight: item.weight ?? null,
+          unit: item.unit ?? null
         };
       });
     }
@@ -788,7 +792,9 @@ export default function ListaComprasPage() {
             ...item.product_snapshot,
             variant_name: variantInfo.variantType,
             variant_value: variantInfo.variantValue
-          }
+          },
+          weight: item.weight ?? null,
+          unit: item.unit ?? null
         };
       });
     }
@@ -805,7 +811,9 @@ export default function ListaComprasPage() {
             ...item.product_snapshot,
             variant_name: variantInfo.variantType,
             variant_value: variantInfo.variantValue
-          }
+          },
+          weight: item.weight ?? null,
+          unit: item.unit ?? null
         };
       });
     }
@@ -1485,8 +1493,20 @@ const normalizeVariant = (variant: string | null): string => {
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
 
-          // Extraer peso de la variante (si existe)
-          const weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
+          // Extraer peso: PRIORIZAR weight/unit guardados en el pedido, fallback a variante
+          let weightPerUnitGrams: number | undefined;
+          if (item.weight != null && item.unit) {
+            const unit = item.unit.toLowerCase();
+            if (unit === 'kg' || unit === 'kilo' || unit === 'kilos') {
+              weightPerUnitGrams = item.weight * 1000;
+            } else if (unit === 'g' || unit === 'gr' || unit === 'grs' || unit === 'gramos' || unit === 'gramo') {
+              weightPerUnitGrams = item.weight;
+            } else {
+              weightPerUnitGrams = item.weight; // asumir gramos si no se reconoce la unidad
+            }
+          } else {
+            weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
+          }
 
           // Crear clave de agrupación inteligente (detecta si variante ya está en el nombre)
           const groupingKey = createGroupingKey(variantResolution.catalogDisplayName, variantDisplay);

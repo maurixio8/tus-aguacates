@@ -228,7 +228,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           variantType: item.variant?.variant_name || null,
           variantId: item.variant?.id || null,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          weight: item.product.weight || null,
+          unit: item.product.unit || null
         })),
         subtotal: totals.subtotal,
         discount: totals.discount,
@@ -292,7 +294,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           productName: item.product.name,
           variantName: item.variant?.variant_value || null,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          weight: item.product.weight || null,
+          unit: item.product.unit || null
         })),
         subtotal: totals.subtotal,
         discount: totals.discount,
@@ -311,7 +315,7 @@ Acabo de hacer un pedido en su tienda:
 🔗 https://tus-aguacates.vercel.app
 
 📦 *Mi pedido:*
-${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''}${item.weight && item.unit ? ` | ${item.weight}${item.unit}` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {
@@ -477,7 +481,9 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
           variantName: item.variant?.variant_value || null,
           variantId: item.variant?.id || null,
           quantity: item.quantity,
-          price: item.price
+          price: item.price,
+          weight: item.product.weight || null,
+          unit: item.product.unit || null
         })),
         subtotal: totals.subtotal,
         discount: totals.discount,
@@ -515,7 +521,7 @@ Acabo de hacer un pedido en su tienda:
 🔗 https://tus-aguacates.vercel.app
 
 📦 *Mi pedido:*
-${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
+${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${item.quantity}x ${item.productName}${item.variantName ? ` (${item.variantName})` : ''}${item.weight && item.unit ? ` | ${item.weight}${item.unit}` : ''} - $${item.price.toLocaleString('es-CO')}`).join('\n')}`;
 
       // Add breakdown if there's discount or shipping
       if (totals.discount > 0 || totals.shipping > 0) {
