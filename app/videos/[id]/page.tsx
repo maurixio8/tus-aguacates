@@ -5,7 +5,7 @@ type Props = {
   params: Promise<{ id: string }>;
 };
 
-const VIDEOS_BASE_URL = 'https://tusaguacates.com/media/videos';
+const VIDEOS_BASE_URL = 'https://media.tusaguacates.com/media/videos';
 
 // Esta función genera los metadatos dinámicos para redes sociales (OpenGraph)
 export async function generateMetadata(

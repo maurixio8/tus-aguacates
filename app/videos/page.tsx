@@ -25,7 +25,7 @@ interface VideoComment {
 }
 
 // Probamos con la ruta base que parece ser la más probable según Nginx
-const VIDEOS_BASE_URL = 'https://tusaguacates.com/media/videos';
+const VIDEOS_BASE_URL = 'https://media.tusaguacates.com/media/videos';
 
 const SOCIAL_LINKS = {
   instagram: 'https://www.instagram.com/invites/contact/?igsh=aw5gc4o2dib7&utm_content=mb2lvuk',
