@@ -152,8 +152,18 @@ export function generateOrderSummary(order: Order): string {
   const orderNumber = order.order_number || `INV-${order.id.slice(-8)}`;
 
   // Generate delivery date based on delivery days: TUESDAY (2) and FRIDAY (5) only
-  // RULE: If order is placed on a delivery day BEFORE 10:00 AM, deliver SAME DAY
+  // RULE: If order is placed on a delivery day BEFORE 10:00 AM Bogotá (UTC-5), deliver SAME DAY
   //       Otherwise, calculate next delivery day
+  //
+  // IMPORTANT: Convert from UTC (how Supabase stores timestamps) to Bogotá time explicitly
+  // so the logic works correctly on Vercel (UTC runtime) AND client-side (any browser TZ).
+  const toBogotaDate = (dateStr: string): Date => {
+    const utcDate = new Date(dateStr);
+    return new Date(utcDate.getTime() - 5 * 60 * 60 * 1000); // UTC-5
+  };
+  const getBogotaHours = (d: Date): number => d.getUTCHours();
+  const getBogotaDay = (d: Date): number => d.getUTCDay();
+
   const getDeliveryDate = (): string => {
     // If order has explicit delivery_date, use it
     if ((order as any).delivery_date) {
@@ -168,18 +178,18 @@ export function generateOrderSummary(order: Order): string {
 
     // Delivery days: Tuesday (2) and Friday (5)
     const DELIVERY_DAYS = [2, 5]; // Tuesday = 2, Friday = 5
-    const CUT_OFF_HOUR = 10; // 10:00 AM - orders before this can be delivered same day
+    const CUT_OFF_HOUR = 10; // 10:00 AM Bogotá - orders before this can be delivered same day
 
-    // Get order date and time
-    const orderDate = new Date(order.created_at);
-    const orderDayOfWeek = orderDate.getDay();
-    const orderHour = orderDate.getHours();
+    // Get order date and time in Bogotá (UTC-5)
+    const orderDate = toBogotaDate(order.created_at);
+    const orderDayOfWeek = getBogotaDay(orderDate);
+    const orderHour = getBogotaHours(orderDate);
 
     // Check if order was placed on a delivery day BEFORE cut-off time
     const isDeliveryDay = DELIVERY_DAYS.includes(orderDayOfWeek);
     const isBeforeCutOff = orderHour < CUT_OFF_HOUR;
 
-    // If it's a delivery day and before 10 Am, deliver TODAY (same day)
+    // If it's a delivery day and before 10 AM Bogotá, deliver TODAY (same day)
     if (isDeliveryDay && isBeforeCutOff) {
       return orderDate.toLocaleDateString('es-ES', {
         weekday: 'long',
@@ -191,7 +201,7 @@ export function generateOrderSummary(order: Order): string {
 
     // Otherwise, find the NEXT delivery day
     const deliveryDate = new Date(orderDate);
-    let currentDay = deliveryDate.getDay();
+    let currentDay = getBogotaDay(deliveryDate);
 
     // Advance to next day and keep going until we hit a delivery day
     let maxIterations = 7; // Safety limit
@@ -220,11 +230,11 @@ export function generateOrderSummary(order: Order): string {
     return cleanName;
   };
 
-  // Get greeting based on current hour (Colombia timezone UTC-5)
+  // Get greeting based on current hour in Colombia (UTC-5)
   const getGreeting = (): string => {
     const now = new Date();
-    // Adjust for Colombia timezone (UTC-5)
-    const colombiaHour = now.getHours(); // Assuming server is in Colombia time
+    const bogotaNow = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+    const colombiaHour = bogotaNow.getUTCHours();
 
     if (colombiaHour >= 5 && colombiaHour < 12) {
       return '¡Buenos días';
