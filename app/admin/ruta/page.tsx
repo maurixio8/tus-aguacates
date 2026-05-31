@@ -526,7 +526,7 @@ function OrderCard({
                 {order.deliveryAddress.replace(/\?/g, '').trim() || 'Sin dirección'}
               </span>
               {hasQuestion && (
-                <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" title="Dirección con ?" />
+                <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" aria-label="Dirección con ?" />
               )}
             </div>
 

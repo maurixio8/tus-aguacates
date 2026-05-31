@@ -20,7 +20,8 @@ import {
   MessageSquare,
   Layers,
   Building2,
-  ClipboardList
+  ClipboardList,
+  Truck
 } from 'lucide-react';
 
 interface AdminUser {
