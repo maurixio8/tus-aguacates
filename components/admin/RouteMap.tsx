@@ -26,6 +26,7 @@ interface RouteMapProps {
 export default function RouteMap({ orders, origin, onMapReady }: RouteMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<any>(null);
+  const leafletRef = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
   const [loading, setLoading] = useState(false);
@@ -127,6 +128,7 @@ export default function RouteMap({ orders, origin, onMapReady }: RouteMapProps) 
         }).addTo(map);
 
         mapInstance.current = map;
+        leafletRef.current = L;
         setMapReady(true);
       } catch (e) {
         console.error('Error initializing map:', e);
@@ -148,7 +150,8 @@ export default function RouteMap({ orders, origin, onMapReady }: RouteMapProps) 
   useEffect(() => {
     if (!mapInstance.current || geocoded.length === 0) return;
     const map = mapInstance.current;
-    const L = require('leaflet');
+    const L = leafletRef.current;
+    if (!L) return;
 
     // Limpiar marcadores anteriores
     markersRef.current.forEach(m => map.removeLayer(m));
