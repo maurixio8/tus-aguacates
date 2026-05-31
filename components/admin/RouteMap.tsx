@@ -21,15 +21,14 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
   const Lref = useRef<any>(null);
   const markersRef = useRef<any[]>([]);
   const polylineRef = useRef<any>(null);
-  const geocodedKey = useRef(''); // evita re-geocodificar si no cambian los pedidos
+  const geocodedKey = useRef('');
   const initDone = useRef(false);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('Cargando mapa...');
 
-  // ───────────────────── 1. Inicializar mapa (solo una vez) ─────────────────────
+  // ── 1. Inicializar mapa (solo una vez) ──
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
-
     let cancel = false;
 
     (async () => {
@@ -44,12 +43,9 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
           shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
         });
 
-        const map = L.map(mapContainer.current!, {
-          zoomControl: true,
-          scrollWheelZoom: true,
-        });
+        const map = L.map(mapContainer.current!, { zoomControl: true, scrollWheelZoom: true });
 
-        // CartoDB Positron — tiles ligeros que cargan rápido
+        // CartoDB Positron — tiles ligeros, cargan rápido
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
           attribution: '&copy; OSM &copy; CARTO',
           maxZoom: 19,
@@ -57,10 +53,7 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
         }).addTo(map);
 
         // Bogotá completo desde el inicio
-        map.fitBounds([
-          [4.45, -74.25],
-          [4.85, -73.95],
-        ]);
+        map.fitBounds([[4.45, -74.25], [4.85, -73.95]]);
 
         mapRef.current = map;
         Lref.current = L;
@@ -68,7 +61,7 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
         setLoading(false);
 
         // Disparar geocoding ahora que el mapa está listo
-        geocode(orders, origin);
+        await geocode(orders, origin);
       } catch (e) {
         console.error('Error mapa:', e);
         setStatus('Error al cargar el mapa');
@@ -80,20 +73,20 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ───────────────────── 2. Re-geocodificar si cambian los pedidos ─────────────────────
+  // ── 2. Re-geocodificar si cambian los pedidos ──
   useEffect(() => {
     if (!initDone.current) return;
     geocode(orders, origin);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orders, origin]);
 
-  // ───────────────────── 3. Geocoding ─────────────────────
+  // ── 3. Geocoding ──
   async function geocode(orderList: RouteMapOrder[], ori: string) {
     const L = Lref.current;
     const map = mapRef.current;
     if (!L || !map || orderList.length === 0) return;
 
-    // Evitar duplicados: solo geocodificar si cambió la lista
+    // Evitar duplicados
     const key = orderList.map(o => o.id).join(',') + '|' + ori;
     if (geocodedKey.current === key) return;
     geocodedKey.current = key;
@@ -110,12 +103,11 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
 
     const points: { lat: number; lng: number; order: RouteMapOrder; label: string }[] = [];
 
-    // ---- Origen ----
+    // Origen
     if (ori?.trim()) {
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ori + ', Bogotá, Colombia')}&format=json&limit=1`
-        );
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ori + ', Bogotá, Colombia')}&format=json&limit=1`;
+        const res = await fetch(url);
         const data = await res.json();
         if (data?.length > 0) {
           points.push({
@@ -129,7 +121,7 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
       }
     }
 
-    // ---- Pedidos (1 request/segundo para no saturar Nominatim) ----
+    // Pedidos (1 request/segundo máximo)
     for (let i = 0; i < orderList.length; i++) {
       const o = orderList[i];
       const addr = (o.deliveryAddress + ', Bogotá, Colombia').replace(/\?/g, '').trim();
@@ -137,9 +129,8 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
 
       try {
         await new Promise(r => setTimeout(r, 300));
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`
-        );
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
+        const res = await fetch(url);
         const data = await res.json();
         if (data?.length > 0) {
           points.push({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), order: o, label: `${i + 1}` });
@@ -149,7 +140,7 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
       }
     }
 
-    // ---- Dibujar en el mapa ----
+    // Dibujar
     if (points.length === 0) {
       setStatus('No se pudieron ubicar las direcciones');
       return;
@@ -162,15 +153,7 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
       const isOrigin = p.order.id === 'origin';
       const icon = L.divIcon({
         className: '',
-        html: `<div style="
-          background:${isOrigin ? '#3b82f6' : '#16a34a'};
-          color:#fff;
-          width:26px;height:26px;
-          border-radius:50%;
-          display:flex;align-items:center;justify-content:center;
-          font-size:12px;font-weight:600;
-          border:2px solid #fff;
-        ">${isOrigin ? '🏠' : p.label}</div>`,
+        html: `<div style="background:${isOrigin ? '#3b82f6' : '#16a34a'};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid #fff">${isOrigin ? '🏠' : p.label}</div>`,
         iconSize: [26, 26],
         iconAnchor: [13, 13],
       });
@@ -184,23 +167,18 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
       latlngs.push([p.lat, p.lng]);
     }
 
-    // Línea de ruta
     if (latlngs.length >= 2) {
-      polylineRef.current = L.polyline(latlngs, {
-        color: '#2563eb', weight: 2.5, opacity: 0.5,
-      }).addTo(map);
+      polylineRef.current = L.polyline(latlngs, { color: '#2563eb', weight: 2.5, opacity: 0.5 }).addTo(map);
     }
 
-    // Ajustar vista
     if (bounds.isValid()) {
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
     }
 
-    const stopCount = points.length - (ori?.trim() ? 1 : 0);
-    setStatus(`📍 ${stopCount} parada${stopCount !== 1 ? 's' : ''} en mapa`);
+    const n = points.length - (ori?.trim() ? 1 : 0);
+    setStatus(`📍 ${n} parada${n !== 1 ? 's' : ''} en mapa`);
   }
 
-  // ───────────────────── 4. Render ─────────────────────
   return (
     <div className="space-y-2">
       {status && (
@@ -209,7 +187,6 @@ export default function RouteMap({ orders, origin }: RouteMapProps) {
           {status}
         </div>
       )}
-
       <div
         ref={mapContainer}
         className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100"
