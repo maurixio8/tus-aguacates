@@ -23,10 +23,13 @@ export async function GET(request: NextRequest) {
     const supabase = createSupabaseClient();
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') || 'pendiente';
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const limit = parseInt(searchParams.get('limit') || '200');
+    const desde = searchParams.get('desde');
+    const hasta = searchParams.get('hasta');
+    const origin = searchParams.get('origin') || '';
 
-    // Obtener pedidos pendientes (no entregados)
-    const { data: orders, error } = await supabase
+    // Construir query base
+    let query = supabase
       .from('orders')
       .select(`
         id,
@@ -44,8 +47,19 @@ export async function GET(request: NextRequest) {
         delivery_notes
       `)
       .is('delivered_at', null)
-      .or(`order_status.eq.${status},status.eq.${status}`)
-      .order('created_at', { ascending: false })
+      .or(`order_status.eq.${status},status.eq.${status}`);
+
+    // Filtro por rango de fechas
+    if (desde) {
+      query = query.gte('created_at', desde);
+    }
+    if (hasta) {
+      const hastaEnd = hasta.length === 10 ? hasta + 'T23:59:59.999Z' : hasta;
+      query = query.lte('created_at', hastaEnd);
+    }
+
+    const { data: orders, error } = await query
+      .order('created_at', { ascending: true })
       .limit(limit);
 
     if (error) {

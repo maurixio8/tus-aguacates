@@ -23,7 +23,10 @@ import {
   ClipboardList,
   AlertTriangle,
   RefreshCw,
+  Filter,
 } from 'lucide-react';
+
+import RouteMap from '@/components/admin/RouteMap';
 
 interface RouteItem {
   id: string;
@@ -64,14 +67,30 @@ export default function RutaPage() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
+  const [dateDesde, setDateDesde] = useState('');
+  const [dateHasta, setDateHasta] = useState('');
+  const [originAddress, setOriginAddress] = useState('');
+  const [excludedOrders, setExcludedOrders] = useState<Set<string>>(new Set());
+  const [showMap, setShowMap] = useState(false);
 
   const fetchRoute = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/ruta');
+      const params = new URLSearchParams();
+      if (dateDesde) params.set('desde', dateDesde);
+      if (dateHasta) params.set('hasta', dateHasta);
+      const res = await fetch(`/api/admin/ruta?${params.toString()}`);
       if (!res.ok) throw new Error('Error al cargar ruta');
       const json = await res.json();
+      // Excluir pedidos pausados
+      if (excludedOrders.size > 0 && json.orders) {
+        json.orders = json.orders.filter((o: any) => !excludedOrders.has(o.id));
+        // Recalcular zonas
+        json.zones = recalculateZones(json.orders);
+        json.total = json.orders.length;
+        json.totalAmount = json.orders.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
+      }
       setData(json);
       // Expandir todas las zonas por defecto
       if (json.zones) {
@@ -82,7 +101,7 @@ export default function RutaPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dateDesde, dateHasta, excludedOrders]);
 
   useEffect(() => {
     fetchRoute();
@@ -141,6 +160,31 @@ export default function RutaPage() {
       else next.add(orderId);
       return next;
     });
+  };
+
+  const toggleExclude = (orderId: string) => {
+    setExcludedOrders(prev => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+    // Quitar de seleccionados si estaba
+    setSelectedOrders(prev => {
+      const next = new Set(prev);
+      next.delete(orderId);
+      return next;
+    });
+  };
+
+  // Generar URL de Google Maps multi-parada
+  const gmapsMultiUrl = () => {
+    const selected = data?.orders.filter(o => selectedOrders.has(o.id) && !excludedOrders.has(o.id)) || [];
+    if (selected.length === 0 && !originAddress) return '#';
+    const base = 'https://www.google.com/maps/dir/';
+    const origin = originAddress ? encodeURIComponent(originAddress) : '';
+    const destinations = selected.map(o => '/' + encodeURIComponent(o.deliveryAddress.replace(/\?/g, '').trim()));
+    return `${base}${origin}${destinations.join('')}`;
   };
 
   const selectAll = () => {
@@ -220,6 +264,37 @@ export default function RutaPage() {
     return next.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
   };
 
+  // Recalcular zonas cuando se excluyen pedidos
+  const recalculateZones = (orders: any[]) => {
+    const zoneKeywords: Record<string, string[]> = {
+      chapinero: ['chapinero'], usaquen: ['usaquén', 'cedritos', 'santa bárbara'],
+      suba: ['suba', 'iberia', 'prado'], engativa: ['engativá', 'normandía', 'bonanza'],
+      fontibon: ['fontibón'], teusaquillo: ['teusaquillo', 'salitre'],
+      barrios_unidos: ['barrios unidos', 'doce de octubre'],
+      puente_aranda: ['puente aranda', 'paloquemao', 'carabelas'],
+      martires: ['mártires'], tintal: ['tintal', 'bosa'],
+      kennedy: ['kennedy', 'britalia', 'marsella'],
+      ciudad_bolivar: ['ciudad bolívar'], rafael_uribe: ['rafael uribe'],
+      santa_fe: ['santa fe', 'centro'], san_cristobal: ['san cristóbal'],
+    };
+    const zones: Record<string, any> = {};
+    for (const order of orders) {
+      const addr = (order.deliveryAddress || '').toLowerCase();
+      let assigned = false;
+      for (const [key, keywords] of Object.entries(zoneKeywords)) {
+        if (keywords.some(k => addr.includes(k))) {
+          if (!zones[key]) zones[key] = { name: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '), orders: [], count: 0 };
+          zones[key].orders.push(order); zones[key].count++; assigned = true; break;
+        }
+      }
+      if (!assigned) {
+        if (!zones.otras) zones.otras = { name: 'Otras', orders: [], count: 0 };
+        zones.otras.orders.push(order); zones.otras.count++;
+      }
+    }
+    return zones;
+  };
+
   // Filtrar por búsqueda
   const filteredOrders = data?.orders.filter(o => {
     if (!searchTerm) return true;
@@ -288,6 +363,48 @@ export default function RutaPage() {
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
           />
         </div>
+
+        {/* Filtros: Rango de fechas + Origen */}
+        {data && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Desde</label>
+              <input
+                type="date"
+                value={dateDesde}
+                onChange={(e) => setDateDesde(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+              <input
+                type="date"
+                value={dateHasta}
+                onChange={(e) => setDateHasta(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs text-gray-500 mb-1">Dirección de salida (origen de la ruta)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={originAddress}
+                  onChange={(e) => setOriginAddress(e.target.value)}
+                  placeholder="Ej: Cra 30 #10-20, Bogotá"
+                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                <button
+                  onClick={fetchRoute}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Mensaje de éxito */}
         {markSuccess > 0 && (
@@ -358,7 +475,55 @@ export default function RutaPage() {
             Abrir en Waze
           </a>
         )}
+
+        {/* Botón Ruta completa en Google Maps */}
+        {selectedOrders.size > 0 && (
+          <a
+            href={gmapsMultiUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-1"
+          >
+            <MapPin className="w-4 h-4" />
+            Ruta en Google Maps
+          </a>
+        )}
+
+        {/* Botón mostrar/ocultar mapa */}
+        {data && data.orders.length > 0 && (
+          <button
+            onClick={() => setShowMap(!showMap)}
+            className={`px-3 py-1.5 text-sm border rounded-lg transition-colors flex items-center gap-1 ${
+              showMap ? 'bg-green-50 border-green-300 text-green-700' : 'border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            <MapPin className="w-4 h-4" />
+            {showMap ? 'Ocultar mapa' : 'Mostrar mapa'}
+          </button>
+        )}
       </div>
+
+      {/* MAPA DE RUTA */}
+      {showMap && data && (
+        <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
+          <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-green-600" />
+            Ruta visual — {selectedOrders.size > 0 ? selectedOrders.size : data.orders.length} paradas
+          </h3>
+          <RouteMap
+            orders={data.orders
+              .filter(o => selectedOrders.size === 0 || selectedOrders.has(o.id))
+              .filter(o => !excludedOrders.has(o.id))
+              .map(o => ({
+                id: o.id,
+                customerName: o.customerName,
+                deliveryAddress: o.deliveryAddress,
+                orderNumber: o.orderNumber,
+              }))}
+            origin={originAddress}
+          />
+        </div>
+      )}
 
       {/* Lista de pedidos agrupada por zona */}
       {data && Object.keys(data.zones || {}).length === 0 && (
@@ -391,6 +556,8 @@ export default function RutaPage() {
                 selected={selectedOrders.has(order.id)}
                 expanded={expandedOrders.has(order.id)}
                 onToggleSelect={() => toggleSelect(order.id)}
+                onToggleExclude={() => toggleExclude(order.id)}
+                isExcluded={excludedOrders.has(order.id)}
                 onToggleExpand={() => toggleOrder(order.id)}
                 wazeUrl={wazeUrl(order.deliveryAddress)}
                 gmapsUrl={gmapsUrl(order.deliveryAddress)}
@@ -437,6 +604,8 @@ export default function RutaPage() {
                   selected={selectedOrders.has(order.id)}
                   expanded={expandedOrders.has(order.id)}
                   onToggleSelect={() => toggleSelect(order.id)}
+                  onToggleExclude={() => toggleExclude(order.id)}
+                  isExcluded={excludedOrders.has(order.id)}
                   onToggleExpand={() => toggleOrder(order.id)}
                   wazeUrl={wazeUrl(order.deliveryAddress)}
                   gmapsUrl={gmapsUrl(order.deliveryAddress)}
@@ -460,6 +629,8 @@ function OrderCard({
   selected,
   expanded,
   onToggleSelect,
+  onToggleExclude,
+  isExcluded,
   onToggleExpand,
   wazeUrl,
   gmapsUrl,
@@ -472,6 +643,8 @@ function OrderCard({
   selected: boolean;
   expanded: boolean;
   onToggleSelect: () => void;
+  onToggleExclude: () => void;
+  isExcluded: boolean;
   onToggleExpand: () => void;
   wazeUrl: string;
   gmapsUrl: string;
@@ -588,6 +761,20 @@ function OrderCard({
               <Copy className="w-3 h-3" />
             )}
             Copiar
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleExclude();
+            }}
+            className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+              isExcluded
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-gray-50 text-gray-500 hover:bg-amber-50 hover:text-amber-600'
+            }`}
+            title={isExcluded ? 'Incluir en ruta' : 'Excluir de ruta'}
+          >
+            {isExcluded ? '✓ Incluir' : '⏸ Excluir'}
           </button>
         </div>
       </div>
