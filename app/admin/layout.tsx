@@ -110,6 +110,7 @@ export default function AdminLayout({
     { name: 'Categorías', href: '/admin/categorias', icon: Layers },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
+    { name: 'Ruta de Hoy', href: '/admin/ruta', icon: Truck },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
