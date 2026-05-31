@@ -927,6 +927,8 @@ export default function ListaComprasPage() {
       /(\d+(?:\.\d+)?)grs/i,
       // "X250grs" (formato especial)
       /x(\d+(?:\.\d+)?)grs/i,
+      // "500g" (bare g sin rs — común en nombres de productos)
+      /(\d+(?:\.\d+)?)g\b/i,
     ];
 
     for (const pattern of patterns) {
@@ -975,9 +977,11 @@ export default function ListaComprasPage() {
     // SIEMPRE remover CUALQUIER contenido final entre paréntesis
     normalized = normalized.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
-    // Remover información de cantidad redundante al final del nombre si ya está normalizada en la variante
+    // Remover información de cantidad redundante al final del nombre
+    // SOLO la cantidad, NO todo lo que sigue (antes .*$ destrozaba nombres como "Caja de 24 unidades Hass Mediano" -> "caja de")
     // Ej: "Arandanos 125gr" -> "arandanos"
-    normalized = normalized.replace(/\s*\d+\s*(grs?|gramas|gramos|kg|kilos?|lb|libras?|unidades?|bandeja?s?)\b.*$/i, '').trim();
+    // Ej: "Caja de 24 unidades Hass Mediano" -> "caja de hass mediano" (la variante "24 unidades" se maneja separado)
+    normalized = normalized.replace(/\s*\d+\s*(grs?|gramas|gramos|kg|kilos?|lb|libras?|unidades?|bandeja?s?)\b\s*/i, '').trim();
 
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
