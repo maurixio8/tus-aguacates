@@ -130,10 +130,12 @@ export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFo
         .insert({
           user_id: user.id,
           order_data: orderData,
+          total: totals.total,
           total_amount: totals.total,
           subtotal: totals.subtotal,
           discount_amount: totals.discount,
           shipping_amount: totals.shipping,
+          shipping_fee: totals.shipping,
           address_id: selectedAddress.id,
           shipping_address: addressSnapshot,
           payment_method: paymentMethod,
