@@ -22,7 +22,7 @@ import {
   MessageCircle,
   CheckCircle
 } from 'lucide-react';
-import { getProductEmoji } from '@/utils/productEmojis';
+import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 
 interface Category {
   id: string;
@@ -653,7 +653,7 @@ export default function CreateOrderPage() {
       const itemPrice = item.variant?.price_adjustment || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
-      message += `- ${getProductEmoji(item.product.name)} ${item.quantity}x ${itemName}: ${formatCurrency(itemTotal)}\n`;
+      message += `- ${getWhatsAppSafeEmoji(item.product.name)} ${item.quantity}x ${itemName}: ${formatCurrency(itemTotal)}\n`;
     });
 
     message += `\n_Subtotal: ${formatCurrency(subtotal)}_\n`;

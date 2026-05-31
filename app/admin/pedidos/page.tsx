@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { getProductEmoji } from '@/utils/productEmojis';
+import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { useSearchParams } from 'next/navigation';
 import {
   Filter,
@@ -349,7 +349,7 @@ export default function OrdersPage() {
       const unitPrice = item.unit_price || item.product_snapshot?.price || item.price || 0;
       const weight = item.weight || null;
       const unit = item.unit || null;
-      const emoji = getProductEmoji(itemName);
+      const emoji = getWhatsAppSafeEmoji(itemName);
       
       // Mostrar producto: cantidad x nombre - precio unitario
       let line = `   ☐ ${emoji} ${item.quantity}x ${itemName}`;
