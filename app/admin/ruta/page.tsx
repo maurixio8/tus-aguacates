@@ -71,7 +71,7 @@ export default function RutaPage() {
   const [dateHasta, setDateHasta] = useState('');
   const [originAddress, setOriginAddress] = useState('');
   const [excludedOrders, setExcludedOrders] = useState<Set<string>>(new Set());
-  const [showMap, setShowMap] = useState(false);
+  const [showMap, setShowMap] = useState(true);
 
   const fetchRoute = useCallback(async () => {
     setLoading(true);
