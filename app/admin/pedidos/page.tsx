@@ -296,7 +296,7 @@ export default function OrdersPage() {
     // HEADER - Para empaque
     // ═══════════════════════════════════════
     lines.push('═══════════════════════════════════');
-    lines.push(`📦 EMPAQUE - Pedido #${order.order_number || order.id.slice(-6).toUpperCase()}`);
+    lines.push(`🥑 EMPAQUE - Pedido #${order.order_number || order.id.slice(-6).toUpperCase()}`);
     lines.push('═══════════════════════════════════');
     lines.push('');
 
