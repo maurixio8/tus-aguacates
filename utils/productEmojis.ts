@@ -85,10 +85,10 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'guayaba': '🍈',
 
   // --- VERDURAS / TUBÉRCULOS ---
-  'cebolla': '🌰',
-  'cebollin': '🌰',
-  'ajo': '🌰',
-  'pasta de ajo': '🌰',
+  'cebolla': '🥬',
+  'cebollin': '🥬',
+  'ajo': '🥬',
+  'pasta de ajo': '🥬',
   'tomate': '🍅',
   'papa': '🥔',
   'cubios': '🥔',
@@ -105,7 +105,7 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'lechuga': '🥬',
   'repollo': '🥬',
   'apio': '🥬',
-  'berenjena': '🍆',
+  'berenjena': '🍇',
   'acelga': '🥬',
   'alcachofa': '🥬',
   'col bruselas': '🥬',
