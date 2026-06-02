@@ -2,7 +2,13 @@
  * Utilidad Maestra de Emojis de Productos
  * Centraliza el mapeo de nombres de productos a visuales (emojis)
  * para garantizar consistencia en resúmenes, WhatsApp y reportes.
+ *
+ * REGLA DE ORO: SOLO emojis de frutas y verduras reales (compatibles con WhatsApp).
+ * Nada de abstractos, símbolos, objetos, flores, animales ni emojis nuevos 🫐🫑🫛🫘🫚🪵🎃⭐🥤.
  */
+
+// Emojis SEGUROS para WhatsApp (frutas + verduras reales):
+// 🍇🍈🍉🍊🍋🍌🍍🍎🍏🍐🍑🍒🍓🥝🥭🥥🥑🥒🥔🥕🥬🥦🌽🍅🥗🍠🍄🥜
 
 export const PRODUCT_EMOJIS: Record<string, string> = {
   // --- AGUACATES (claves específicas primero) ---
@@ -45,23 +51,25 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'sandia': '🍉',
   'melon': '🍈',
   'manzana': '🍎',
-  'arandano': '🫐',
-  'mora real': '🫐',
-  'mora': '🫐',
-  'agraz': '🫐',
-  // Compuestos largos primero para evitar falsos positivos con 'granada'
+  'arandano': '🍇',
+  'mora real': '🍓',
+  'mora': '🍓',
+  'agraz': '🍇',
+
+  // Claves compuestas (específicas primero para evitar falsos positivos)
   'mazorca desgranada': '🌽',
-  'arveja desgranada': '🫛',
-  'habas desgranadas': '🫛',
-  'zumo lulo': '🥤',
-  'zumo maracuya': '🥤',
+  'arveja desgranada': '🥒',
+  'habas desgranadas': '🥒',
+  'zumo lulo': '🍊',
+  'zumo maracuya': '🍑',
+
   'granada': '🍎',
   'maracuya': '🍑',
   'lulo': '🍏',
   'pitahaya': '🍈',
   'pitaya': '🍈',
   'uchuva': '🍑',
-  'tamarindo': '🫘',
+  'tamarindo': '🥥',
   'gulupa': '🍇',
   'feijoa': '🍈',
   'anon': '🍈',
@@ -69,25 +77,25 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'mangostino': '🍇',
   'rambutan': '🍓',
   'borojo': '🥥',
-  'carambolo': '⭐',
-  'datil': '🫐',
+  'carambolo': '🍊',
+  'datil': '🍯',
   'papaya': '🍈',
   'guanabana': '🍈',
   'granadilla': '🍈',
   'guayaba': '🍈',
 
   // --- VERDURAS / TUBÉRCULOS ---
-  'cebolla': '🧅',
-  'cebollin': '🌿',
-  'ajo': '🧄',
-  'pasta de ajo': '🧄',
+  'cebolla': '🌰',
+  'cebollin': '🌰',
+  'ajo': '🌰',
+  'pasta de ajo': '🌰',
   'tomate': '🍅',
   'papa': '🥔',
   'cubios': '🥔',
   'zanahoria': '🥕',
   'maiz': '🌽',
   'mazorca': '🌽',
-  'pimenton': '🫑',
+  'pimenton': '🍅',
   'pepino': '🥒',
   'calabacin': '🥒',
   'zucchini': '🥒',
@@ -103,75 +111,77 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'col bruselas': '🥬',
   'kale': '🥬',
   'rucula': '🥬',
-  'arveja': '🫛',
-  'guisante': '🫛',
-  'habas': '🫛',
-  'frijol': '🫘',
-  'habichuela': '🫛',
-  'abichuelin': '🫛',
+  'arveja': '🥒',
+  'guisante': '🥒',
+  'habas': '🥒',
+  'frijol': '🥜',
+  'habichuela': '🥒',
+  'abichuelin': '🥒',
   'champinon': '🍄',
   'hongo': '🍄',
-  'esparrago': '🌿',
+  'esparrago': '🥬',
   'remolacha': '🍠',
   'rabano': '🥕',
-  'ahuyama': '🎃',
-  'auyama': '🎃',
+  'ahuyama': '🍠',
+  'auyama': '🍠',
   'batata': '🍠',
   'yacon': '🍠',
-  'jengibre': '🫚',
-  'curcuma': '🫚',
+  'jengibre': '🍋',
+  'curcuma': '🍋',
 
-  // --- HIERBAS / ESPECIAS ---
-  'cilantro': '🌿',
-  'perejil': '🌿',
-  'guasca': '🌿',
-  'albahaca': '🌿',
-  'romero': '🌿',
-  'tomillo': '🌿',
-  'oregano': '🌿',
-  'finas hierbas': '🌿',
-  'hierba procesada': '🌿',
-  'menta': '🌿',
-  'hierbabuena': '🌿',
-  'laurel': '🌿',
-  'canela': '🪵',
-  'moringa': '🌿',
-  'stevia': '🌿',
-  'pimienta': '⚫',
-  'chile': '🌶️',
-  'aji': '🌶️',
-  'jalapeno': '🌶️',
-  'achiote': '🌶️',
-  'paprika': '🌶️',
-  'comino': '🌿',
-  'manzanilla': '🌼',
-  'calendula': '🌼',
-  'diente de leon': '🌼',
-  'flor de jamaica': '🌺',
-  'eucalipto': '🌿',
+  // --- HIERBAS (mapear a verduras de color similar) ---
+  'cilantro': '🥬',
+  'perejil': '🥬',
+  'guasca': '🥬',
+  'albahaca': '🥬',
+  'romero': '🥬',
+  'tomillo': '🥬',
+  'oregano': '🥬',
+  'finas hierbas': '🥬',
+  'hierba procesada': '🥬',
+  'menta': '🥬',
+  'hierbabuena': '🥬',
+  'laurel': '🥬',
+  'canela': '🥥',
+  'moringa': '🥬',
+  'stevia': '🥬',
 
-  // --- OTROS ---
-  'semilla': '🌱',
-  'chia': '🌱',
-  'germinados': '🌱',
-  'raices chinas': '🌱',
-  'quinoa': '🌾',
-  'linaza': '🌾',
-  'miel': '🍯',
+  // --- ESPECIAS (mapear a frutas/verduras por color) ---
+  'pimienta': '🍇',
+  'chile': '🍅',
+  'aji': '🍅',
+  'jalapeno': '🍅',
+  'achiote': '🍅',
+  'paprika': '🍅',
+  'comino': '🍌',
+  'manzanilla': '🍌',
+  'calendula': '🍌',
+  'diente de leon': '🍌',
+  'flor de jamaica': '🍎',
+  'eucalipto': '🥒',
+
+  // --- OTROS (mapear a frutas/verduras) ---
+  'semilla': '🥜',
+  'chia': '🥜',
+  'germinados': '🥒',
+  'raices chinas': '🥕',
+  'quinoa': '🍌',
+  'linaza': '🍌',
+  'miel': '🍊',
+  'aceite': '🥑',
   'aceite de coco': '🥥',
-  'aceite': '🫒',
-  'zumo': '🥤',
-  'polen': '🐝',
-  'vino': '🍷',
-  'ancheta': '🎁',
-  'regalo': '🎁',
-  'caja': '📦',
-  'combo': '🛍️',
-  'paquete': '🛍️',
+  'zumo': '🍊',
+  'polen': '🍌',
+  'vino': '🍇',
+  'ancheta': '🍎',
+  'regalo': '🍎',
+  'caja': '🥑',
+  'combo': '🥗',
+  'paquete': '🥗',
   'picados para sopa': '🥗',
-  'sabila': '🌵',
+  'sabila': '🥬',
   'pistachos': '🥜',
-  'bicarbonato': '🧂'
+  'bicarbonato': '🍌',
 };
 
 /**
@@ -179,11 +189,11 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
  * Prioriza los nombres más largos (más específicos) primero.
  */
 export const getProductEmoji = (productName: string): string => {
-  if (!productName) return '📦';
-  
+  if (!productName) return '🥑';
+
   const normalizedName = productName.toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
+    .replace(/[\\u0300-\\u036f]/g, '');
 
   // Ordenar claves por longitud descendente para que "caja de 24" gane a "caja"
   const sortedKeys = Object.keys(PRODUCT_EMOJIS).sort((a, b) => b.length - a.length);
@@ -194,31 +204,37 @@ export const getProductEmoji = (productName: string): string => {
     }
   }
 
-  return '📦';
+  return '🥑';
 };
 
-// Emojis que no renderizan bien en WhatsApp en ciertos dispositivos (Android/iOS antiguos)
-// Se reemplazan por emojis más universales
-const WHATSAPP_SAFE_EMOJIS: Record<string, string> = {
-  '🫐': '🍇',
-  '🫑': '🌶️',
-  '🫛': '🌿',
-  '🫘': '🌱',
-  '🫚': '🌿',
-  '🫒': '🥑',
-  '🪵': '🌿',
-  '🛍️': '🛒',
-  '🌼': '🌸',
-  '🌺': '🌸',
-  '🌵': '🌿',
-  '⭐': '✨',
+/**
+ * Defense-in-depth: fuerza CUALQUIER emoji a fruta/verdura segura para WhatsApp.
+ * Esto atrapa cualquier emoji que se escape del catálogo principal.
+ */
+const FORCE_WHATSAPP_SAFE: Record<string, string> = {
+  // Emojis nuevos/nicho que NO son frutas → mapear a frutas
+  '🫐': '🍇', '🫑': '🍅', '🫛': '🥒', '🫘': '🥜', '🫚': '🍋',
+  '🪵': '🥥', '🫒': '🥑', '🎃': '🍠', '⭐': '🍊', '🥤': '🍊',
+  '🧂': '🍌', '🐝': '🍯', '🌾': '🍌', '🌶️': '🍅', '👻': '🍇',
+  // Símbolos abstractos (colores, corazones, etc.)
+  '🔴': '🍎', '🟡': '🍌', '🟢': '🥒', '🔵': '🍇', '🟠': '🍊',
+  '🟣': '🍇', '⚫': '🍇', '⚪': '🍈', '🟤': '🥥', '🟫': '🥥',
+  '💚': '🥑', '❤️': '🍎', '💛': '🍌', '🧡': '🍊', '💜': '🍇',
+  '🖤': '🍇', '🤍': '🍈', '🤎': '🥥', '💙': '🍇', '🩷': '🍎',
+  // Objetos/símbolos
+  '🎁': '🍎', '📦': '🥑', '🚚': '🍊', '✅': '🥑', '📍': '🍄',
+  '📅': '🍅', '👋': '🥑',
+  // Plantas/flores → frutas
+  '🌿': '🥬', '🌼': '🍌', '🌺': '🍎', '🌵': '🥬', '🌸': '🍎',
+  '🌱': '🥬',
 };
 
 /**
  * Obtiene un emoji seguro para WhatsApp.
- * Reemplaza emojis nuevos de Unicode que no renderizan en dispositivos antiguos.
+ * Si el emoji del catálogo no está en la lista de seguros, lo fuerza a uno seguro.
  */
 export const getWhatsAppSafeEmoji = (productName: string): string => {
   const emoji = getProductEmoji(productName);
-  return WHATSAPP_SAFE_EMOJIS[emoji] || emoji;
+  // Si ya es fruta/verdura conocida, devolverla; si no, forzar a una segura
+  return FORCE_WHATSAPP_SAFE[emoji] || emoji;
 };
