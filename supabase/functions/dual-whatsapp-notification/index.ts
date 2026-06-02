@@ -21,6 +21,17 @@ interface CustomerInfo {
   deliveryTime?: string;
 }
 
+// Emojis seguros: solo frutas/verduras
+const E = {
+  avocado: '🥑',
+  orange: '🍊',
+  peach: '🍎',
+  tomato: '🍅',
+  mushroom: '🍄',
+  lettuce: '🥬',
+  carrot: '🥕',
+};
+
 Deno.serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
@@ -42,52 +53,52 @@ Deno.serve(async (req) => {
     // Formatear productos
     const productLines = orderData.items.map((item) => {
       const variantInfo = item.variantName ? ` (${item.variantName})` : '';
-      return `${item.productName}${variantInfo} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-CO')}`;
+      return `${E.avocado} ${item.productName}${variantInfo} x${item.quantity} - $${(item.price * item.quantity).toLocaleString('es-CO')}`;
     }).join('\n');
 
     // Mensaje para la EMPRESA
     const businessMessage = `
-🔔 *NUEVO PEDIDO - TUS AGUACATES*
+${E.avocado} *NUEVO PEDIDO - TUS AGUACATES*
 
 *Cliente:* ${customerInfo.name}
 *Telefono:* ${customerInfo.phone}
 *Email:* ${customerInfo.email}
 
-📦 *PRODUCTOS:*
+${E.mushroom} *PRODUCTOS:*
 ${productLines}
 
-💰 *TOTAL:* $${orderData.total.toLocaleString('es-CO')}
+${E.peach} *TOTAL:* $${orderData.total.toLocaleString('es-CO')}
 
-🏠 *DIRECCIÓN DE ENTREGA:*
+${E.lettuce} *DIRECCIÓN DE ENTREGA:*
 ${customerInfo.address}
 
-${orderData.deliveryDate ? `📅 *Fecha:* ${orderData.deliveryDate}` : ''}
-${orderData.deliveryTime ? `⏰ *Horario:* ${orderData.deliveryTime === 'mañana' ? 'Mañana (8am-12pm)' : 'Tarde (2pm-6pm)'}` : '⏰ *Horario:* Por definir'}
+${orderData.deliveryDate ? `${E.carrot} *Fecha:* ${orderData.deliveryDate}` : ''}
+${orderData.deliveryTime ? `${E.tomato} *Horario:* ${orderData.deliveryTime === 'mañana' ? 'Mañana (8am-12pm)' : 'Tarde (2pm-6pm)'}` : `${E.tomato} *Horario:* Por definir`}
 
-🚚 *Entregas:* Martes y Viernes en Bogotá
+${E.orange} *Entregas:* Martes y Viernes en Bogotá
     `.trim();
 
     // Mensaje para el CLIENTE
     const customerMessage = `
-✅ *PEDIDO CONFIRMADO - TUS AGUACATES*
+${E.avocado} *PEDIDO CONFIRMADO - TUS AGUACATES*
 
 ¡Hola ${customerInfo.name}! Tu pedido ha sido recibido exitosamente.
 
-📋 *RESUMEN DE TU PEDIDO:*
+${E.mushroom} *RESUMEN DE TU PEDIDO:*
 *Pedido ID:* #${orderData.id}
 
-📦 *Productos:*
+${E.lettuce} *Productos:*
 ${productLines}
 
-💰 *Total:* $${orderData.total.toLocaleString('es-CO')}
+${E.peach} *Total:* $${orderData.total.toLocaleString('es-CO')}
 
-🏠 *Dirección de Entrega:*
+${E.lettuce} *Dirección de Entrega:*
 ${customerInfo.address}
 
-${orderData.deliveryDate ? `📅 *Fecha:* ${orderData.deliveryDate}` : ''}
-${orderData.deliveryTime ? `⏰ *Horario:* ${orderData.deliveryTime === 'mañana' ? 'Mañana (8am-12pm)' : 'Tarde (2pm-6pm)'}` : ''}
+${orderData.deliveryDate ? `${E.carrot} *Fecha:* ${orderData.deliveryDate}` : ''}
+${orderData.deliveryTime ? `${E.tomato} *Horario:* ${orderData.deliveryTime === 'mañana' ? 'Mañana (8am-12pm)' : 'Tarde (2pm-6pm)'}` : ''}
 
-🙏 *Gracias por tu compra!*
+${E.orange} *Gracias por tu compra!*
 Te contactaremos pronto para confirmar detalles de entrega.
     `.trim();
 

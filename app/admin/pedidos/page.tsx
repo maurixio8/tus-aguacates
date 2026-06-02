@@ -304,9 +304,9 @@ export default function OrdersPage() {
     // ESTADO DE PAGO - Destacado
     // ═══════════════════════════════════════
     if (isPaid) {
-      lines.push('✅ PAGO: PAGADO');
+      lines.push('🥑 PAGO: PAGADO');
     } else {
-      lines.push('⚠️  PAGO: PENDIENTE - COBRAR AL ENTREGAR');
+      lines.push('🥕 PAGO: PENDIENTE - COBRAR AL ENTREGAR');
     }
     lines.push('');
 
@@ -314,17 +314,17 @@ export default function OrdersPage() {
     // FECHA DE ENTREGA
     // ═══════════════════════════════════════
     if (deliveryDate) {
-      lines.push(`📅 ENTREGA: ${formatDateShort(deliveryDate)}`);
+      lines.push(`🍅 ENTREGA: ${formatDateShort(deliveryDate)}`);
       lines.push('');
     }
 
     // ═══════════════════════════════════════
     // CLIENTE
     // ═══════════════════════════════════════
-    lines.push(`👤 CLIENTE: ${customerName.toUpperCase()}`);
+    lines.push(`🥑 CLIENTE: ${customerName.toUpperCase()}`);
     const customerPhone = order.customer_phone || '';
     if (customerPhone) {
-      lines.push(`📞 Tel: ${customerPhone}`);
+      lines.push(`🍊 Tel: ${customerPhone}`);
     }
     lines.push('');
 
@@ -332,14 +332,14 @@ export default function OrdersPage() {
     // DIRECCIÓN COMPLETA
     // ═══════════════════════════════════════
     const address = getAddressText(order);
-    lines.push('📍 DIRECCIÓN DE ENTREGA:');
-    lines.push(`   ${address || '⚠️ Sin dirección'}`);
+    lines.push('🍄 DIRECCIÓN DE ENTREGA:');
+    lines.push(`   ${address || '🥕 Sin dirección'}`);
     lines.push('');
 
     // ═══════════════════════════════════════
     // PRODUCTOS - Lista para verificación
     // ═══════════════════════════════════════
-    lines.push(`☑️ VERIFICAR PRODUCTOS (${totalProducts} items):`);
+    lines.push(`🥬 VERIFICAR PRODUCTOS (${totalProducts} items):`);
     lines.push('───────────────────────────────────');
 
 
@@ -352,7 +352,7 @@ export default function OrdersPage() {
       const emoji = getWhatsAppSafeEmoji(itemName);
       
       // Mostrar producto: cantidad x nombre - precio unitario
-      let line = `   ☐ ${emoji} ${item.quantity}x ${itemName}`;
+      let line = `   🥑 ${emoji} ${item.quantity}x ${itemName}`;
       if (unitPrice > 0) {
         line += ` - ${formatMoney(unitPrice)} c/u`;
       }
@@ -364,9 +364,9 @@ export default function OrdersPage() {
         const weightStr = totalWeight >= 1000
           ? `${(totalWeight / 1000).toFixed(2)} kg`
           : `${totalWeight} g`;
-        lines.push(`      ⚖️ ${item.quantity}x ${weight}${unit || 'g'} = ${weightStr}`);
+        lines.push(`      🥔 ${item.quantity}x ${weight}${unit || 'g'} = ${weightStr}`);
       } else if (unit) {
-        lines.push(`      📦 Unidad: ${unit}`);
+        lines.push(`      🥑 Unidad: ${unit}`);
       }
       
       // Variante (si existe)
@@ -384,30 +384,30 @@ export default function OrdersPage() {
     const calculations = calculateOrderSummary(order, orderItems);
     
     lines.push('');
-    lines.push('💵 RESUMEN DE PAGO:');
+    lines.push('🍎 RESUMEN DE PAGO:');
     
     // Subtotal de productos
     lines.push(`   Subtotal productos: ${formatMoney(calculations.subtotal)}`);
     
     // Envío
     if (calculations.shippingFee > 0) {
-      lines.push(`   🚚 Domicilio: ${formatMoney(calculations.shippingFee)}`);
+      lines.push(`   🍊 Domicilio: ${formatMoney(calculations.shippingFee)}`);
     } else {
-      lines.push(`   🚚 Domicilio: GRATIS`);
+      lines.push(`   🍊 Domicilio: GRATIS`);
     }
     
     // Descuento si existe
     if (calculations.discount > 0) {
-      lines.push(`   🏷️ Descuento: -${formatMoney(calculations.discount)}`);
+      lines.push(`   🍋 Descuento: -${formatMoney(calculations.discount)}`);
     }
     
     lines.push('   ─────────────────────');
     
     // Total final
     if (isPaid) {
-      lines.push(`   💰 TOTAL: ${formatMoney(calculations.total)} (PAGADO)`);
+      lines.push(`   🍎 TOTAL: ${formatMoney(calculations.total)} (PAGADO)`);
     } else {
-      lines.push(`   💰 TOTAL A COBRAR: ${formatMoney(calculations.total)}`);
+      lines.push(`   🍎 TOTAL A COBRAR: ${formatMoney(calculations.total)}`);
     }
 
     // ═══════════════════════════════════════
@@ -416,7 +416,7 @@ export default function OrdersPage() {
     const notes = order.delivery_notes || order.notes;
     if (notes) {
       lines.push('');
-      lines.push('📝 NOTAS DE ENTREGA:');
+      lines.push('🥦 NOTAS DE ENTREGA:');
       lines.push(`   ${notes}`);
     }
 
@@ -1819,7 +1819,7 @@ export default function OrdersPage() {
                         {customerInfo.phone && (
                           <div className="relative group">
                             <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm flex items-center gap-2">
-                              <span>💬 WhatsApp</span>
+                              <span>🥑 WhatsApp</span>
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                             </button>
                             <div className="absolute right-0 bottom-full mb-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 hidden group-hover:block z-10">
@@ -1832,14 +1832,14 @@ export default function OrdersPage() {
                                 target="_blank" rel="noopener noreferrer"
                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                💬 Mensaje directo
+                                🥑 Mensaje directo
                               </a>
                               <a
                                 href={generateWhatsAppURL(customerInfo.phone, generateOrderSummary({ ...order, order_type: order.user_id ? 'registered' : 'guest', customer_name: customerInfo.name, customer_phone: customerInfo.phone }))}
                                 target="_blank" rel="noopener noreferrer"
                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                📋 Enviar resumen
+                                🥦 Enviar resumen
                               </a>
                               <a
                                 href={(() => {
@@ -1850,7 +1850,7 @@ export default function OrdersPage() {
                                 target="_blank" rel="noopener noreferrer"
                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                🚚 En ruta
+                                🍊 En ruta
                               </a>
                               <a
                                 href={(() => {
@@ -1861,7 +1861,7 @@ export default function OrdersPage() {
                                 target="_blank" rel="noopener noreferrer"
                                 className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               >
-                                📍 Llegando
+                                🍄 Llegando
                               </a>
                             </div>
                           </div>
