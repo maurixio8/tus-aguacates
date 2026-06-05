@@ -100,19 +100,28 @@ export function EnhancedAuthenticatedCheckoutForm({
 
 
   // Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
+  // FIX 2026-06-04: idempotente — nunca duplica el prefijo 57
   const normalizePhone = (phone: string): string => {
     // Quitar todo excepto números
     const digits = phone.replace(/\D/g, '');
-    // Si tiene 10 dígitos y empieza con 3, agregar 57
-    if (digits.length === 10 && digits.startsWith('3')) {
-      return '57' + digits;
+    // Paso 1: Si ya empieza con 57, quitarlo para obtener el número local
+    let local = digits.startsWith('57') ? digits.slice(2) : digits;
+    // Paso 2: Intentar extraer móvil colombiano (3XX XXX XXXX = 10 dígitos empezando en 3)
+    const mobileMatch = local.match(/^(3\d{9})$/);
+    if (mobileMatch) {
+      return '57' + mobileMatch[1];
     }
-    // Si ya tiene 12 dígitos con 57, retornar tal cual
-    if (digits.length === 12 && digits.startsWith('57')) {
-      return digits;
+    // Si no matchea exacto, intentar extraer los últimos 10 dígitos que empiecen con 3
+    const fallback = local.match(/(3\d{9})$/);
+    if (fallback) {
+      return '57' + fallback[1];
     }
-    // Retornar con prefijo 57 si no lo tiene
-    return digits.startsWith('57') ? digits : '57' + digits;
+    // Último recurso: si parece un número parcial, devolver con 57
+    if (local.length >= 7 && local.startsWith('3')) {
+      return '57' + local;
+    }
+    // No parece un número colombiano válido — devolver los dígitos originales con 57
+    return local.length > 0 ? '57' + local : digits;
   };
 
   // Validar formato de teléfono colombiano
@@ -620,10 +629,19 @@ ${orderData.appliedCoupon.description}
                         <label className="block text-sm font-medium mb-1">Teléfono</label>
                         <input
                           type="tel"
+                          required
                           value={personalInfo.phone}
-                          onChange={(e) => setPersonalInfo({ ...personalInfo, phone: e.target.value })}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, '');
+                            if (val.length <= 10) {
+                              setPersonalInfo({ ...personalInfo, phone: val });
+                            }
+                          }}
                           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                          placeholder="3001234567"
+                          placeholder="300 123 4567 (10 dígitos)"
+                          pattern="3[0-9]{9}"
+                          title="Debe ser un número celular de 10 dígitos iniciando en 3"
+                          maxLength={10}
                         />
                       </div>
                     </div>
