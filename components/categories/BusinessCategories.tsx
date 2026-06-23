@@ -160,17 +160,17 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
         <>
           <button
             onClick={() => scroll('left')}
-            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm shadow-strong rounded-full p-3 hover:bg-white border border-verde-aguacate/20 transition-all hover:scale-110 group"
+            className="hidden md:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-[#0D2818]/90 backdrop-blur-sm shadow-strong rounded-full p-3 hover:bg-[#0D2818] border border-white/20 transition-all hover:scale-110 group"
             aria-label="Anterior"
-          >
-            <ChevronLeft className="w-6 h-6 text-verde-bosque group-hover:text-naranja-frutal transition-colors" />
-          </button>
-          <button
+            >
+            <ChevronLeft className="w-6 h-6 text-dorado group-hover:text-yellow-400 transition-colors" />
+            </button>
+            <button
             onClick={() => scroll('right')}
-            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white/90 backdrop-blur-sm shadow-strong rounded-full p-3 hover:bg-white border border-verde-aguacate/20 transition-all hover:scale-110 group"
+            className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-[#0D2818]/90 backdrop-blur-sm shadow-strong rounded-full p-3 hover:bg-[#0D2818] border border-white/20 transition-all hover:scale-110 group"
             aria-label="Siguiente"
-          >
-            <ChevronRight className="w-6 h-6 text-verde-bosque group-hover:text-naranja-frutal transition-colors" />
+            >
+            <ChevronRight className="w-6 h-6 text-dorado group-hover:text-yellow-400 transition-colors" />
           </button>
         </>
       )}
@@ -193,8 +193,8 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
               relative w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden mb-3
               shadow-soft hover:shadow-strong transition-all duration-300
               group-hover:scale-110 border-4 border-transparent
-              ${hoveredIndex === index ? 'border-naranja-frutal' : 'hover:border-verde-aguacate'}
-              ${selectedCategory === category.slug ? 'ring-4 ring-naranja-frutal ring-offset-4' : ''}
+              ${hoveredIndex === index ? 'border-dorado' : 'hover:border-dorado/50'}
+              ${selectedCategory === category.slug ? 'ring-4 ring-dorado ring-offset-[#07180f]' : ''}
             `}>
               {category.image ? (
                 <img
@@ -218,7 +218,7 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
 
               {/* Ring pulse animation on hover */}
               {hoveredIndex === index && (
-                <div className={`absolute inset-0 rounded-full border-2 border-naranja-frutal animate-ping`} />
+                <div className={`absolute inset-0 rounded-full border-2 border-dorado animate-ping`} />
               )}
             </div>
 
@@ -226,9 +226,9 @@ export function BusinessCategories({ variant = 'scroll', selectedCategory }: Bus
             <div className="text-center">
               <span className={`
                 text-sm md:text-base font-semibold w-28 md:w-36 block transition-all duration-200
-                ${selectedCategory === category.slug ? 'text-verde-bosque' : 'text-gray-700 group-hover:text-verde-bosque'}
-                ${hoveredIndex === index ? 'scale-105' : ''}
-              `}>
+                  ${selectedCategory === category.slug ? 'text-dorado' : 'text-white/70 group-hover:text-dorado'}
+                  ${hoveredIndex === index ? 'scale-105' : ''}
+                `}>
                 {category.name}
               </span>
               {/* Indicator arrow on hover */}
