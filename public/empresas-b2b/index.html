@@ -115,7 +115,8 @@
       border-bottom: 1px solid rgba(200,162,39,0.1); padding: 0.7rem 1.5rem;
     }
     .navbar-logo { display: flex; align-items: center; gap: 0.75rem; }
-    .navbar-logo .wordmark { height: 28px; width: auto; }
+    .navbar-logo .wordmark-text { font-family: 'Berkshire Swash', cursive; font-size: 1.35rem; color: var(--cream); line-height: 1; white-space: nowrap; }
+    .footer-wordmark { font-family: 'Berkshire Swash', cursive; font-size: 1.1rem; color: var(--txd); line-height: 1; white-space: nowrap; }
     .navbar-logo .sello { height: 36px; width: auto; }
     .navbar-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
     .navbar-links a { color: #c0b8a8; font-size: 0.875rem; font-weight: 500; transition: color .3s; }
@@ -170,8 +171,6 @@
     }
     .sello-display img { width: 100%; height: 100%; }
     @media (max-width: 768px) { .sello-display { width: 70px; height: 70px; top: -10px; right: -10px; } }
-
-    .brand-wordmark { width: min(100%, 420px); max-height: 80px; object-fit: contain; display: block; filter: drop-shadow(0 8px 20px rgba(0,0,0,.55)); }
 
     .hero-badge {
       display: inline-flex; align-items: center; gap: 0.5rem;
@@ -381,7 +380,6 @@
     .form-success.show { display: block; animation: scaleIn 0.5s both; }
 
     .footer { border-top: 2px solid rgba(200,162,39,0.08); padding: 3rem 0; text-align: center; }
-    .footer img.wordmark { height: 28px; width: auto; margin: 0 auto 0.75rem; filter: brightness(0.7); }
     .footer-text { font-size: 0.85rem; color: #5a5040; line-height: 1.6; }
     .footer-social { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
 
@@ -428,7 +426,7 @@
   <nav class="navbar" id="navbar">
     <div class="navbar-logo">
       <img class="sello" src="/empresas-b2b/assets/logo-sello.png" alt="TusAguacates">
-      <img class="wordmark" src="/empresas-b2b/assets/tusaguacates-wordmark.svg" alt="TusAguacates">
+      <span class="wordmark-text">TusAguacates</span>
     </div>
     <ul class="navbar-links" id="navLinks">
       <li><a href="#productos">Productos</a></li>
@@ -634,7 +632,7 @@
   <footer class="footer"><div class="container">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
       <img src="/empresas-b2b/assets/logo-sello.png" alt="" style="height:32px;filter:brightness(0.6);">
-      <img class="wordmark" src="/empresas-b2b/assets/tusaguacates-wordmark.svg" alt="TusAguacates" style="height:24px;filter:brightness(0.6);">
+      <span class="footer-wordmark">TusAguacates</span>
     </div>
     <p class="footer-text">Productores directos · Bogotá, Colombia<br><a href="mailto:tusaguacates.com@gmail.com">tusaguacates.com@gmail.com</a></p>
     <div class="footer-social">
