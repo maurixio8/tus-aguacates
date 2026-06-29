@@ -27,7 +27,7 @@
       },
       contact: { email: 'tusaguacates.com@gmail.com', instagram: '@tusaguacates', location: 'Bogotá, Colombia · Productores directos', delivery: 'Bogotá · Chía' },
       webhook: { url: 'https://n8n.tusaguacates.com/webhook/b2b-pedido', enabled: false },
-      hero: { image: 'https://images.unsplash.com/photo-1601039641847-7e4a8f6e2f7b?w=1920&q=80' },
+      hero: { image: '/empresas-b2b/assets/negocio.jpg' },
       company: 'Equipo Comercial · Tus Aguacates',
     };
   </script>
@@ -115,8 +115,8 @@
       border-bottom: 1px solid rgba(200,162,39,0.1); padding: 0.7rem 1.5rem;
     }
     .navbar-logo { display: flex; align-items: center; gap: 0.75rem; }
-    .navbar-logo .wordmark-text { font-family: 'Berkshire Swash', cursive; font-size: 1.35rem; color: var(--cream); line-height: 1; white-space: nowrap; }
-    .footer-wordmark { font-family: 'Berkshire Swash', cursive; font-size: 1.1rem; color: var(--txd); line-height: 1; white-space: nowrap; }
+    .navbar-logo .wordmark-text { font-family: 'Berkshire Swash', cursive; font-size: 1.35rem; color: var(--cream); line-height: 1.4; padding: 4px 0; white-space: nowrap; }
+    .footer-wordmark { font-family: 'Berkshire Swash', cursive; font-size: 1.1rem; color: var(--txd); line-height: 1.4; padding: 2px 0; white-space: nowrap; }
     .navbar-logo .sello { height: 36px; width: auto; }
     .navbar-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
     .navbar-links a { color: #c0b8a8; font-size: 0.875rem; font-weight: 500; transition: color .3s; }
@@ -195,13 +195,13 @@
 
     .typewriter-line-2 {
       font-family: 'Berkshire Swash', cursive;
-      font-size: clamp(48px, 9vw, 96px); color: #ffffff; line-height: 0.95;
-      overflow: hidden; white-space: nowrap; width: 0;
+      font-size: clamp(48px, 9vw, 96px); color: #ffffff; line-height: 1.2; padding: 8px 0;
+      overflow: visible; white-space: nowrap; width: 0;
       text-shadow: 0 4px 10px rgba(0,0,0,0.45), 0 10px 22px rgba(0,0,0,0.28);
     }
     .typewriter-line-2.done { border-right: none; }
 
-    .segment-row { display: flex; align-items: center; gap: 18px; margin: 16px 0 12px; opacity: 0; transition: opacity 0.8s; }
+    .segment-row { display: flex; align-items: center; gap: 18px; margin: 16px auto 12px; opacity: 0; transition: opacity 0.8s; }
     .segment-row.visible { opacity: 1; }
     .segment-row::before, .segment-row::after { content: ''; flex: 1; height: 1px; }
     .segment-row::before { background: linear-gradient(90deg, transparent, var(--gold)); }
@@ -210,7 +210,7 @@
 
     /* Diamond divider */
     .divider-gold {
-      position: relative; width: min(330px, 70%); height: 2px; margin: 0 0 22px 0;
+      position: relative; width: min(330px, 70%); height: 2px; margin: 0 auto 22px;
       background: linear-gradient(90deg, transparent 0%, var(--gold) 20%, var(--gold) 80%, transparent 100%);
       opacity: 0; transition: opacity 1s;
     }
@@ -311,7 +311,8 @@
     .products { background: rgba(255,255,255,0.01); }
     .products-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; margin-top: 2.5rem; }
     @media (max-width: 640px) { .products-grid { grid-template-columns: 1fr; } }
-    .product-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--line); border-radius: 20px; padding: 2.5rem; transition: all .5s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; }
+    .product-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--line); border-radius: 20px; padding: 2rem; transition: all .5s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; }
+    .product-card .product-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; border: 1px solid rgba(200,162,39,0.1); }
     .product-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0; transition: opacity .5s; }
     .product-card:hover::before { opacity: 1; }
     .product-card:hover { transform: translateY(-4px); border-color: rgba(200,162,39,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -540,13 +541,15 @@
     <div class="text-center mb-4 reveal"><span class="section-label">Nuestros productos</span><h2>Dos variedades,<br>una <span class="gold">calidad premium</span></h2></div>
     <div class="products-grid">
       <div class="product-card reveal reveal-delay-1">
-        <div class="product-name">🥑 Aguacate Hass</div>
+        <img class="product-img" src="/empresas-b2b/assets/hass.jpg" alt="Aguacate Hass">
+        <div class="product-name">Aguacate Hass</div>
         <span class="product-origin">Eje Cafetero y Antioquia</span>
         <p class="product-desc">Cremoso, de piel rugosa que oscurece al madurar. Pulpa dorada, sabor intenso. Ideal para guacamole, purés, cremas y preparaciones untables.</p>
         <div class="product-uses"><span class="product-use-tag">Guacamole</span><span class="product-use-tag">Purés</span><span class="product-use-tag">Cremas</span><span class="product-use-tag">Untables</span></div>
       </div>
       <div class="product-card reveal reveal-delay-2">
-        <div class="product-name">🥑 Aguacate Papelillo</div>
+        <img class="product-img" src="/empresas-b2b/assets/papelillo.jpg" alt="Aguacate Papelillo">
+        <div class="product-name">Aguacate Papelillo</div>
         <span class="product-origin">Llano y Tolima</span>
         <p class="product-desc">Firme, de gran tamaño y piel delgada. Pulpa blanca, textura compacta. Perfecto para tajar en rodajas grandes, ensaladas, presentaciones y decoración de platos.</p>
         <div class="product-uses"><span class="product-use-tag">Rodajas</span><span class="product-use-tag">Ensaladas</span><span class="product-use-tag">Presentación</span><span class="product-use-tag">Carpaccio</span></div>
