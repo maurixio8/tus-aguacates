@@ -638,11 +638,8 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (variantError || !variant) {
-          console.log('⚠️ Variant not found, using item price:', item.price);
-          // Si no se encuentra la variante pero se envió un precio, usar ese precio
-          if (item.price) {
-            itemPrice = item.price;
-          }
+          console.log('⚠️ Variant not found for product', item.product_id, '- using product.price from DB');
+          // itemPrice ya es product.price desde la línea 628, no usar item.price del cliente
         } else {
           // El precio de la variante está guardado en price_adjustment como precio completo
           itemPrice = variant.price_adjustment || product.price;
@@ -653,10 +650,9 @@ export async function POST(request: NextRequest) {
             price_adjustment: variant.price_adjustment
           };
         }
-      } else if (item.price) {
-        // Si se envió un precio directamente, usarlo
-        itemPrice = item.price;
-      }
+      } // end if (item.variant_id)
+      // itemPrice se mantiene como product.price (línea 628)
+      // NO usar item.price del cliente por seguridad de precios
 
       const itemTotal = itemPrice * item.quantity;
       totalAmount += itemTotal;
@@ -697,8 +693,9 @@ export async function POST(request: NextRequest) {
     const normalizedCreatePhone = normalizePhoneForDB(body.customer_phone?.trim() || '');
 
     // Construir order_data con los items (requerido por trigger de Supabase)
+    // Usar los datos validados (orderItems) NO el body.items del cliente
     const orderData = {
-      items: body.items.map((item: any) => ({
+      items: orderItems.map((item: any) => ({
         product_id: item.product_id,
         product_name: item.product_name || 'Producto',
         quantity: item.quantity,
