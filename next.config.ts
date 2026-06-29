@@ -65,6 +65,15 @@ const nextConfig: NextConfig = {
   },
   // Compresión para producción
   compress: true,
+  // Rewrite para servir la landing B2B mayorista
+  async rewrites() {
+    return [
+      {
+        source: '/empresas/aguacates',
+        destination: '/empresas-b2b/index.html',
+      },
+    ];
+  },
   // Configuración de headers para caché
   async headers() {
     return [
