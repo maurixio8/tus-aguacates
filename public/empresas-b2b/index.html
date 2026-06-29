@@ -237,9 +237,10 @@
       font-size: 14px; font-weight: 600; color: var(--cream);
     }
     .pb-icon {
-      width: 26px; height: 26px; display: flex; align-items: center; justify-content: center;
-      border: 1.5px solid var(--gold); border-radius: 50%; color: var(--gold);
-      font-size: 13px; font-weight: 800; flex-shrink: 0;
+      width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #D4AF37, #C8A227, #B8961F); border-radius: 50%;
+      color: #061812; font-size: 16px; font-weight: 900; flex-shrink: 0;
+      box-shadow: 0 0 0 2px rgba(200,162,39,0.2), 0 4px 8px rgba(0,0,0,0.2);
     }
 
     /* CTA Button with particle animations */
@@ -263,10 +264,11 @@
     .btn-primary:active { transform: translateY(0); }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.06); color: #e8e0d0;
-      border: 1px solid rgba(255,255,255,0.1); border-radius: 20px;
+      background: linear-gradient(135deg, #0D2818, #0a2214);
+      color: #D4AF37; border: 1.5px solid rgba(200,162,39,0.35);
+      border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.25);
     }
-    .btn-secondary:hover { background: rgba(255,255,255,0.1); transform: translateY(-2px); }
+    .btn-secondary:hover { background: linear-gradient(135deg, #145433, #0D2818); border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.35); }
 
     /* Floating gold particles */
     .particles-container {
@@ -292,20 +294,39 @@
 
     .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem; }
 
-    .hero-stats { display: flex; gap: 2.5rem; margin-top: 3rem; }
+    .hero-stats {
+      display: flex; gap: 2.5rem; margin-top: 3rem;
+    }
+    .hero-stat-item {
+      background: rgba(6,24,18,0.6); border: 1px solid rgba(200,162,39,0.12);
+      border-radius: 12px; padding: 0.75rem 1.25rem; min-width: 120px;
+      backdrop-filter: blur(6px);
+    }
     .hero-stat-value { font-size: 1.3rem; font-weight: 800; color: var(--gold-s); }
-    .hero-stat-label { font-size: 0.8rem; color: var(--txd); margin-top: 0.15rem; }
+    .hero-stat-label { font-size: 0.8rem; color: #c0b8a8; margin-top: 0.15rem; font-weight: 500; }
     @media (max-width: 768px) { .hero { min-height: 90vh; padding: 5rem 0 3rem; } .hero-stats { gap: 1.5rem; flex-wrap: wrap; } }
 
     /* ═══════ TRUST STRIP ═══════ */
-    .trust-strip { background: rgba(255,255,255,0.02); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 2.5rem 0; overflow: hidden; }
-    .trust-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.5rem; text-align: center; }
-    @media (max-width: 640px) { .trust-grid { grid-template-columns: repeat(2,1fr); } }
+    .trust-strip { background: rgba(255,255,255,0.015); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 3rem 0; overflow: hidden; }
+    .trust-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 2rem; text-align: center; }
+    @media (max-width: 640px) { .trust-grid { grid-template-columns: repeat(2,1fr); gap: 1.5rem; } }
     .trust-item { padding: 0.5rem; }
-    .trust-icon { display: block; margin: 0 auto 0.75rem; width: 44px; height: 44px; }
-    .trust-item svg { width: 44px; height: 44px; }
+    .trust-icon-wrap {
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem; width: 72px; height: 72px;
+    }
+    .trust-icon-wrap svg { width: 72px; height: 72px; }
     .trust-title { font-weight: 700; color: #fff; font-size: 0.95rem; margin-bottom: 0.2rem; }
     .trust-desc { font-size: 0.8rem; color: var(--txd); }
+    .trust-icon-bg { fill: #0D2818; }
+    .trust-icon-ring { fill: none; stroke: url(#goldGrad); stroke-width: 2; }
+    .trust-icon-gold { fill: #D4AF37; }
+    .trust-icon-gold-stroke { fill: none; stroke: #D4AF37; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .trust-icon-cream { fill: #fff6df; }
+    .trust-icon-cream-stroke { fill: none; stroke: #fff6df; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .trust-icon-gold-light { fill: #f1d27a; }
+    .trust-icon-gold-dim { fill: rgba(200,162,39,0.35); }
+    .trust-item:hover .trust-icon-wrap svg { transform: scale(1.06); transition: transform 0.4s cubic-bezier(0.16,1,0.3,1); }
 
     /* ═══════ REST OF SECTIONS ═══════ */
     .products { background: rgba(255,255,255,0.01); }
@@ -505,31 +526,81 @@
       </div>
 
       <div class="hero-stats">
-        <div><div class="hero-stat-value">Hass</div><div class="hero-stat-label">Cremoso · Eje Cafetero</div></div>
-        <div><div class="hero-stat-value">Papelillo</div><div class="hero-stat-label">Firme · Llano y Tolima</div></div>
-        <div><div class="hero-stat-value">3</div><div class="hero-stat-label">Estados de maduración</div></div>
+        <div class="hero-stat-item"><div class="hero-stat-value">Hass</div><div class="hero-stat-label">Cremoso · Eje Cafetero</div></div>
+        <div class="hero-stat-item"><div class="hero-stat-value">Papelillo</div><div class="hero-stat-label">Firme · Llano y Tolima</div></div>
+        <div class="hero-stat-item"><div class="hero-stat-value">3</div><div class="hero-stat-label">Estados de maduración</div></div>
       </div>
     </div>
   </section>
 
-  <!-- TRUST STRIP (SVG icons) -->
+  <!-- TRUST STRIP (Premium SVG icons) -->
   <div class="trust-strip">
     <div class="container">
       <div class="trust-grid reveal">
         <div class="trust-item">
-          <svg class="trust-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="20" stroke="#C8A227" stroke-width="1.5"/><path d="M14 22l5 5 11-11" stroke="#C8A227" stroke-width="2" stroke-linecap="round"/></svg>
+          <div class="trust-icon-wrap">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="g1" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8961F"/></linearGradient><linearGradient id="g2" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#0D2818"/><stop offset="100%" stop-color="#071f15"/></linearGradient></defs>
+              <circle cx="36" cy="36" r="34" fill="url(#g2)"/>
+              <circle cx="36" cy="36" r="34" stroke="url(#g1)" stroke-width="1.5"/>
+              <circle cx="36" cy="36" r="28" stroke="rgba(200,162,39,0.15)" stroke-width="1" fill="none"/>
+              <path d="M28 24l8 6 8-6" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M24 32c0 6 12 16 12 16s12-10 12-16a12 12 0 0 0-24 0z" fill="none" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M30 30l4 4 8-8" stroke="#f1d27a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M34 32c0 0 6 14 14 18" stroke="#fff6df" stroke-width="1.8" stroke-linecap="round" stroke-dasharray="3 4" fill="none"/>
+            </svg>
+          </div>
           <div class="trust-title">Productores directos</div><div class="trust-desc">Sin intermediarios</div>
         </div>
         <div class="trust-item">
-          <svg class="trust-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="20" stroke="#C8A227" stroke-width="1.5"/><path d="M12 28h20M16 28V16a6 6 0 0112 0v12" stroke="#C8A227" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="trust-icon-wrap">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="g3" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8961F"/></linearGradient></defs>
+              <circle cx="36" cy="36" r="34" fill="#0D2818"/>
+              <circle cx="36" cy="36" r="34" stroke="url(#g3)" stroke-width="1.5"/>
+              <circle cx="36" cy="36" r="28" stroke="rgba(200,162,39,0.15)" stroke-width="1" fill="none"/>
+              <rect x="20" y="20" width="32" height="22" rx="3" stroke="#D4AF37" stroke-width="2" fill="none"/>
+              <path d="M22 24l14 10 14-10" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M20 42l12-8M52 42l-12-8" stroke="#D4AF37" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M30 30h12M30 34h12" stroke="#f1d27a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+              <path d="M34 48l4 4 8-8" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
           <div class="trust-title">Desde 10 kg</div><div class="trust-desc">10, 20, 50 o 100 kg</div>
         </div>
         <div class="trust-item">
-          <svg class="trust-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="20" stroke="#C8A227" stroke-width="1.5"/><circle cx="22" cy="22" r="4" fill="#C8A227" opacity="0.5"/><path d="M22 6v4M22 34v4M6 22h4M34 22h4" stroke="#C8A227" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/></svg>
+          <div class="trust-icon-wrap">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="g4" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8961F"/></linearGradient></defs>
+              <circle cx="36" cy="36" r="34" fill="#0D2818"/>
+              <circle cx="36" cy="36" r="34" stroke="url(#g4)" stroke-width="1.5"/>
+              <circle cx="36" cy="36" r="28" stroke="rgba(200,162,39,0.15)" stroke-width="1" fill="none"/>
+              <path d="M30 18l8 7-8 7" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M42 40l-8 7 8 7" stroke="#D4AF37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <path d="M36 26v24" stroke="#D4AF37" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="36" cy="36" r="5" fill="#f1d27a" opacity="0.3"/>
+              <circle cx="36" cy="36" r="2" fill="#D4AF37"/>
+              <path d="M20 36h4M48 36h4M36 20v4M36 48v4" stroke="#f1d27a" stroke-width="1.8" stroke-linecap="round" opacity="0.6"/>
+            </svg>
+          </div>
           <div class="trust-title">3 maduraciones</div><div class="trust-desc">Verde · Pintón · Maduro</div>
         </div>
         <div class="trust-item">
-          <svg class="trust-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="20" stroke="#C8A227" stroke-width="1.5"/><path d="M14 18l8-6 8 6M16 18v10h12V18" stroke="#C8A227" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="trust-icon-wrap">
+            <svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs><linearGradient id="g5" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8961F"/></linearGradient></defs>
+              <circle cx="36" cy="36" r="34" fill="#0D2818"/>
+              <circle cx="36" cy="36" r="34" stroke="url(#g5)" stroke-width="1.5"/>
+              <circle cx="36" cy="36" r="28" stroke="rgba(200,162,39,0.15)" stroke-width="1" fill="none"/>
+              <path d="M22 48V30a6 6 0 0112 0v18" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+              <rect x="22" y="42" width="12" height="8" rx="2" fill="#D4AF37" opacity="0.25"/>
+              <path d="M38 48V34a6 6 0 0112 0v14" stroke="#D4AF37" stroke-width="2.2" stroke-linecap="round" fill="none"/>
+              <rect x="38" y="42" width="12" height="8" rx="2" fill="#D4AF37" opacity="0.25"/>
+              <path d="M28 36h4v4h-4z" fill="#f1d27a"/>
+              <path d="M42 36h5v2h-5z" fill="#f1d27a"/>
+              <path d="M33 30l3-4 3 4" stroke="#f1d27a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
           <div class="trust-title">Entrega Bogotá · Chía</div><div class="trust-desc">Coordinamos tu entrega</div>
         </div>
       </div>
