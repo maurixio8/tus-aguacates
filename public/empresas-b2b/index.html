@@ -526,67 +526,67 @@
       flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
       padding: 4px 0 8px; overflow-y: auto; min-height: 0;
     }
-    .card-icon { font-size: 38px; margin-bottom: 8px; line-height: 1; flex-shrink: 0; }
+    .card-icon { font-size: clamp(38px, 8vw, 54px); margin-bottom: clamp(6px, 1.5vw, 12px); line-height: 1; flex-shrink: 0; }
     .card-title {
       font-family: 'Montserrat', sans-serif;
-      font-size: clamp(15px, 2vw, 18px); font-weight: 700;
+      font-size: clamp(16px, 3.5vw, 22px); font-weight: 700;
       color: #fff; text-align: center; margin-bottom: 2px; flex-shrink: 0;
     }
     .card-hint {
-      font-size: 11px; color: var(--txm); font-weight: 500;
-      text-align: center; margin-bottom: 12px; flex-shrink: 0;
+      font-size: clamp(11px, 2.2vw, 15px); color: var(--txm); font-weight: 500;
+      text-align: center; margin-bottom: clamp(10px, 2vw, 18px); flex-shrink: 0;
     }
     .card-choices {
       width: 100%; max-width: 100%;
-      display: grid; gap: 10px; margin: 0 auto; flex-shrink: 0;
+      display: grid; gap: clamp(8px, 2vw, 14px); margin: 0 auto; flex-shrink: 0;
       padding: 0 4px;
     }
     .card-choices-2 { grid-template-columns: repeat(2,1fr); }
     /* 3 options: 2 on top, 1 below centered */
     .card-choices-3 { grid-template-columns: repeat(2,1fr); }
     .card-choices-3 .card-choice:nth-child(3) {
-      grid-column: 1 / -1; justify-self: center; width: 100%; max-width: 55%;
+      grid-column: 1 / -1; justify-self: center; width: 100%; max-width: 60%;
     }
     @media (min-width: 500px) {
-      .card-choices { gap: 12px; padding: 0 8px; }
-      .card-choices-3 .card-choice:nth-child(3) { max-width: 45%; }
+      .card-choices { padding: 0 12px; }
+      .card-choices-3 .card-choice:nth-child(3) { max-width: 50%; }
     }
     .card-choice {
-      border-radius: 14px; padding: 10px 8px;
+      border-radius: clamp(12px, 2.5vw, 18px); padding: clamp(10px, 2vw, 16px) clamp(8px, 1.5vw, 14px);
       cursor: pointer; color: var(--cream);
       background: rgba(13,40,24,0.85);
       border: 1px solid rgba(214,168,74,.45);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       font-family: inherit; transition: all .3s;
-      min-height: 78px; gap: 4px;
+      min-height: clamp(78px, 16vw, 120px); gap: clamp(3px, 0.8vw, 8px);
     }
     .card-choice:hover, .card-choice.is-selected {
       background: linear-gradient(180deg, rgba(20,84,51,.94), rgba(7,31,21,.94));
       border-color: #f1d27a;
       box-shadow: 0 0 0 2px rgba(241,210,122,0.15), 0 8px 20px rgba(0,0,0,0.3);
     }
-    .card-choice-img { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
-    .card-choice-frame { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(212,175,55,0.4); background: #0a2214; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.4); }
+    .card-choice-img { width: clamp(42px, 9vw, 64px); height: clamp(42px, 9vw, 64px); object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+    .card-choice-frame { width: clamp(48px, 10vw, 68px); height: clamp(48px, 10vw, 68px); border-radius: clamp(10px, 2vw, 16px); overflow: hidden; border: 2px solid rgba(212,175,55,0.4); background: #0a2214; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.4); }
     .card-choice-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .card-choice span { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; }
-    .card-choice small { display: block; font-weight: 400; font-size: 9px; color: rgba(255,246,223,0.55); margin-top: 1px; line-height: 1.2; }
-    .card-choice .emoji-big { font-size: 24px; line-height: 1; margin-bottom: 1px; }
-    .card-choice svg.avo-icon { width: 30px; height: 30px; margin-bottom: 2px; }
+    .card-choice span { font-family: 'Montserrat', sans-serif; font-size: clamp(12px, 2.5vw, 16px); font-weight: 600; }
+    .card-choice small { display: block; font-weight: 400; font-size: clamp(9px, 1.6vw, 12px); color: rgba(255,246,223,0.55); margin-top: 1px; line-height: 1.2; }
+    .card-choice .emoji-big { font-size: clamp(24px, 5vw, 38px); line-height: 1; margin-bottom: 1px; }
+    .card-choice svg.avo-icon { width: clamp(30px, 6vw, 44px); height: clamp(30px, 6vw, 44px); margin-bottom: 2px; }
     /* Contact form inside card */
-    .card-contact { width: 100%; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-    .card-contact .field { display: grid; align-items: center; min-height: 40px; grid-template-columns: 22px 1fr; gap: 7px; padding: 0 10px; border-radius: 12px; background: rgba(255,246,223,.95); color: #172016; border: 1px solid rgba(214,168,74,.34); }
-    .card-contact .field input { width: 100%; border: 0; outline: 0; background: transparent; color: #172016; min-height: 38px; font-size: 13px; }
+    .card-contact { width: 100%; display: flex; flex-direction: column; gap: clamp(6px, 1.5vw, 12px); flex-shrink: 0; }
+    .card-contact .field { display: grid; align-items: center; min-height: clamp(40px, 8vw, 52px); grid-template-columns: clamp(22px, 4vw, 30px) 1fr; gap: clamp(6px, 1.2vw, 10px); padding: 0 clamp(10px, 2vw, 16px); border-radius: clamp(10px, 2vw, 14px); background: rgba(255,246,223,.95); color: #172016; border: 1px solid rgba(214,168,74,.34); }
+    .card-contact .field input { width: 100%; border: 0; outline: 0; background: transparent; color: #172016; min-height: clamp(36px, 7vw, 46px); font-size: clamp(13px, 2.5vw, 16px); }
     .card-submit {
-      min-height: 42px; border-radius: 13px; cursor: pointer; font-family: inherit;
-      font-weight: 700; font-size: 13px; color: var(--cream);
+      min-height: clamp(42px, 8vw, 54px); border-radius: clamp(12px, 2vw, 16px); cursor: pointer; font-family: inherit;
+      font-weight: 700; font-size: clamp(13px, 2.5vw, 17px); color: var(--cream);
       background: linear-gradient(#145433, #071f15) padding-box, linear-gradient(135deg, #f1d27a, #bd8a2f) border-box;
       border: 1.5px solid transparent; transition: all .3s;
     }
     .card-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
     .card-success { text-align: center; }
-    .card-success-icon { font-size: 44px; margin-bottom: 8px; }
-    .card-success-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .card-success-text { font-size: 12px; color: var(--txm); }
+    .card-success-icon { font-size: clamp(38px, 8vw, 52px); margin-bottom: clamp(6px, 1.5vw, 12px); }
+    .card-success-title { font-size: clamp(16px, 3.5vw, 22px); font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .card-success-text { font-size: clamp(12px, 2vw, 15px); color: var(--txm); }
 
     /* Close button for AvoPro chat */
     .close-chat {
@@ -598,22 +598,6 @@
       border-radius: 8px;
     }
     .close-chat:hover { color: var(--gold-l); background: rgba(200,162,39,0.12); }
-
-    /* Fullscreen button */
-    .fullscreen-btn {
-      background: none; border: none; color: var(--txd); font-size: 1.2rem;
-      cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: all 0.3s;
-      line-height: 1;
-    }
-    .fullscreen-btn:hover { color: var(--gold); background: rgba(200,162,39,0.1); }
-    .chat-shell.is-fullscreen {
-      width: 100vw !important; height: 100vh !important;
-      inset: 0 !important; border-radius: 0 !important;
-      margin: 0 !important; max-width: none !important;
-    }
-    @media (min-width: 768px) {
-      .chat-shell.is-fullscreen { right: 0 !important; left: 0 !important; bottom: 0 !important; }
-    }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #061812; }
@@ -1006,7 +990,6 @@
         <div class="bot-avatar"><img src="/empresas-b2b/assets/logo-sello.png" alt="AvoPro"></div>
         <div class="bot-meta"><p class="bot-title">AvoPro <span class="online-dot"></span></p><p class="bot-status">Asistente premium de cotización</p></div>
       </div>
-      <button class="fullscreen-btn" id="fullscreenBtn" title="Pantalla completa">⛶</button>
       <button class="close-chat" type="button" data-close-chat>×</button>
     </header>
     <div class="chat-body" id="chatBody">
@@ -1413,14 +1396,6 @@
     function closeChat(){chatShell.classList.remove('is-open');chatShell.setAttribute('aria-hidden','true');document.body.style.overflow='';}
     document.querySelectorAll('[data-open-chat]').forEach(b=>b.addEventListener('click',openChat));
     document.querySelector('[data-close-chat]').addEventListener('click',closeChat);
-
-    // Fullscreen toggle
-    const fsBtn = document.getElementById('fullscreenBtn');
-    fsBtn.addEventListener('click', function() {
-      chatShell.classList.toggle('is-fullscreen');
-      this.textContent = chatShell.classList.contains('is-fullscreen') ? '✕' : '⛶';
-      this.title = chatShell.classList.contains('is-fullscreen') ? 'Salir de pantalla completa' : 'Pantalla completa';
-    });
 
     function goToCard(n) {
       const cards = document.querySelectorAll('.card-screen');
