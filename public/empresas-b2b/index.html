@@ -313,8 +313,9 @@
     .hero-stat-item {
       background: rgba(6,24,18,0.6); border: 1px solid rgba(200,162,39,0.12);
       border-radius: 12px; padding: 0.75rem 1.25rem; min-width: 120px;
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(6px); display: flex; align-items: center; gap: 0.75rem;
     }
+    .hero-stat-icon { width: 40px; height: 40px; object-fit: contain; flex-shrink: 0; }
     .hero-stat-value { font-size: 1.3rem; font-weight: 800; color: var(--gold-s); }
     .hero-stat-label { font-size: 0.8rem; color: #c0b8a8; margin-top: 0.15rem; font-weight: 500; }
     @media (max-width: 768px) { .hero { min-height: 90vh; padding: 5rem 0 3rem; } .hero-stats { gap: 1.5rem; flex-wrap: wrap; } }
@@ -346,7 +347,7 @@
     .products-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; margin-top: 2.5rem; }
     @media (max-width: 640px) { .products-grid { grid-template-columns: 1fr; } }
     .product-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--line); border-radius: 20px; padding: 2rem; transition: all .5s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; }
-    .product-card .product-img { width: 100%; height: 240px; object-fit: contain; margin-bottom: 1rem; }
+    .product-card .product-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; border: 1px solid rgba(200,162,39,0.1); }
     .product-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0; transition: opacity .5s; }
     .product-card:hover::before { opacity: 1; }
     .product-card:hover { transform: translateY(-4px); border-color: rgba(200,162,39,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -591,8 +592,8 @@
       </div>
 
       <div class="hero-stats">
-        <div class="hero-stat-item"><div class="hero-stat-value">Hass</div><div class="hero-stat-label">Cremoso · Eje Cafetero</div></div>
-        <div class="hero-stat-item"><div class="hero-stat-value">Papelillo</div><div class="hero-stat-label">Firme · Llano y Tolima</div></div>
+        <div class="hero-stat-item"><img class="hero-stat-icon" src="/empresas-b2b/assets/hass-icon.png" alt=""><div><div class="hero-stat-value">Hass</div><div class="hero-stat-label">Cremoso · Eje Cafetero</div></div></div>
+        <div class="hero-stat-item"><img class="hero-stat-icon" src="/empresas-b2b/assets/papelillo-icon.png" alt=""><div><div class="hero-stat-value">Papelillo</div><div class="hero-stat-label">Firme · Llano y Tolima</div></div></div>
         <div class="hero-stat-item"><div class="hero-stat-value">3</div><div class="hero-stat-label">Estados de maduración</div></div>
       </div>
     </div>
@@ -677,14 +678,14 @@
     <div class="text-center mb-4 reveal"><span class="section-label">Nuestros productos</span><h2>Dos variedades,<br>una <span class="gold">calidad premium</span></h2></div>
     <div class="products-grid">
       <div class="product-card reveal reveal-delay-1">
-        <img class="product-img" src="/empresas-b2b/assets/hass.png" alt="Aguacate Hass">
+        <img class="product-img" src="/empresas-b2b/assets/hass.jpg" alt="Aguacate Hass">
         <div class="product-name">Aguacate Hass</div>
         <span class="product-origin">Eje Cafetero y Antioquia</span>
         <p class="product-desc">Cremoso, de piel rugosa que oscurece al madurar. Pulpa dorada, sabor intenso. Ideal para guacamole, purés, cremas y preparaciones untables.</p>
         <div class="product-uses"><span class="product-use-tag">Guacamole</span><span class="product-use-tag">Purés</span><span class="product-use-tag">Cremas</span><span class="product-use-tag">Untables</span></div>
       </div>
       <div class="product-card reveal reveal-delay-2">
-        <img class="product-img" src="/empresas-b2b/assets/papelillo.png" alt="Aguacate Papelillo">
+        <img class="product-img" src="/empresas-b2b/assets/papelillo.jpg" alt="Aguacate Papelillo">
         <div class="product-name">Aguacate Papelillo</div>
         <span class="product-origin">Llano y Tolima</span>
         <p class="product-desc">Firme, de gran tamaño y piel delgada. Pulpa blanca, textura compacta. Perfecto para tajar en rodajas grandes, ensaladas, presentaciones y decoración de platos.</p>
