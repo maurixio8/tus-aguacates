@@ -346,10 +346,70 @@
     .products-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1.5rem; margin-top: 2.5rem; }
     @media (max-width: 640px) { .products-grid { grid-template-columns: 1fr; } }
     .product-card { background: linear-gradient(135deg, var(--card), var(--card2)); border: 1px solid var(--line); border-radius: 20px; padding: 2rem; transition: all .5s cubic-bezier(0.16,1,0.3,1); position: relative; overflow: hidden; }
-    .product-card .product-img { width: 100%; height: 200px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; border: 1px solid rgba(200,162,39,0.1); }
+    .product-card .product-img { width: 100%; height: 240px; object-fit: contain; margin-bottom: 1rem; }
     .product-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, transparent, var(--gold), transparent); opacity: 0; transition: opacity .5s; }
     .product-card:hover::before { opacity: 1; }
     .product-card:hover { transform: translateY(-4px); border-color: rgba(200,162,39,0.2); box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .maduracion-bar { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-top: 1.5rem; padding: 1rem 1.5rem; background: rgba(200,162,39,0.04); border: 1px solid rgba(200,162,39,0.1); border-radius: 100px; flex-wrap: wrap; }
+    .maduracion-label { color: var(--gold); font-weight: 600; font-size: 0.95rem; }
+    .maduracion-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
+    .maduracion-text { color: var(--txd); font-size: 0.85rem; }
+    @media (max-width: 480px) { .maduracion-bar { border-radius: 16px; gap: 0.5rem; } }
+    /* Wizard */
+    .wizard-trigger { display: inline-flex; align-items: center; gap: 10px; padding: 1rem 2.5rem; background: linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; font-weight:700; font-size:1.1rem; border:none; border-radius:50px; cursor:pointer; transition:all .4s cubic-bezier(0.16,1,0.3,1); }
+    .wizard-trigger:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(200,162,39,0.3); }
+    .wizard-overlay { display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:1rem; }
+    .wizard-overlay.is-open { display:flex; }
+    .wizard-modal { background: linear-gradient(135deg, #0D2818 0%, #143524 100%); border:1px solid rgba(200,162,39,0.15); border-radius:24px; max-width:560px; width:100%; padding:2rem 2rem 1.5rem; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 40px 80px rgba(0,0,0,0.5); }
+    .wizard-close { position:absolute; top:12px; right:16px; background:none; border:none; color:var(--txd); font-size:2rem; cursor:pointer; line-height:1; padding:4px; }
+    .wizard-close:hover { color:var(--gold); }
+    .wizard-progress { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:2rem; }
+    .wp-dot { width:12px;height:12px;border-radius:50%;background:var(--txd);transition:all .4s; }
+    .wp-dot.wp-active { background:var(--gold); box-shadow:0 0 12px rgba(200,162,39,0.4); }
+    .wp-dot.wp-done { background:var(--gold); opacity:0.5; }
+    .wp-line { width:40px;height:2px;background:var(--txd);border-radius:2px; }
+    .wizard-steps { position:relative; min-height:320px; }
+    .ws-step { display:none; animation:wsFadeIn .35s ease; }
+    .ws-step.ws-active { display:block; }
+    @keyframes wsFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+    .ws-icon { font-size:2.5rem; text-align:center; margin-bottom:0.5rem; }
+    .ws-title { text-align:center; color:#fff; font-size:1.3rem; font-weight:700; margin-bottom:0.3rem; }
+    .ws-sub { text-align:center; color:var(--txd); font-size:0.9rem; margin-bottom:1.5rem; }
+    .ws-choices { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .ws-choices-3 { grid-template-columns:1fr 1fr 1fr; }
+    @media (max-width:480px){ .ws-choices { grid-template-columns:1fr; } .ws-choices-3{grid-template-columns:1fr;} }
+    .ws-choice { display:flex; flex-direction:column; align-items:center; gap:6px; padding:1.25rem 1rem; background:rgba(200,162,39,0.03); border:1px solid rgba(200,162,39,0.1); border-radius:16px; cursor:pointer; transition:all .3s; text-align:center; }
+    .ws-choice:hover { border-color:var(--gold); background:rgba(200,162,39,0.06); }
+    .ws-choice.ws-selected { border-color:var(--gold); background:rgba(200,162,39,0.1); box-shadow:0 0 20px rgba(200,162,39,0.1); }
+    .ws-choice-icon { font-size:1.8rem; }
+    .ws-choice-title { color:#fff; font-weight:700; font-size:0.95rem; }
+    .ws-choice-desc { color:var(--txd); font-size:0.78rem; line-height:1.3; }
+    .wizard-nav { display:flex; justify-content:space-between; margin-top:1.5rem; gap:10px; }
+    .wn-back, .wn-next { padding:0.7rem 1.5rem; border-radius:50px; font-weight:600; cursor:pointer; transition:all .3s; border:none; font-size:0.9rem; }
+    .wn-back { background:var(--card); color:var(--txd); border:1px solid rgba(200,162,39,0.1); }
+    .wn-back:hover { border-color:var(--gold); color:#fff; }
+    .wn-next { background:linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; margin-left:auto; }
+    .wn-next:disabled, .wn-back:disabled { opacity:0.3; cursor:not-allowed; }
+    .wn-back:disabled:hover { border-color:rgba(200,162,39,0.1); color:var(--txd); }
+    .ws-summary { background:rgba(200,162,39,0.04); border:1px solid rgba(200,162,39,0.1); border-radius:12px; padding:1rem; margin-bottom:1rem; }
+    .ws-summary-row { display:flex; justify-content:space-between; padding:0.4rem 0; color:var(--txm); font-size:0.9rem; border-bottom:1px solid rgba(200,162,39,0.05); }
+    .ws-summary-row:last-child { border-bottom:none; }
+    .ws-summary-row strong { color:#fff; }
+    .ws-email-form { display:flex; gap:10px; }
+    .ws-email-form input { flex:1; padding:0.85rem 1rem; border-radius:12px; border:1px solid rgba(200,162,39,0.15); background:rgba(0,0,0,0.2); color:#fff; font-size:1rem; outline:none; }
+    .ws-email-form input:focus { border-color:var(--gold); }
+    .ws-email-form input::placeholder { color:var(--txd); }
+    .ws-submit { padding:0.85rem 1.5rem; background:linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; font-weight:700; border:none; border-radius:12px; cursor:pointer; white-space:nowrap; transition:all .3s; }
+    .ws-submit:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(200,162,39,0.25); }
+    .ws-submit.loading { opacity:0.7; pointer-events:none; }
+    .ws-phone-option { text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--txd); }
+    .ws-phone-option a { color:var(--gold); text-decoration:underline; cursor:pointer; }
+    /* Wizard success state */
+    .wiz-success { display:none; text-align:center; padding:2rem 0; }
+    .wiz-success.show { display:block; }
+    .wiz-success-icon { font-size:3rem; margin-bottom:0.5rem; }
+    .wiz-success h3 { color:#fff; font-size:1.3rem; margin-bottom:0.5rem; }
+    .wiz-success p { color:var(--txd); font-size:0.9rem; }
     .product-name { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
     .product-origin { font-size: 0.8rem; color: var(--gold); font-weight: 600; margin-bottom: 1rem; display: block; }
     .product-desc { font-size: 0.9rem; color: var(--txm); line-height: 1.7; margin-bottom: 1.5rem; }
@@ -617,43 +677,152 @@
     <div class="text-center mb-4 reveal"><span class="section-label">Nuestros productos</span><h2>Dos variedades,<br>una <span class="gold">calidad premium</span></h2></div>
     <div class="products-grid">
       <div class="product-card reveal reveal-delay-1">
-        <img class="product-img" src="/empresas-b2b/assets/hass.jpg" alt="Aguacate Hass">
+        <img class="product-img" src="/empresas-b2b/assets/hass.png" alt="Aguacate Hass">
         <div class="product-name">Aguacate Hass</div>
         <span class="product-origin">Eje Cafetero y Antioquia</span>
         <p class="product-desc">Cremoso, de piel rugosa que oscurece al madurar. Pulpa dorada, sabor intenso. Ideal para guacamole, purés, cremas y preparaciones untables.</p>
         <div class="product-uses"><span class="product-use-tag">Guacamole</span><span class="product-use-tag">Purés</span><span class="product-use-tag">Cremas</span><span class="product-use-tag">Untables</span></div>
       </div>
       <div class="product-card reveal reveal-delay-2">
-        <img class="product-img" src="/empresas-b2b/assets/papelillo.jpg" alt="Aguacate Papelillo">
+        <img class="product-img" src="/empresas-b2b/assets/papelillo.png" alt="Aguacate Papelillo">
         <div class="product-name">Aguacate Papelillo</div>
         <span class="product-origin">Llano y Tolima</span>
         <p class="product-desc">Firme, de gran tamaño y piel delgada. Pulpa blanca, textura compacta. Perfecto para tajar en rodajas grandes, ensaladas, presentaciones y decoración de platos.</p>
         <div class="product-uses"><span class="product-use-tag">Rodajas</span><span class="product-use-tag">Ensaladas</span><span class="product-use-tag">Presentación</span><span class="product-use-tag">Carpaccio</span></div>
       </div>
     </div>
-  </div></section>
-
-  <!-- SPECS (unchanged) -->
-  <section id="especificaciones"><div class="container">
-    <div class="text-center mb-4 reveal"><span class="section-label">Especificaciones</span><h2>Calidad y maduración<br>a tu <span class="gold">medida</span></h2></div>
-    <div class="specs-grid">
-      <div class="spec-card reveal reveal-delay-1"><h3>CALIDADES DISPONIBLES</h3><ul class="spec-list">
-        <li><span class="spec-dot spec-dot-gold"></span><div><span class="spec-label">Grandes (1ª)</span><span class="spec-sub">Calibre premium · Tamaño uniforme · Frutos seleccionados</span></div></li>
-        <li><span class="spec-dot spec-dot-gold" style="opacity:0.6"></span><div><span class="spec-label">Medianos (2ª)</span><span class="spec-sub">Buena calidad · Tamaño estándar · Para producción</span></div></li>
-      </ul></div>
-      <div class="spec-card reveal reveal-delay-2"><h3>ESTADOS DE MADURACIÓN</h3><ul class="spec-list">
-        <li><span class="spec-dot spec-dot-green"></span><div><span class="spec-label">Verde</span><span class="spec-sub">Firme · Dura hasta 7-10 días · Ideal para programar maduración</span></div></li>
-        <li><span class="spec-dot spec-dot-yellow"></span><div><span class="spec-label">Pintón</span><span class="spec-sub">Inicio de maduración · 3-5 días para consumo · Punto versátil</span></div></li>
-        <li><span class="spec-dot spec-dot-brown"></span><div><span class="spec-label">Maduro</span><span class="spec-sub">Listo para usar · 1-2 días · Máximo sabor y cremosidad</span></div></li>
-      </ul></div>
+    <div class="maduracion-bar reveal">
+      <span class="maduracion-label">🍃 3 estados de maduración</span>
+      <span class="maduracion-dot" style="background:#5cb85c;"></span><span class="maduracion-text">Verde</span>
+      <span class="maduracion-dot" style="background:#f0ad4e;"></span><span class="maduracion-text">Pintón</span>
+      <span class="maduracion-dot" style="background:#8B5E3C;"></span><span class="maduracion-text">Maduro</span>
     </div>
   </div></section>
 
-  <!-- PRICING (JS generated) -->
+  <!-- PRICING WIZARD -->
   <section id="precios" class="pricing"><div class="container">
-    <div class="pricing-intro reveal"><span class="section-label">Precios</span><h2 class="mb-2">Precios por kilo <span class="gold">según volumen</span></h2><p class="text-muted">Precios en COP. Sin contratos fijos — pedí cuando necesites.<br>¿Volumen mayor a 100 kg? <a href="#pedido">Escríbenos</a> para precio personalizado.</p></div>
-    <div class="pricing-grid" id="pricingGrid"></div>
-    <div class="price-note reveal" style="text-align:center;margin-top:2rem;font-size:0.85rem;color:var(--txd);">* Precios por kilogramo. IVA incluido.<br><strong style="color:var(--gold-s);">¿Necesitas otro volumen?</strong> Contáctanos y te cotizamos.</div>
+    <div class="pricing-intro reveal"><span class="section-label">Precios</span><h2 class="mb-2">Cotizá tu pedido en <span class="gold">3 pasos</span></h2><p class="text-muted">Seleccioná tus preferencias y te enviamos los precios al instante.</p></div>
+
+    <!-- Wizard trigger -->
+    <div class="text-center reveal">
+      <button class="wizard-trigger" id="wizardTrigger">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        Cotizar ahora
+      </button>
+    </div>
+
+    <!-- Wizard modal overlay -->
+    <div class="wizard-overlay" id="wizardOverlay">
+      <div class="wizard-modal" id="wizardModal">
+        <button class="wizard-close" id="wizardClose">&times;</button>
+
+        <!-- Progress dots -->
+        <div class="wizard-progress" id="wizardProgress">
+          <span class="wp-dot wp-active" data-step="1"></span>
+          <span class="wp-line"></span>
+          <span class="wp-dot" data-step="2"></span>
+          <span class="wp-line"></span>
+          <span class="wp-dot" data-step="3"></span>
+          <span class="wp-line"></span>
+          <span class="wp-dot" data-step="4"></span>
+        </div>
+
+        <!-- Step cards -->
+        <div class="wizard-steps" id="wizardSteps">
+
+          <!-- Step 1: Variety -->
+          <div class="ws-step ws-active" data-step="1">
+            <div class="ws-icon">🥑</div>
+            <h3 class="ws-title">¿Qué variedad te interesa?</h3>
+            <p class="ws-sub">Elegí la que más se adapte a tu negocio</p>
+            <div class="ws-choices">
+              <button class="ws-choice" data-value="hass">
+                <span class="ws-choice-icon">🥑</span>
+                <span class="ws-choice-title">Aguacate Hass</span>
+                <span class="ws-choice-desc">Cremoso, piel rugosa, sabor intenso</span>
+              </button>
+              <button class="ws-choice" data-value="papelillo">
+                <span class="ws-choice-icon">🥑</span>
+                <span class="ws-choice-title">Aguacate Papelillo</span>
+                <span class="ws-choice-desc">Firme, piel delgada, textura compacta</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 2: Kilos -->
+          <div class="ws-step" data-step="2">
+            <div class="ws-icon">⚖️</div>
+            <h3 class="ws-title">¿Cuántos kilos consumes a la semana?</h3>
+            <p class="ws-sub">Elegí el volumen que manejás semanalmente</p>
+            <div class="ws-choices ws-choices-3">
+              <button class="ws-choice" data-value="0-10">
+                <span class="ws-choice-icon">📦</span>
+                <span class="ws-choice-title">0 – 10 kg</span>
+                <span class="ws-choice-desc">Emprendimiento · Prueba · Bajo volumen</span>
+              </button>
+              <button class="ws-choice" data-value="10-20">
+                <span class="ws-choice-icon">📦📦</span>
+                <span class="ws-choice-title">10 – 20 kg</span>
+                <span class="ws-choice-desc">Restaurante pequeño · Cafetería</span>
+              </button>
+              <button class="ws-choice" data-value="20+">
+                <span class="ws-choice-icon">📦📦📦</span>
+                <span class="ws-choice-title">20+ kg</span>
+                <span class="ws-choice-desc">Hotel · Catering · Fruver · Mayor volumen</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 3: Ripeness -->
+          <div class="ws-step" data-step="3">
+            <div class="ws-icon">🍃</div>
+            <h3 class="ws-title">¿Cómo preferís que te lleguen?</h3>
+            <p class="ws-sub">Elegí el punto de maduración ideal para tu operación</p>
+            <div class="ws-choices">
+              <button class="ws-choice" data-value="todos-maduros">
+                <span class="ws-choice-icon">🟤</span>
+                <span class="ws-choice-title">Todos maduros</span>
+                <span class="ws-choice-desc">Listos para usar al llegar · Consumo inmediato</span>
+              </button>
+              <button class="ws-choice" data-value="mitad-mitad">
+                <span class="ws-choice-icon">🟡</span>
+                <span class="ws-choice-title">Mitad maduro, mitad verde</span>
+                <span class="ws-choice-desc">Balance para usar hoy y programar la semana</span>
+              </button>
+              <button class="ws-choice" data-value="todos-verdes">
+                <span class="ws-choice-icon">🟢</span>
+                <span class="ws-choice-title">Todos verdes</span>
+                <span class="ws-choice-desc">Programá tu propia maduración · Mayor duración</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Step 4: Email -->
+          <div class="ws-step" data-step="4">
+            <div class="ws-icon">📨</div>
+            <h3 class="ws-title">¡Listo! Recibí los precios</h3>
+            <p class="ws-sub">Ingresá tu correo y te enviamos los precios para tu selección</p>
+            <div class="ws-summary" id="wsSummary">
+              <div class="ws-summary-row"><span>Variedad:</span> <strong id="sumVariedad">—</strong></div>
+              <div class="ws-summary-row"><span>Kilos/semana:</span> <strong id="sumKilos">—</strong></div>
+              <div class="ws-summary-row"><span>Maduración:</span> <strong id="sumMaduracion">—</strong></div>
+            </div>
+            <div class="ws-email-form">
+              <input type="email" id="wizEmail" placeholder="tu@correo.com" required>
+              <button class="ws-submit" id="wizSubmit">Enviar precios</button>
+            </div>
+            <p class="ws-phone-option">¿Prefieres que te llamemos? <a href="javascript:void(0)" id="wizRequestCall">Solicitar llamada</a></p>
+          </div>
+
+        </div>
+
+        <!-- Nav buttons -->
+        <div class="wizard-nav">
+          <button class="wn-back" id="wnBack">← Atrás</button>
+          <button class="wn-next" id="wnNext">Siguiente →</button>
+        </div>
+      </div>
+    </div>
   </div></section>
 
   <!-- STEPS (unchanged) -->
@@ -832,23 +1001,129 @@
       });
     }, 400);
 
-    // ─── Pricing Tables ───
-    function buildPricing() {
-      const grid = document.getElementById('pricingGrid');
-      ['hass','papelillo'].forEach(v => {
-        const p = CONFIG.prices[v];
-        const vols = Object.keys(p.grandes).sort((a,b)=>a-b);
-        const table = document.createElement('div');
-        table.className = 'pricing-table reveal';
-        table.innerHTML = '<div class="pricing-table-header"><h3>' + p.label + '</h3><span style="color:#7a7058;font-size:0.85rem;">' + p.origin + '</span></div><div class="pricing-table-body">' +
-          '<div class="price-row" style="border-bottom:1px solid rgba(200,162,39,0.1);padding-bottom:0.5rem;font-size:0.8rem;color:#D4AF37;font-weight:600;"><span>Kilos</span><span>Grandes (1ª)</span><span>Medianos (2ª)</span></div>' +
-          vols.map(kg => '<div class="price-row"><span class="price-kgs">' + kg + ' kg</span><span class="price-value">$' + (p.grandes[kg]*kg).toLocaleString('es-CO') + '</span><span class="price-value">$' + (p.medianos[kg]*kg).toLocaleString('es-CO') + '</span></div>').join('') +
-          '</div>';
-        grid.appendChild(table);
+    // ─── Pricing Wizard ───
+    (function(){
+      const overlay = document.getElementById('wizardOverlay');
+      const modal = document.getElementById('wizardModal');
+      const trigger = document.getElementById('wizardTrigger');
+      const closeBtn = document.getElementById('wizardClose');
+      const steps = document.querySelectorAll('.ws-step');
+      const dots = document.querySelectorAll('.wp-dot');
+      const backBtn = document.getElementById('wnBack');
+      const nextBtn = document.getElementById('wnNext');
+      const sumVariedad = document.getElementById('sumVariedad');
+      const sumKilos = document.getElementById('sumKilos');
+      const sumMaduracion = document.getElementById('sumMaduracion');
+
+      let currentStep = 1;
+      const selections = {};
+
+      function renderStep(step) {
+        steps.forEach(s => s.classList.toggle('ws-active', parseInt(s.dataset.step) === step));
+        dots.forEach(d => {
+          const s = parseInt(d.dataset.step);
+          d.classList.toggle('wp-active', s === step);
+          d.classList.toggle('wp-done', s < step);
+        });
+        backBtn.disabled = step === 1;
+        if (step === 4) {
+          nextBtn.style.display = 'none';
+          backBtn.style.display = 'inline-block';
+        } else {
+          nextBtn.style.display = 'inline-block';
+          backBtn.style.display = 'inline-block';
+        }
+        // Disable next if step has no selection
+        if (step < 4) {
+          const key = ['variedad','kilos','maduracion'][step-1];
+          nextBtn.disabled = !selections[key];
+        }
+        updateSummary();
+      }
+
+      function updateSummary() {
+        const variedadMap = { hass: 'Aguacate Hass', papelillo: 'Aguacate Papelillo' };
+        const kilosMap = { '0-10': '0–10 kg/sem', '10-20': '10–20 kg/sem', '20+': '20+ kg/sem' };
+        const madMap = { 'todos-maduros': 'Todos maduros', 'mitad-mitad': 'Mitad maduro, mitad verde', 'todos-verdes': 'Todos verdes' };
+        sumVariedad.textContent = variedadMap[selections.variedad] || '—';
+        sumKilos.textContent = kilosMap[selections.kilos] || '—';
+        sumMaduracion.textContent = madMap[selections.maduracion] || '—';
+      }
+
+      function goToStep(s) {
+        currentStep = s;
+        renderStep(s);
+      }
+
+      // Open / Close
+      trigger.addEventListener('click', () => { overlay.classList.add('is-open'); document.body.style.overflow = 'hidden'; });
+      closeBtn.addEventListener('click', closeWizard);
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeWizard(); });
+      function closeWizard() {
+        overlay.classList.remove('is-open');
+        document.body.style.overflow = '';
+      }
+
+      // Choices
+      document.querySelectorAll('.ws-choice').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const parent = this.closest('.ws-choices');
+          parent.querySelectorAll('.ws-choice').forEach(c => c.classList.remove('ws-selected'));
+          this.classList.add('ws-selected');
+          const step = parseInt(this.closest('.ws-step').dataset.step);
+          const key = ['variedad','kilos','maduracion'][step-1];
+          selections[key] = this.dataset.value;
+          nextBtn.disabled = false;
+        });
       });
-      document.querySelectorAll('.pricing-table.reveal').forEach(el => revObs.observe(el));
-    }
-    buildPricing();
+
+      // Navigation
+      nextBtn.addEventListener('click', () => { if (currentStep < 4) goToStep(currentStep + 1); });
+      backBtn.addEventListener('click', () => { if (currentStep > 1) goToStep(currentStep - 1); });
+
+      // Submit
+      document.getElementById('wizSubmit').addEventListener('click', async function() {
+        const email = document.getElementById('wizEmail').value.trim();
+        if (!email || !email.includes('@')) { alert('Por favor ingresá un correo válido.'); return; }
+        this.classList.add('loading');
+        this.textContent = 'Enviando...';
+
+        const data = {
+          tipo: 'cotizador-rapido',
+          email: email,
+          variedad: selections.variedad,
+          kilos: selections.kilos,
+          maduracion: selections.maduracion,
+          timestamp: new Date().toISOString()
+        };
+
+        try {
+          if (CONFIG.webhook.enabled && CONFIG.webhook.url) {
+            await fetch(CONFIG.webhook.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+          }
+          // Show success
+          document.querySelector('.wizard-steps').style.display = 'none';
+          document.querySelector('#wnBack').style.display = 'none';
+          document.querySelector('#wnNext').style.display = 'none';
+          document.querySelector('.wizard-progress').style.display = 'none';
+          const success = document.createElement('div');
+          success.className = 'wiz-success show';
+          success.innerHTML = '<div class="wiz-success-icon">📨</div><h3>¡Recibimos tu solicitud!</h3><p>Te enviamos los precios a <strong>' + email + '</strong>.<br>Si pediste llamada, te contactaremos pronto.</p>';
+          document.getElementById('wizardModal').querySelector('.wizard-steps').after(success);
+        } catch(e) {
+          alert('Hubo un error. Intentá de nuevo.');
+        }
+        this.classList.remove('loading');
+      });
+
+      // Request call
+      document.getElementById('wizRequestCall').addEventListener('click', function() {
+        selections.solicitaLlamada = true;
+        document.getElementById('wizSubmit').click();
+      });
+
+      renderStep(1);
+    })();
 
     // ─── Order Summary ───
     function calcTotal() {
