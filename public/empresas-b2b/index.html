@@ -503,7 +503,7 @@
     .card-screen {
       position: absolute; inset: 0;
       display: flex; flex-direction: column;
-      padding: 8px 20px 16px;
+      padding: clamp(4px, 1.5vw, 8px) clamp(8px, 3vw, 20px) clamp(8px, 2vw, 16px);
       transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
       opacity: 0; transform: translateX(24px); pointer-events: none;
     }
