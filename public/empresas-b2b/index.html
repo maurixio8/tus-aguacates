@@ -501,80 +501,82 @@
     /* ─── Full-screen cards ─── */
     .card-screen {
       position: absolute; inset: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 24px 20px 30px;
+      display: flex; flex-direction: column;
+      padding: 8px 20px 16px;
       transition: all 0.4s cubic-bezier(0.16,1,0.3,1);
-      opacity: 0; transform: translateX(30px); pointer-events: none;
+      opacity: 0; transform: translateX(24px); pointer-events: none;
     }
     .card-screen.active {
       opacity: 1; transform: translateX(0); pointer-events: auto;
       position: relative;
     }
-    .card-screen.exit-left {
-      opacity: 0; transform: translateX(-30px); pointer-events: none;
+    .card-progress {
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      min-height: 20px; flex-shrink: 0;
     }
-    .card-icon { font-size: 44px; margin-bottom: 12px; line-height: 1; }
+    .card-progress-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: rgba(200,162,39,0.2);
+      transition: all 0.4s;
+    }
+    .card-progress-dot.active { background: var(--gold); box-shadow: 0 0 6px rgba(200,162,39,0.4); }
+    .card-progress-dot.done { background: var(--gold); opacity: 0.4; }
+    .card-progress-line { width: 16px; height: 1.5px; background: rgba(200,162,39,0.12); border-radius: 2px; flex-shrink: 0; }
+    .card-body {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 4px 0 8px; overflow-y: auto; min-height: 0;
+    }
+    .card-icon { font-size: 38px; margin-bottom: 8px; line-height: 1; flex-shrink: 0; }
     .card-title {
       font-family: 'Montserrat', sans-serif;
-      font-size: clamp(16px, 2.2vw, 20px); font-weight: 700;
-      color: #fff; text-align: center; margin-bottom: 4px;
+      font-size: clamp(15px, 2vw, 18px); font-weight: 700;
+      color: #fff; text-align: center; margin-bottom: 2px; flex-shrink: 0;
     }
     .card-hint {
-      font-size: 12px; color: var(--txm); font-weight: 500;
-      text-align: center; margin-bottom: 18px;
+      font-size: 11px; color: var(--txm); font-weight: 500;
+      text-align: center; margin-bottom: 12px; flex-shrink: 0;
     }
     .card-choices {
-      width: 100%; max-width: 400px;
-      display: grid; gap: 10px; margin: 0 auto;
+      width: 100%; max-width: 380px;
+      display: grid; gap: 8px; margin: 0 auto; flex-shrink: 0;
     }
     .card-choices-2 { grid-template-columns: repeat(2,1fr); }
     .card-choices-3 { grid-template-columns: repeat(3,1fr); }
     .card-choice {
-      border-radius: 16px; padding: 14px 10px;
+      border-radius: 14px; padding: 10px 8px;
       cursor: pointer; color: var(--cream);
       background: rgba(13,40,24,0.85);
       border: 1px solid rgba(214,168,74,.45);
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       font-family: inherit; transition: all .3s;
-      min-height: 90px; gap: 6px;
+      min-height: 78px; gap: 4px;
     }
     .card-choice:hover, .card-choice.is-selected {
       background: linear-gradient(180deg, rgba(20,84,51,.94), rgba(7,31,21,.94));
       border-color: #f1d27a;
-      box-shadow: 0 0 0 2px rgba(241,210,122,0.15), 0 8px 24px rgba(0,0,0,0.3);
+      box-shadow: 0 0 0 2px rgba(241,210,122,0.15), 0 8px 20px rgba(0,0,0,0.3);
     }
-    .card-choice-img { width: 48px; height: 48px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
-    .card-choice-frame { width: 56px; height: 56px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(212,175,55,0.4); background: #0a2214; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.4); }
+    .card-choice-img { width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+    .card-choice-frame { width: 48px; height: 48px; border-radius: 10px; overflow: hidden; border: 2px solid rgba(212,175,55,0.4); background: #0a2214; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05), 0 4px 12px rgba(0,0,0,0.4); }
     .card-choice-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .card-choice span { font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600; }
-    .card-choice small { display: block; font-weight: 400; font-size: 10px; color: rgba(255,246,223,0.6); margin-top: 1px; }
-    .card-choice .emoji-big { font-size: 30px; line-height: 1; margin-bottom: 2px; }
-    .card-choice .cf-icon { font-size: 28px; line-height: 1; margin-bottom: 2px; }
+    .card-choice span { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 600; }
+    .card-choice small { display: block; font-weight: 400; font-size: 9px; color: rgba(255,246,223,0.55); margin-top: 1px; line-height: 1.2; }
+    .card-choice .emoji-big { font-size: 24px; line-height: 1; margin-bottom: 1px; }
+    .card-choice svg.avo-icon { width: 30px; height: 30px; margin-bottom: 2px; }
     /* Contact form inside card */
-    .card-contact { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-    .card-progress {
-      display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 16px;
-    }
-    .card-progress-dot {
-      width: 8px; height: 8px; border-radius: 50%; background: rgba(200,162,39,0.2);
-      transition: all 0.4s;
-    }
-    .card-progress-dot.active { background: var(--gold); box-shadow: 0 0 8px rgba(200,162,39,0.4); }
-    .card-progress-dot.done { background: var(--gold); opacity: 0.5; }
-    .card-progress-line { width: 24px; height: 1.5px; background: rgba(200,162,39,0.15); border-radius: 2px; }
+    .card-contact { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .card-contact .field { min-height: 40px; grid-template-columns: 22px 1fr; gap: 7px; padding: 0 10px; }
+    .card-contact .field input { min-height: 38px; font-size: 13px; }
     .card-submit {
-      min-height: 48px; border-radius: 15px; cursor: pointer; font-family: inherit;
-      font-weight: 700; font-size: 14px; color: var(--cream);
+      min-height: 42px; border-radius: 13px; cursor: pointer; font-family: inherit;
+      font-weight: 700; font-size: 13px; color: var(--cream);
       background: linear-gradient(#145433, #071f15) padding-box, linear-gradient(135deg, #f1d27a, #bd8a2f) border-box;
       border: 1.5px solid transparent; transition: all .3s;
     }
-    .card-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
-    .card-success {
-      text-align: center;
-    }
-    .card-success-icon { font-size: 52px; margin-bottom: 12px; }
-    .card-success-title { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; }
-    .card-success-text { font-size: 13px; color: var(--txm); }
+    .card-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+    .card-success { text-align: center; }
+    .card-success-icon { font-size: 44px; margin-bottom: 8px; }
+    .card-success-title { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 4px; }
+    .card-success-text { font-size: 12px; color: var(--txm); }
 
     /* Close button for AvoPro chat */
     .close-chat {
@@ -969,139 +971,180 @@
 
   <!-- Floating CTAs -->
   <button class="floating-cta" id="floatingCta" data-open-chat><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.5 8.5 0 0 1-11.8 7.8L4 21l1.7-4.7A8.5 8.5 0 1 1 21 11.5Z"/><path d="M8 10h8M8 14h5"/></svg> Cotizar con AvoPro</button>
-  <button class="float-chat" type="button" data-open-chat><img src="/empresas-b2b/assets/logo-avatar.svg" alt="AvoPro"></button>
+  <button class="float-chat" type="button" data-open-chat><img src="/empresas-b2b/assets/logo-sello.png" alt="AvoPro"></button>
 
   <!-- CHAT SHELL -->
   <aside class="chat-shell" id="chatShell">
     <header class="chat-header">
-      <div class="bot-avatar"><img src="/empresas-b2b/assets/logo-avatar.svg" alt="AvoPro"></div>
+      <div class="bot-avatar"><img src="/empresas-b2b/assets/logo-sello.png" alt="AvoPro"></div>
       <div class="bot-meta"><p class="bot-title">AvoPro <span class="online-dot"></span></p><p class="bot-status">Asistente premium de cotización</p></div>
       <button class="close-chat" type="button" data-close-chat>×</button>
     </header>
     <div class="chat-body" id="chatBody">
-      <!-- Progress dots -->
-      <div class="card-progress" id="cardProgress">
-        <span class="card-progress-dot active" data-cstep="1"></span>
-        <span class="card-progress-line"></span>
-        <span class="card-progress-dot" data-cstep="2"></span>
-        <span class="card-progress-line"></span>
-        <span class="card-progress-dot" data-cstep="3"></span>
-        <span class="card-progress-line"></span>
-        <span class="card-progress-dot" data-cstep="4"></span>
-        <span class="card-progress-line"></span>
-        <span class="card-progress-dot" data-cstep="5"></span>
-      </div>
-
       <!-- Card 1: Variety -->
       <div class="card-screen active" data-card="1">
-        <div class="card-icon">🥑</div>
-        <div class="card-title">¿Qué variedad de aguacate te interesa?</div>
-        <div class="card-hint">Elige una opción</div>
-        <div class="card-choices card-choices-2">
-          <button class="card-choice" data-variety="papelillo">
-            <img src="/empresas-b2b/assets/papelillo-icon.png" alt="" class="card-choice-img">
-            <span>Aguacate Papelillo</span>
-            <small>Firme · Piel delgada · Textura compacta</small>
-          </button>
-          <button class="card-choice" data-variety="hass">
-            <img src="/empresas-b2b/assets/hass-icon.png" alt="" class="card-choice-img">
-            <span>Aguacate Hass</span>
-            <small>Cremoso · Piel rugosa · Sabor intenso</small>
-          </button>
+        <div class="card-progress">
+          <span class="card-progress-dot active" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-icon">🥑</div>
+          <div class="card-title">¿Qué variedad de aguacate te interesa?</div>
+          <div class="card-hint">Elige una opción</div>
+          <div class="card-choices card-choices-2">
+            <button class="card-choice" data-variety="papelillo">
+              <img src="/empresas-b2b/assets/papelillo-icon.png" alt="" class="card-choice-img">
+              <span>Aguacate Papelillo</span>
+              <small>Firme · Piel delgada</small>
+            </button>
+            <button class="card-choice" data-variety="hass">
+              <img src="/empresas-b2b/assets/hass-icon.png" alt="" class="card-choice-img">
+              <span>Aguacate Hass</span>
+              <small>Cremoso · Piel rugosa</small>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Card 2: Consumption -->
       <div class="card-screen" data-card="2">
-        <div class="card-icon">📦</div>
-        <div class="card-title">¿Cuál es tu consumo semanal?</div>
-        <div class="card-hint">Elige una opción</div>
-        <div class="card-choices card-choices-3">
-          <button class="card-choice" data-consumption="1-10">
-            <div class="emoji-big">📦</div>
-            <span>1 – 10 kg</span>
-            <small>Emprendimiento · Prueba</small>
-          </button>
-          <button class="card-choice" data-consumption="10-50">
-            <div class="emoji-big">📦📦</div>
-            <span>10 – 50 kg</span>
-            <small>Restaurante · Cafetería</small>
-          </button>
-          <button class="card-choice" data-consumption="50+">
-            <div class="emoji-big">📦📦📦</div>
-            <span>Más de 50 kg</span>
-            <small>Hotel · Catering · Mayorista</small>
-          </button>
+        <div class="card-progress">
+          <span class="card-progress-dot done" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot active" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-icon">📦</div>
+          <div class="card-title">¿Cuál es tu consumo semanal?</div>
+          <div class="card-hint">Elige una opción</div>
+          <div class="card-choices card-choices-3">
+            <button class="card-choice" data-consumption="1-10">
+              <div class="emoji-big">📦</div>
+              <span>1 – 10 kg</span>
+              <small>Emprendimiento</small>
+            </button>
+            <button class="card-choice" data-consumption="10-50">
+              <div class="emoji-big">📦📦</div>
+              <span>10 – 50 kg</span>
+              <small>Restaurante · Cafetería</small>
+            </button>
+            <button class="card-choice" data-consumption="50+">
+              <div class="emoji-big">📦📦📦</div>
+              <span>Más de 50 kg</span>
+              <small>Hotel · Mayorista</small>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Card 3: Business type -->
       <div class="card-screen" data-card="3">
-        <div class="card-icon">🏪</div>
-        <div class="card-title">¿Qué tipo de negocio tienes?</div>
-        <div class="card-hint">Elige una opción</div>
-        <div class="card-choices card-choices-2">
-          <button class="card-choice" data-business="Restaurante">
-            <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-restaurante.jpg" alt=""></div>
-            <span>Restaurante</span>
-          </button>
-          <button class="card-choice" data-business="Fruver">
-            <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-fruver.jpg" alt=""></div>
-            <span>Fruver</span>
-          </button>
-          <button class="card-choice" data-business="Hotel / Catering">
-            <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-hotel.jpg" alt=""></div>
-            <span>Hotel / Catering</span>
-          </button>
-          <button class="card-choice" data-business="Empresa">
-            <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-empresa.jpg" alt=""></div>
-            <span>Empresa</span>
-          </button>
+        <div class="card-progress">
+          <span class="card-progress-dot done" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot active" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-icon">🏪</div>
+          <div class="card-title">¿Qué tipo de negocio tienes?</div>
+          <div class="card-hint">Elige una opción</div>
+          <div class="card-choices card-choices-2">
+            <button class="card-choice" data-business="Restaurante">
+              <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-restaurante.jpg" alt=""></div>
+              <span>Restaurante</span>
+            </button>
+            <button class="card-choice" data-business="Fruver">
+              <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-fruver.jpg" alt=""></div>
+              <span>Fruver</span>
+            </button>
+            <button class="card-choice" data-business="Hotel / Catering">
+              <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-hotel.jpg" alt=""></div>
+              <span>Hotel / Catering</span>
+            </button>
+            <button class="card-choice" data-business="Empresa">
+              <div class="card-choice-frame"><img src="/empresas-b2b/assets/real-empresa.jpg" alt=""></div>
+              <span>Empresa</span>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Card 4: Ripeness -->
       <div class="card-screen" data-card="4">
-        <div class="card-icon">🍃</div>
-        <div class="card-title">¿Cómo preferís que te llegue?</div>
-        <div class="card-hint">Elige una opción</div>
-        <div class="card-choices card-choices-3">
-          <button class="card-choice" data-ripeness="mixto">
-            <div class="emoji-big">🟡</div>
-            <span>Mixto</span>
-            <small>Mitad maduro, mitad verde</small>
-          </button>
-          <button class="card-choice" data-ripeness="maduro">
-            <div class="emoji-big">🟤</div>
-            <span>Maduro</span>
-            <small>Listo para usar al llegar</small>
-          </button>
-          <button class="card-choice" data-ripeness="verde">
-            <div class="emoji-big">🟢</div>
-            <span>Verde</span>
-            <small>Programá tu maduración</small>
-          </button>
+        <div class="card-progress">
+          <span class="card-progress-dot done" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot active" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-icon">🍃</div>
+          <div class="card-title">¿Cómo prefieres que te llegue?</div>
+          <div class="card-hint">Elige una opción</div>
+          <div class="card-choices card-choices-3">
+            <button class="card-choice" data-ripeness="mixto">
+              <svg class="avo-icon" viewBox="0 0 30 30"><path d="M15 4C10 4 6 10 6 14c0 6 9 12 9 12s9-6 9-12c0-4-4-10-9-10z" fill="#9CCC65"/><path d="M15 4C10 4 6 10 6 14c0 6 9 12 9 12s9-6 9-12c0-4-4-10-9-10z" fill="#A1887F" opacity="0.45"/><circle cx="15" cy="12" r="3" fill="#f1d27a"/><path d="M6 14c0 2.5 3.5 5 9 5" stroke="#A1887F" stroke-width="2" opacity="0.5"/></svg>
+              <span>Mixto</span>
+              <small>Mitad maduro, mitad verde</small>
+            </button>
+            <button class="card-choice" data-ripeness="maduro">
+              <svg class="avo-icon" viewBox="0 0 30 30"><path d="M15 4C10 4 6 10 6 14c0 6 9 12 9 12s9-6 9-12c0-4-4-10-9-10z" fill="#8D6E63"/><circle cx="15" cy="12" r="3" fill="#f1d27a"/><path d="M12 8c0 0 1-2 3-2s3 2 3 2" stroke="#6D4C41" stroke-width="1.2" fill="none"/></svg>
+              <span>Maduro</span>
+              <small>Listo para usar</small>
+            </button>
+            <button class="card-choice" data-ripeness="verde">
+              <svg class="avo-icon" viewBox="0 0 30 30"><path d="M15 4C10 4 6 10 6 14c0 6 9 12 9 12s9-6 9-12c0-4-4-10-9-10z" fill="#7CB342"/><circle cx="15" cy="12" r="3" fill="#f1d27a"/><path d="M12 8c0 0 1-2 3-2s3 2 3 2" stroke="#558B2F" stroke-width="1.2" fill="none"/></svg>
+              <span>Verde</span>
+              <small>Programá maduración</small>
+            </button>
+          </div>
         </div>
       </div>
 
       <!-- Card 5: Contact -->
       <div class="card-screen" data-card="5">
-        <div class="card-icon">📨</div>
-        <div class="card-title">¡Casi listo! Déjame tus datos</div>
-        <div class="card-hint">Te enviamos la cotización al instante</div>
-        <div class="card-contact">
-          <label class="field" style="grid-template-columns:24px 1fr;"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><input id="contactEmail" type="email" placeholder="tu@correo.com" required></label>
-          <label class="field" style="grid-template-columns:24px 1fr;"><svg viewBox="0 0 24 24" width="18" height="18"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><input id="contactPhone" type="tel" placeholder="300 123 4567" required></label>
-          <button class="card-submit" id="sendCotizacionBtn">Enviar cotización →</button>
+        <div class="card-progress">
+          <span class="card-progress-dot done" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot active" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-icon">📨</div>
+          <div class="card-title">¡Casi listo! Déjame tus datos</div>
+          <div class="card-hint">Te enviamos la cotización al instante</div>
+          <div class="card-contact">
+            <label class="field"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><input id="contactEmail" type="email" placeholder="tu@correo.com" required></label>
+            <label class="field"><svg viewBox="0 0 24 24" width="16" height="16"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><input id="contactPhone" type="tel" placeholder="300 123 4567" required></label>
+            <button class="card-submit" id="sendCotizacionBtn">Enviar cotización →</button>
+          </div>
         </div>
       </div>
 
       <!-- Card 6: Success -->
       <div class="card-screen" data-card="6">
-        <div class="card-success">
-          <div class="card-success-icon">📨</div>
-          <div class="card-success-title">¡Recibimos tu solicitud!</div>
-          <div class="card-success-text">Te contactaremos pronto con los precios.</div>
+        <div class="card-progress">
+          <span class="card-progress-dot done" data-cstep="1"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="2"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="3"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="4"></span>
+          <span class="card-progress-line"></span><span class="card-progress-dot done" data-cstep="5"></span>
+        </div>
+        <div class="card-body">
+          <div class="card-success">
+            <div class="card-success-icon">📨</div>
+            <div class="card-success-title">¡Recibimos tu solicitud!</div>
+            <div class="card-success-text">Te contactaremos pronto con los precios.</div>
+          </div>
         </div>
       </div>
     </div>
