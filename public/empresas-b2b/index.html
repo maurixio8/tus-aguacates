@@ -545,11 +545,10 @@
     /* 3 options: 2 on top, 1 below centered */
     .card-choices-3 { grid-template-columns: repeat(2,1fr); }
     .card-choices-3 .card-choice:nth-child(3) {
-      grid-column: 1 / -1; justify-self: center; width: 100%; max-width: 65%;
+      grid-column: 1 / -1; width: 100%;
     }
     @media (min-width: 500px) {
       .card-choices { padding: 0 16px; }
-      .card-choices-3 .card-choice:nth-child(3) { max-width: 50%; }
     }
     .card-choice {
       border-radius: clamp(14px, 3vw, 20px); padding: clamp(14px, 2.5vw, 20px) clamp(10px, 2vw, 16px);
@@ -570,8 +569,8 @@
     .card-choice-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
     .card-choice span { font-family: 'Montserrat', sans-serif; font-size: clamp(14px, 3vw, 18px); font-weight: 600; }
     .card-choice small { display: block; font-weight: 400; font-size: clamp(10px, 1.8vw, 13px); color: rgba(255,246,223,0.55); margin-top: 2px; line-height: 1.2; }
-    .card-choice .emoji-big { font-size: clamp(28px, 6vw, 42px); line-height: 1; margin-bottom: 2px; }
-    .card-choice svg.avo-icon { width: clamp(36px, 7vw, 50px); height: clamp(36px, 7vw, 50px); margin-bottom: 3px; }
+    .card-choice .emoji-big { font-size: clamp(48px, 10vw, 72px); line-height: 1; margin-bottom: 2px; }
+    .card-choice svg.avo-icon { width: clamp(48px, 10vw, 72px); height: clamp(48px, 10vw, 72px); margin-bottom: 3px; }
     /* Contact form inside card */
     .card-contact { width: 100%; display: flex; flex-direction: column; gap: clamp(8px, 2vw, 14px); flex-shrink: 0; }
     .card-contact .field { display: grid; align-items: center; min-height: clamp(48px, 9vw, 60px); grid-template-columns: clamp(26px, 4.5vw, 34px) 1fr; gap: clamp(8px, 1.5vw, 12px); padding: 0 clamp(12px, 2.5vw, 18px); border-radius: clamp(12px, 2.5vw, 16px); background: rgba(255,246,223,.95); color: #172016; border: 1px solid rgba(214,168,74,.34); }
