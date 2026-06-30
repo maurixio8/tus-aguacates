@@ -116,6 +116,10 @@
     }
     .navbar-logo { display: flex; align-items: center; gap: 0.75rem; }
     .navbar-logo .wordmark-text { font-family: 'Berkshire Swash', cursive; font-size: 1.35rem; color: var(--cream); line-height: 1.4; padding: 4px 0; white-space: nowrap; }
+    .navbar-logo .navbar-logo-img { height: 32px; width: auto; display: block; }
+    @media (max-width: 480px) {
+      .navbar-logo .navbar-logo-img { height: 26px; }
+    }
     .footer-wordmark { font-family: 'Berkshire Swash', cursive; font-size: 1.1rem; color: var(--txd); line-height: 1.4; padding: 2px 0; white-space: nowrap; }
     .navbar-logo .sello { height: 36px; width: auto; }
     .navbar-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
@@ -162,6 +166,15 @@
       animation: breathe 8s ease-in-out infinite reverse;
     }
     .hero-content { position: relative; z-index: 2; max-width: 760px; }
+
+    /* Hero banner logo */
+    .hero-logo-area { margin-bottom: 0.5rem; }
+    .hero-logo-area img {
+      max-width: 100%;
+      height: auto;
+      width: clamp(280px, 60vw, 640px);
+      display: block;
+    }
 
     /* Brand presentation */
     .brand-area { position: relative; }
@@ -448,7 +461,7 @@
   <nav class="navbar" id="navbar">
     <div class="navbar-logo">
       <img class="sello" src="/empresas-b2b/assets/logo-sello.png" alt="TusAguacates">
-      <span class="wordmark-text">TusAguacates</span>
+      <img class="navbar-logo-img" src="/empresas-b2b/assets/logo-b2b-banner.jpg" alt="TusAguacates" style="height:32px;width:auto;">
     </div>
     <ul class="navbar-links" id="navLinks">
       <li><a href="#productos">Productos</a></li>
@@ -475,17 +488,9 @@
           <img src="/empresas-b2b/assets/logo-sello.png" alt="TusAguacates">
         </div>
 
-        <!-- Typewriter: Bienvenido a -->
-        <div class="hero-typewriter">
-          <div class="typewriter-line" id="twLine1">Bienvenido a</div>
-        </div>
-
-        <!-- Typewriter: TusAguacates -->
-        <div class="typewriter-line-2" id="twLine2">TusAguacates</div>
-
-        <!-- Segment EMPRESAS -->
-        <div class="segment-row" id="segmentRow">
-          <span class="segment-text">EMPRESAS</span>
+        <!-- Logo banner -->
+        <div class="hero-logo-area" style="margin-bottom:0.5rem;">
+          <img src="/empresas-b2b/assets/logo-b2b-banner.jpg" alt="TusAguacates Empresas" style="max-width:100%;height:auto;width:clamp(280px, 60vw, 640px);">
         </div>
 
         <!-- Gold diamond divider -->
@@ -706,7 +711,7 @@
   <footer class="footer"><div class="container">
     <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:10px;">
       <img src="/empresas-b2b/assets/logo-sello.png" alt="" style="height:32px;filter:brightness(0.6);">
-      <span class="footer-wordmark">TusAguacates</span>
+      <img src="/empresas-b2b/assets/logo-b2b-banner.jpg" alt="TusAguacates" style="height:28px;width:auto;opacity:0.6;">
     </div>
     <p class="footer-text">Productores directos · Bogotá, Colombia<br><a href="mailto:tusaguacates.com@gmail.com">tusaguacates.com@gmail.com</a></p>
     <div class="footer-social">
@@ -788,38 +793,7 @@
     }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
     document.querySelectorAll('.reveal').forEach(el => revObs.observe(el));
 
-    // ─── Typewriter Effect ───
-    function typeWriter(element, text, speed, callback) {
-      element.style.width = '0';
-      element.textContent = text;
-      element.style.animation = 'none';
-      element.offsetHeight; // force reflow
-      const totalWidth = text.length;
-      let i = 0;
-      function type() {
-        if (i < totalWidth) {
-          element.style.width = (i + 1) + 'ch';
-          i++;
-          setTimeout(type, speed);
-        } else {
-          element.style.width = text.length + 'ch';
-          element.classList.add('done');
-          if (callback) setTimeout(callback, 300);
-        }
-      }
-      // Set font and measure
-      element.style.whiteSpace = 'nowrap';
-      element.style.overflow = 'hidden';
-      element.style.width = '0';
-      element.style.borderRight = '3px solid #d9b96a';
-      element.textContent = text;
-      setTimeout(type, 200);
-    }
-
-    // Typewriter sequence
-    const tw1 = document.getElementById('twLine1');
-    const tw2 = document.getElementById('twLine2');
-    const segRow = document.getElementById('segmentRow');
+    // ─── Hero reveal sequence ───
     const divGold = document.getElementById('dividerGold');
     const tagline = document.getElementById('heroTagline');
     const benefits = document.getElementById('premiumBenefits');
@@ -829,40 +803,34 @@
       '"Hass y Papelillo, siempre frescos"',
     ];
 
-    typeWriter(tw1, 'Bienvenido a', 60, function() {
-      typeWriter(tw2, 'TusAguacates', 50, function() {
+    // Show logo, divider, tagline and benefits immediately
+    setTimeout(() => {
+      divGold.classList.add('visible');
+      // Typewriter for tagline
+      let ti = 0;
+      function cycleTagline() {
+        tagline.style.opacity = '0';
+        tagline.style.transition = 'opacity 0.5s';
         setTimeout(() => {
-          segRow.classList.add('visible');
-          setTimeout(() => {
-            divGold.classList.add('visible');
-            // Typewriter for tagline
-            let ti = 0;
-            function cycleTagline() {
-              tagline.style.opacity = '0';
-              tagline.style.transition = 'opacity 0.5s';
-              setTimeout(() => {
-                tagline.textContent = taglines[ti % taglines.length];
-                tagline.style.opacity = '1';
-                ti++;
-                setTimeout(cycleTagline, 3500);
-              }, 600);
-            }
-            cycleTagline();
-            // Show benefits
-            benefits.style.opacity = '1';
-            benefits.querySelectorAll('.premium-benefit').forEach((b, i) => {
-              b.style.opacity = '0';
-              b.style.transform = 'translateX(-10px)';
-              setTimeout(() => {
-                b.style.opacity = '1';
-                b.style.transform = 'translateX(0)';
-                b.style.transition = 'all 0.6s cubic-bezier(0.16,1,0.3,1)';
-              }, 200 + i * 150);
-            });
-          }, 400);
-        }, 300);
+          tagline.textContent = taglines[ti % taglines.length];
+          tagline.style.opacity = '1';
+          ti++;
+          setTimeout(cycleTagline, 3500);
+        }, 600);
+      }
+      cycleTagline();
+      // Show benefits
+      benefits.style.opacity = '1';
+      benefits.querySelectorAll('.premium-benefit').forEach((b, i) => {
+        b.style.opacity = '0';
+        b.style.transform = 'translateX(-10px)';
+        setTimeout(() => {
+          b.style.opacity = '1';
+          b.style.transform = 'translateX(0)';
+          b.style.transition = 'all 0.6s cubic-bezier(0.16,1,0.3,1)';
+        }, 200 + i * 150);
       });
-    });
+    }, 400);
 
     // ─── Pricing Tables ───
     function buildPricing() {
