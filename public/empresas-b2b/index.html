@@ -133,6 +133,7 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 8px 20px rgba(0,0,0,.30);
     }
     .nav-toggle { display: none; flex-direction: column; gap: 4px; cursor: pointer; background: none; border: none; padding: 4px; }
+    .nav-toggle.chat-open { display: none !important; }
     .nav-toggle span { display: block; width: 24px; height: 2px; background: var(--gold-s); transition: .3s; border-radius: 2px; }
     .nav-toggle.active span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
     .nav-toggle.active span:nth-child(2) { opacity: 0; }
@@ -1031,8 +1032,8 @@
     // ═══════ AVOPRO CARDS ═══════
     const chatShell=document.getElementById('chatShell'),chatBody=document.getElementById('chatBody');
     let chatData = {}, currentCard = 1;
-    function openChat(){chatShell.classList.add('is-open');chatShell.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';document.getElementById('floatingCta')?.classList.remove('show');}
-    function closeChat(){chatShell.classList.remove('is-open');chatShell.setAttribute('aria-hidden','true');document.body.style.overflow='';}
+    function openChat(){chatShell.classList.add('is-open');chatShell.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';document.getElementById('floatingCta')?.classList.remove('show');document.getElementById('navToggle')?.classList.add('chat-open');}
+    function closeChat(){chatShell.classList.remove('is-open');chatShell.setAttribute('aria-hidden','true');document.body.style.overflow='';document.getElementById('navToggle')?.classList.remove('chat-open');}
     document.querySelectorAll('[data-open-chat]').forEach(b=>b.addEventListener('click',openChat));
     document.querySelector('[data-close-chat]').addEventListener('click',closeChat);
 
