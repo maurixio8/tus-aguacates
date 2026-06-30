@@ -1,0 +1,22 @@
+<svg viewBox="0 0 72 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fg1" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#D4AF37"/><stop offset="100%" stop-color="#B8961F"/></linearGradient>
+    <linearGradient id="fg2" x1="0" y1="0" x2="72" y2="72"><stop offset="0%" stop-color="#0D2818"/><stop offset="100%" stop-color="#071f15"/></linearGradient>
+  </defs>
+  <circle cx="36" cy="36" r="34" fill="url(#fg2)"/>
+  <circle cx="36" cy="36" r="34" stroke="url(#fg1)" stroke-width="1.5"/>
+  <circle cx="36" cy="36" r="28" stroke="rgba(200,162,39,0.15)" stroke-width="1" fill="none"/>
+  <!-- Crate base -->
+  <path d="M18 42l6-14h24l6 14" stroke="#D4AF37" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+  <path d="M18 42l4 6h28l4-6" stroke="#f1d27a" stroke-width="2" stroke-linejoin="round" fill="none"/>
+  <path d="M24 28l-2 14" stroke="rgba(212,175,55,0.5)" stroke-width="1.5"/>
+  <path d="M48 28l2 14" stroke="rgba(212,175,55,0.5)" stroke-width="1.5"/>
+  <!-- Avocado leaf top -->
+  <path d="M36 18c-6 0-8 4-8 6s2 2 2 0 2-4 6-4 6 2 6 4 2 2 2 0-2-6-8-6z" fill="rgba(212,175,55,0.4)"/>
+  <!-- Fruit dots -->
+  <circle cx="28" cy="34" r="4" fill="rgba(241,210,122,0.5)"/>
+  <circle cx="36" cy="38" r="5" fill="rgba(212,175,55,0.6)"/>
+  <circle cx="44" cy="33" r="3.5" fill="rgba(241,210,122,0.5)"/>
+  <!-- Stem -->
+  <path d="M36 14v4" stroke="#D4AF37" stroke-width="2" stroke-linecap="round"/>
+</svg>

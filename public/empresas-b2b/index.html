@@ -506,6 +506,9 @@
     .choice:hover, .choice.is-selected { background: linear-gradient(180deg, rgba(20,84,51,.94), rgba(7,31,21,.94)); border-color: #f1d27a; }
     .choice svg { width: 32px; height: 32px; stroke: var(--gold); fill: none; stroke-width: 1.7; margin-bottom: 8px; }
     .choice span { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 600; }
+    .choice-variety { min-height: 130px; gap: 6px; }
+    .choice-img { width: 44px; height: 44px; object-fit: contain; margin-bottom: 6px; filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3)); }
+    .choice img[src$=".svg"] { display: block; margin-bottom: 6px; }
     .field { display: grid; grid-template-columns: 26px 1fr; align-items: center; gap: 9px; min-height: 48px; padding: 0 14px; border-radius: 14px; background: rgba(255,246,223,.95); color: #172016; border: 1px solid rgba(214,168,74,.34); }
     .field input, .field select { width: 100%; border: 0; outline: 0; background: transparent; color: #172016; min-height: 44px; font-size: 14px; }
     .mini-cta { min-height: 48px; border-radius: 15px; cursor: pointer; font-family: inherit; font-weight: 700; font-size: 14px; color: var(--cream); background: linear-gradient(#145433, #071f15) padding-box, linear-gradient(135deg, #f1d27a, #bd8a2f) border-box; border: 1.5px solid transparent; }
@@ -916,19 +919,20 @@
     </header>
     <div class="chat-body" id="chatBody">
       <div class="message bot">🥑 ¡Hola! Soy <strong>AvoPro</strong>. Te ayudo a cotizar aguacate al por mayor.</div>
-      <div class="message bot"><strong>¿Qué clase de aguacate te interesa?</strong></div>
+      <div class="message bot"><strong>¿Qué variedad de aguacate te interesa?</strong></div>
+      <div style="text-align:center;font-size:12px;color:var(--txm);margin:0 0 10px;font-weight:500;">Elige una opción</div>
       <div class="choice-grid" id="varietyChoices">
-        <button class="choice" data-variety="hass"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3c-5 0-9 4-9 8 0 6 9 13 9 13s9-7 9-13c0-4-4-8-9-8z"/><circle cx="12" cy="10" r="2" fill="rgba(200,162,39,0.3)"/><path d="M9 6c0 0 1-2 3-2s3 2 3 2" stroke-width="1.5"/></svg><span>Aguacate Hass</span><small style="display:block;font-weight:400;font-size:11px;color:rgba(255,246,223,0.7);margin-top:2px;">Cremoso · Piel rugosa · Sabor intenso</small></button>
-        <button class="choice" data-variety="papelillo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3c-5 0-9 4-9 8 0 6 9 13 9 13s9-7 9-13c0-4-4-8-9-8z"/><ellipse cx="12" cy="9" rx="3" ry="2" fill="rgba(200,162,39,0.3)"/><path d="M10 5c1-1 3-1 4 0" stroke-width="1.5"/></svg><span>Aguacate Papelillo</span><small style="display:block;font-weight:400;font-size:11px;color:rgba(255,246,223,0.7);margin-top:2px;">Firme · Piel delgada · Textura compacta</small></button>
+        <button class="choice choice-variety" data-variety="papelillo"><img src="/empresas-b2b/assets/papelillo-icon.png" alt="" class="choice-img"><span>Aguacate Papelillo</span><small style="display:block;font-weight:400;font-size:11px;color:rgba(255,246,223,0.7);margin-top:2px;">Firme · Piel delgada · Textura compacta</small></button>
+        <button class="choice choice-variety" data-variety="hass"><img src="/empresas-b2b/assets/hass-icon.png" alt="" class="choice-img"><span>Aguacate Hass</span><small style="display:block;font-weight:400;font-size:11px;color:rgba(255,246,223,0.7);margin-top:2px;">Cremoso · Piel rugosa · Sabor intenso</small></button>
       </div>
       <!-- Business choices (hidden initially, shown after variety selection) -->
       <div id="businessSection" hidden>
         <div class="message bot">¿Qué tipo de negocio tienes?</div>
         <div class="choice-grid" id="businessChoices">
-          <button class="choice" data-business="Restaurante"><svg viewBox="0 0 24 24"><path d="M4 14h16"/><path d="M5 14a7 7 0 0 1 14 0"/></svg><span>Restaurante</span></button>
-          <button class="choice" data-business="Fruver"><svg viewBox="0 0 24 24"><path d="M4 10h16l-2 10H6L4 10Z"/></svg><span>Fruver</span></button>
-          <button class="choice" data-business="Hotel / Catering"><svg viewBox="0 0 24 24"><path d="M5 17h14"/><path d="M7 17V8a5 5 0 0 1 10 0v9"/></svg><span>Hotel / Catering</span></button>
-          <button class="choice" data-business="Empresa"><svg viewBox="0 0 24 24"><path d="M4 21V9h6v12"/><path d="M10 21V4h10v17"/></svg><span>Empresa</span></button>
+          <button class="choice" data-business="Restaurante"><img src="/empresas-b2b/assets/icon-restaurante.svg" alt="" style="width:44px;height:44px;"><span>Restaurante</span></button>
+          <button class="choice" data-business="Fruver"><img src="/empresas-b2b/assets/icon-fruver.svg" alt="" style="width:44px;height:44px;"><span>Fruver</span></button>
+          <button class="choice" data-business="Hotel / Catering"><img src="/empresas-b2b/assets/icon-hotel.svg" alt="" style="width:44px;height:44px;"><span>Hotel / Catering</span></button>
+          <button class="choice" data-business="Empresa"><img src="/empresas-b2b/assets/icon-empresa.svg" alt="" style="width:44px;height:44px;"><span>Empresa</span></button>
         </div>
       </div>
       <div class="field-stack" id="quoteFields" hidden>
