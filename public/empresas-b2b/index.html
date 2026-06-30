@@ -491,6 +491,7 @@
     .chat-shell { position: fixed; inset: auto 0 0; z-index: 40; width: min(100%, 540px); margin-inline: auto; height: min(88svh, 760px); display: flex; flex-direction: column; border-radius: 28px 28px 0 0; overflow: hidden; background: linear-gradient(180deg, rgba(7,31,21,.98), rgba(4,19,13,.98)); border: 1px solid rgba(200,162,39,0.2); box-shadow: 0 -24px 65px rgba(0,0,0,.65); transform: translateY(105%); transition: transform .34s ease; }
     .chat-shell.is-open { transform: translateY(0); }
     .chat-header { padding: 14px 16px 13px; display: flex; align-items: center; gap: 12px; background: linear-gradient(90deg, rgba(4,19,13,.98), rgba(14,58,37,.95)), radial-gradient(circle at top right, rgba(214,168,74,.16), transparent 42%); border-bottom: 1px solid rgba(200,162,39,0.2); }
+    .chat-header-title { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
     .bot-avatar { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; flex: 0 0 auto; background: linear-gradient(#0e3a25, #061812) padding-box, linear-gradient(135deg, #f1d27a, #b8df45) border-box; border: 2px solid transparent; }
     .bot-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .bot-title { display: flex; align-items: center; gap: 7px; margin: 0; font-weight: 900; font-size: 1rem; color: var(--cream); }
@@ -536,11 +537,20 @@
       text-align: center; margin-bottom: 12px; flex-shrink: 0;
     }
     .card-choices {
-      width: 100%; max-width: 380px;
-      display: grid; gap: 8px; margin: 0 auto; flex-shrink: 0;
+      width: 100%; max-width: 100%;
+      display: grid; gap: 10px; margin: 0 auto; flex-shrink: 0;
+      padding: 0 4px;
     }
     .card-choices-2 { grid-template-columns: repeat(2,1fr); }
-    .card-choices-3 { grid-template-columns: repeat(3,1fr); }
+    /* 3 options: 2 on top, 1 below centered */
+    .card-choices-3 { grid-template-columns: repeat(2,1fr); }
+    .card-choices-3 .card-choice:nth-child(3) {
+      grid-column: 1 / -1; justify-self: center; width: 100%; max-width: 55%;
+    }
+    @media (min-width: 500px) {
+      .card-choices { gap: 12px; padding: 0 8px; }
+      .card-choices-3 .card-choice:nth-child(3) { max-width: 45%; }
+    }
     .card-choice {
       border-radius: 14px; padding: 10px 8px;
       cursor: pointer; color: var(--cream);
@@ -563,9 +573,9 @@
     .card-choice .emoji-big { font-size: 24px; line-height: 1; margin-bottom: 1px; }
     .card-choice svg.avo-icon { width: 30px; height: 30px; margin-bottom: 2px; }
     /* Contact form inside card */
-    .card-contact { width: 100%; max-width: 300px; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
-    .card-contact .field { min-height: 40px; grid-template-columns: 22px 1fr; gap: 7px; padding: 0 10px; }
-    .card-contact .field input { min-height: 38px; font-size: 13px; }
+    .card-contact { width: 100%; display: flex; flex-direction: column; gap: 8px; flex-shrink: 0; }
+    .card-contact .field { display: grid; align-items: center; min-height: 40px; grid-template-columns: 22px 1fr; gap: 7px; padding: 0 10px; border-radius: 12px; background: rgba(255,246,223,.95); color: #172016; border: 1px solid rgba(214,168,74,.34); }
+    .card-contact .field input { width: 100%; border: 0; outline: 0; background: transparent; color: #172016; min-height: 38px; font-size: 13px; }
     .card-submit {
       min-height: 42px; border-radius: 13px; cursor: pointer; font-family: inherit;
       font-weight: 700; font-size: 13px; color: var(--cream);
@@ -588,6 +598,22 @@
       border-radius: 8px;
     }
     .close-chat:hover { color: var(--gold-l); background: rgba(200,162,39,0.12); }
+
+    /* Fullscreen button */
+    .fullscreen-btn {
+      background: none; border: none; color: var(--txd); font-size: 1.2rem;
+      cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: all 0.3s;
+      line-height: 1;
+    }
+    .fullscreen-btn:hover { color: var(--gold); background: rgba(200,162,39,0.1); }
+    .chat-shell.is-fullscreen {
+      width: 100vw !important; height: 100vh !important;
+      inset: 0 !important; border-radius: 0 !important;
+      margin: 0 !important; max-width: none !important;
+    }
+    @media (min-width: 768px) {
+      .chat-shell.is-fullscreen { right: 0 !important; left: 0 !important; bottom: 0 !important; }
+    }
 
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #061812; }
@@ -976,8 +1002,11 @@
   <!-- CHAT SHELL -->
   <aside class="chat-shell" id="chatShell">
     <header class="chat-header">
-      <div class="bot-avatar"><img src="/empresas-b2b/assets/logo-sello.png" alt="AvoPro"></div>
-      <div class="bot-meta"><p class="bot-title">AvoPro <span class="online-dot"></span></p><p class="bot-status">Asistente premium de cotización</p></div>
+      <div class="chat-header-title">
+        <div class="bot-avatar"><img src="/empresas-b2b/assets/logo-sello.png" alt="AvoPro"></div>
+        <div class="bot-meta"><p class="bot-title">AvoPro <span class="online-dot"></span></p><p class="bot-status">Asistente premium de cotización</p></div>
+      </div>
+      <button class="fullscreen-btn" id="fullscreenBtn" title="Pantalla completa">⛶</button>
       <button class="close-chat" type="button" data-close-chat>×</button>
     </header>
     <div class="chat-body" id="chatBody">
@@ -1086,7 +1115,7 @@
           <span class="card-progress-line"></span><span class="card-progress-dot" data-cstep="5"></span>
         </div>
         <div class="card-body">
-          <div class="card-icon">🍃</div>
+          <div class="card-icon">🥑</div>
           <div class="card-title">¿Cómo prefieres que te llegue?</div>
           <div class="card-hint">Elige una opción</div>
           <div class="card-choices card-choices-3">
@@ -1384,6 +1413,14 @@
     function closeChat(){chatShell.classList.remove('is-open');chatShell.setAttribute('aria-hidden','true');document.body.style.overflow='';}
     document.querySelectorAll('[data-open-chat]').forEach(b=>b.addEventListener('click',openChat));
     document.querySelector('[data-close-chat]').addEventListener('click',closeChat);
+
+    // Fullscreen toggle
+    const fsBtn = document.getElementById('fullscreenBtn');
+    fsBtn.addEventListener('click', function() {
+      chatShell.classList.toggle('is-fullscreen');
+      this.textContent = chatShell.classList.contains('is-fullscreen') ? '✕' : '⛶';
+      this.title = chatShell.classList.contains('is-fullscreen') ? 'Salir de pantalla completa' : 'Pantalla completa';
+    });
 
     function goToCard(n) {
       const cards = document.querySelectorAll('.card-screen');
