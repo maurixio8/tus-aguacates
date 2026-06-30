@@ -26,7 +26,7 @@
         }
       },
       contact: { email: 'tusaguacates.com@gmail.com', instagram: '@tusaguacates', location: 'Bogotá, Colombia · Productores directos', delivery: 'Bogotá · Chía' },
-      webhook: { url: 'https://n8n.tusaguacates.com/webhook/b2b-pedido', enabled: true },
+      webhook: { url: 'https://n8n.tusaguacates.com/webhook/b2b-pedido', enabled: false },
       hero: { image: '/empresas-b2b/assets/negocio.jpg' },
       company: 'Equipo Comercial · Tus Aguacates',
     };
@@ -361,58 +361,6 @@
     /* Wizard */
     .wizard-trigger { display: inline-flex; align-items: center; gap: 10px; padding: 1rem 2.5rem; background: linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; font-weight:700; font-size:1.1rem; border:none; border-radius:50px; cursor:pointer; transition:all .4s cubic-bezier(0.16,1,0.3,1); }
     .wizard-trigger:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(200,162,39,0.3); }
-    .wizard-overlay { display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:1rem; }
-    .wizard-overlay.is-open { display:flex; }
-    .wizard-modal { background: linear-gradient(135deg, #0D2818 0%, #143524 100%); border:1px solid rgba(200,162,39,0.15); border-radius:24px; max-width:560px; width:100%; padding:2rem 2rem 1.5rem; position:relative; max-height:90vh; overflow-y:auto; box-shadow:0 40px 80px rgba(0,0,0,0.5); }
-    .wizard-close { position:absolute; top:12px; right:16px; background:none; border:none; color:var(--gold); font-size:2.8rem; cursor:pointer; line-height:1; padding:4px 12px; font-weight:bold; z-index:2; }
-    .wizard-close:hover { color: var(--gold-l); background: rgba(200,162,39,0.12); }
-    .wizard-progress { display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:2rem; }
-    .wp-dot { width:12px;height:12px;border-radius:50%;background:var(--txd);transition:all .4s; }
-    .wp-dot.wp-active { background:var(--gold); box-shadow:0 0 12px rgba(200,162,39,0.4); }
-    .wp-dot.wp-done { background:var(--gold); opacity:0.5; }
-    .wp-line { width:40px;height:2px;background:var(--txd);border-radius:2px; }
-    .wizard-steps { position:relative; min-height:320px; }
-    .ws-step { display:none; animation:wsFadeIn .35s ease; }
-    .ws-step.ws-active { display:block; }
-    @keyframes wsFadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-    .ws-icon { font-size:2.5rem; text-align:center; margin-bottom:0.5rem; }
-    .ws-title { text-align:center; color:#fff; font-size:1.3rem; font-weight:700; margin-bottom:0.3rem; }
-    .ws-sub { text-align:center; color:var(--txd); font-size:0.9rem; margin-bottom:1.5rem; }
-    .ws-choices { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .ws-choices-3 { grid-template-columns:1fr 1fr 1fr; }
-    @media (max-width:480px){ .ws-choices { grid-template-columns:1fr; } .ws-choices-3{grid-template-columns:1fr;} }
-    .ws-choice { display:flex; flex-direction:column; align-items:center; gap:6px; padding:1.25rem 1rem; background:rgba(200,162,39,0.03); border:1px solid rgba(200,162,39,0.1); border-radius:16px; cursor:pointer; transition:all .3s; text-align:center; }
-    .ws-choice:hover { border-color:var(--gold); background:rgba(200,162,39,0.06); }
-    .ws-choice.ws-selected { border-color:var(--gold); background:rgba(200,162,39,0.1); box-shadow:0 0 20px rgba(200,162,39,0.1); }
-    .ws-choice-icon { font-size:1.8rem; }
-    .ws-choice-title { color:#fff; font-weight:700; font-size:0.95rem; }
-    .ws-choice-desc { color:var(--txd); font-size:0.78rem; line-height:1.3; }
-    .wizard-nav { display:flex; justify-content:space-between; margin-top:1.5rem; gap:10px; }
-    .wn-back, .wn-next { padding:0.7rem 1.5rem; border-radius:50px; font-weight:600; cursor:pointer; transition:all .3s; border:none; font-size:0.9rem; }
-    .wn-back { background:var(--card); color:var(--txd); border:1px solid rgba(200,162,39,0.1); }
-    .wn-back:hover { border-color:var(--gold); color:#fff; }
-    .wn-next { background:linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; margin-left:auto; }
-    .wn-next:disabled, .wn-back:disabled { opacity:0.3; cursor:not-allowed; }
-    .wn-back:disabled:hover { border-color:rgba(200,162,39,0.1); color:var(--txd); }
-    .ws-summary { background:rgba(200,162,39,0.04); border:1px solid rgba(200,162,39,0.1); border-radius:12px; padding:1rem; margin-bottom:1rem; }
-    .ws-summary-row { display:flex; justify-content:space-between; padding:0.4rem 0; color:var(--txm); font-size:0.9rem; border-bottom:1px solid rgba(200,162,39,0.05); }
-    .ws-summary-row:last-child { border-bottom:none; }
-    .ws-summary-row strong { color:#fff; }
-    .ws-email-form { display:flex; gap:10px; }
-    .ws-email-form input { flex:1; padding:0.85rem 1rem; border-radius:12px; border:1px solid rgba(200,162,39,0.15); background:rgba(0,0,0,0.2); color:#fff; font-size:1rem; outline:none; }
-    .ws-email-form input:focus { border-color:var(--gold); }
-    .ws-email-form input::placeholder { color:var(--txd); }
-    .ws-submit { padding:0.85rem 1.5rem; background:linear-gradient(135deg,var(--gold),#B8961F); color:#07180f; font-weight:700; border:none; border-radius:12px; cursor:pointer; white-space:nowrap; transition:all .3s; }
-    .ws-submit:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(200,162,39,0.25); }
-    .ws-submit.loading { opacity:0.7; pointer-events:none; }
-    .ws-phone-option { text-align:center; margin-top:1rem; font-size:0.85rem; color:var(--txd); }
-    .ws-phone-option a { color:var(--gold); text-decoration:underline; cursor:pointer; }
-    /* Wizard success state */
-    .wiz-success { display:none; text-align:center; padding:2rem 0; }
-    .wiz-success.show { display:block; }
-    .wiz-success-icon { font-size:3rem; margin-bottom:0.5rem; }
-    .wiz-success h3 { color:#fff; font-size:1.3rem; margin-bottom:0.5rem; }
-    .wiz-success p { color:var(--txd); font-size:0.9rem; }
     .product-name { font-size: 1.4rem; font-weight: 800; color: #fff; margin-bottom: 0.3rem; }
     .product-origin { font-size: 0.8rem; color: var(--gold); font-weight: 600; margin-bottom: 1rem; display: block; }
     .product-desc { font-size: 0.9rem; color: var(--txm); line-height: 1.7; margin-bottom: 1.5rem; }
@@ -445,37 +393,7 @@
     .price-row:last-child { border-bottom: none; }
     .price-kgs { font-weight: 600; color: #e8e0d0; }
     .price-value { font-weight: 700; color: var(--gold-s); font-size: 1rem; }
-
-    .steps-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1.5rem; margin-top: 2.5rem; }
-    @media (max-width: 768px) { .steps-grid { grid-template-columns: 1fr; } }
-    .step-card { background: var(--card); border: 1px solid rgba(255,255,255,0.04); border-radius: 16px; padding: 2rem; text-align: center; transition: all .4s; }
-    .step-card:hover { border-color: rgba(200,162,39,0.15); transform: translateY(-3px); }
-    .step-number { width: 48px; height: 48px; border-radius: 50%; background: rgba(200,162,39,0.12); color: var(--gold-s); font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; border: 1px solid rgba(200,162,39,0.2); transition: all .4s; }
-    .step-card:hover .step-number { background: var(--gold); color: #061812; }
-    .step-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
-    .step-card p { font-size: 0.85rem; color: var(--txd); line-height: 1.6; }
-
-    .order-section { background: linear-gradient(180deg, #061812 0%, #0a2214 50%, #061812 100%); }
-    .order-form { max-width: 800px; margin: 0 auto; background: rgba(13,40,24,0.6); border: 1px solid var(--line); border-radius: 24px; padding: 3rem; backdrop-filter: blur(10px); }
-    @media (max-width: 768px) { .order-form { padding: 1.5rem; } }
-    .form-section-title { font-family: 'Montserrat', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 1.25rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(200,162,39,0.15); }
-    .form-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 1rem; margin-bottom: 2rem; }
-    @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
-    .form-group.full { grid-column: 1 / -1; }
-    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: #c0b8a8; margin-bottom: 0.4rem; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 0.8rem 1rem; background: rgba(6,24,18,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; color: #e8e0d0; font-size: 0.9rem; font-family: inherit; transition: all .3s; outline: none; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(200,162,39,0.1); }
-    .order-line { background: rgba(6,24,18,0.4); border: 1px solid rgba(255,255,255,0.04); border-radius: 14px; padding: 1.25rem; margin-bottom: 1rem; }
-    .order-line-title { font-size: 0.8rem; font-weight: 700; color: var(--gold-s); margin-bottom: 0.75rem; }
-    .order-line-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-    @media (max-width: 480px) { .order-line-grid { grid-template-columns: 1fr; } }
-    .ripening-group { margin-top: 0.75rem; }
-    .ripening-row { display: flex; gap: 0.75rem; }
-    .ripening-row .form-group { flex: 1; }
-    .form-submit { width: 100%; min-height: 62px; border-radius: 20px; display: flex; align-items: center; justify-content: center; gap: 0.75rem; padding: 1.1rem; color: var(--cream); background: linear-gradient(#0e3a25, #071f15) padding-box, linear-gradient(135deg, #f1d27a, #bd8a2f, #b8df45) border-box; border: 1.5px solid transparent; cursor: pointer; font-family: inherit; font-weight: 800; font-size: 1rem; letter-spacing: 0.02em; text-transform: uppercase; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 12px 28px rgba(0,0,0,.38); }
-    .form-submit:hover { transform: translateY(-2px); }
-    .form-success { display: none; text-align: center; padding: 3rem; }
-    .form-success.show { display: block; animation: scaleIn 0.5s both; }
+    @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; } }
 
     .footer { border-top: 2px solid rgba(200,162,39,0.08); padding: 3rem 0; text-align: center; }
     .footer-text { font-size: 0.85rem; color: #5a5040; line-height: 1.6; }
@@ -640,9 +558,7 @@
       <img class="navbar-logo-img" src="/empresas-b2b/assets/logo-b2b-banner.png" alt="TusAguacates" style="height:32px;width:auto;">
     </div>
     <ul class="navbar-links" id="navLinks">
-      <li><a href="#productos">Productos</a></li>
       <li><a href="#precios">Precios</a></li>
-      <li><a href="#como-pedir">Cómo pedir</a></li>
       <li><a href="#" class="nav-cta" data-open-chat>AvoPro →</a></li>
     </ul>
     <button class="nav-toggle" id="navToggle" aria-label="Menú"><span></span><span></span><span></span></button>
@@ -820,176 +736,13 @@
 
     <!-- Wizard trigger -->
     <div class="text-center reveal">
-      <button class="wizard-trigger" id="wizardTrigger">
+      <button class="wizard-trigger" id="wizardTrigger" data-open-chat>
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         Cotizar ahora
       </button>
     </div>
 
-    <!-- Wizard modal overlay -->
-    <div class="wizard-overlay" id="wizardOverlay">
-      <div class="wizard-modal" id="wizardModal">
-        <button class="wizard-close" id="wizardClose">&times;</button>
-
-        <!-- Progress dots -->
-        <div class="wizard-progress" id="wizardProgress">
-          <span class="wp-dot wp-active" data-step="1"></span>
-          <span class="wp-line"></span>
-          <span class="wp-dot" data-step="2"></span>
-          <span class="wp-line"></span>
-          <span class="wp-dot" data-step="3"></span>
-          <span class="wp-line"></span>
-          <span class="wp-dot" data-step="4"></span>
-        </div>
-
-        <!-- Step cards -->
-        <div class="wizard-steps" id="wizardSteps">
-
-          <!-- Step 1: Variety -->
-          <div class="ws-step ws-active" data-step="1">
-            <div class="ws-icon">🥑</div>
-            <h3 class="ws-title">¿Qué variedad te interesa?</h3>
-            <p class="ws-sub">Elegí la que más se adapte a tu negocio</p>
-            <div class="ws-choices">
-              <button class="ws-choice" data-value="hass">
-                <span class="ws-choice-icon">🥑</span>
-                <span class="ws-choice-title">Aguacate Hass</span>
-                <span class="ws-choice-desc">Cremoso, piel rugosa, sabor intenso</span>
-              </button>
-              <button class="ws-choice" data-value="papelillo">
-                <span class="ws-choice-icon">🥑</span>
-                <span class="ws-choice-title">Aguacate Papelillo</span>
-                <span class="ws-choice-desc">Firme, piel delgada, textura compacta</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 2: Kilos -->
-          <div class="ws-step" data-step="2">
-            <div class="ws-icon">⚖️</div>
-            <h3 class="ws-title">¿Cuántos kilos consumes a la semana?</h3>
-            <p class="ws-sub">Elegí el volumen que manejás semanalmente</p>
-            <div class="ws-choices ws-choices-3">
-              <button class="ws-choice" data-value="0-10">
-                <span class="ws-choice-icon">📦</span>
-                <span class="ws-choice-title">0 – 10 kg</span>
-                <span class="ws-choice-desc">Emprendimiento · Prueba · Bajo volumen</span>
-              </button>
-              <button class="ws-choice" data-value="10-20">
-                <span class="ws-choice-icon">📦📦</span>
-                <span class="ws-choice-title">10 – 20 kg</span>
-                <span class="ws-choice-desc">Restaurante pequeño · Cafetería</span>
-              </button>
-              <button class="ws-choice" data-value="20+">
-                <span class="ws-choice-icon">📦📦📦</span>
-                <span class="ws-choice-title">20+ kg</span>
-                <span class="ws-choice-desc">Hotel · Catering · Fruver · Mayor volumen</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 3: Ripeness -->
-          <div class="ws-step" data-step="3">
-            <div class="ws-icon">🍃</div>
-            <h3 class="ws-title">¿Cómo preferís que te lleguen?</h3>
-            <p class="ws-sub">Elegí el punto de maduración ideal para tu operación</p>
-            <div class="ws-choices">
-              <button class="ws-choice" data-value="todos-maduros">
-                <span class="ws-choice-icon">🟤</span>
-                <span class="ws-choice-title">Todos maduros</span>
-                <span class="ws-choice-desc">Listos para usar al llegar · Consumo inmediato</span>
-              </button>
-              <button class="ws-choice" data-value="mitad-mitad">
-                <span class="ws-choice-icon">🟡</span>
-                <span class="ws-choice-title">Mitad maduro, mitad verde</span>
-                <span class="ws-choice-desc">Balance para usar hoy y programar la semana</span>
-              </button>
-              <button class="ws-choice" data-value="todos-verdes">
-                <span class="ws-choice-icon">🟢</span>
-                <span class="ws-choice-title">Todos verdes</span>
-                <span class="ws-choice-desc">Programá tu propia maduración · Mayor duración</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- Step 4: Email -->
-          <div class="ws-step" data-step="4">
-            <div class="ws-icon">📨</div>
-            <h3 class="ws-title">¡Listo! Recibí los precios</h3>
-            <p class="ws-sub">Ingresá tu correo y te enviamos los precios para tu selección</p>
-            <div class="ws-summary" id="wsSummary">
-              <div class="ws-summary-row"><span>Variedad:</span> <strong id="sumVariedad">—</strong></div>
-              <div class="ws-summary-row"><span>Kilos/semana:</span> <strong id="sumKilos">—</strong></div>
-              <div class="ws-summary-row"><span>Maduración:</span> <strong id="sumMaduracion">—</strong></div>
-            </div>
-            <div class="ws-email-form">
-              <input type="email" id="wizEmail" placeholder="tu@correo.com" required>
-              <button class="ws-submit" id="wizSubmit">Enviar precios</button>
-            </div>
-            <p class="ws-phone-option">¿Prefieres que te llamemos? <a href="javascript:void(0)" id="wizRequestCall">Solicitar llamada</a></p>
-          </div>
-
-        </div>
-
-        <!-- Nav buttons -->
-        <div class="wizard-nav">
-          <button class="wn-back" id="wnBack">← Atrás</button>
-          <button class="wn-next" id="wnNext">Siguiente →</button>
-        </div>
-      </div>
-    </div>
-  </div></section>
-
-  <!-- STEPS (unchanged) -->
-  <section id="como-pedir"><div class="container">
-    <div class="text-center mb-4 reveal"><span class="section-label">Proceso</span><h2>Pedir es <span class="gold">muy sencillo</span></h2></div>
-    <div class="steps-grid">
-      <div class="step-card reveal reveal-delay-1"><div class="step-number">1</div><h3>Configuras tu pedido</h3><p>Elegís variedad, calidad, kilos y maduración.</p></div>
-      <div class="step-card reveal reveal-delay-2"><div class="step-number">2</div><h3>Te contactamos</h3><p>Confirmamos disponibilidad y coordinamos entrega.</p></div>
-      <div class="step-card reveal reveal-delay-3"><div class="step-number">3</div><h3>Recibís tu pedido</h3><p>Entregamos en Bogotá y Chía.</p></div>
-    </div>
-  </div></section>
-
-  <!-- FORM -->
-  <section id="pedido" class="order-section"><div class="container">
-    <div class="text-center mb-4 reveal"><span class="section-label">Cotizar</span><h2>Solicitá tu <span class="gold">cotización</span></h2><p class="text-muted" style="max-width:500px;margin:0.75rem auto 0;">Completá el formulario y te contactamos.</p></div>
-    <div class="order-form reveal">
-      <div class="form-success" id="formSuccess"><div class="form-success-icon">✅</div><h3>Recibimos tu solicitud</h3><p>Te contactaremos pronto.</p></div>
-      <form id="orderForm" onsubmit="return handleSubmit(event)">
-        <div class="form-section-title">Datos del negocio</div>
-        <div class="form-grid">
-          <div class="form-group full"><label for="businessName">Nombre del restaurante / negocio *</label><input type="text" id="businessName" required placeholder="Ej: Restaurante La Esquina"></div>
-          <div class="form-group full"><label for="deliveryAddress">Dirección de entrega *</label><input type="text" id="deliveryAddress" required placeholder="Barrio, dirección completa"></div>
-          <div class="form-group"><label for="email">Correo electrónico *</label><input type="email" id="email" required placeholder="correo@ejemplo.com"></div>
-          <div class="form-group"><label for="phone">Número de contacto *</label><input type="tel" id="phone" required placeholder="300 123 4567"></div>
-          <div class="form-group"><label for="foundUs">¿Cómo nos conociste?</label>
-            <select id="foundUs"><option value="">Seleccioná</option><option value="email">Email</option><option value="instagram">Instagram</option><option value="referido">Referido</option><option value="google">Google</option><option value="whatsapp">WhatsApp</option><option value="otro">Otro</option></select>
-          </div>
-        </div>
-        <div class="form-section-title">Configurá tu pedido</div>
-        <div class="order-line">
-          <div class="order-line-title">Línea 1</div>
-          <div class="order-line-grid">
-            <div class="form-group"><label for="variety1">Variedad *</label><select id="variety1" required><option value="">Seleccioná</option><option value="hass">Aguacate Hass</option><option value="papelillo">Aguacate Papelillo</option></select></div>
-            <div class="form-group"><label for="quality1">Calidad *</label><select id="quality1" required><option value="">Seleccioná</option><option value="grandes">Grandes (1ª)</option><option value="medianos">Medianos (2ª)</option></select></div>
-            <div class="form-group"><label for="kilos1">Kilos *</label><select id="kilos1" required><option value="">Seleccioná</option><option value="10">10 kg</option><option value="20">20 kg</option><option value="50">50 kg</option><option value="100">100 kg</option><option value="otro">Otro</option></select></div>
-          </div>
-          <div class="ripening-group"><label>Maduración</label><div class="ripening-row"><div class="form-group"><label>Verde (kg)</label><input type="number" id="verde1" min="0" placeholder="0"></div><div class="form-group"><label>Pintón (kg)</label><input type="number" id="pinton1" min="0" placeholder="0"></div><div class="form-group"><label>Maduro (kg)</label><input type="number" id="maduro1" min="0" placeholder="0"></div></div></div>
-        </div>
-        <div class="order-line">
-          <div class="order-line-title">Línea 2 <span style="color:#5a5040;font-weight:400;">(opcional)</span></div>
-          <div class="order-line-grid">
-            <div class="form-group"><label for="variety2">Variedad</label><select id="variety2"><option value="">No aplica</option><option value="hass">Aguacate Hass</option><option value="papelillo">Aguacate Papelillo</option></select></div>
-            <div class="form-group"><label for="quality2">Calidad</label><select id="quality2"><option value="">No aplica</option><option value="grandes">Grandes (1ª)</option><option value="medianos">Medianos (2ª)</option></select></div>
-            <div class="form-group"><label for="kilos2">Kilos</label><select id="kilos2"><option value="">No aplica</option><option value="10">10 kg</option><option value="20">20 kg</option><option value="50">50 kg</option><option value="100">100 kg</option><option value="otro">Otro</option></select></div>
-          </div>
-          <div class="ripening-group"><label>Maduración</label><div class="ripening-row"><div class="form-group"><label>Verde (kg)</label><input type="number" id="verde2" min="0" placeholder="0"></div><div class="form-group"><label>Pintón (kg)</label><input type="number" id="pinton2" min="0" placeholder="0"></div><div class="form-group"><label>Maduro (kg)</label><input type="number" id="maduro2" min="0" placeholder="0"></div></div></div>
-        </div>
-        <div class="form-group full" style="margin-bottom:1.5rem;"><label for="notes">Notas</label><textarea id="notes" placeholder="Ej: 50% Hass y 50% Papelillo..."></textarea></div>
-        <button type="submit" class="form-submit" id="submitBtn"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2 11 13"/><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg> Solicitar cotización</button>
-      </form>
-    </div>
-  </div></section>
+  </section>
 
   <!-- FOOTER -->
   <footer class="footer"><div class="container">
@@ -1270,161 +1023,6 @@
         }, 200 + i * 150);
       });
     }, 400);
-
-    // ─── Pricing Wizard ───
-    (function(){
-      const overlay = document.getElementById('wizardOverlay');
-      const modal = document.getElementById('wizardModal');
-      const trigger = document.getElementById('wizardTrigger');
-      const closeBtn = document.getElementById('wizardClose');
-      const steps = document.querySelectorAll('.ws-step');
-      const dots = document.querySelectorAll('.wp-dot');
-      const backBtn = document.getElementById('wnBack');
-      const nextBtn = document.getElementById('wnNext');
-      const sumVariedad = document.getElementById('sumVariedad');
-      const sumKilos = document.getElementById('sumKilos');
-      const sumMaduracion = document.getElementById('sumMaduracion');
-
-      let currentStep = 1;
-      const selections = {};
-
-      function renderStep(step) {
-        steps.forEach(s => s.classList.toggle('ws-active', parseInt(s.dataset.step) === step));
-        dots.forEach(d => {
-          const s = parseInt(d.dataset.step);
-          d.classList.toggle('wp-active', s === step);
-          d.classList.toggle('wp-done', s < step);
-        });
-        backBtn.disabled = step === 1;
-        if (step === 4) {
-          nextBtn.style.display = 'none';
-          backBtn.style.display = 'inline-block';
-        } else {
-          nextBtn.style.display = 'inline-block';
-          backBtn.style.display = 'inline-block';
-        }
-        // Disable next if step has no selection
-        if (step < 4) {
-          const key = ['variedad','kilos','maduracion'][step-1];
-          nextBtn.disabled = !selections[key];
-        }
-        updateSummary();
-      }
-
-      function updateSummary() {
-        const variedadMap = { hass: 'Aguacate Hass', papelillo: 'Aguacate Papelillo' };
-        const kilosMap = { '0-10': '0–10 kg/sem', '10-20': '10–20 kg/sem', '20+': '20+ kg/sem' };
-        const madMap = { 'todos-maduros': 'Todos maduros', 'mitad-mitad': 'Mitad maduro, mitad verde', 'todos-verdes': 'Todos verdes' };
-        sumVariedad.textContent = variedadMap[selections.variedad] || '—';
-        sumKilos.textContent = kilosMap[selections.kilos] || '—';
-        sumMaduracion.textContent = madMap[selections.maduracion] || '—';
-      }
-
-      function goToStep(s) {
-        currentStep = s;
-        renderStep(s);
-      }
-
-      // Open / Close
-      trigger.addEventListener('click', () => { overlay.classList.add('is-open'); document.body.style.overflow = 'hidden'; });
-      closeBtn.addEventListener('click', closeWizard);
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) closeWizard(); });
-      function closeWizard() {
-        overlay.classList.remove('is-open');
-        document.body.style.overflow = '';
-      }
-
-      // Choices
-      document.querySelectorAll('.ws-choice').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const parent = this.closest('.ws-choices');
-          parent.querySelectorAll('.ws-choice').forEach(c => c.classList.remove('ws-selected'));
-          this.classList.add('ws-selected');
-          const step = parseInt(this.closest('.ws-step').dataset.step);
-          const key = ['variedad','kilos','maduracion'][step-1];
-          selections[key] = this.dataset.value;
-          nextBtn.disabled = false;
-        });
-      });
-
-      // Navigation
-      nextBtn.addEventListener('click', () => { if (currentStep < 4) goToStep(currentStep + 1); });
-      backBtn.addEventListener('click', () => { if (currentStep > 1) goToStep(currentStep - 1); });
-
-      // Submit
-      document.getElementById('wizSubmit').addEventListener('click', async function() {
-        const email = document.getElementById('wizEmail').value.trim();
-        if (!email || !email.includes('@')) { alert('Por favor ingresá un correo válido.'); return; }
-        this.classList.add('loading');
-        this.textContent = 'Enviando...';
-
-        const data = {
-          tipo: 'cotizador-rapido',
-          email: email,
-          variedad: selections.variedad,
-          kilos: selections.kilos,
-          maduracion: selections.maduracion,
-          timestamp: new Date().toISOString()
-        };
-
-        try {
-          if (CONFIG.webhook.enabled && CONFIG.webhook.url) {
-            await fetch(CONFIG.webhook.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-          }
-          // Show success
-          document.querySelector('.wizard-steps').style.display = 'none';
-          document.querySelector('#wnBack').style.display = 'none';
-          document.querySelector('#wnNext').style.display = 'none';
-          document.querySelector('.wizard-progress').style.display = 'none';
-          const success = document.createElement('div');
-          success.className = 'wiz-success show';
-          success.innerHTML = '<div class="wiz-success-icon">📨</div><h3>¡Recibimos tu solicitud!</h3><p>Te enviamos los precios a <strong>' + email + '</strong>.<br>Si pediste llamada, te contactaremos pronto.</p>';
-          document.getElementById('wizardModal').querySelector('.wizard-steps').after(success);
-        } catch(e) {
-          alert('Hubo un error. Intentá de nuevo.');
-        }
-        this.classList.remove('loading');
-      });
-
-      // Request call
-      document.getElementById('wizRequestCall').addEventListener('click', function() {
-        selections.solicitaLlamada = true;
-        document.getElementById('wizSubmit').click();
-      });
-
-      renderStep(1);
-    })();
-
-    // ─── Order Summary ───
-    function calcTotal() {
-      const v1=document.getElementById('variety1').value, q1=document.getElementById('quality1').value, k1=parseInt(document.getElementById('kilos1').value);
-      let t=0,h=false;
-      if(v1&&q1&&k1){h=true;const pr=CONFIG.prices[v1]?.[q1]?.[k1];if(pr)t+=pr*k1;}
-      const s=document.getElementById('orderSummary'),v=document.getElementById('orderSummaryValue');
-      if(h&&t>0){s.style.display='flex';v.textContent='$'+t.toLocaleString('es-CO');
-        const v2=document.getElementById('variety2').value,q2=document.getElementById('quality2').value,k2=parseInt(document.getElementById('kilos2').value);
-        if(v2&&q2&&k2&&v2!==''&&q2!==''&&k2){const pr2=CONFIG.prices[v2]?.[q2]?.[k2];if(pr2)v.textContent='$'+(t+pr2*k2).toLocaleString('es-CO');}
-      }else s.style.display='none';
-    }
-    ['variety1','quality1','kilos1','variety2','quality2','kilos2'].forEach(id=>document.getElementById(id)?.addEventListener('change',calcTotal));
-
-    [1,2].forEach(l=>{['verde','pinton','maduro'].forEach(s=>{document.getElementById(s+l)?.addEventListener('input',()=>{
-      const v=parseInt(document.getElementById('verde'+l).value)||0,p=parseInt(document.getElementById('pinton'+l).value)||0,m=parseInt(document.getElementById('maduro'+l).value)||0;
-      const el=document.getElementById('ripeningSum'+l);
-      el&&((v+p+m)>0?(el.textContent='Total: '+(v+p+m)+' kg',el.style.color='#7a7058'):(el.textContent='Si no especificás, enviamos según disponibilidad.',el.style.color='#5a5040'));
-    });})});
-
-    // ─── Form Submit ───
-    async function handleSubmit(e) {
-      e.preventDefault();
-      const btn=document.getElementById('submitBtn'),form=document.getElementById('orderForm'),success=document.getElementById('formSuccess');
-      const data={businessName:document.getElementById('businessName').value,deliveryAddress:document.getElementById('deliveryAddress').value,email:document.getElementById('email').value,phone:document.getElementById('phone').value,foundUs:document.getElementById('foundUs').value,line1:{variety:document.getElementById('variety1').value,quality:document.getElementById('quality1').value,kilos:document.getElementById('kilos1').value,verde:document.getElementById('verde1').value||0,pinton:document.getElementById('pinton1').value||0,maduro:document.getElementById('maduro1').value||0},line2:{variety:document.getElementById('variety2').value,quality:document.getElementById('quality2').value,kilos:document.getElementById('kilos2').value,verde:document.getElementById('verde2').value||0,pinton:document.getElementById('pinton2').value||0,maduro:document.getElementById('maduro2').value||0},notes:document.getElementById('notes').value,timestamp:new Date().toISOString()};
-      btn.disabled=true;btn.classList.add('loading');btn.innerHTML='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Enviando...';
-      try{if(CONFIG.webhook.enabled&&CONFIG.webhook.url){const r=await fetch(CONFIG.webhook.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});if(!r.ok)throw new Error('HTTP '+r.status);}else await new Promise(r=>setTimeout(r,1200));
-        form.style.display='none';success.classList.add('show');success.scrollIntoView({behavior:'smooth',block:'center'});const q=JSON.parse(localStorage.getItem('ta_pedidos')||'[]');q.push(data);localStorage.setItem('ta_pedidos',JSON.stringify(q));
-      }catch(err){form.style.display='none';success.classList.add('show');success.scrollIntoView({behavior:'smooth',block:'center'});const q=JSON.parse(localStorage.getItem('ta_pedidos')||'[]');q.push(Object.assign({},data,{error:err.message}));localStorage.setItem('ta_pedidos',JSON.stringify(q));}
-      return false;
-    }
 
     // ═══════ AVOPRO CARDS ═══════
     const chatShell=document.getElementById('chatShell'),chatBody=document.getElementById('chatBody');
