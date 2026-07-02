@@ -1225,16 +1225,18 @@ const normalizeVariant = (variant: string | null): string => {
         }
       }
       
-      // If no exact match OR if variantDisplay is generic "Presentación", 
-      // use the variant_name and first variant value from ANY active variant
-      if ((!currentVariantName || variantDisplay === 'Presentación') && catalogEntry.variantNames.size > 0) {
+      // If no exact match OR if variantDisplay is a generic field name 
+      // (e.g. "Cantidad", "Peso", "Presentación"), use the first actual variant value from the catalog
+      const genericFieldNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+      const isGenericField = variantDisplay ? genericFieldNames.includes(normalizeVariant(variantDisplay)) : false;
+      if ((!currentVariantName || isGenericField) && catalogEntry.variantNames.size > 0) {
         const firstVariantName = Array.from(catalogEntry.variantNames.values())[0];
         const firstVariantValue = Array.from(catalogEntry.variants.values())[0];
         if (firstVariantName && firstVariantName !== 'Presentación') {
           currentVariantName = firstVariantName;
         }
-        // If the order's variant_value is generic "Presentación", use the catalog's actual value
-        if (variantDisplay === 'Presentación' && firstVariantValue) {
+        // If the order's variant_display is a generic field name, use the catalog's actual value
+        if (isGenericField && firstVariantValue) {
           variantDisplay = firstVariantValue;
         }
       }
@@ -1495,16 +1497,17 @@ const normalizeVariant = (variant: string | null): string => {
           }
 
           const variantResolution = resolveVariantForProduct(productName, item);
-          // Solo sobrescribir si resolveVariantForProduct encontró algo útil
-          if (variantResolution.variantDisplay && variantResolution.variantDisplay !== 'Peso' && variantResolution.variantDisplay !== 'Cantidad') {
+          // Solo sobrescribir si resolveVariantForProduct encontró algo útil (no un nombre de campo genérico)
+          const genericFieldNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+          if (variantResolution.variantDisplay && !genericFieldNames.includes(variantResolution.variantDisplay.toLowerCase().trim())) {
             variantDisplay = variantResolution.variantDisplay;
           }
 
           // Si después de toda la resolución la variante sigue vacía o genérica
           // pero el nombre del producto tiene info de cantidad, usar esa info
           // para que la agrupación sea consistente (ej: "Cantidad" vs "24 unidades")
-          const genericVariants = ['Peso', 'Cantidad', 'Presentación', 'Presentacion', 'Volumen', 'Unidad', 'Unidades'];
-          if ((!variantDisplay || genericVariants.includes(variantDisplay)) && quantityFromName) {
+          const genericVariantNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
+          if ((!variantDisplay || genericVariantNames.includes(variantDisplay.toLowerCase().trim())) && quantityFromName) {
             variantDisplay = quantityFromName;
           }
 
@@ -2714,7 +2717,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               {isExpanded && (
                 <div className="space-y-2 pl-2 border-l-2 border-gray-100 dark:border-gray-700">
                   {product.customer_breakdown.map((customer, idx) => {
-                    // Filtrar nombres de campo de variantes
+                    // Filtrar nombres de campo de variantes (no mostrar "Cantidad" o "Presentación" genéricos)
                     const fieldNames = ['peso', 'cantidad', 'presentación', 'presentacion', 'volumen', 'unidad', 'unidades'];
                     const variantValue = customer.variant_name?.toLowerCase().trim() || '';
                     const isFieldName = fieldNames.includes(variantValue);

@@ -21,6 +21,9 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'caja de 35': '🥑',
   'nueva maya': '🥑',
   'aceite de aguacate': '🥑',
+  'aceite de oliva': '🥑',
+  'botella de aceite': '🥑',
+  'aceite': '🥑',
 
   // --- UVAS ---
   'red globe': '🍇',
@@ -176,10 +179,8 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'chia': '🥜',
   'germinados': '🥒',
   'raices chinas': '🥕',
-  'quinoa': '🍌',
   'linaza': '🍌',
-  'miel': '🍊',
-  'aceite': '🥑',
+  'miel': '🍯',
   'aceite de coco': '🥥',
   'zumo': '🍊',
   'polen': '🍌',
@@ -193,6 +194,222 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'sabila': '🥬',
   'pistachos': '🥜',
   'bicarbonato': '🍌',
+
+  // --- NUEVOS: Tubérculos y raíces ---
+  'yuca': '🥔',
+  'yukita': '🥔',
+  'ñame': '🥔',
+  'name': '🥔',
+  'arracacha': '🥔',
+
+  // --- NUEVOS: Calabazas y auyamas ---
+  'calabaza': '🍠',
+  'zapallo': '🍠',
+
+  // --- NUEVOS: Pepinos ---
+  'pepino cohombro': '🥒',
+  'pepino de rellenar': '🥒',
+
+  // --- NUEVOS: Tomates ---
+  'tomate de arbol': '🍅',
+  'tomate arbol': '🍅',
+
+  // --- NUEVOS: Pimentones ---
+  'pimenton rojo': '🍅',
+  'pimenton verde': '🍅',
+  'pimenton amarillo': '🍅',
+
+  // --- NUEVOS: Ajo y cebollas ---
+  'ajo pelado': '🥬',
+  'ajo entero': '🥬',
+  'cebolla larga': '🥬',
+  'cebolla junca': '🥬',
+  'cebolla de huevo': '🥬',
+  'cebolleta': '🥬',
+
+  // --- NUEVOS: Lechugas y espinacas ---
+  'espinaca baby': '🥬',
+  'lechuga crespa': '🥬',
+  'lechuga romana': '🥬',
+  'mix de lechugas': '🥬',
+
+  // --- NUEVOS: Coles y repollos ---
+  'coliflor morada': '🥦',
+  'repollo morado': '🥬',
+  'repollo verde': '🥬',
+  'col morada': '🥬',
+  'col china': '🥬',
+  'bok choy': '🥬',
+  'pak choi': '🥬',
+
+  // --- NUEVOS: Apio y cilantro ---
+  'apio españa': '🥬',
+  'cilantro en pasta': '🥬',
+
+  // --- NUEVOS: Proteínas ---
+  'huevo': '🥚',
+  'huevos': '🥚',
+  'huevos de codorniz': '🥚',
+  'pollo': '🍗',
+  'pollo entero': '🍗',
+  'pollo en piezas': '🍗',
+  'pechuga': '🍗',
+  'carne': '🥩',
+  'res': '🥩',
+  'cerdo': '🥩',
+  'pescado': '🐟',
+  'tilapia': '🐟',
+  'bagre': '🐟',
+  'salmon': '🐟',
+  'atun': '🐟',
+  'camaron': '🦐',
+  'camarones': '🦐',
+  'langostinos': '🦐',
+
+  // --- NUEVOS: Panadería y granos ---
+  'pan': '🍞',
+  'pan artesanal': '🍞',
+  'tostadas': '🍞',
+  'arepa': '🌽',
+  'arepas': '🌽',
+  'galletas': '🍪',
+  'harina': '🌾',
+  'harina de trigo': '🌾',
+  'harina de maiz': '🌽',
+  'harina pan': '🌽',
+  'avena': '🌾',
+  'granola': '🌾',
+  'cereal': '🌾',
+  'pasta': '🍝',
+  'espagueti': '🍝',
+  'fideos': '🍝',
+  'tallarines': '🍝',
+  'lasaña': '🍝',
+  'arroz': '🍚',
+  'arroz integral': '🍚',
+  'arroz basmati': '🍚',
+  'arroz jazmin': '🍚',
+  'quinoa': '🍚',
+  'quinua': '🍚',
+
+  // --- NUEVOS: Lácteos ---
+  'leche': '🥛',
+  'queso': '🧀',
+  'quesito': '🧀',
+
+  // --- NUEVOS: Dulces ---
+  'chocolate': '🍫',
+  'cacao': '🍫',
+  'brownie': '🍫',
+  'dulces': '🍬',
+  'ponque': '🍰',
+  'torta': '🍰',
+  'gelatina': '🍮',
+
+  // --- NUEVOS: Bebidas ---
+  'cafe': '☕',
+  'café': '☕',
+  'te': '🍵',
+  'té': '🍵',
+
+  // --- NUEVOS: Condimentos ---
+  'azucar': '🍚',
+  'sal': '🧂',
+  'sal del himalaya': '🧂',
+  'sal marina': '🧂',
+  'vinagre': '🍊',
+  'salsa de soya': '🍊',
+  'salsa de tomate': '🍅',
+  'mayonesa': '🍊',
+  'mostaza': '🍊',
+  'aceitunas': '🫒',
+  'aceituna': '🫒',
+  'pepinillos': '🥒',
+  'alcaparras': '🥒',
+  'crispetas': '🌽',
+  'pasas': '🍇',
+
+  // --- NUEVOS: Papas específicas ---
+  'papa pastusa': '🥔',
+  'papa amarilla': '🥔',
+  'papa r-12': '🥔',
+  'papa suprema': '🥔',
+  'papa unica': '🥔',
+  'papa tocarreña': '🥔',
+  'papa negra': '🥔',
+  'papa santana': '🥔',
+  'papa larroque': '🥔',
+  'papa mambera': '🥔',
+  'puré de papa': '🥔',
+
+  // --- NUEVOS: Frutos secos y semillas ---
+  'lenteja': '🥜',
+  'lentejas': '🥜',
+  'garbanzo': '🥜',
+  'garbanzos': '🥜',
+  'almendra': '🥜',
+  'almendras': '🥜',
+  'nuez': '🥜',
+  'nueces': '🥜',
+  'mani': '🥜',
+  'avellana': '🥜',
+  'avellanas': '🥜',
+  'linaza molida': '🥜',
+  'semilla de calabaza': '🥜',
+  'semilla de girasol': '🥜',
+  'semilla de sesamo': '🥜',
+  'ajonjoli': '🥜',
+  'frijol bola roja': '🥜',
+  'frijol cargamanto': '🥜',
+  'frijol radical': '🥜',
+
+  // --- NUEVOS: Legumbres verdes ---
+  'frijol verde': '🥒',
+  'frijol abono': '🥒',
+  'brotes de soya': '🥒',
+
+  // --- NUEVOS: Coco ---
+  'coco rallado': '🥥',
+  'leche de coco': '🥥',
+  'crema de coco': '🥥',
+
+  // --- NUEVOS: Maíz ---
+  'maiz peto': '🌽',
+  'maiz trillado': '🌽',
+  'maiz pira': '🌽',
+  'palomitas': '🌽',
+  'panca': '🌽',
+  'hoja de maiz': '🌽',
+
+  // --- NUEVOS: Frutas deshidratadas ---
+  'ciruela pasa': '🍑',
+  'orejones': '🍑',
+
+  // --- NUEVOS: Verduras de hoja ---
+  'cimarrón': '🥬',
+  'cimarron': '🥬',
+  'berros': '🥬',
+  'berro': '🥬',
+  'eneldo': '🥬',
+  'estragon': '🥬',
+  'microverdes': '🥬',
+  'brotes': '🥬',
+  'hoja de platano': '🥬',
+  'palmito': '🥬',
+  'corazon de alcachofa': '🥬',
+
+  // --- NUEVOS: Hongos ---
+  'hongos': '🍄',
+  'setas': '🍄',
+  'portobello': '🍄',
+  'champinones': '🍄',
+  'shitake': '🍄',
+  'orejitas': '🍄',
+
+  // --- NUEVOS: Proteínas vegetales ---
+  'tofu': '🥗',
+  'tempeh': '🥗',
+  'seitan': '🥗',
 };
 
 /**
@@ -204,7 +421,7 @@ export const getProductEmoji = (productName: string): string => {
 
   const normalizedName = productName.toLowerCase()
     .normalize('NFD')
-    .replace(/[\\u0300-\\u036f]/g, '');
+    .replace(/[\u0300-\u036f]/g, '');
 
   // Ordenar claves por longitud descendente para que "caja de 24" gane a "caja"
   const sortedKeys = Object.keys(PRODUCT_EMOJIS).sort((a, b) => b.length - a.length);
