@@ -252,12 +252,11 @@ export function generateOrderSummary(order: Order): string {
     : `${greeting}!`;
 
   // Build compact product list for customer WhatsApp message.
-  // Keep emojis, but normalize newer ones that can render as question marks on some devices.
+  // SIN emojis decorativos - solo texto plano para compatibilidad máxima
   const productList = items.map((item) => {
     const itemName = (item as any).name || item.product_name || item.product_snapshot?.name || item.products?.name || 'Producto';
     const variantName = item.variantName || (item as any).variant_value || '';
     const itemTotal = item.subtotal || (item.unit_price * item.quantity);
-    const emoji = getWhatsAppSafeEmoji(itemName);
     const weight = item.weight || null;
     const unit = item.unit || null;
 
@@ -270,19 +269,18 @@ export function generateOrderSummary(order: Order): string {
     }
 
     return variantName
-      ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}${weightSuffix}`
-      : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}${weightSuffix}`;
+      ? `  ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}${weightSuffix}`
+      : `  ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}${weightSuffix}`;
   }).join('\n');
 
-  // Build compact financial summary.
-  // SOLO emojis de frutas/verduras (compatibilidad WhatsApp garantizada)
+  // Build compact financial summary - sin emojis
   const financialLines = [];
-  financialLines.push("🍎 *Total:* " + formatCurrency(total));
+  financialLines.push("  Total: " + formatCurrency(total));
   if (shippingCost > 0) {
-    financialLines.push("🍊 Domicilio: " + formatCurrency(shippingCost));
+    financialLines.push("  Domicilio: " + formatCurrency(shippingCost));
   }
   if (hasDiscount && discount > 0) {
-    financialLines.push("🍋 Descuento aplicado: -" + formatCurrency(discount));
+    financialLines.push("  Descuento aplicado: -" + formatCurrency(discount));
   }
   const financialSummary = financialLines.join('\n');
 
@@ -292,8 +290,8 @@ export function generateOrderSummary(order: Order): string {
   let deliveryAddress = extractedAddress || 'N/A';
 
   // Compact customer-facing WhatsApp summary from dashboard.
-  // SOLO emojis de frutas/verduras para compatibilidad máxima con WhatsApp (ningún emoji de objeto/símbolo)
-  const message = greetingLine + "\n\n🍎 *Resumen Pedido #" + orderNumber + "*\n\n" + productList + "\n\n" + financialSummary + "\n🍅 *Entrega:* " + formattedDeliveryDate + "\n🍄 *Dirección:* " + deliveryAddress + "\n\n¿Está todo correcto? 🥑";
+  // Texto plano + solo 😊 en saludo para máxima compatibilidad en todos los dispositivos
+  const message = greetingLine + " 😊\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  Entrega: " + formattedDeliveryDate + "\n  Dirección: " + deliveryAddress + "\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
 
   return message;
 }
