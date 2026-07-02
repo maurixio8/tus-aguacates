@@ -1500,6 +1500,14 @@ const normalizeVariant = (variant: string | null): string => {
             variantDisplay = variantResolution.variantDisplay;
           }
 
+          // Si después de toda la resolución la variante sigue vacía o genérica
+          // pero el nombre del producto tiene info de cantidad, usar esa info
+          // para que la agrupación sea consistente (ej: "Cantidad" vs "24 unidades")
+          const genericVariants = ['Peso', 'Cantidad', 'Presentación', 'Presentacion', 'Volumen', 'Unidad', 'Unidades'];
+          if ((!variantDisplay || genericVariants.includes(variantDisplay)) && quantityFromName) {
+            variantDisplay = quantityFromName;
+          }
+
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
 
@@ -1985,12 +1993,40 @@ const normalizeVariant = (variant: string | null): string => {
   const generateOrderSummary = (customer: CustomerBreakdown) => {
     if (!customer.order_items || customer.order_items.length === 0) return '';
 
-    const lines = [`Pedido para: ${customer.customer_name}`, `Origen: ${getOrderTypeLabel(customer.order_type)}`, ''];
+    // Expandir combos en sus componentes para el resumen
+    const expandedItems: Array<{ product_name: string; variant_name?: string; quantity: number; weight_display?: string }> = [];
+    
     customer.order_items.forEach(item => {
-      const emoji = getWhatsAppSafeEmoji(item.product_name);
+      // Verificar si es un combo
+      const itemNameLower = item.product_name.toLowerCase();
+      const comboComponents = COMBO_COMPONENTS[itemNameLower] ||
+        Object.entries(COMBO_COMPONENTS).find(([key]) => itemNameLower.includes(key))?.[1];
+
+      if (comboComponents) {
+        // Es un combo - desglosar en componentes
+        comboComponents.forEach(component => {
+          expandedItems.push({
+            product_name: component.name,
+            variant_name: component.variant,
+            quantity: component.quantity * item.quantity,
+          });
+        });
+      } else {
+        // Producto normal - mantener tal cual
+        expandedItems.push({
+          product_name: item.product_name,
+          variant_name: item.variant_name,
+          quantity: item.quantity,
+          weight_display: item.weight_display,
+        });
+      }
+    });
+
+    const lines = [`Pedido para: ${customer.customer_name}`, `Origen: ${getOrderTypeLabel(customer.order_type)}`, ''];
+    expandedItems.forEach(item => {
       const variant = item.variant_name ? ` (${item.variant_name})` : '';
       const weight = item.weight_display ? ` - ${item.weight_display}` : '';
-      lines.push(`${emoji} ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
+      lines.push(`  ${item.product_name}${variant}: ${item.quantity} unidad${item.quantity === 1 ? '' : 'es'}${weight}`);
     });
 
     if (customer.customer_address) {

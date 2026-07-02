@@ -14,6 +14,7 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   // --- AGUACATES (claves específicas primero) ---
   'hass': '🥑',
   'injerto': '🥑',
+  'papelillo': '🥑',
   'caja de 24': '🥑',
   'caja de 12': '🥑',
   'caja de 7': '🥑',
@@ -98,6 +99,10 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   'tomate larga vida': '🍅',
   'papa': '🥔',
   'cubios': '🥔',
+  'sabanera': '🥔',
+  'criolla': '🥔',
+  'papa sabanera': '🥔',
+  'papa criolla': '🥔',
   'zanahoria': '🥕',
   'maiz': '🌽',
   'mazorca': '🌽',
