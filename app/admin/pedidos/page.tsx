@@ -296,7 +296,7 @@ export default function OrdersPage() {
     // HEADER - Para empaque
     // ═══════════════════════════════════════
     lines.push('═══════════════════════════════════');
-    lines.push(`🥑 EMPAQUE - Pedido #${order.order_number || order.id.slice(-6).toUpperCase()}`);
+    lines.push(`📦 EMPAQUE - Pedido #${order.order_number || order.id.slice(-6).toUpperCase()}`);
     lines.push('═══════════════════════════════════');
     lines.push('');
 
@@ -304,9 +304,9 @@ export default function OrdersPage() {
     // ESTADO DE PAGO - Destacado
     // ═══════════════════════════════════════
     if (isPaid) {
-      lines.push('🥑 PAGO: PAGADO');
+      lines.push('✅ PAGO: PAGADO');
     } else {
-      lines.push('🥕 PAGO: PENDIENTE - COBRAR AL ENTREGAR');
+      lines.push('🔴 PAGO: PENDIENTE - COBRAR AL ENTREGAR');
     }
     lines.push('');
 
@@ -314,17 +314,17 @@ export default function OrdersPage() {
     // FECHA DE ENTREGA
     // ═══════════════════════════════════════
     if (deliveryDate) {
-      lines.push(`🍅 ENTREGA: ${formatDateShort(deliveryDate)}`);
+      lines.push(`📅 ENTREGA: ${formatDateShort(deliveryDate)}`);
       lines.push('');
     }
 
     // ═══════════════════════════════════════
     // CLIENTE
     // ═══════════════════════════════════════
-    lines.push(`🥑 CLIENTE: ${customerName.toUpperCase()}`);
+    lines.push(`👤 CLIENTE: ${customerName.toUpperCase()}`);
     const customerPhone = order.customer_phone || '';
     if (customerPhone) {
-      lines.push(`🍊 Tel: ${customerPhone}`);
+      lines.push(`📞 Tel: ${customerPhone}`);
     }
     lines.push('');
 
@@ -332,14 +332,14 @@ export default function OrdersPage() {
     // DIRECCIÓN COMPLETA
     // ═══════════════════════════════════════
     const address = getAddressText(order);
-    lines.push('🍄 DIRECCIÓN DE ENTREGA:');
-    lines.push(`   ${address || '🥕 Sin dirección'}`);
+    lines.push('📍 DIRECCIÓN DE ENTREGA:');
+    lines.push(`   ${address || '🔴 Sin dirección'}`);
     lines.push('');
 
     // ═══════════════════════════════════════
     // PRODUCTOS - Lista para verificación
     // ═══════════════════════════════════════
-    lines.push(`🥬 VERIFICAR PRODUCTOS (${totalProducts} items):`);
+    lines.push(`📋 VERIFICAR PRODUCTOS (${totalProducts} items):`);
     lines.push('───────────────────────────────────');
 
 
@@ -352,7 +352,8 @@ export default function OrdersPage() {
       const emoji = getWhatsAppSafeEmoji(itemName);
       
       // Mostrar producto: cantidad x nombre - precio unitario
-      let line = `   🥑 ${emoji} ${item.quantity}x ${itemName}`;
+      // Usar SOLO el emoji del producto, sin 🥑 hardcodeado
+      let line = `   ${emoji} ${item.quantity}x ${itemName}`;
       if (unitPrice > 0) {
         line += ` - ${formatMoney(unitPrice)} c/u`;
       }
@@ -364,9 +365,9 @@ export default function OrdersPage() {
         const weightStr = totalWeight >= 1000
           ? `${(totalWeight / 1000).toFixed(2)} kg`
           : `${totalWeight} g`;
-        lines.push(`      🥔 ${item.quantity}x ${weight}${unit || 'g'} = ${weightStr}`);
+        lines.push(`      ⚖️ ${item.quantity}x ${weight}${unit || 'g'} = ${weightStr}`);
       } else if (unit) {
-        lines.push(`      🥑 Unidad: ${unit}`);
+        lines.push(`      📦 Unidad: ${unit}`);
       }
       
       // Variante (si existe)
@@ -384,30 +385,30 @@ export default function OrdersPage() {
     const calculations = calculateOrderSummary(order, orderItems);
     
     lines.push('');
-    lines.push('🍎 RESUMEN DE PAGO:');
+    lines.push('💰 RESUMEN DE PAGO:');
     
     // Subtotal de productos
     lines.push(`   Subtotal productos: ${formatMoney(calculations.subtotal)}`);
     
     // Envío
     if (calculations.shippingFee > 0) {
-      lines.push(`   🍊 Domicilio: ${formatMoney(calculations.shippingFee)}`);
+      lines.push(`   🚚 Domicilio: ${formatMoney(calculations.shippingFee)}`);
     } else {
-      lines.push(`   🍊 Domicilio: GRATIS`);
+      lines.push(`   🚚 Domicilio: GRATIS`);
     }
     
     // Descuento si existe
     if (calculations.discount > 0) {
-      lines.push(`   🍋 Descuento: -${formatMoney(calculations.discount)}`);
+      lines.push(`   🏷️ Descuento: -${formatMoney(calculations.discount)}`);
     }
     
     lines.push('   ─────────────────────');
     
     // Total final
     if (isPaid) {
-      lines.push(`   🍎 TOTAL: ${formatMoney(calculations.total)} (PAGADO)`);
+      lines.push(`   💰 TOTAL: ${formatMoney(calculations.total)} (PAGADO)`);
     } else {
-      lines.push(`   🍎 TOTAL A COBRAR: ${formatMoney(calculations.total)}`);
+      lines.push(`   💰 TOTAL A COBRAR: ${formatMoney(calculations.total)}`);
     }
 
     // ═══════════════════════════════════════
@@ -416,7 +417,7 @@ export default function OrdersPage() {
     const notes = order.delivery_notes || order.notes;
     if (notes) {
       lines.push('');
-      lines.push('🥦 NOTAS DE ENTREGA:');
+      lines.push('📝 NOTAS DE ENTREGA:');
       lines.push(`   ${notes}`);
     }
 

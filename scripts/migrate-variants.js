@@ -92,7 +92,8 @@ async function migrateVariants() {
             product_id: productId,
             variant_name: 'Presentación',
             variant_value: variant.name || 'Estándar',
-            price_adjustment: variantPrice, // Guardar precio completo como ajuste
+            price: variantPrice,
+            price_adjustment: variantPrice, // Guardar precio completo
             stock_quantity: 100,
             is_active: true
           });

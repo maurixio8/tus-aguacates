@@ -272,18 +272,18 @@ export function generateOrderSummary(order: Order): string {
     return variantName
       ? `${emoji} ${item.quantity}x ${itemName} (${variantName}) - ${formatCurrency(itemTotal)}${weightSuffix}`
       : `${emoji} ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}${weightSuffix}`;
-  }).join('\\n');
+  }).join('\n');
 
   // Build compact financial summary.
-  // Usamos solo emojis de frutas/verduras (aprobados por Mao, compatibilidad WhatsApp garantizada)
-  const financialLines = ["🍎 *Total:* " + formatCurrency(total)];
+  const financialLines = [];
+  financialLines.push("🟢 *Total:* " + formatCurrency(total));
   if (shippingCost > 0) {
-    financialLines.push("🍊 Domicilio: " + formatCurrency(shippingCost));
+    financialLines.push("🚚 Domicilio: " + formatCurrency(shippingCost));
   }
   if (hasDiscount && discount > 0) {
-    financialLines.push("🍈 Descuento aplicado: -" + formatCurrency(discount));
+    financialLines.push("🏷️ Descuento aplicado: -" + formatCurrency(discount));
   }
-  const financialSummary = financialLines.join('\\n');
+  const financialSummary = financialLines.join('\n');
 
   // Generate delivery address - extract complete address for guest orders
   // NOTA: delivery_address (actualizado desde dashboard) tiene prioridad sobre shipping_address
@@ -291,8 +291,8 @@ export function generateOrderSummary(order: Order): string {
   let deliveryAddress = extractedAddress || 'N/A';
 
   // Compact customer-facing WhatsApp summary from dashboard.
-  // TODOS emojis = frutas/verduras solo (ningun emoji de objeto/simbolo abstracto)
-  const message = greetingLine + " 🥑\n\n🥑 Te compartimos tu pedido #" + orderNumber + ":\n\n" + productList + "\n\n" + financialSummary + "\n🍅 Entrega: " + formattedDeliveryDate + "\n🍄 Dirección: " + deliveryAddress + "\n\n¿Está todo correcto? 🥑";
+  // Mensaje limpio con salto de línea real (\n) para que WhatsApp muestre bien el formato
+  const message = greetingLine + "\n\n📋 *Resumen Pedido #" + orderNumber + "*\n\n" + productList + "\n\n" + financialSummary + "\n📅 *Entrega:* " + formattedDeliveryDate + "\n📍 *Dirección:* " + deliveryAddress + "\n\n¿Está todo correcto? ¡Gracias por tu compra! 🙌";
 
   return message;
 }

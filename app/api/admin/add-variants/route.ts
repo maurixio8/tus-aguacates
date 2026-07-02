@@ -180,6 +180,7 @@ async function buildVariantPlan() {
       product_id: product.id,
       variant_name: variant.variant_name,
       variant_value: variant.variant_value,
+      price: variant.price_adjustment,
       price_adjustment: variant.price_adjustment,
       is_active: true,
       stock_quantity: 999,

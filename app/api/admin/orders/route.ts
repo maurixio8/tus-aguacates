@@ -641,8 +641,8 @@ export async function POST(request: NextRequest) {
           console.log('⚠️ Variant not found for product', item.product_id, '- using product.price from DB');
           // itemPrice ya es product.price desde la línea 628, no usar item.price del cliente
         } else {
-          // El precio de la variante está guardado en price_adjustment como precio completo
-          itemPrice = variant.price_adjustment || product.price;
+          // El precio de la variante está en el campo price
+          itemPrice = variant.price || product.price;
           variantInfo = {
             variant_id: variant.id,
             variant_name: variant.variant_name,

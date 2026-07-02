@@ -87,9 +87,15 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
   // --- VERDURAS / TUBÉRCULOS ---
   'cebolla': '🥬',
   'cebollin': '🥬',
+  'cebollín': '🥬',
+  'cebolla cabezona': '🥬',
+  'cebolla roja': '🥬',
+  'cebolla blanca': '🥬',
   'ajo': '🥬',
   'pasta de ajo': '🥬',
   'tomate': '🍅',
+  'tomate chonto': '🍅',
+  'tomate larga vida': '🍅',
   'papa': '🥔',
   'cubios': '🥔',
   'zanahoria': '🥕',
@@ -189,7 +195,7 @@ export const PRODUCT_EMOJIS: Record<string, string> = {
  * Prioriza los nombres más largos (más específicos) primero.
  */
 export const getProductEmoji = (productName: string): string => {
-  if (!productName) return '🥑';
+  if (!productName) return '🥬';
 
   const normalizedName = productName.toLowerCase()
     .normalize('NFD')
@@ -204,7 +210,7 @@ export const getProductEmoji = (productName: string): string => {
     }
   }
 
-  return '🥑';
+  return '🥬';
 };
 
 /**

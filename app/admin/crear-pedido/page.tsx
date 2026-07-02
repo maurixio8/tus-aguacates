@@ -34,6 +34,7 @@ interface ProductVariant {
   id: string;
   variant_name: string;
   variant_value: string;
+  price: number;
   price_adjustment: number;
   stock_quantity: number;
   is_active: boolean;
@@ -601,9 +602,9 @@ export default function CreateOrderPage() {
   };
 
   const calculateItemPrice = (item: OrderItem) => {
-    // Si hay variante, usar su precio (guardado en price_adjustment)
-    if (item.variant?.price_adjustment) {
-      return item.variant.price_adjustment;
+    // Si hay variante activa, usar su precio específico
+    if (item.variant?.price) {
+      return item.variant.price;
     }
     // Si no hay variante, usar el precio base del producto
     return item.product.price;
@@ -650,7 +651,7 @@ export default function CreateOrderPage() {
       const itemName = item.variant
         ? `${item.product.name} (${item.variant.variant_value})`
         : item.product.name;
-      const itemPrice = item.variant?.price_adjustment || item.product.price;
+      const itemPrice = item.variant?.price || item.product.price;
       const itemTotal = itemPrice * item.quantity;
       subtotal += itemTotal;
       message += `- ${getWhatsAppSafeEmoji(item.product.name)} ${item.quantity}x ${itemName}: ${formatCurrency(itemTotal)}\n`;
@@ -914,7 +915,7 @@ export default function CreateOrderPage() {
                     const product = result.product;
                     const isActive = index === globalSearchActiveIndex;
                     const variantCount = getActiveVariants(product).length;
-                    const displayPrice = result.variant?.price_adjustment ?? product.price;
+                    const displayPrice = result.variant?.price ?? product.price;
 
                     return (
                     <button
@@ -1106,7 +1107,7 @@ export default function CreateOrderPage() {
                                       {variant.variant_name}: {variant.variant_value}
                                     </p>
                                     <p className="text-xs text-gray-600">
-                                      {formatCurrency(variant.price_adjustment || product.price)}
+                                      {formatCurrency(variant.price || product.price)}
                                       {variant.stock_quantity !== undefined && ` · Stock: ${variant.stock_quantity}`}
                                     </p>
                                   </div>

@@ -7,6 +7,7 @@ export interface UnifiedProductVariant {
   product_id: string;
   variant_name: string;
   variant_value: string;
+  price: number;
   price_adjustment: number;
   stock_quantity?: number;
   is_active: boolean;

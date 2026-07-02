@@ -403,6 +403,10 @@ export default function ListaComprasPage() {
   'caja24 aguacates': 'Caja de 24 unidades hass mediano',
   'caja de (24 unidades)': 'Caja de 24 unidades hass mediano',
   'caja de 24 unidades': 'Caja de 24 unidades hass mediano',
+  'caja de hass': 'Caja de 24 unidades hass mediano',
+  'caja de hass mediano': 'Caja de 24 unidades hass mediano',
+  'caja hass': 'Caja de 24 unidades hass mediano',
+  'caja hass mediano': 'Caja de 24 unidades hass mediano',
 
   'caja de 12 unidades hass': 'Caja de 12 unidades Premium',
   'caja12 unidades': 'Caja de 12 unidades Premium',
@@ -411,6 +415,8 @@ export default function ListaComprasPage() {
   'caja12 aguacates': 'Caja de 12 unidades Premium',
   'caja de (12 unidades)': 'Caja de 12 unidades Premium',
   'caja de 12 unidades': 'Caja de 12 unidades Premium',
+  'caja de premium': 'Caja de 12 unidades Premium',
+  'caja premium': 'Caja de 12 unidades Premium',
 
     'caja de 7 unidades injerto': 'Caja de 7 unidades injerto',
     'caja7 unidades': 'Caja de 7 unidades injerto',
@@ -2197,24 +2203,35 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
           </div>
         ) : (
           <>
-
-            {/* Stats Compactos (Una sola fila) */}
-            {orders.length > 0 && (
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Rango</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-white leading-tight">{orders.length}</p>
+            {/* Stats Compactos (Una sola fila) - MEJORADO */}
+              {orders.length > 0 && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Pedidos</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{orders.length}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{selectedOrders.size} seleccionados</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos a Comprar</p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{groupedProducts.length}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{purchaseProgress.purchased} comprados</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes</p>
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {new Set(orders.filter(o => selectedOrders.has(o.id)).map(o => o.customer_name)).size}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">en pedidos seleccionados</p>
+                  </div>
+                  <div className={`rounded-xl p-4 text-center border shadow-sm ${selectedOrders.size > 0 ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Valor Estimado</p>
+                    <p className={`text-2xl font-bold ${selectedOrders.size > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {selectedOrders.size > 0 ? formatPrice(salesSummary.grandTotal) : '-'}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">ventas seleccionadas</p>
+                  </div>
                 </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Selec.</p>
-                  <p className="text-lg font-bold text-green-600 dark:text-green-400 leading-tight">{selectedOrders.size}</p>
-                </div>
-                <div className="bg-white dark:bg-gray-800 rounded-lg p-3 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Prods.</p>
-                  <p className="text-lg font-bold text-blue-600 dark:text-blue-400 leading-tight">{groupedProducts.length}</p>
-                </div>
-              </div>
-            )}
+              )}
 
             {/* Resumen de Ventas de Pedidos Seleccionados (Colapsable) */}
             {selectedOrders.size > 0 && (
@@ -2516,23 +2533,77 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                   <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Producto / Cantidad
+                        Producto / Precio
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Desglose / Clientes
+                        Clientes / Desglose
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Acciones
+                        Cant. Total
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Unid. Físicas
+                      </th>
+                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Costo Est.
                       </th>
                     </tr>
                   </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key)).map(product => {
+                  {(() => {
+                    // Agrupar por categoría para mostrar encabezados
+                    const groupedByCategory = new Map<string, { style: any; products: typeof filteredProducts }>();
+                    const visibleProducts = filteredProducts.filter(p => !hidePurchased || !purchasedProducts.has(p.grouping_key));
+                    
+                    visibleProducts.forEach(product => {
+                      const style = getCategoryStyle(product.product_name);
+                      const catKey = style.label || 'Otros';
+                      if (!groupedByCategory.has(catKey)) {
+                        groupedByCategory.set(catKey, { style, products: [] });
+                      }
+                      groupedByCategory.get(catKey)!.products.push(product);
+                    });
+                    
+                    const rows: Array<React.ReactElement | null> = [];
+                    let rowIndex = 0;
+                    
+                    groupedByCategory.forEach((group, catName) => {
+                      const catTotalQty = group.products.reduce((sum, p) => sum + p.total_quantity, 0);
+                      const catTotalCost = group.products.reduce((sum, p) => sum + (p.unit_price * p.total_quantity), 0);
+                      const catCustomers = new Set(group.products.flatMap(p => p.customer_breakdown.map(c => c.customer_name))).size;
+                      
+                      // Category header row
+                      rows.push(
+                        <tr key={`cat-${catName}`} className="bg-gray-100 dark:bg-gray-700/50">
+                          <td colSpan={5} className="px-6 py-2.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-2 h-8 rounded-full ${group.style.bg.replace('bg-', 'bg-')}`} style={{ backgroundColor: group.style.border.replace('border-l-4 border-l-', '').replace(' dark:border-l-*', '') }} />
+                                <h3 className={`font-bold text-sm uppercase tracking-wider ${group.style.color}`}>
+                                  {catName === 'Combo/Caja' ? '📦 ' : catName === 'Fruta' ? '🍓 ' : catName === 'Verdura' ? '🥬 ' : '📋 '}
+                                  {catName}
+                                </h3>
+                              </div>
+                              <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                                <span>{group.products.length} productos</span>
+                                <span>{catCustomers} clientes</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{catTotalQty} unid.</span>
+                                {catTotalCost > 0 && (
+                                  <span className="font-semibold text-orange-600 dark:text-orange-400">{formatPrice(catTotalCost)}</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                      
+                      // Product rows
+                      group.products.forEach(product => {
                       const isExpanded = expandedProducts.has(product.grouping_key);
                       const isPurchased = purchasedProducts.has(product.grouping_key);
                       const categoryStyle = getCategoryStyle(product.product_name);
 
-                      return (
+                      rows.push(
                         <tr key={product.grouping_key} className={isPurchased ? 'bg-purple-50 dark:bg-purple-900/20' : ''}>
                           {/* Columna 1: Producto / Cantidad */}
                           <td className="px-6 py-4 align-top">
@@ -2613,35 +2684,53 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                     const isFieldName = fieldNames.includes(variantValue);
                     const showVariant = customer.variant_name && !isFieldName;
                     const pricePerUnit = product.unit_price || 0;
+                    const customerTotal = pricePerUnit * customer.quantity;
                     
                     return (
-                      <div key={`${customer.order_id}-${idx}`} className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
-                          <User className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-medium text-gray-900 dark:text-white text-xs">
-                            {customer.customer_name}
-                          </span>
-                          <span className="text-gray-400 mx-1">·</span>
-                          <span className="text-xs text-green-700 dark:text-green-400 font-semibold">
+                      <div key={`${customer.order_id}-${idx}`} className="bg-gray-50 dark:bg-gray-700/30 rounded-lg p-2.5 border border-gray-100 dark:border-gray-700">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <div className="w-6 h-6 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center flex-shrink-0">
+                              <User className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <span className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                              {customer.customer_name}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded whitespace-nowrap ml-2">
                             {customer.quantity}x
                           </span>
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5 pl-8 text-xs">
+                          {/* Variante */}
                           {showVariant && (
-                            <>
-                              <span className="text-gray-400 mx-1">·</span>
-                              <span className="text-[10px] text-gray-500 dark:text-gray-400">
-                                {customer.variant_name}
-                              </span>
-                            </>
+                            <span className="text-gray-600 dark:text-gray-400">
+                              📦 <span className="font-medium">{customer.variant_name}</span>
+                            </span>
                           )}
+                          {/* Precio unitario */}
                           {pricePerUnit > 0 && (
-                            <>
-                              <span className="text-gray-400 mx-1">·</span>
-                              <span className="text-[10px] text-orange-600 dark:text-orange-400 font-medium">
-                                ${pricePerUnit.toLocaleString('es-CO')}
-                              </span>
-                            </>
+                            <span className="text-gray-500 dark:text-gray-400">
+                              💰 <span className="font-medium">${pricePerUnit.toLocaleString('es-CO')} c/u</span>
+                            </span>
+                          )}
+                          {/* Total del cliente para este producto */}
+                          {customerTotal > 0 && (
+                            <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                              = ${customerTotal.toLocaleString('es-CO')}
+                            </span>
+                          )}
+                          {/* Peso si aplica */}
+                          {customer.weight_display && (
+                            <span className="text-gray-500 dark:text-gray-400">
+                              ⚖️ {customer.weight_display}
+                            </span>
+                          )}
+                          {/* Dirección si está disponible */}
+                          {customer.customer_address && (
+                            <span className="text-gray-400 dark:text-gray-500 truncate max-w-[200px]" title={customer.customer_address}>
+                              📍 {customer.customer_address}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -2651,7 +2740,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               )}
             </td>
 
-            {/* Columna 2: Desglose / Clientes */}
+            {/* Columna 3: Cantidad Total */}
               <td className="px-6 py-4 whitespace-nowrap text-right align-top">
                 <div className="flex flex-col items-end gap-1">
                   {formatBoxQuantity(product.display_name, product.total_quantity) ? (
@@ -2674,15 +2763,6 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                         </p>
                       )}
                     </>
-                  ) : product.total_physical_units && product.total_physical_units > product.total_quantity ? (
-                    <>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {product.total_physical_units}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {product.physical_unit_name || 'unidad'}{product.total_physical_units === 1 ? '' : 's'}
-                      </p>
-                    </>
                   ) : (
                     <>
                       <p className="text-xl font-bold text-green-600 dark:text-green-400">
@@ -2695,9 +2775,74 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                   )}
                 </div>
               </td>
+
+              {/* Columna 4: Unidades Físicas */}
+              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
+                {(() => {
+                  let totalPhysical = 0;
+                  let unitName = 'unidad';
+                  product.items?.forEach(item => {
+                    const variantDisplay = item.variant_value || item.variantName || item.product_snapshot?.variant_value || null;
+                    const multiplier = extractMultiplierFromVariant(variantDisplay || null, product.product_name);
+                    totalPhysical += (item.quantity || 0) * multiplier;
+                  });
+                  
+                  // Detectar nombre de unidad
+                  const lowerName = product.product_name.toLowerCase();
+                  const lowerVariant = product.variant_name?.toLowerCase() || '';
+                  if (lowerName.includes('caja')) unitName = 'Caja';
+                  else if (lowerVariant.includes('bandeja') || lowerName.includes('bandeja')) unitName = 'Bandeja';
+                  else if (lowerVariant.includes('unidad') || lowerName.includes('unidades')) unitName = 'unidad';
+                  else if (lowerVariant.includes('paquete') || lowerName.includes('paquete')) unitName = 'Paquete';
+                  else if (lowerVariant.includes('kilo') || lowerVariant.includes('kg')) unitName = 'kilo';
+                  else if (lowerVariant.includes('libra') || lowerVariant.includes('lb')) unitName = 'libra';
+
+                  const hasMultiplier = totalPhysical !== product.total_quantity;
+
+                  return (
+                    <div className="flex flex-col items-end gap-1">
+                      <p className={`text-lg font-bold ${hasMultiplier ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>
+                        {hasMultiplier ? totalPhysical : '-'}
+                      </p>
+                      {hasMultiplier && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {unitName}{totalPhysical === 1 ? '' : 's'}
+                        </p>
+                      )}
+                      {!hasMultiplier && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {product.total_quantity} {unitName}{product.total_quantity === 1 ? '' : 's'}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </td>
+
+              {/* Columna 5: Costo Estimado */}
+              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
+                {(() => {
+                  const totalCost = product.unit_price * product.total_quantity;
+                  return (
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                        {totalCost > 0 ? formatPrice(totalCost) : '-'}
+                      </p>
+                      {product.unit_price > 0 && (
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          a {formatPrice(product.unit_price)} c/u
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </td>
             </tr>
-          );
-                    })}
+                      );
+                    });
+                  });
+                  return rows;
+                })()}
                   </tbody>
                 </table>
               </div>

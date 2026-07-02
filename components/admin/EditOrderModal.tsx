@@ -31,6 +31,7 @@ interface ProductVariant {
     id: string;
     variant_name: string;
     variant_value: string;
+    price: number;
     price_adjustment: number;
     stock_quantity: number;
     is_active: boolean;
@@ -249,7 +250,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
     };
 
     const addProduct = (product: Product, variant?: ProductVariant) => {
-        const price = variant?.price_adjustment || product.price;
+        const price = variant?.price || product.price;
         const existingIndex = orderItems.findIndex(
             item => item.product_id === product.id &&
                 ((!variant && !item.variant_id) || (variant && item.variant_id === variant.id))
@@ -641,7 +642,7 @@ export default function EditOrderModal({ order, isOpen, onClose, onSave }: EditO
                                                         <div key={variant.id} className="flex items-center justify-between rounded-xl border border-gray-200 bg-slate-50 p-3">
                                                             <div>
                                                                 <p className="text-xs font-medium">{variant.variant_value}</p>
-                                                                <p className="text-xs text-gray-500">{formatCurrency(variant.price_adjustment || product.price)}</p>
+                                                                <p className="text-xs text-gray-500">{formatCurrency(variant.price || product.price)}</p>
                                                             </div>
                                                             <button
                                                                 onClick={() => addProduct(product, variant)}
