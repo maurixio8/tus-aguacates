@@ -864,7 +864,22 @@ export default function ListaComprasPage() {
   const getCategoryStyle = (productName: string): { bg: string; border: string; label: string; color: string } => {
     const name = productName.toLowerCase();
 
-    // Combos y Cajas (primero para tener prioridad)
+    // Aguacates (antes que caja/combo y fruta para dar prioridad)
+    // Captura todos los productos relacionados con aguacate: cajas, mallas, paquetes, etc.
+    if (name.includes('aguacate') || name.includes('hass') ||
+        name.includes('nueva maya') || name.includes('injerto') ||
+        name.includes('caja selección') || name.includes('malla premium') ||
+        (name.includes('caja') && (name.includes('12') || name.includes('24') || name.includes('35') || name.includes('7'))) ||
+        (name.includes('paquete') && name.includes('unidades'))) {
+      return {
+        bg: 'bg-emerald-50 dark:bg-emerald-900/30',
+        border: 'border-l-4 border-l-emerald-600 dark:border-l-emerald-400',
+        label: 'Aguacate',
+        color: 'text-emerald-700 dark:text-emerald-300'
+      };
+    }
+
+    // Combos y Cajas (segundo, después de aguacate)
     if (name.includes('combo') || name.includes('caja')) {
       return {
         bg: 'bg-purple-50 dark:bg-purple-900/30',
@@ -874,10 +889,10 @@ export default function ListaComprasPage() {
       };
     }
 
-    // Frutas
+    // Frutas (sin aguacate, que ya está arriba)
     const frutas = ['manzana', 'fresa', 'arándano', 'arandano', 'naranja', 'limón', 'limon', 'mandarina',
       'mango', 'piña', 'pina', 'papaya', 'banano', 'banana', 'uva', 'ciruela', 'durazno',
-      'mora', 'granadilla', 'maracuyá', 'maracuya', 'guayaba', 'aguacate', 'pera', 'sandía',
+      'mora', 'granadilla', 'maracuyá', 'maracuya', 'guayaba', 'pera', 'sandía',
       'sandia', 'melón', 'melon', 'cereza', 'kiwi', 'coco', 'pitiahaya', 'pitaya', 'lulo', 'tomate de árbol'];
     if (frutas.some(f => name.includes(f))) {
       return {
@@ -1469,7 +1484,7 @@ const normalizeVariant = (variant: string | null): string => {
                 product_name: component.name,
                 variant_name: component.variant,
                 display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
-                unit_price: (item.unit_price || item.price || 0) > 0 ? Math.round((item.unit_price || item.price || 0) / comboComponents.length) : 0, // Precio dividido entre componentes para que no sea 0
+                unit_price: 0, // 0 = sin precio directo, se rellena desde ítem regular o catálogo
                 total_quantity: component.quantity * item.quantity,
                 has_missing_variants: false, // Combos siempre tienen variante definida
                 orders_count: 1,
@@ -1569,6 +1584,10 @@ const normalizeVariant = (variant: string | null): string => {
           // Verificar si ya existe este grupo
           if (productMap.has(groupingKey)) {
             const existing = productMap.get(groupingKey)!;
+            // Si el precio actual es 0 (viene de combo) o este item tiene precio real, actualizarlo
+            if (unitPrice > 0 && (existing.unit_price === 0 || unitPrice !== existing.unit_price)) {
+              existing.unit_price = unitPrice;
+            }
             existing.total_quantity += item.quantity;
             existing.orders_count += 1;
 
@@ -1708,15 +1727,48 @@ const normalizeVariant = (variant: string | null): string => {
       });
     });
 
+    // Post-process: llenar precios desde el catálogo para productos que vinieron solo de combos
+    productMap.forEach((product) => {
+      if (product.unit_price === 0) {
+        const normalizedName = normalizeProductName(product.product_name, null);
+        const normalizedVariant = product.variant_name ? normalizeVariant(product.variant_name) : null;
+
+        for (const catalogProduct of catalogProducts) {
+          const catalogNormalized = normalizeProductName(catalogProduct.name, null);
+          if (catalogNormalized === normalizedName) {
+            const activeVariants = getActiveCatalogVariants(catalogProduct);
+            if (activeVariants.length > 0) {
+              // Intentar coincidir variante
+              if (normalizedVariant) {
+                const matchingVariant = activeVariants.find(v => {
+                  const vDisplay = v.variant_value || v.variant_name || '';
+                  return normalizeVariant(vDisplay) === normalizedVariant;
+                });
+                const variantWithPrice = matchingVariant || activeVariants[0];
+                if ((variantWithPrice as any).price) {
+                  product.unit_price = (variantWithPrice as any).price;
+                  break;
+                }
+              } else if ((activeVariants[0] as any).price) {
+                product.unit_price = (activeVariants[0] as any).price;
+                break;
+              }
+            }
+          }
+        }
+      }
+    });
+
     return Array.from(productMap.values()).sort(
       (a, b) => {
-        // Orden de prioridad de categorías (1: Combo/Caja, 2: Fruta, 3: Verdura, 4: Otro)
+        // Orden de prioridad de categorías (1: Aguacate, 2: Combo/Caja, 3: Fruta, 4: Verdura, 5: Otro)
         const getPriority = (name: string) => {
           const style = getCategoryStyle(name);
-          if (style.label === 'Combo/Caja') return 1;
-          if (style.label === 'Fruta') return 2;
-          if (style.label === 'Verdura') return 3;
-          return 4;
+          if (style.label === 'Aguacate') return 1;
+          if (style.label === 'Combo/Caja') return 2;
+          if (style.label === 'Fruta') return 3;
+          if (style.label === 'Verdura') return 4;
+          return 5;
         };
 
         const priorityA = getPriority(a.product_name);
@@ -2619,7 +2671,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                               <div className="flex items-center gap-3">
                                 <div className={`w-2 h-8 rounded-full ${group.style.bg.replace('bg-', 'bg-')}`} style={{ backgroundColor: group.style.border.replace('border-l-4 border-l-', '').replace(' dark:border-l-*', '') }} />
                                 <h3 className={`font-bold text-sm uppercase tracking-wider ${group.style.color}`}>
-                                  {catName === 'Combo/Caja' ? '📦 ' : catName === 'Fruta' ? '🍓 ' : catName === 'Verdura' ? '🥬 ' : '📋 '}
+                                  {catName === 'Aguacate' ? '🥑 ' : catName === 'Combo/Caja' ? '📦 ' : catName === 'Fruta' ? '🍓 ' : catName === 'Verdura' ? '🥬 ' : '📋 '}
                                   {catName}
                                 </h3>
                               </div>
