@@ -6,6 +6,44 @@ import Image from 'next/image';
 import { Sparkles } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+// ─── Efecto typewriter + fade-up ────────────────────────────────────────────
+const sectionStyles = `
+  @keyframes typewriter {
+    from { width: 0; }
+    to { width: 100%; }
+  }
+  @keyframes blink-caret {
+    50% { border-color: transparent; }
+  }
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .typewriter-title {
+    display: inline-block;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100%;
+    width: 0;
+    border-right: 3px solid #C8A227;
+    animation:
+      typewriter 1.8s steps(28) forwards,
+      blink-caret 0.75s step-end infinite;
+  }
+  @media (max-width: 640px) {
+    .typewriter-title {
+      font-size: 1.25rem;
+      animation:
+        typewriter 1.5s steps(22) forwards,
+        blink-caret 0.75s step-end infinite;
+    }
+  }
+  .fade-slide-sub {
+    opacity: 0;
+    animation: fadeSlideUp 0.8s ease-out 1.2s forwards;
+  }
+`;
+
 interface Category {
   id: string;
   name: string;
@@ -125,9 +163,14 @@ export default function PremiumCategoryGrid() {
         <div>
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
             <Sparkles className="w-6 h-6 text-verde-aguacate-500" />
-            Explora Nuestras Categorías
+            <style>{sectionStyles}</style>
+            <span className="typewriter-title font-serif tracking-wide text-gray-900" style={{ fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif' }}>
+              Explora Nuestras Categorías
+            </span>
           </h2>
-          <p className="text-gray-600 mt-1">Productos frescos y de calidad premium</p>
+          <p className="fade-slide-sub text-gray-600 mt-1 text-base md:text-lg">
+            Productos frescos y de calidad premium
+          </p>
         </div>
       </div>
 

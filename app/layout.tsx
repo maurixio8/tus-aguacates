@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { ClientLayout } from "@/components/layout/ClientLayout";
 import { WebVitals } from "@/components/analytics/WebVitals";
@@ -16,6 +16,13 @@ const inter = Inter({
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
   variable: '--font-display',
+  display: 'swap',
+  preload: true,
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: '--font-playfair',
   display: 'swap',
   preload: true,
 });
@@ -95,7 +102,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//res.cloudinary.com" />
         <link rel="dns-prefetch" href="//www.googletagmanager.com" />
       </head>
-      <body className={`${inter.variable} ${plusJakarta.variable} antialiased`}>
+      <body className={`${inter.variable} ${plusJakarta.variable} ${playfair.variable} antialiased`}>
         {/* GEO Schemas para optimización en motores de IA */}
         <GeoSchemas />
         
