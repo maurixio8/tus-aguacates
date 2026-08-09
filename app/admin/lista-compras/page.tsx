@@ -1600,15 +1600,15 @@ const normalizeVariant = (variant: string | null): string => {
             weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
           }
 
-          // Usar el product_id como identidad principal cuando existe.
-          // Los pedidos históricos pueden traer nombres distintos para el mismo producto
-          // (ej: "Banano criollo" vs "Banano criollo Kilo"). El product_id evita
-          // que esas diferencias de texto creen líneas duplicadas.
-          const textGroupingKey = createGroupingKey(variantResolution.catalogDisplayName, variantDisplay);
+          // La identidad visual canónica debe ser igual aunque un pedido histórico
+          // tenga product_id y otro no. Si usamos ID en unos casos y texto en otros,
+          // el mismo Banano criollo vuelve a aparecer en dos filas.
+          const canonicalGroupingName = normalizeProductName(
+            variantResolution.catalogDisplayName || productName,
+            null
+          );
           const normalizedVariantKey = normalizeVariant(variantDisplay);
-          const groupingKey = item.product_id
-            ? `product:${item.product_id}|${normalizedVariantKey || 'sin-variante'}`
-            : textGroupingKey;
+          const groupingKey = `canonical:${canonicalGroupingName}|${normalizedVariantKey || 'sin-variante'}`;
           const normalizedName = variantResolution.normalizedName;
 
           // Calcular peso para este item
