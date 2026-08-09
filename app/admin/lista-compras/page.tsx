@@ -1242,7 +1242,13 @@ const normalizeVariant = (variant: string | null): string => {
       variantDisplay = quantityFromName;
     }
 
-    const catalogEntry = catalogVariantsByName.get(normalizedName);
+    const catalogProduct = item.product_id
+      ? catalogProducts.find((product) => product.id === item.product_id)
+      : undefined;
+    const catalogEntryById = catalogProduct
+      ? catalogVariantsByName.get(normalizeProductName(catalogProduct.name, null))
+      : undefined;
+    const catalogEntry = catalogEntryById || catalogVariantsByName.get(normalizedName);
     const selectedHints = selectedVariantHints.get(normalizedName);
 
     // If we have a catalog entry, try to get the current variant_name and value
