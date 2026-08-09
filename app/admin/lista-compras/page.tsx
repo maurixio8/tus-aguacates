@@ -1567,8 +1567,15 @@ const normalizeVariant = (variant: string | null): string => {
           const activeVariantsForItem = catalogProductForItem
             ? getActiveCatalogVariants(catalogProductForItem)
             : [];
-          if (!variantDisplay && activeVariantsForItem.length === 1) {
+          const catalogVariantEntryForItem = catalogProductForItem
+            ? catalogVariantsByName.get(normalizeProductName(catalogProductForItem.name, null))
+            : catalogVariantsByName.get(variantResolution.normalizedName);
+          const isGenericVariantForItem = !variantDisplay || genericVariantNames.includes(variantDisplay.toLowerCase().trim());
+          if (isGenericVariantForItem && activeVariantsForItem.length === 1) {
             variantDisplay = activeVariantsForItem[0].variant_value || activeVariantsForItem[0].variant_name || null;
+          }
+          if ((!variantDisplay || genericVariantNames.includes(variantDisplay.toLowerCase().trim())) && catalogVariantEntryForItem?.variants.size === 1) {
+            variantDisplay = Array.from(catalogVariantEntryForItem.variants.values())[0] || null;
           }
 
           // Precio unitario de venta
