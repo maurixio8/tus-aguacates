@@ -1460,7 +1460,10 @@ const normalizeVariant = (variant: string | null): string => {
             // que los productos directos; de lo contrario el mismo producto aparece
             // en una fila por combo y otra por pedido directo.
             const normalizedComponentName = normalizeProductName(component.name, null);
-            const normalizedComponentVariant = normalizeVariant(component.variant || null);
+            let normalizedComponentVariant = normalizeVariant(component.variant || null);
+            if (/^(kilo|kilos|kg)$/i.test((component.variant || '').trim())) {
+              normalizedComponentVariant = '1000grs';
+            }
             const componentKey = `canonical:${normalizedComponentName}|${normalizedComponentVariant || 'sin-variante'}`;
             const normalizedName = normalizedComponentName;
 
