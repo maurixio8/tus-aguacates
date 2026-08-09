@@ -2153,6 +2153,159 @@ const normalizeVariant = (variant: string | null): string => {
     document.body.removeChild(link);
   };
 
+  // Exportar a XLS (formato XML de Excel, sin librerías externas)
+  const exportToXLS = () => {
+    if (groupedProducts.length === 0) return;
+
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones', 'Pedidos IDs'];
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    let rowsXml = '';
+    rowsXml += `<Row ss:StyleID="Header"><Cell><Data ss:Type="String">${headers[0]}</Data></Cell>`;
+    for (let i = 1; i < headers.length; i++) {
+      rowsXml += `<Cell><Data ss:Type="String">${headers[i]}</Data></Cell>`;
+    }
+    rowsXml += '</Row>';
+
+    groupedProducts.forEach(product => {
+      const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
+      const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
+      const orderIds = product.customer_breakdown.map(c => c.order_id).join('; ');
+      const totalCost = product.unit_price * product.total_quantity;
+
+      const cells = [
+        product.product_name,
+        product.variant_name || 'Sin variante',
+        product.total_quantity.toString(),
+        product.total_weight_display || '-',
+        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
+        totalCost > 0 ? formatPrice(totalCost) : '-',
+        customerNames,
+        addresses,
+        orderIds
+      ];
+
+      rowsXml += '<Row>';
+      cells.forEach(cell => {
+        const escaped = String(cell).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        rowsXml += `<Cell><Data ss:Type="String">${escaped}</Data></Cell>`;
+      });
+      rowsXml += '</Row>';
+    });
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel">
+ <Styles>
+  <Style ss:ID="Header">
+   <Font ss:Bold="1" ss:Size="11"/>
+   <Interior ss:Color="#D4EDDA" ss:Pattern="Solid"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Lista de Compras">
+  <Table>
+${rowsXml}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lista-compras-${dateStr}.xls`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Exportar a PDF (usando ventana de impresión optimizada)
+  const exportToPDF = () => {
+    if (groupedProducts.length === 0) return;
+
+    const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+    const dateFromStr = dateFrom ? new Date(dateFrom).toLocaleDateString('es-CO') : '';
+    const dateToStr = dateTo ? new Date(dateTo).toLocaleDateString('es-CO') : '';
+    const totalItems = groupedProducts.length;
+    const totalQuantity = groupedProducts.reduce((sum, p) => sum + p.total_quantity, 0);
+
+    let tableRows = '';
+    groupedProducts.forEach(product => {
+      const totalCost = product.unit_price * product.total_quantity;
+      tableRows += `
+        <tr>
+          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${product.product_name}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${product.variant_name || '-'}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${product.total_quantity}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${product.total_weight_display || '-'}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;">${totalCost > 0 ? formatPrice(totalCost) : '-'}</td>
+        </tr>`;
+    });
+
+    const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Lista de Compras - Tus Aguacates</title>
+<style>
+  @page { size: A4; margin: 1.5cm; }
+  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #333; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #166534; padding-bottom: 10px; }
+  .logo { font-size: 22px; font-weight: bold; color: #166534; }
+  .info { font-size: 12px; color: #666; text-align: right; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th { background: #166534; color: white; padding: 8px; border: 1px solid #166534; text-align: left; }
+  .summary { margin-top: 15px; padding: 10px; background: #f0f9f0; border-radius: 6px; font-size: 12px; }
+  .summary span { font-weight: 600; color: #166534; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">🥑 Tus Aguacates</div>
+    <div class="info">
+      <div><strong>Lista de Compras</strong></div>
+      <div>Generada: ${dateStr}</div>
+      ${dateFromStr && dateToStr ? `<div>Pedidos del: ${dateFromStr} al ${dateToStr}</div>` : ''}
+    </div>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th>Variante</th>
+        <th style="text-align:center">Cant.</th>
+        <th style="text-align:center">Peso</th>
+        <th>Precio Unit.</th>
+        <th>Costo Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows}
+    </tbody>
+  </table>
+  <div class="summary">
+    <p>Total de productos: <span>${totalItems}</span></p>
+    <p>Total de unidades: <span>${totalQuantity}</span></p>
+  </div>
+  <script>
+    window.onload = function() { window.print(); }
+  </script>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+    if (printWindow) {
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+    }
+  };
+
   const handleCopyAll = async () => {
     const allText = filteredProducts.map(p =>
       `${p.display_name}\t${p.total_weight_display || p.total_quantity}`
@@ -2526,6 +2679,20 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                   >
                     <Download size={16} />
                     Exportar CSV
+                  </button>
+                  <button
+                    onClick={exportToXLS}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <Download size={16} />
+                    Exportar XLS
+                  </button>
+                  <button
+                    onClick={exportToPDF}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    <Download size={16} />
+                    Exportar PDF
                   </button>
                   <button
                     onClick={() => setShowSupplierView(!showSupplierView)}

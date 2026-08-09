@@ -105,7 +105,9 @@ export default function AdminLayout({
     return null;
   }
 
-  const navigation = [
+  const isViewer = admin?.role === 'viewer';
+
+  const allNavigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Productos', href: '/admin/productos', icon: Package },
     { name: 'Categorías', href: '/admin/categorias', icon: Layers },
@@ -120,7 +122,14 @@ export default function AdminLayout({
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   ];
 
-  const b2bNavigation = [
+  const viewerNavigation = [
+    { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
+    { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
+  ];
+
+  const navigation = isViewer ? viewerNavigation : allNavigation;
+
+  const b2bNavigation = isViewer ? [] : [
     { name: 'Dashboard B2B', href: '/admin/empresas', icon: LayoutDashboard },
     { name: 'Clientes B2B', href: '/admin/empresas/clientes', icon: Users },
     { name: 'Pedidos B2B', href: '/admin/empresas/pedidos', icon: ShoppingCart },
