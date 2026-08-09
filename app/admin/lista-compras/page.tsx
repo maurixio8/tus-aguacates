@@ -1353,7 +1353,9 @@ const normalizeVariant = (variant: string | null): string => {
   // Resolver la presentación física desde el campo unit, no desde el peso de la variante.
   const normalizePhysicalUnit = (unit: string | null | undefined, variant?: string | null, productName?: string): string | undefined => {
     const text = `${unit || ''} ${variant || ''} ${productName || ''}`.toLowerCase();
-    if (text.includes('caja')) return 'Caja';
+    const normalizedProduct = normalizeProductName(productName || '', null).toLowerCase();
+    // Presentaciones definidas por catálogo aunque el pedido histórico solo guarde el peso.
+    if (/\bkiwis?\b/.test(normalizedProduct) || /\bgranadillas?\b/.test(normalizedProduct)) return 'Bandeja';
     if (text.includes('bandeja')) return 'Bandeja';
     if (text.includes('paquete') || text.includes('paq')) return 'Paquete';
     if (unit?.toLowerCase().includes('unidad') || unit?.toLowerCase() === 'und') return 'unidad';
