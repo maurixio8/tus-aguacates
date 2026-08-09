@@ -1004,6 +1004,10 @@ export default function ListaComprasPage() {
     // Ej: "Caja de 24 unidades Hass Mediano" -> "caja de hass mediano" (la variante "24 unidades" se maneja separado)
     normalized = normalized.replace(/\s*\d+\s*(grs?|gramas|gramos|kg|kilos?|lb|libras?|unidades?|bandeja?s?)\b\s*/i, '').trim();
 
+    // Pedidos históricos también pueden traer la presentación como sufijo textual:
+    // "Banano criollo Kilo" debe resolverse como "Banano criollo".
+    normalized = normalized.replace(/\s+(?:kilo|kilos)\s*$/i, '').trim();
+
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ');
 
