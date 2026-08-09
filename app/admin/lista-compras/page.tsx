@@ -1664,6 +1664,19 @@ const normalizeVariant = (variant: string | null): string => {
             weightPerUnitGrams = ['kg', 'kilo', 'kilos'].includes(unit) ? rawWeight * 1000 : rawWeight;
           } else {
             weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
+            // Si el pedido histórico perdió la variante, recuperar el peso desde el catálogo activo.
+            if (weightPerUnitGrams === undefined) {
+              const normalizedProductForWeight = normalizeProductName(productName, null);
+              const catalogProductForWeight = catalogProducts.find((product) =>
+                normalizeProductName(product.name, null) === normalizedProductForWeight
+              );
+              const catalogWeight = catalogProductForWeight
+                ? getActiveCatalogVariants(catalogProductForWeight)
+                    .map((variant) => extractWeightFromVariant(variant.variant_value || variant.variant_name || null))
+                    .find((weight): weight is number => weight !== undefined)
+                : undefined;
+              weightPerUnitGrams = catalogWeight;
+            }
           }
 
           // La identidad visual canónica debe ser igual aunque un pedido histórico
