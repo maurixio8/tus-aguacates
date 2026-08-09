@@ -1558,6 +1558,19 @@ const normalizeVariant = (variant: string | null): string => {
             }
           }
 
+          // Regla canónica: si el producto del catálogo tiene una sola variante activa,
+          // usarla también para pedidos históricos que no guardaron la variante.
+          // Esto evita separar "Banano criollo" de "Banano criollo (1 Kilo)".
+          const catalogProductForItem = item.product_id
+            ? catalogProducts.find((product) => product.id === item.product_id)
+            : undefined;
+          const activeVariantsForItem = catalogProductForItem
+            ? getActiveCatalogVariants(catalogProductForItem)
+            : [];
+          if (!variantDisplay && activeVariantsForItem.length === 1) {
+            variantDisplay = activeVariantsForItem[0].variant_value || activeVariantsForItem[0].variant_name || null;
+          }
+
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
 
