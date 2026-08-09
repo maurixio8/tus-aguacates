@@ -1355,7 +1355,9 @@ const normalizeVariant = (variant: string | null): string => {
     const text = `${unit || ''} ${variant || ''} ${productName || ''}`.toLowerCase();
     const normalizedProduct = normalizeProductName(productName || '', null).toLowerCase();
     // Presentaciones definidas por catálogo aunque el pedido histórico solo guarde el peso.
-    if (normalizedProduct.includes('kiwi') || normalizedProduct.includes('granadilla') || normalizedProduct.includes('fresa economica')) return 'Bandeja';
+    if (normalizedProduct.includes('kiwi') || normalizedProduct.includes('granadilla') ||
+        (normalizedProduct.includes('fresa') && (normalizedProduct.includes('econom') || normalizedProduct.includes('econ'))) ||
+        normalizedProduct.includes('durazno') || normalizedProduct.includes('durazmo')) return 'Bandeja';
     if (text.includes('bandeja')) return 'Bandeja';
     if (text.includes('paquete') || text.includes('paq')) return 'Paquete';
     if (unit?.toLowerCase().includes('unidad') || unit?.toLowerCase() === 'und') return 'unidad';
