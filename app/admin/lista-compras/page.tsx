@@ -1466,7 +1466,7 @@ const normalizeVariant = (variant: string | null): string => {
             }
             const componentKey = `canonical:${normalizedComponentName}|${normalizedComponentVariant || 'sin-variante'}`;
             const normalizedName = normalizedComponentName;
-            const componentWeightPerUnit = extractWeightFromVariant(component.variant) ??
+            const componentWeightPerUnit = extractWeightFromVariant(component.variant || null) ??
               (/^(kilo|kilos|kg)$/i.test((component.variant || '').trim()) ? 1000 : undefined);
             const componentWeightGrams = componentWeightPerUnit
               ? componentWeightPerUnit * component.quantity * item.quantity
