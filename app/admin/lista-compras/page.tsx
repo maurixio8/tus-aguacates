@@ -1466,6 +1466,11 @@ const normalizeVariant = (variant: string | null): string => {
             }
             const componentKey = `canonical:${normalizedComponentName}|${normalizedComponentVariant || 'sin-variante'}`;
             const normalizedName = normalizedComponentName;
+            const componentWeightPerUnit = extractWeightFromVariant(component.variant) ??
+              (/^(kilo|kilos|kg)$/i.test((component.variant || '').trim()) ? 1000 : undefined);
+            const componentWeightGrams = componentWeightPerUnit
+              ? componentWeightPerUnit * component.quantity * item.quantity
+              : undefined;
 
             // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
             const customerUniqueKey = `${componentKey}|${order.id}`;
@@ -1482,18 +1487,35 @@ const normalizeVariant = (variant: string | null): string => {
                 order_type: order.order_type,
                 variant_name: component.variant,
                 quantity: component.quantity * item.quantity,
+                weight_grams: componentWeightGrams,
+                weight_display: componentWeightGrams ? formatWeight(componentWeightGrams) : undefined,
                 order_items: orderSummaries.get(order.id)
               };
               customerProductMap.set(customerUniqueKey, customerInfo);
             } else {
               // Actualizar cantidad si ya existe
               customerInfo.quantity += component.quantity * item.quantity;
+              if (componentWeightGrams) {
+                customerInfo.weight_grams = (customerInfo.weight_grams || 0) + componentWeightGrams;
+                customerInfo.weight_display = formatWeight(customerInfo.weight_grams);
+              }
             }
 
             if (productMap.has(componentKey)) {
               const existing = productMap.get(componentKey)!;
               existing.total_quantity += component.quantity * item.quantity;
               existing.orders_count += 1;
+              if (componentWeightGrams) {
+                existing.total_weight_grams = (existing.total_weight_grams || 0) + componentWeightGrams;
+                existing.total_weight_display = formatWeight(existing.total_weight_grams);
+                existing.weight_per_unit_grams = componentWeightPerUnit;
+                existing.smallest_weight_grams = existing.smallest_weight_grams
+                  ? Math.min(existing.smallest_weight_grams, componentWeightPerUnit || existing.smallest_weight_grams)
+                  : componentWeightPerUnit;
+                existing.total_in_smallest_units = existing.smallest_weight_grams
+                  ? Math.ceil(existing.total_weight_grams / existing.smallest_weight_grams)
+                  : existing.total_in_smallest_units;
+              }
 
               // Verificar si este cliente ya está en customer_breakdown
               const existingCustomerIndex = existing.customer_breakdown.findIndex(
@@ -1519,6 +1541,11 @@ const normalizeVariant = (variant: string | null): string => {
                 display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
                 unit_price: 0, // 0 = sin precio directo, se rellena desde ítem regular o catálogo
                 total_quantity: component.quantity * item.quantity,
+                total_weight_grams: componentWeightGrams,
+                total_weight_display: componentWeightGrams ? formatWeight(componentWeightGrams) : undefined,
+                weight_per_unit_grams: componentWeightPerUnit,
+                smallest_weight_grams: componentWeightPerUnit,
+                total_in_smallest_units: componentWeightPerUnit ? component.quantity * item.quantity : undefined,
                 has_missing_variants: false, // Combos siempre tienen variante definida
                 orders_count: 1,
                 customer_breakdown: [customerInfo],
