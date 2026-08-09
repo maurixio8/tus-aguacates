@@ -1526,6 +1526,16 @@ const normalizeVariant = (variant: string | null): string => {
             variantDisplay = quantityFromName;
           }
 
+          // FALLBACK: Si no hay variante pero el nombre original contenía "kilo"/"kilos",
+          // asumir que la unidad es "1 Kilo" para agrupar correctamente
+          // Ej: "Banano criollo Kilo" (sin variante) debe agruparse con "Banano criollo" + variante "1 Kilo"
+          if ((!variantDisplay || genericVariantNames.includes(variantDisplay.toLowerCase().trim())) && !quantityFromName) {
+            const originalName = item.product_snapshot?.name || item.product_name || productName || '';
+            if (/\b\d*\s*kilo/i.test(originalName)) {
+              variantDisplay = '1 Kilo';
+            }
+          }
+
           // Precio unitario de venta
           const unitPrice = item.unit_price || item.price || 0;
 
