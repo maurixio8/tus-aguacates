@@ -1350,6 +1350,26 @@ const normalizeVariant = (variant: string | null): string => {
     return 1; // Sin multiplicador detectado
   };
 
+  // Resolver la presentación física desde el campo unit, no desde el peso de la variante.
+  const normalizePhysicalUnit = (unit: string | null | undefined, variant?: string | null, productName?: string): string | undefined => {
+    const text = `${unit || ''} ${variant || ''} ${productName || ''}`.toLowerCase();
+    if (text.includes('caja')) return 'Caja';
+    if (text.includes('bandeja')) return 'Bandeja';
+    if (text.includes('paquete') || text.includes('paq')) return 'Paquete';
+    if (unit?.toLowerCase().includes('unidad') || unit?.toLowerCase() === 'und') return 'unidad';
+    if (text.includes('libra') || text.includes('lb')) return 'libra';
+    if (text.includes('kilo') || text.includes('kg')) return 'kilo';
+    return undefined;
+  };
+
+  // Multiplicador físico: 2 bandejas/unidades en una presentación cuentan como 2.
+  const getPhysicalMultiplier = (unit: string | null | undefined, variant: string | null | undefined, productName?: string): number => {
+    const explicitUnit = normalizePhysicalUnit(unit, variant, productName);
+    const multiplierFromVariant = extractMultiplierFromVariant(variant || null, productName);
+    if (explicitUnit === 'Caja') return 1;
+    return multiplierFromVariant || 1;
+  };
+
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
     const summaries = new Map<string, Array<{
@@ -1471,6 +1491,9 @@ const normalizeVariant = (variant: string | null): string => {
             const componentWeightGrams = componentWeightPerUnit
               ? componentWeightPerUnit * component.quantity * item.quantity
               : undefined;
+            const componentPhysicalUnit = normalizePhysicalUnit(component.unit, component.variant, component.name);
+            const componentPhysicalMultiplier = getPhysicalMultiplier(component.unit, component.variant, component.name);
+            const componentPhysicalUnits = component.quantity * item.quantity * componentPhysicalMultiplier;
 
             // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
             const customerUniqueKey = `${componentKey}|${order.id}`;
@@ -1505,6 +1528,8 @@ const normalizeVariant = (variant: string | null): string => {
               const existing = productMap.get(componentKey)!;
               existing.total_quantity += component.quantity * item.quantity;
               existing.orders_count += 1;
+              existing.total_physical_units = (existing.total_physical_units || 0) + componentPhysicalUnits;
+              existing.physical_unit_name = existing.physical_unit_name || componentPhysicalUnit;
               if (componentWeightGrams) {
                 existing.total_weight_grams = (existing.total_weight_grams || 0) + componentWeightGrams;
                 existing.total_weight_display = formatWeight(existing.total_weight_grams);
@@ -1541,6 +1566,8 @@ const normalizeVariant = (variant: string | null): string => {
                 display_name: component.variant ? `${component.name} (${component.variant})` : component.name,
                 unit_price: 0, // 0 = sin precio directo, se rellena desde ítem regular o catálogo
                 total_quantity: component.quantity * item.quantity,
+                total_physical_units: componentPhysicalUnits,
+                physical_unit_name: componentPhysicalUnit,
                 total_weight_grams: componentWeightGrams,
                 total_weight_display: componentWeightGrams ? formatWeight(componentWeightGrams) : undefined,
                 weight_per_unit_grams: componentWeightPerUnit,
@@ -1626,15 +1653,11 @@ const normalizeVariant = (variant: string | null): string => {
 
           // Extraer peso: PRIORIZAR weight/unit guardados en el pedido, fallback a variante
           let weightPerUnitGrams: number | undefined;
-          if (item.weight != null && item.unit) {
-            const unit = item.unit.toLowerCase();
-            if (unit === 'kg' || unit === 'kilo' || unit === 'kilos') {
-              weightPerUnitGrams = item.weight * 1000;
-            } else if (unit === 'g' || unit === 'gr' || unit === 'grs' || unit === 'gramos' || unit === 'gramo') {
-              weightPerUnitGrams = item.weight;
-            } else {
-              weightPerUnitGrams = item.weight; // asumir gramos si no se reconoce la unidad
-            }
+          const itemWeightUnit = (item as any).unit || (item.product_snapshot as any)?.unit || null;
+          if ((item as any).weight != null && itemWeightUnit) {
+            const unit = String(itemWeightUnit).toLowerCase();
+            const rawWeight = Number((item as any).weight);
+            weightPerUnitGrams = ['kg', 'kilo', 'kilos'].includes(unit) ? rawWeight * 1000 : rawWeight;
           } else {
             weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
           }
@@ -1653,6 +1676,10 @@ const normalizeVariant = (variant: string | null): string => {
           // Calcular peso para este item
           const itemWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
           const itemWeightDisplay = itemWeightGrams ? formatWeight(itemWeightGrams) : undefined;
+          const itemPresentationUnit = (item as any).unit || (item.product_snapshot as any)?.unit || (item.products as any)?.unit || null;
+          const physicalUnitName = normalizePhysicalUnit(itemPresentationUnit, variantDisplay, productName);
+          const multiplier = getPhysicalMultiplier(itemPresentationUnit, variantDisplay, productName);
+          const physicalUnits = item.quantity * multiplier;
 
           // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
           const customerUniqueKey = `${groupingKey}|${order.id}`;
@@ -1715,11 +1742,10 @@ const normalizeVariant = (variant: string | null): string => {
             if (!existing.items) existing.items = [];
             existing.items.push(item);
 
-            // Calcular unidades físicas para este item (SIEMPRE, no solo con multiplicador > 1)
-            const multiplier = extractMultiplierFromVariant(variantDisplay, normalizedName);
-            const itemPhysicalUnits = item.quantity * multiplier;
+            const itemPhysicalUnits = physicalUnits;
 
-            // Inicializar total_physical_units si no existe
+            // La presentación física viene de unit, no de la variante de peso.
+            existing.physical_unit_name = existing.physical_unit_name || physicalUnitName;
             if (existing.total_physical_units === undefined) {
               // Recalcular desde cero sumando todos los items anteriores
               existing.total_physical_units = 0;
@@ -1785,23 +1811,7 @@ const normalizeVariant = (variant: string | null): string => {
             const initialWeightGrams = weightPerUnitGrams ? weightPerUnitGrams * item.quantity : undefined;
             const weightDisplay = initialWeightGrams ? formatWeight(initialWeightGrams) : undefined;
 
-            // Calcular unidades físicas (considerando multiplicador de variante)
-            // Ej: 1 pedido de "2 Bandejas" = 2 bandejas físicas
-            const multiplier = extractMultiplierFromVariant(variantDisplay, normalizedName);
-            const physicalUnits = item.quantity * multiplier;
-
-            let physicalUnitName: string | undefined = undefined;
-            if (productName.toLowerCase().includes('caja')) {
-              physicalUnitName = 'Caja';
-            } else if (variantDisplay) {
-              const lower = variantDisplay.toLowerCase();
-              if (lower.includes('bandeja')) physicalUnitName = 'Bandeja';
-              else if (lower.includes('unidad')) physicalUnitName = 'unidad';
-              else if (lower.includes('paquete')) physicalUnitName = 'paquete';
-              else if (lower.includes('libra') || lower.includes('lb')) physicalUnitName = 'libra';
-              else if (lower.includes('kilo') || lower.includes('kg')) physicalUnitName = 'kilo';
-            }
-
+            // La columna usa los valores físicos acumulados en el producto.
               productMap.set(groupingKey, {
                 grouping_key: groupingKey,
                 product_name: displayBaseName,
@@ -3127,24 +3137,18 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               {/* Columna 4: Unidades Físicas */}
               <td className="px-6 py-4 whitespace-nowrap text-right align-top">
                 {(() => {
-                  let totalPhysical = 0;
-                  let unitName = 'unidad';
-                  product.items?.forEach(item => {
-                    const variantDisplay = item.variant_value || item.variantName || item.product_snapshot?.variant_value || null;
-                    const multiplier = extractMultiplierFromVariant(variantDisplay || null, product.product_name);
-                    totalPhysical += (item.quantity || 0) * multiplier;
-                  });
+                  let totalPhysical = product.total_physical_units ?? product.total_quantity;
+                  let unitName = product.physical_unit_name || 'unidad';
+                  if (product.total_physical_units === undefined) {
+                    totalPhysical = 0;
+                    product.items?.forEach(item => {
+                      const variantDisplay = item.variant_value || item.variantName || item.product_snapshot?.variant_value || null;
+                      const itemUnit = (item as any).unit || (item.product_snapshot as any)?.unit || (item.products as any)?.unit || null;
+                      totalPhysical += (item.quantity || 0) * getPhysicalMultiplier(itemUnit, variantDisplay, product.product_name);
+                      unitName = normalizePhysicalUnit(itemUnit, variantDisplay, product.product_name) || unitName;
+                    });
+                  }
                   
-                  // Detectar nombre de unidad
-                  const lowerName = product.product_name.toLowerCase();
-                  const lowerVariant = product.variant_name?.toLowerCase() || '';
-                  if (lowerName.includes('caja')) unitName = 'Caja';
-                  else if (lowerVariant.includes('bandeja') || lowerName.includes('bandeja')) unitName = 'Bandeja';
-                  else if (lowerVariant.includes('unidad') || lowerName.includes('unidades')) unitName = 'unidad';
-                  else if (lowerVariant.includes('paquete') || lowerName.includes('paquete')) unitName = 'Paquete';
-                  else if (lowerVariant.includes('kilo') || lowerVariant.includes('kg')) unitName = 'kilo';
-                  else if (lowerVariant.includes('libra') || lowerVariant.includes('lb')) unitName = 'libra';
-
                   const hasMultiplier = totalPhysical !== product.total_quantity;
 
                   return (
