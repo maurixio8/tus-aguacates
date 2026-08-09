@@ -936,7 +936,10 @@ export default function ListaComprasPage() {
 
     const text = variantName.toLowerCase().trim();
 
-    // Patrones de búsqueda (en orden de especificidad)
+    // Variantes históricas que guardan la unidad implícita.
+    if (/^(kilo|kilos|kg)$/i.test(text)) return 1000;
+    if (/^\d+(?:\.\d+)?$/.test(text) && /\bapio\b|\btallos\b/i.test(text)) return parseFloat(text);
+
     const patterns = [
       // "1000 grs", "500 gramos", "250 grs"
       /(\d+(?:\.\d+)?)\s*(?:grs|gramas|gramos|gr)\b/i,
