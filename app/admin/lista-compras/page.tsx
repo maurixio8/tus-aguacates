@@ -1028,6 +1028,19 @@ const normalizeVariant = (variant: string | null): string => {
     return ''; // Tratar como sin variante
   }
 
+  // Manejar formato "Peso: 500g" o "Presentacion: 2000 gr" → extraer el valor
+  // Ej: "Peso: 500g" → "500g"
+  const colonMatch = variant.match(/:\s*(.+)/);
+  if (colonMatch) {
+    const afterColon = colonMatch[1].trim();
+    const weightFromColon = extractWeightFromVariant(afterColon);
+    if (weightFromColon !== undefined) {
+      return `${weightFromColon}grs`;
+    }
+    // Si no es peso, usar el valor después de los dos puntos
+    return afterColon.toLowerCase().trim();
+  }
+
   // Si podemos extraer un peso numérico, usar el peso en gramos como variante normalizada
   // Esto agrupa "1000 gr" con "1 kg" automáticamente
   const weightGrams = extractWeightFromVariant(variant);
@@ -1056,6 +1069,9 @@ const normalizeVariant = (variant: string | null): string => {
       .replace(/\s+kilos?/g, 'kg')
       .replace(/\s+unidades?/g, 'unidades')
       .replace(/\s+bandeja?s/g, 'bandejas');
+
+    // Normalizar "1unidad" → "1 unidades", "2unidad" → "2 unidades" etc
+    normalized = normalized.replace(/(\d+)\s*unidad\b/gi, '$1 unidades');
 
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ').trim();
@@ -1554,8 +1570,15 @@ const normalizeVariant = (variant: string | null): string => {
             weightPerUnitGrams = extractWeightFromVariant(variantDisplay);
           }
 
-          // Crear clave de agrupación inteligente (detecta si variante ya está en el nombre)
-          const groupingKey = createGroupingKey(variantResolution.catalogDisplayName, variantDisplay);
+          // Usar el product_id como identidad principal cuando existe.
+          // Los pedidos históricos pueden traer nombres distintos para el mismo producto
+          // (ej: "Banano criollo" vs "Banano criollo Kilo"). El product_id evita
+          // que esas diferencias de texto creen líneas duplicadas.
+          const textGroupingKey = createGroupingKey(variantResolution.catalogDisplayName, variantDisplay);
+          const normalizedVariantKey = normalizeVariant(variantDisplay);
+          const groupingKey = item.product_id
+            ? `product:${item.product_id}|${normalizedVariantKey || 'sin-variante'}`
+            : textGroupingKey;
           const normalizedName = variantResolution.normalizedName;
 
           // Calcular peso para este item
