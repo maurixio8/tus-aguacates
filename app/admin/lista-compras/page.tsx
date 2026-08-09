@@ -1456,9 +1456,13 @@ const normalizeVariant = (variant: string | null): string => {
         if (comboComponents) {
           // Es un combo - desglosar en sus componentes
           comboComponents.forEach(component => {
-            // Usar createGroupingKey que incluye la variante para agrupación precisa
-            const componentKey = createGroupingKey(component.name, component.variant || null);
-            const normalizedName = normalizeProductName(component.name, component.variant || null);
+            // Los componentes de combos deben usar la misma identidad canónica
+            // que los productos directos; de lo contrario el mismo producto aparece
+            // en una fila por combo y otra por pedido directo.
+            const normalizedComponentName = normalizeProductName(component.name, null);
+            const normalizedComponentVariant = normalizeVariant(component.variant || null);
+            const componentKey = `canonical:${normalizedComponentName}|${normalizedComponentVariant || 'sin-variante'}`;
+            const normalizedName = normalizedComponentName;
 
             // CLAVE ÚNICA PARA EVITAR DUPLICAR CLIENTES
             const customerUniqueKey = `${componentKey}|${order.id}`;
