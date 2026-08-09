@@ -2098,26 +2098,23 @@ const normalizeVariant = (variant: string | null): string => {
     if (groupedProducts.length === 0) return;
 
     const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones', 'Pedidos IDs'];
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
 
     const rows: string[][] = [];
 
     groupedProducts.forEach(product => {
       const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
       const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
-      const orderIds = product.customer_breakdown.map(c => c.order_id).join('; ');
       const totalCost = product.unit_price * product.total_quantity;
 
       rows.push([
         product.product_name,
         product.variant_name || 'Sin variante',
         product.total_quantity.toString(),
-        product.total_weight_display || '-',
         product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
         totalCost > 0 ? formatPrice(totalCost) : '-',
         customerNames,
-        addresses,
-        orderIds
+        addresses
       ]);
 
       product.customer_breakdown.forEach(customer => {
@@ -2127,12 +2124,8 @@ const normalizeVariant = (variant: string | null): string => {
           '',
           '',
           '',
-          '',
           customer.customer_name,
-          getOrderTypeLabel(customer.order_type),
-          customer.customer_address || '-',
-          customer.quantity.toString(),
-          customer.weight_display || '-'
+          customer.customer_address || '-'
         ]);
       });
     });
@@ -2157,7 +2150,7 @@ const normalizeVariant = (variant: string | null): string => {
   const exportToXLS = () => {
     if (groupedProducts.length === 0) return;
 
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Peso Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones', 'Pedidos IDs'];
+    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
     const dateStr = new Date().toISOString().split('T')[0];
 
     let rowsXml = '';
@@ -2170,19 +2163,16 @@ const normalizeVariant = (variant: string | null): string => {
     groupedProducts.forEach(product => {
       const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
       const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
-      const orderIds = product.customer_breakdown.map(c => c.order_id).join('; ');
       const totalCost = product.unit_price * product.total_quantity;
 
       const cells = [
         product.product_name,
         product.variant_name || 'Sin variante',
         product.total_quantity.toString(),
-        product.total_weight_display || '-',
         product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
         totalCost > 0 ? formatPrice(totalCost) : '-',
         customerNames,
-        addresses,
-        orderIds
+        addresses
       ];
 
       rowsXml += '<Row>';
@@ -2241,7 +2231,6 @@ ${rowsXml}
           <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${product.product_name}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${product.variant_name || '-'}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${product.total_quantity}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;">${product.total_weight_display || '-'}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${totalCost > 0 ? formatPrice(totalCost) : '-'}</td>
         </tr>`;
@@ -2279,7 +2268,6 @@ ${rowsXml}
         <th>Producto</th>
         <th>Variante</th>
         <th style="text-align:center">Cant.</th>
-        <th style="text-align:center">Peso</th>
         <th>Precio Unit.</th>
         <th>Costo Total</th>
       </tr>
