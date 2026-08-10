@@ -1357,10 +1357,23 @@ const normalizeVariant = (variant: string | null): string => {
   const normalizePhysicalUnit = (unit: string | null | undefined, variant?: string | null, productName?: string): string | undefined => {
     const text = `${unit || ''} ${variant || ''} ${productName || ''}`.toLowerCase();
     const normalizedProduct = normalizeProductName(productName || '', null).toLowerCase();
+    // Presentaciones operativas definidas por Mao, por encima de unidades históricas del pedido.
+    if (normalizedProduct.includes('lechuga batavia') || normalizedProduct.includes('alcachofa') ||
+        normalizedProduct.includes('repollo') || normalizedProduct.includes('coco') || normalizedProduct.includes('cidra')) return 'unidad';
+    if (normalizedProduct.includes('lechuga romana') || normalizedProduct.includes('lechuga hidropon') ||
+        normalizedProduct.includes('lechuga morada') || normalizedProduct.includes('hierb') ||
+        normalizedProduct.includes('menta') || normalizedProduct.includes('tomillo') || normalizedProduct.includes('romero') ||
+        normalizedProduct.includes('oregano') || normalizedProduct.includes('albahaca')) return 'Paquete';
+    if (normalizedProduct.includes('kale') || normalizedProduct.includes('rucula') || normalizedProduct.includes('mazorca') ||
+        normalizedProduct.includes('pimenton amarillo') || normalizedProduct.includes('maiz dulce') ||
+        normalizedProduct.includes('champinon') || normalizedProduct.includes('pera') || normalizedProduct.includes('manzana') ||
+        normalizedProduct.includes('pitaya') || normalizedProduct.includes('carambolo') || normalizedProduct.includes('aji jalapeno') ||
+        normalizedProduct.includes('kiwi') || normalizedProduct.includes('granadilla') || normalizedProduct.includes('durazno') ||
+        normalizedProduct.includes('fresa econom')) return 'Bandeja';
+    if (normalizedProduct.includes('batata rosada') || normalizedProduct.includes('cebolla larga')) return 'kilo';
+    if (normalizedProduct.includes('germinad') || normalizedProduct.includes('fresa premium') || normalizedProduct.includes('arandano')) return 'Contenedor';
     // Presentaciones definidas por catálogo aunque el pedido histórico solo guarde el peso.
-    if (normalizedProduct.includes('kiwi') || normalizedProduct.includes('granadilla') ||
-        (normalizedProduct.includes('fresa') && (normalizedProduct.includes('econom') || normalizedProduct.includes('econ'))) ||
-        normalizedProduct.includes('durazno') || normalizedProduct.includes('durazmo')) return 'Bandeja';
+    if (normalizedProduct.includes('fresa') && (normalizedProduct.includes('econom') || normalizedProduct.includes('econ'))) return 'Bandeja';
     if (text.includes('bandeja')) return 'Bandeja';
     if (text.includes('paquete') || text.includes('paq')) return 'Paquete';
     if (unit?.toLowerCase().includes('unidad') || unit?.toLowerCase() === 'und') return 'unidad';
@@ -1375,6 +1388,16 @@ const normalizeVariant = (variant: string | null): string => {
     const multiplierFromVariant = extractMultiplierFromVariant(variant || null, productName);
     if (explicitUnit === 'Caja') return 1;
     return multiplierFromVariant || 1;
+  };
+
+  const getDefaultPresentationWeight = (productName: string): number | undefined => {
+    const normalizedProduct = normalizeProductName(productName || '', null).toLowerCase();
+    if (normalizedProduct.includes('champiñon') || normalizedProduct.includes('champinon')) return 80;
+    if (normalizedProduct.includes('aji jalapeno')) return 125;
+    if (normalizedProduct.includes('arandano')) return 125;
+    if (normalizedProduct.includes('pera') || normalizedProduct.includes('manzana') ||
+        normalizedProduct.includes('pitaya') || normalizedProduct.includes('carambolo')) return 450;
+    return undefined;
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
@@ -1678,7 +1701,7 @@ const normalizeVariant = (variant: string | null): string => {
                     .map((variant) => extractWeightFromVariant(variant.variant_value || variant.variant_name || null))
                     .find((weight): weight is number => weight !== undefined)
                 : undefined;
-              weightPerUnitGrams = catalogWeight;
+              weightPerUnitGrams = catalogWeight ?? getDefaultPresentationWeight(productName);
             }
           }
 
