@@ -1001,6 +1001,11 @@ export default function ListaComprasPage() {
     // SIEMPRE remover CUALQUIER contenido final entre paréntesis
     normalized = normalized.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
+    // Las cajas de 24 hass son la misma referencia operativa aunque el pedido histórico traiga un descriptor distinto.
+    if (/^caja\s+de\s+24\s+unidades\b/i.test(normalized)) {
+      return 'caja de 24 unidades hass mediano';
+    }
+
     // Remover información de cantidad redundante al final del nombre
     // SOLO la cantidad, NO todo lo que sigue (antes .*$ destrozaba nombres como "Caja de 24 unidades Hass Mediano" -> "caja de")
     // Ej: "Arandanos 125gr" -> "arandanos"
@@ -1398,6 +1403,19 @@ const normalizeVariant = (variant: string | null): string => {
     if (normalizedProduct.includes('pera') || normalizedProduct.includes('manzana') ||
         normalizedProduct.includes('pitaya') || normalizedProduct.includes('carambolo')) return 450;
     return undefined;
+  };
+
+  const getPurchaseQuantityText = (product: ProductGrouped): string => {
+    const physicalTotal = product.total_physical_units ?? product.total_quantity;
+    const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
+    const pluralUnit = physicalTotal === 1 ? physicalUnit : `${physicalUnit}s`;
+    if (product.smallest_weight_grams && product.total_in_smallest_units) {
+      return `${product.total_in_smallest_units} ${pluralUnit} de ${formatWeight(product.smallest_weight_grams)}`;
+    }
+    if (product.total_weight_display) {
+      return `${product.total_weight_display} (${physicalTotal} ${pluralUnit})`;
+    }
+    return `${physicalTotal} ${pluralUnit}`;
   };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
@@ -2253,7 +2271,7 @@ const normalizeVariant = (variant: string | null): string => {
     if (groupedProducts.length === 0) return;
 
     const BOM = '\uFEFF';
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
+    const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
 
     const rows: string[][] = [];
 
@@ -2264,8 +2282,7 @@ const normalizeVariant = (variant: string | null): string => {
 
       rows.push([
         product.product_name,
-        product.variant_name || 'Sin variante',
-        product.total_quantity.toString(),
+        getPurchaseQuantityText(product),
         product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
         totalCost > 0 ? formatPrice(totalCost) : '-',
         customerNames,
@@ -2274,7 +2291,6 @@ const normalizeVariant = (variant: string | null): string => {
 
       product.customer_breakdown.forEach(customer => {
         rows.push([
-          '',
           '',
           '',
           '',
@@ -2305,7 +2321,7 @@ const normalizeVariant = (variant: string | null): string => {
   const exportToXLS = () => {
     if (groupedProducts.length === 0) return;
 
-    const headers = ['Producto', 'Variante', 'Cantidad Total', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
+    const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
     const dateStr = new Date().toISOString().split('T')[0];
 
     let rowsXml = '';
@@ -2322,8 +2338,7 @@ const normalizeVariant = (variant: string | null): string => {
 
       const cells = [
         product.product_name,
-        product.variant_name || 'Sin variante',
-        product.total_quantity.toString(),
+        getPurchaseQuantityText(product),
         product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
         totalCost > 0 ? formatPrice(totalCost) : '-',
         customerNames,
@@ -2384,8 +2399,7 @@ ${rowsXml}
       tableRows += `
         <tr>
           <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${product.product_name}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;">${product.variant_name || '-'}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${product.total_quantity}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${getPurchaseQuantityText(product)}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${totalCost > 0 ? formatPrice(totalCost) : '-'}</td>
         </tr>`;
@@ -2421,8 +2435,7 @@ ${rowsXml}
     <thead>
       <tr>
         <th>Producto</th>
-        <th>Variante</th>
-        <th style="text-align:center">Cant.</th>
+        <th style="text-align:center">Cantidad a comprar</th>
         <th>Precio Unit.</th>
         <th>Costo Total</th>
       </tr>
@@ -2451,7 +2464,7 @@ ${rowsXml}
 
   const handleCopyAll = async () => {
     const allText = filteredProducts.map(p =>
-      `${p.display_name}\t${p.total_weight_display || p.total_quantity}`
+      `${getWhatsAppSafeEmoji(p.product_name)} ${getPurchaseQuantityText(p)} ${p.display_name}`
     ).join('\n');
     await navigator.clipboard.writeText(allText);
     setCopiedItems(new Set(filteredProducts.map(p => p.grouping_key)));
@@ -2940,10 +2953,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                         Clientes / Desglose
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Cant. Total
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Unid. Físicas
+                        Cantidad a comprar
                       </th>
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Costo Est.
@@ -2976,7 +2986,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                       // Category header row
                       rows.push(
                         <tr key={`cat-${catName}`} className="bg-gray-100 dark:bg-gray-700/50">
-                          <td colSpan={5} className="px-6 py-2.5">
+                          <td colSpan={4} className="px-6 py-2.5">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-3">
                                 <div className={`w-2 h-8 rounded-full ${group.style.bg.replace('bg-', 'bg-')}`} style={{ backgroundColor: group.style.border.replace('border-l-4 border-l-', '').replace(' dark:border-l-*', '') }} />
@@ -3141,97 +3151,44 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               )}
             </td>
 
-            {/* Columna 3: Cantidad Total */}
-              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
-                <div className="flex flex-col items-end gap-1">
-                  {formatBoxQuantity(product.display_name, product.total_quantity) ? (
-                    <>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {product.total_quantity} cajas
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                        ({formatBoxQuantity(product.display_name, product.total_quantity)?.totalUnits} unid.)
-                      </p>
-                    </>
-                  ) : product.total_weight_display ? (
-                    <>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {product.total_weight_display}
-                      </p>
-                      {product.total_in_smallest_units && product.smallest_weight_grams && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                          ({product.total_in_smallest_units} × {formatWeight(product.smallest_weight_grams)})
-                        </p>
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-xl font-bold text-green-600 dark:text-green-400">
-                        {product.total_quantity}
-                      </p>
+            {/* Columna 3: Cantidad a comprar */}
+            <td className="px-6 py-4 whitespace-nowrap text-right align-top">
+              {(() => {
+                const purchaseLabel = getPurchaseQuantityText(product);
+
+                return (
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-xl font-bold text-green-600 dark:text-green-400">
+                      {purchaseLabel}
+                    </p>
+                    {product.total_weight_display && product.smallest_weight_grams && product.total_in_smallest_units && (
                       <p className="text-xs text-gray-500 dark:text-gray-400">
-                        unid.
+                        Peso total: {product.total_weight_display}
                       </p>
-                    </>
-                  )}
-                </div>
-              </td>
+                    )}
+                  </div>
+                );
+              })()}
+            </td>
 
-              {/* Columna 4: Unidades Físicas */}
-              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
-                {(() => {
-                  let totalPhysical = product.total_physical_units ?? product.total_quantity;
-                  let unitName = product.physical_unit_name || 'unidad';
-                  if (product.total_physical_units === undefined) {
-                    totalPhysical = 0;
-                    product.items?.forEach(item => {
-                      const variantDisplay = item.variant_value || item.variantName || item.product_snapshot?.variant_value || null;
-                      const itemUnit = (item as any).unit || (item.product_snapshot as any)?.unit || (item.products as any)?.unit || null;
-                      totalPhysical += (item.quantity || 0) * getPhysicalMultiplier(itemUnit, variantDisplay, product.product_name);
-                      unitName = normalizePhysicalUnit(itemUnit, variantDisplay, product.product_name) || unitName;
-                    });
-                  }
-                  
-                  const hasMultiplier = totalPhysical !== product.total_quantity;
-
-                  return (
-                    <div className="flex flex-col items-end gap-1">
-                      <p className={`text-lg font-bold ${hasMultiplier ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'}`}>
-                        {hasMultiplier ? totalPhysical : '-'}
+            {/* Columna 4: Costo Estimado */}
+            <td className="px-6 py-4 whitespace-nowrap text-right align-top">
+              {(() => {
+                const totalCost = product.unit_price * product.total_quantity;
+                return (
+                  <div className="flex flex-col items-end gap-1">
+                    <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                      {totalCost > 0 ? formatPrice(totalCost) : '-'}
+                    </p>
+                    {product.unit_price > 0 && (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        a {formatPrice(product.unit_price)} c/u
                       </p>
-                      {hasMultiplier && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {unitName}{totalPhysical === 1 ? '' : 's'}
-                        </p>
-                      )}
-                      {!hasMultiplier && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          {product.total_quantity} {unitName}{product.total_quantity === 1 ? '' : 's'}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-              </td>
-
-              {/* Columna 5: Costo Estimado */}
-              <td className="px-6 py-4 whitespace-nowrap text-right align-top">
-                {(() => {
-                  const totalCost = product.unit_price * product.total_quantity;
-                  return (
-                    <div className="flex flex-col items-end gap-1">
-                      <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                        {totalCost > 0 ? formatPrice(totalCost) : '-'}
-                      </p>
-                      {product.unit_price > 0 && (
-                        <p className="text-xs text-gray-400 dark:text-gray-500">
-                          a {formatPrice(product.unit_price)} c/u
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-              </td>
+                    )}
+                  </div>
+                );
+              })()}
+            </td>
             </tr>
                       );
                     });
