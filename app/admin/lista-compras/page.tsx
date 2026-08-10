@@ -977,6 +977,12 @@ export default function ListaComprasPage() {
     return undefined;
   };
 
+  const extractVolumeFromVariant = (variantName: string | null): number | undefined => {
+    if (!variantName) return undefined;
+    const match = variantName.toLowerCase().match(/(?:x\s*)?(\d+(?:\.\d+)?)\s*ml\b/i);
+    return match ? parseFloat(match[1]) : undefined;
+  };
+
   // Formatear peso total para mostrar
   const formatWeight = (grams: number): string => {
     if (grams >= 1000) {
@@ -1336,9 +1342,15 @@ const normalizeVariant = (variant: string | null): string => {
         // Es una caja, retornar 1 (contar cajas, no contenido interno)
         return 1;
       }
+      if (productLower.includes('paquete') && productLower.includes('unidad')) {
+        // Es un paquete, retornar 1 (contar paquetes, no las unidades internas)
+        return 1;
+      }
     }
 
-    // Patrones para encontrar multiplicadores
+    // "3 paquetes" sí significa tres paquetes; "8 unidades" dentro de un paquete no.
+    const paqueteMatch = text.match(/^(\d+)\s*paquete/i);
+    if (paqueteMatch) return parseInt(paqueteMatch[1], 10);
     // "2 Bandejas", "2 bandejas"
     const bandejaMatch = text.match(/^(\d+)\s*bandeja/i);
     if (bandejaMatch) return parseInt(bandejaMatch[1], 10);
@@ -1368,13 +1380,16 @@ const normalizeVariant = (variant: string | null): string => {
     if (normalizedProduct.includes('lechuga romana') || normalizedProduct.includes('lechuga hidropon') ||
         normalizedProduct.includes('lechuga morada') || normalizedProduct.includes('hierb') ||
         normalizedProduct.includes('menta') || normalizedProduct.includes('tomillo') || normalizedProduct.includes('romero') ||
-        normalizedProduct.includes('oregano') || normalizedProduct.includes('albahaca')) return 'Paquete';
+        normalizedProduct.includes('oregano') || normalizedProduct.includes('albahaca') ||
+        normalizedProduct.includes('eucalipto') || normalizedProduct.includes('apio') || normalizedProduct.includes('paquete')) return 'Paquete';
     if (normalizedProduct.includes('kale') || normalizedProduct.includes('rucula') || normalizedProduct.includes('mazorca') ||
         normalizedProduct.includes('pimenton amarillo') || normalizedProduct.includes('maiz dulce') ||
-        normalizedProduct.includes('champinon') || normalizedProduct.includes('pera') || normalizedProduct.includes('manzana') ||
+        normalizedProduct.includes('pera') || normalizedProduct.includes('manzana') ||
         normalizedProduct.includes('pitaya') || normalizedProduct.includes('carambolo') || normalizedProduct.includes('aji jalapeno') ||
         normalizedProduct.includes('kiwi') || normalizedProduct.includes('granadilla') || normalizedProduct.includes('durazno') ||
-        normalizedProduct.includes('fresa econom')) return 'Bandeja';
+        normalizedProduct.includes('fresa econom') || normalizedProduct.includes('uva')) return 'Bandeja';
+    if (normalizedProduct.includes('naranja')) return 'Malla';
+    if (normalizedProduct.includes('zumo')) return 'unidad';
     if (normalizedProduct.includes('batata rosada') || normalizedProduct.includes('cebolla larga')) return 'kilo';
     if (normalizedProduct.includes('germinad') || normalizedProduct.includes('fresa premium') || normalizedProduct.includes('arandano')) return 'Contenedor';
     // Presentaciones definidas por catálogo aunque el pedido histórico solo guarde el peso.
@@ -1409,6 +1424,10 @@ const normalizeVariant = (variant: string | null): string => {
     const physicalTotal = product.total_physical_units ?? product.total_quantity;
     const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
     const pluralUnit = physicalTotal === 1 ? physicalUnit : `${physicalUnit}s`;
+    const volumeMl = extractVolumeFromVariant(product.variant_name || null);
+    if (volumeMl) {
+      return `${physicalTotal} ${pluralUnit} de ${volumeMl} ml`;
+    }
     if (product.smallest_weight_grams && product.total_in_smallest_units) {
       return `${product.total_in_smallest_units} ${pluralUnit} de ${formatWeight(product.smallest_weight_grams)}`;
     }
