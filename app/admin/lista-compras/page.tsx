@@ -2425,7 +2425,7 @@ ${rowsXml}
       const totalCost = product.unit_price * product.total_quantity;
       tableRows += `
         <tr>
-          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${product.product_name}</td>
+          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${getWhatsAppSafeEmoji(product.product_name)} ${product.product_name}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${getPurchaseQuantityText(product)}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</td>
           <td style="padding:6px 8px;border:1px solid #ddd;">${totalCost > 0 ? formatPrice(totalCost) : '-'}</td>
