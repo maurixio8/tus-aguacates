@@ -1012,6 +1012,14 @@ export default function ListaComprasPage() {
       return 'caja de 24 unidades hass mediano';
     }
 
+    // Las cajas de 12 premium también deben conservar su identidad canónica.
+    // Sin este guard, el regex de cantidad convierte "Caja de 12 unidades Premium"
+    // en "caja depremium" (se come los espacios), el alias no matchea y el
+    // multiplicador de "12 unidades" se aplica como 12 en vez de 1.
+    if (/^caja\s+de\s+12\s+unidades\b/i.test(normalized)) {
+      return 'caja de 12 unidades premium';
+    }
+
     // Remover información de cantidad redundante al final del nombre
     // SOLO la cantidad, NO todo lo que sigue (antes .*$ destrozaba nombres como "Caja de 24 unidades Hass Mediano" -> "caja de")
     // Ej: "Arandanos 125gr" -> "arandanos"
