@@ -32,6 +32,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
+  const [showShareToast, setShowShareToast] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
@@ -119,51 +120,74 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
   const displayPrice = selectedVariant ? selectedVariant.price : (product.discount_price || product.price);
 
-    const handleAddToCart = () => {
-        // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna,
-        // buscar la variante más económica.
-        let finalVariant = selectedVariant;
-        if (variants.length > 0 && !finalVariant) {
-            console.log('⚠️ No variant selected in Modal, defaulting to cheapest');
-            const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
-            finalVariant = cheapest;
-        }
-
-        const itemToAdd = {
-            ...product,
-            category_id: product.category_id || product.category || 'general',
-            variant: finalVariant ?? undefined
-        };
-
-        // Pasar quantity como segundo parámetro, no como propiedad del objeto
-        addItem(itemToAdd as any, quantity);
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 2000);
-
-        // Resetear cantidad
-        setQuantity(1);
-    };
+    // Compartir producto: link directo que abre la página del producto
+  const getShareUrl = () => {
+    // Usar slug si existe (URL limpia y legible), si no el UUID
+    const idOrSlug = product.slug || product.id;
+    return `${window.location.origin}/productos/${idOrSlug}`;
+  };
 
   const handleShare = async () => {
-    const shareUrl = `${window.location.origin}/productos/${product.id}`;
-    const shareText = `Mira este producto: ${product.name} - ${formatPrice(displayPrice)}`;
+    const shareUrl = getShareUrl();
+    const displayPrice = selectedVariant?.price || product.discount_price || product.price;
+    const shareText = `🥑 ${product.name} - ${formatPrice(displayPrice)} — Tus Aguacates`;
 
     if (navigator.share) {
       try {
         await navigator.share({
           title: product.name,
           text: shareText,
-          url: shareUrl
+          url: shareUrl,
         });
+        return;
       } catch (error) {
-        console.log('Error sharing:', error);
+        // El usuario canceló o falló el share nativo — seguir con copiar
+        console.log('Share nativo cancelado:', error);
       }
-    } else {
-      // Fallback: Copiar al portapapeles
-      await navigator.clipboard.writeText(shareUrl);
-      alert('Enlace copiado al portapapeles');
+    }
+
+    // Fallback: copiar al portapapeles y avisar
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      setShowShareToast(true);
+      setTimeout(() => setShowShareToast(false), 2500);
+    } catch (error) {
+      console.error('Error copiando enlace:', error);
+      alert(shareUrl);
     }
   };
+
+  const handleShareWhatsApp = () => {
+    const shareUrl = getShareUrl();
+    const displayPrice = selectedVariant?.price || product.discount_price || product.price;
+    const shareText = `🥑 ${product.name} - ${formatPrice(displayPrice)}\n${shareUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
+  };
+
+  const handleAddToCart = () => {
+    // ✅ SOLUCIÓN: Si hay variantes pero no se ha seleccionado ninguna,
+    // buscar la variante más económica.
+    let finalVariant = selectedVariant;
+    if (variants.length > 0 && !finalVariant) {
+      console.log('⚠️ No variant selected in Modal, defaulting to cheapest');
+      const cheapest = [...variants].sort((a, b) => a.price - b.price)[0];
+      finalVariant = cheapest;
+    }
+
+    const itemToAdd = {
+      ...product,
+      category_id: product.category_id || product.category || 'general',
+      variant: finalVariant ?? undefined
+    };
+
+    // Pasar quantity como segundo parámetro, no como propiedad del objeto
+    addItem(itemToAdd as any, quantity);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 2000);
+
+        // Resetear cantidad
+        setQuantity(1);
+    };
 
   return (
     <>
@@ -278,6 +302,24 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               <ShoppingCart className="w-5 h-5" />
               {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
             </button>
+
+            {/* Botones Compartir */}
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button
+                onClick={handleShare}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:border-blue-400 hover:text-blue-600 transition-all"
+              >
+                <Share2 className="w-4 h-4" />
+                Compartir
+              </button>
+              <button
+                onClick={handleShareWhatsApp}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-green-500 text-green-700 font-semibold hover:bg-green-50 transition-all"
+              >
+                <span className="text-base leading-none">💬</span>
+                WhatsApp
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -286,6 +328,11 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
       {showToast && (
         <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg z-[60] flex items-center gap-2 text-sm">
           🛒 ¡Agregado al carrito!
+        </div>
+      )}
+      {showShareToast && (
+        <div className="fixed top-16 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-[60] flex items-center gap-2 text-sm">
+          🔗 ¡Enlace copiado!
         </div>
       )}
     </>
