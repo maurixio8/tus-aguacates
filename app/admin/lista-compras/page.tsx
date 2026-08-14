@@ -2295,8 +2295,8 @@ const normalizeVariant = (variant: string | null): string => {
 
 
 
-  // Exportar a Excel (CSV) — compatible con Android/Arc (Web Share API) y desktop
-  const exportToExcel = async () => {
+  // Exportar a Excel (CSV) — descarga directa compatible con Android/Arc
+  const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
 
     const BOM = '\uFEFF';
@@ -2336,34 +2336,21 @@ const normalizeVariant = (variant: string | null): string => {
     ].join('\n');
 
     const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const file = new File([blob], fileName, { type: 'text/csv;charset=utf-8;' });
-
-    // Android/iOS: usar Web Share API para abrir el menú nativo de guardar/compartir
-    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Lista de Compras' });
-        return;
-      } catch (shareError) {
-        // Usuario canceló o falló — continuar con descarga directa
-        console.log('Share cancelado, usando descarga:', shareError);
-      }
-    }
-
-    // Desktop/fallback: descarga directa
-    const link = document.createElement('a');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
-  // Exportar a XLS (formato XML de Excel, sin librerías externas) — compatible Android/desktop
-  const exportToXLS = async () => {
+  // Exportar a XLS (formato XML de Excel, sin librerías externas) — descarga directa compatible Android/desktop
+  const exportToXLS = () => {
     if (groupedProducts.length === 0) return;
 
     const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
@@ -2418,29 +2405,17 @@ ${rowsXml}
 </Workbook>`;
 
     const fileName = `lista-compras-${dateStr}.xls`;
-    const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const file = new File([blob], fileName, { type: 'application/vnd.ms-excel;charset=utf-8;' });
-
-    // Android/iOS: Web Share API para abrir el menú nativo
-    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-      try {
-        await navigator.share({ files: [file], title: 'Lista de Compras' });
-        return;
-      } catch (shareError) {
-        console.log('Share cancelado, usando descarga:', shareError);
-      }
-    }
-
-    // Desktop/fallback
-    const link = document.createElement('a');
+    const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
     link.setAttribute('href', url);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   // Exportar a PDF — genera un PDF real con jsPDF (funciona en Android, iOS y desktop)
@@ -2509,35 +2484,19 @@ ${rowsXml}
     doc.text(`Total de productos: ${totalItems}`, 14, finalY + 8);
     doc.text(`Total de unidades: ${totalQuantity}`, 14, finalY + 13);
 
-    // Descargar: Web Share API en Android/iOS, fallback descarga directa
+    // Descargar PDF — descarga directa compatible Android/Arc (sin Web Share API que falla)
     const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`;
     const blob = doc.output('blob');
-    const file = new File([blob], fileName, { type: 'application/pdf' });
-
-    const doShare = async () => {
-      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({ files: [file], title: 'Lista de Compras' });
-          return true;
-        } catch (shareError) {
-          console.log('Share cancelado, usando descarga:', shareError);
-        }
-      }
-      return false;
-    };
-
-    doShare().then(shared => {
-      if (shared) return;
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', fileName);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   const handleCopyAll = async () => {
