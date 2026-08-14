@@ -32,6 +32,8 @@ import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface OrderItem {
   id: string;
@@ -2293,8 +2295,8 @@ const normalizeVariant = (variant: string | null): string => {
 
 
 
-  // Exportar a Excel (CSV)
-  const exportToExcel = () => {
+  // Exportar a Excel (CSV) — compatible con Android/Arc (Web Share API) y desktop
+  const exportToExcel = async () => {
     if (groupedProducts.length === 0) return;
 
     const BOM = '\uFEFF';
@@ -2333,19 +2335,35 @@ const normalizeVariant = (variant: string | null): string => {
       ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
     ].join('\n');
 
+    const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.csv`;
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const file = new File([blob], fileName, { type: 'text/csv;charset=utf-8;' });
+
+    // Android/iOS: usar Web Share API para abrir el menú nativo de guardar/compartir
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Lista de Compras' });
+        return;
+      } catch (shareError) {
+        // Usuario canceló o falló — continuar con descarga directa
+        console.log('Share cancelado, usando descarga:', shareError);
+      }
+    }
+
+    // Desktop/fallback: descarga directa
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `lista-compras-${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
-  // Exportar a XLS (formato XML de Excel, sin librerías externas)
-  const exportToXLS = () => {
+  // Exportar a XLS (formato XML de Excel, sin librerías externas) — compatible Android/desktop
+  const exportToXLS = async () => {
     if (groupedProducts.length === 0) return;
 
     const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
@@ -2399,18 +2417,33 @@ ${rowsXml}
  </Worksheet>
 </Workbook>`;
 
+    const fileName = `lista-compras-${dateStr}.xls`;
     const blob = new Blob([xml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+    const file = new File([blob], fileName, { type: 'application/vnd.ms-excel;charset=utf-8;' });
+
+    // Android/iOS: Web Share API para abrir el menú nativo
+    if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: 'Lista de Compras' });
+        return;
+      } catch (shareError) {
+        console.log('Share cancelado, usando descarga:', shareError);
+      }
+    }
+
+    // Desktop/fallback
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `lista-compras-${dateStr}.xls`);
+    link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
-  // Exportar a PDF (usando ventana de impresión optimizada)
+  // Exportar a PDF — genera un PDF real con jsPDF (funciona en Android, iOS y desktop)
   const exportToPDF = () => {
     if (groupedProducts.length === 0) return;
 
@@ -2420,73 +2453,91 @@ ${rowsXml}
     const totalItems = groupedProducts.length;
     const totalQuantity = groupedProducts.reduce((sum, p) => sum + p.total_quantity, 0);
 
-    let tableRows = '';
-    groupedProducts.forEach(product => {
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+    // Header
+    doc.setFontSize(16);
+    doc.setTextColor(22, 101, 52); // verde bosque
+    doc.setFont('helvetica', 'bold');
+    doc.text('🥑 Lista de Compras - Tus Aguacates', 14, 16);
+
+    doc.setFontSize(9);
+    doc.setTextColor(100);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Generada: ${dateStr}`, 14, 22);
+    if (dateFromStr && dateToStr) {
+      doc.text(`Pedidos del: ${dateFromStr} al ${dateToStr}`, 14, 26);
+    }
+
+    // Tabla principal
+    const bodyRows = groupedProducts.map(product => {
       const totalCost = product.unit_price * product.total_quantity;
-      tableRows += `
-        <tr>
-          <td style="padding:6px 8px;border:1px solid #ddd;font-weight:600;">${getWhatsAppSafeEmoji(product.product_name)} ${product.product_name}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;text-align:center;font-weight:600;">${getPurchaseQuantityText(product)}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;">${product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</td>
-          <td style="padding:6px 8px;border:1px solid #ddd;">${totalCost > 0 ? formatPrice(totalCost) : '-'}</td>
-        </tr>`;
+      return [
+        `${getWhatsAppSafeEmoji(product.product_name)} ${product.product_name}`,
+        getPurchaseQuantityText(product),
+        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
+        totalCost > 0 ? formatPrice(totalCost) : '-',
+      ];
     });
 
-    const html = `<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="utf-8">
-<title>Lista de Compras - Tus Aguacates</title>
-<style>
-  @page { size: A4; margin: 1.5cm; }
-  body { font-family: 'Plus Jakarta Sans', Arial, sans-serif; color: #333; }
-  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #166534; padding-bottom: 10px; }
-  .logo { font-size: 22px; font-weight: bold; color: #166534; }
-  .info { font-size: 12px; color: #666; text-align: right; }
-  table { width: 100%; border-collapse: collapse; font-size: 11px; }
-  th { background: #166534; color: white; padding: 8px; border: 1px solid #166534; text-align: left; }
-  .summary { margin-top: 15px; padding: 10px; background: #f0f9f0; border-radius: 6px; font-size: 12px; }
-  .summary span { font-weight: 600; color: #166534; }
-</style>
-</head>
-<body>
-  <div class="header">
-    <div class="logo">🥑 Tus Aguacates</div>
-    <div class="info">
-      <div><strong>Lista de Compras</strong></div>
-      <div>Generada: ${dateStr}</div>
-      ${dateFromStr && dateToStr ? `<div>Pedidos del: ${dateFromStr} al ${dateToStr}</div>` : ''}
-    </div>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th>Producto</th>
-        <th style="text-align:center">Cantidad a comprar</th>
-        <th>Precio Unit.</th>
-        <th>Costo Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${tableRows}
-    </tbody>
-  </table>
-  <div class="summary">
-    <p>Total de productos: <span>${totalItems}</span></p>
-    <p>Total de unidades: <span>${totalQuantity}</span></p>
-  </div>
-  <script>
-    window.onload = function() { window.print(); }
-  </script>
-</body>
-</html>`;
+    autoTable(doc, {
+      startY: 32,
+      head: [['Producto', 'Cantidad a comprar', 'Precio Unit.', 'Costo Total']],
+      body: bodyRows,
+      theme: 'grid',
+      headStyles: { fillColor: [22, 101, 52], fontSize: 9 },
+      bodyStyles: { fontSize: 8 },
+      styles: { cellPadding: 1.5 },
+      columnStyles: {
+        0: { cellWidth: 130 },
+        1: { cellWidth: 55 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 30 },
+      },
+      didDrawPage: () => {
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(`Página ${doc.getNumberOfPages()}`, 280, 200);
+      },
+    });
 
-    const printWindow = window.open('', '_blank', 'width=900,height=700');
-    if (printWindow) {
-      printWindow.document.open();
-      printWindow.document.write(html);
-      printWindow.document.close();
-    }
+    // Resumen
+    const finalY = (doc as any).lastAutoTable?.finalY || 40;
+    doc.setFontSize(10);
+    doc.setTextColor(22, 101, 52);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Total de productos: ${totalItems}`, 14, finalY + 8);
+    doc.text(`Total de unidades: ${totalQuantity}`, 14, finalY + 13);
+
+    // Descargar: Web Share API en Android/iOS, fallback descarga directa
+    const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`;
+    const blob = doc.output('blob');
+    const file = new File([blob], fileName, { type: 'application/pdf' });
+
+    const doShare = async () => {
+      if (typeof navigator !== 'undefined' && navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: 'Lista de Compras' });
+          return true;
+        } catch (shareError) {
+          console.log('Share cancelado, usando descarga:', shareError);
+        }
+      }
+      return false;
+    };
+
+    doShare().then(shared => {
+      if (shared) return;
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    });
   };
 
   const handleCopyAll = async () => {
