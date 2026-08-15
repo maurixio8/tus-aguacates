@@ -2295,7 +2295,7 @@ const normalizeVariant = (variant: string | null): string => {
 
 
 
-  // Exportar a Excel (CSV) — descarga directa compatible con Android/Arc
+  // Exportar a Excel (CSV) — data URL compatible con Arc Android
   const exportToExcel = () => {
     if (groupedProducts.length === 0) return;
 
@@ -2336,17 +2336,15 @@ const normalizeVariant = (variant: string | null): string => {
     ].join('\n');
 
     const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.csv`;
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
+    // Data URL en vez de blob URL: Arc Android falla con URL.createObjectURL + click
+    const dataUrl = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
     const link = document.createElement('a');
-    link.setAttribute('href', url);
+    link.setAttribute('href', dataUrl);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   // Exportar a XLS (formato XML de Excel, sin librerías externas) — descarga directa compatible Android/desktop
@@ -2405,17 +2403,15 @@ ${rowsXml}
 </Workbook>`;
 
     const fileName = `lista-compras-${dateStr}.xls`;
-    const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
-    const url = URL.createObjectURL(blob);
+    // Data URL en vez de blob URL: Arc Android falla con URL.createObjectURL + click
+    const dataUrl = `data:application/vnd.ms-excel;charset=utf-8,${encodeURIComponent(xml)}`;
     const link = document.createElement('a');
-    link.setAttribute('href', url);
+    link.setAttribute('href', dataUrl);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   // Exportar a PDF — genera un PDF real con jsPDF (funciona en Android, iOS y desktop)
@@ -2484,19 +2480,16 @@ ${rowsXml}
     doc.text(`Total de productos: ${totalItems}`, 14, finalY + 8);
     doc.text(`Total de unidades: ${totalQuantity}`, 14, finalY + 13);
 
-    // Descargar PDF — descarga directa compatible Android/Arc (sin Web Share API que falla)
+    // Descargar PDF — data URL (Arc Android falla con blob URL + click)
     const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`;
-    const blob = doc.output('blob');
-    const url = URL.createObjectURL(blob);
+    const dataUrl = doc.output('datauristring');
     const link = document.createElement('a');
-    link.setAttribute('href', url);
+    link.setAttribute('href', dataUrl);
     link.setAttribute('download', fileName);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    // No revocar inmediatamente: Arc/Android necesita tiempo para iniciar la descarga
-    setTimeout(() => URL.revokeObjectURL(url), 30000);
   };
 
   const handleCopyAll = async () => {
