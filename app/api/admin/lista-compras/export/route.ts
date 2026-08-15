@@ -445,6 +445,39 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       dateFrom = url.searchParams.get('dateFrom') || '';
       dateTo = url.searchParams.get('dateTo') || '';
       format = (url.searchParams.get('format') || 'pdf').toLowerCase();
+      // Datos procesados compactos (base64url) enviados por la página
+      const dataParam = url.searchParams.get('data');
+      if (dataParam) {
+        try {
+          // Revertir base64url → base64
+          const base64 = String(dataParam).replace(/-/g, '+').replace(/_/g, '/');
+          const json = Buffer.from(base64, 'base64').toString('utf8');
+          const parsed = JSON.parse(json);
+          if (Array.isArray(parsed.products)) {
+            // Normalizar payload compacto (claves cortas) al formato interno
+            products = parsed.products.map((p: any) => ({
+              product_name: p.n || p.product_name || 'Producto',
+              variant_name: p.v || p.variant_name || null,
+              purchase_text: p.q || p.purchase_text || null,
+              total_quantity: p.t ?? p.total_quantity ?? 0,
+              unit_price: p.p ?? p.unit_price ?? 0,
+              customer_breakdown: (p.c || p.customer_breakdown || []).map((c: any) => ({
+                customer_name: c.n || c.customer_name || 'Cliente',
+                customer_address: c.a || c.customer_address || '',
+              })),
+            }));
+          }
+          if (Array.isArray(parsed.combos)) {
+            combos = parsed.combos.map((c: any) => ({
+              name: c.n || c.name || 'Combo',
+              quantity: c.q ?? c.quantity ?? 1,
+              description: c.d || c.description || '',
+            }));
+          }
+        } catch (e) {
+          console.error('⚠️ Export API: error decodificando data:', e);
+        }
+      }
     }
 
     if (!dateFrom || !dateTo) {

@@ -2318,47 +2318,37 @@ const normalizeVariant = (variant: string | null): string => {
   };
 
   // Envía los productos agrupados (con presentación completa) al endpoint de exportación
-  // vía formulario POST oculto → descarga HTTP real, compatible con Arc Android
+  // vía GET con datos compactos en la URL → descarga HTTP real, compatible con Arc Android
+  // (form.submit() POST no dispara descargas en Arc Android; window.location.href sí)
   const submitExport = (format: string) => {
-    // Preparar productos con texto de presentación ya calculado por la página
+    // Payload compacto (claves cortas para que quepa en la URL)
     const payloadProducts = groupedProducts.map(p => ({
-      product_name: p.product_name,
-      variant_name: p.variant_name || null,
-      display_name: p.display_name,
-      purchase_text: getPurchaseQuantityText(p),
-      total_quantity: p.total_quantity,
-      total_physical_units: p.total_physical_units ?? p.total_quantity,
-      physical_unit_name: p.physical_unit_name || null,
-      unit_price: p.unit_price,
-      customer_breakdown: p.customer_breakdown.map(c => ({
-        customer_name: c.customer_name,
-        customer_address: c.customer_address || '',
+      n: p.product_name,
+      v: p.variant_name || null,
+      q: getPurchaseQuantityText(p),
+      t: p.total_quantity,
+      p: p.unit_price,
+      c: p.customer_breakdown.map(c => ({
+        n: c.customer_name,
+        a: c.customer_address || '',
       })),
     }));
 
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/api/admin/lista-compras/export';
-    form.style.display = 'none';
+    const payloadCombos = (orderedCombos || []).map(c => ({
+      n: c.name,
+      q: c.quantity,
+      d: c.description || '',
+    }));
 
-    const addField = (name: string, value: string) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    };
+    const data = JSON.stringify({ products: payloadProducts, combos: payloadCombos });
+    // base64url compacto (sin +/= para URL segura)
+    const base64 = btoa(unescape(encodeURIComponent(data)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
 
-    addField('format', format);
-    addField('dateFrom', dateFrom);
-    addField('dateTo', dateTo);
-    addField('products', JSON.stringify(payloadProducts));
-    addField('combos', JSON.stringify(orderedCombos || []));
-
-    document.body.appendChild(form);
-    form.submit();
-    // Limpiar el form después de un momento (el submit navega/descarga)
-    setTimeout(() => document.body.removeChild(form), 1000);
+    const url = `/api/admin/lista-compras/export?format=${encodeURIComponent(format)}&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}&data=${encodeURIComponent(base64)}`;
+    window.location.href = url;
   };
 
   const handleCopyAll = async () => {
