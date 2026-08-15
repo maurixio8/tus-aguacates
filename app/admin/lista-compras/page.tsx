@@ -32,8 +32,6 @@ import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 
 interface OrderItem {
   id: string;
@@ -2295,206 +2293,25 @@ const normalizeVariant = (variant: string | null): string => {
 
 
 
-  // Exportar a Excel (CSV) — data URL compatible con Arc Android
+  // Exportar a Excel (CSV) — descarga server-side (funciona en Arc Android)
   const exportToExcel = () => {
-    if (groupedProducts.length === 0) return;
-
-    const BOM = '\uFEFF';
-    const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
-
-    const rows: string[][] = [];
-
-    groupedProducts.forEach(product => {
-      const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
-      const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
-      const totalCost = product.unit_price * product.total_quantity;
-
-      rows.push([
-        product.product_name,
-        getPurchaseQuantityText(product),
-        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
-        totalCost > 0 ? formatPrice(totalCost) : '-',
-        customerNames,
-        addresses
-      ]);
-
-      product.customer_breakdown.forEach(customer => {
-        rows.push([
-          '',
-          '',
-          '',
-          '',
-          customer.customer_name,
-          customer.customer_address || '-'
-        ]);
-      });
-    });
-
-    const csvContent = BOM + [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n');
-
-    const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.csv`;
-    // Data URL en vez de blob URL: Arc Android falla con URL.createObjectURL + click
-    const dataUrl = `data:text/csv;charset=utf-8,${encodeURIComponent(csvContent)}`;
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUrl);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!dateFrom || !dateTo) return;
+    const url = `/api/admin/lista-compras/export?format=csv&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
+    window.location.href = url;
   };
 
-  // Exportar a XLS (formato XML de Excel, sin librerías externas) — descarga directa compatible Android/desktop
+  // Exportar a XLS — descarga server-side (funciona en Arc Android)
   const exportToXLS = () => {
-    if (groupedProducts.length === 0) return;
-
-    const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
-    const dateStr = new Date().toISOString().split('T')[0];
-
-    let rowsXml = '';
-    rowsXml += `<Row ss:StyleID="Header"><Cell><Data ss:Type="String">${headers[0]}</Data></Cell>`;
-    for (let i = 1; i < headers.length; i++) {
-      rowsXml += `<Cell><Data ss:Type="String">${headers[i]}</Data></Cell>`;
-    }
-    rowsXml += '</Row>';
-
-    groupedProducts.forEach(product => {
-      const customerNames = product.customer_breakdown.map(c => c.customer_name).join('; ');
-      const addresses = product.customer_breakdown.map(c => c.customer_address || 'N/A').join('; ');
-      const totalCost = product.unit_price * product.total_quantity;
-
-      const cells = [
-        product.product_name,
-        getPurchaseQuantityText(product),
-        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
-        totalCost > 0 ? formatPrice(totalCost) : '-',
-        customerNames,
-        addresses
-      ];
-
-      rowsXml += '<Row>';
-      cells.forEach(cell => {
-        const escaped = String(cell).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-        rowsXml += `<Cell><Data ss:Type="String">${escaped}</Data></Cell>`;
-      });
-      rowsXml += '</Row>';
-    });
-
-    const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel">
- <Styles>
-  <Style ss:ID="Header">
-   <Font ss:Bold="1" ss:Size="11"/>
-   <Interior ss:Color="#D4EDDA" ss:Pattern="Solid"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Lista de Compras">
-  <Table>
-${rowsXml}
-  </Table>
- </Worksheet>
-</Workbook>`;
-
-    const fileName = `lista-compras-${dateStr}.xls`;
-    // Data URL en vez de blob URL: Arc Android falla con URL.createObjectURL + click
-    const dataUrl = `data:application/vnd.ms-excel;charset=utf-8,${encodeURIComponent(xml)}`;
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUrl);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    if (!dateFrom || !dateTo) return;
+    const url = `/api/admin/lista-compras/export?format=xls&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
+    window.location.href = url;
   };
 
-  // Exportar a PDF — genera un PDF real con jsPDF (funciona en Android, iOS y desktop)
+  // Exportar a PDF — descarga server-side (funciona en Arc Android)
   const exportToPDF = () => {
-    if (groupedProducts.length === 0) return;
-
-    const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
-    const dateFromStr = dateFrom ? new Date(dateFrom).toLocaleDateString('es-CO') : '';
-    const dateToStr = dateTo ? new Date(dateTo).toLocaleDateString('es-CO') : '';
-    const totalItems = groupedProducts.length;
-    const totalQuantity = groupedProducts.reduce((sum, p) => sum + p.total_quantity, 0);
-
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-    // Header
-    doc.setFontSize(16);
-    doc.setTextColor(22, 101, 52); // verde bosque
-    doc.setFont('helvetica', 'bold');
-    doc.text('🥑 Lista de Compras - Tus Aguacates', 14, 16);
-
-    doc.setFontSize(9);
-    doc.setTextColor(100);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Generada: ${dateStr}`, 14, 22);
-    if (dateFromStr && dateToStr) {
-      doc.text(`Pedidos del: ${dateFromStr} al ${dateToStr}`, 14, 26);
-    }
-
-    // Tabla principal
-    const bodyRows = groupedProducts.map(product => {
-      const totalCost = product.unit_price * product.total_quantity;
-      return [
-        `${getWhatsAppSafeEmoji(product.product_name)} ${product.product_name}`,
-        getPurchaseQuantityText(product),
-        product.unit_price > 0 ? formatPrice(product.unit_price) : '-',
-        totalCost > 0 ? formatPrice(totalCost) : '-',
-      ];
-    });
-
-    autoTable(doc, {
-      startY: 32,
-      head: [['Producto', 'Cantidad a comprar', 'Precio Unit.', 'Costo Total']],
-      body: bodyRows,
-      theme: 'grid',
-      headStyles: { fillColor: [22, 101, 52], fontSize: 9 },
-      bodyStyles: { fontSize: 8 },
-      styles: { cellPadding: 1.5 },
-      columnStyles: {
-        0: { cellWidth: 130 },
-        1: { cellWidth: 55 },
-        2: { cellWidth: 30 },
-        3: { cellWidth: 30 },
-      },
-      didDrawPage: () => {
-        doc.setFontSize(8);
-        doc.setTextColor(150);
-        doc.text(`Página ${doc.getNumberOfPages()}`, 280, 200);
-      },
-    });
-
-    // Resumen
-    const finalY = (doc as any).lastAutoTable?.finalY || 40;
-    doc.setFontSize(10);
-    doc.setTextColor(22, 101, 52);
-    doc.setFont('helvetica', 'bold');
-    doc.text(`Total de productos: ${totalItems}`, 14, finalY + 8);
-    doc.text(`Total de unidades: ${totalQuantity}`, 14, finalY + 13);
-
-    // Descargar PDF — abrir en pestaña nueva (Arc Android bloquea link.click con data URL)
-    // Arc muestra su visor de PDF nativo, desde ahí se puede descargar/compartir
-    const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`;
-    const dataUrl = doc.output('datauristring');
-    const win = window.open(dataUrl, '_blank');
-    if (!win) {
-      // Fallback: descarga directa si el popup fue bloqueado
-      const link = document.createElement('a');
-      link.setAttribute('href', dataUrl);
-      link.setAttribute('download', fileName);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
+    if (!dateFrom || !dateTo) return;
+    const url = `/api/admin/lista-compras/export?format=pdf&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
+    window.location.href = url;
   };
 
   const handleCopyAll = async () => {
