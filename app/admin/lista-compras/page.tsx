@@ -2314,6 +2314,13 @@ const normalizeVariant = (variant: string | null): string => {
     window.location.href = url;
   };
 
+  // Exportar HTML compacto — para compartir en una sola pantalla
+  const exportToHTML = () => {
+    if (!dateFrom || !dateTo) return;
+    const url = `/api/admin/lista-compras/export?format=html&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
+    window.location.href = url;
+  };
+
   const handleCopyAll = async () => {
     const allText = filteredProducts.map(p =>
       `${getWhatsAppSafeEmoji(p.product_name)} ${getPurchaseQuantityText(p)} ${p.display_name}`
@@ -2694,6 +2701,14 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                   >
                     <Download size={16} />
                     Exportar XLS
+                  </button>
+                  <button
+                    onClick={exportToHTML}
+                    className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                    title="HTML compacto para compartir en una sola pantalla"
+                  >
+                    <Download size={16} />
+                    Exportar HTML
                   </button>
                   <button
                     onClick={exportToPDF}

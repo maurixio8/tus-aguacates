@@ -185,6 +185,132 @@ ${rowsXml}
 </Workbook>`;
 }
 
+function escapeHtml(value: any): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * HTML compacto para compartir: se ve completo en una sola pantalla,
+ * letras ajustadas a las columnas, organización clara.
+ */
+function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateToStr: string): string {
+  const totalUnits = products.reduce((s, p) => s + p.total_quantity, 0);
+  const totalValue = products.reduce((s, p) => s + p.unit_price * p.total_quantity, 0);
+
+  const rows = products
+    .map(p => {
+      const totalCost = p.unit_price * p.total_quantity;
+      const customers = p.customer_breakdown
+        .map((c: any) => `${escapeHtml(c.customer_name)}${c.customer_address ? ` <span class="addr">· ${escapeHtml(c.customer_address)}</span>` : ''}`)
+        .join('<br>');
+      return `<tr>
+        <td class="prod">${escapeHtml(p.product_name)}${p.variant_name ? `<span class="variant"> · ${escapeHtml(p.variant_name)}</span>` : ''}</td>
+        <td class="qty">${p.total_quantity}</td>
+        <td class="num">${p.unit_price > 0 ? formatCOP(p.unit_price) : '-'}</td>
+        <td class="num">${totalCost > 0 ? formatCOP(totalCost) : '-'}</td>
+        <td class="cust">${customers}</td>
+      </tr>`;
+    })
+    .join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lista de Compras - Tus Aguacates</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    background:#f5f7f5; color:#1f2937; padding:10px; font-size:12px;
+  }
+  .card {
+    max-width:760px; margin:0 auto; background:#fff; border-radius:10px;
+    overflow:hidden; box-shadow:0 1px 4px rgba(0,0,0,.08);
+  }
+  .head {
+    background:#07180f; color:#fff; padding:10px 14px;
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+  }
+  .head h1 { font-size:15px; font-weight:700; color:#C8A227; white-space:nowrap; }
+  .head .meta { font-size:10px; color:#b8c4bd; text-align:right; line-height:1.35; }
+  .head .meta b { color:#fff; }
+  table { width:100%; border-collapse:collapse; }
+  thead th {
+    background:#0D2818; color:#C8A227; text-align:left; font-size:10px;
+    padding:6px 8px; letter-spacing:.03em; white-space:nowrap;
+  }
+  tbody td { padding:5px 8px; border-bottom:1px solid #e5e9e5; vertical-align:top; font-size:11px; }
+  tbody tr:nth-child(even) td { background:#f8faf8; }
+  td.prod { font-weight:600; white-space:nowrap; }
+  td.prod .variant { font-weight:400; color:#6b7280; font-size:10px; }
+  td.qty { text-align:center; font-weight:700; color:#07180f; white-space:nowrap; }
+  td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  td.cust { color:#374151; line-height:1.3; font-size:10px; }
+  td.cust .addr { color:#9ca3af; }
+  .foot {
+    display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;
+    background:#0D2818; color:#fff; padding:8px 14px; font-size:11px;
+  }
+  .foot .total { color:#C8A227; font-weight:700; }
+  .actions { max-width:760px; margin:10px auto 0; display:flex; gap:8px; justify-content:center; }
+  .actions button {
+    font-size:12px; padding:7px 16px; border:none; border-radius:8px; cursor:pointer;
+    background:#07180f; color:#C8A227; font-weight:600;
+  }
+  .actions button:hover { opacity:.9; }
+  @media print {
+    body { background:#fff; padding:0; }
+    .card { box-shadow:none; border-radius:0; max-width:100%; }
+    .actions { display:none; }
+    thead th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .head, .foot { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="head">
+      <h1>🥑 Lista de Compras</h1>
+      <div class="meta">
+        <div>Tus Aguacates · ${escapeHtml(dateStr)}</div>
+        <div>${dateFromStr && dateToStr ? `Pedidos: <b>${escapeHtml(dateFromStr)}</b> → <b>${escapeHtml(dateToStr)}</b>` : ''}</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th style="text-align:center">Cant.</th>
+          <th style="text-align:right">P. Unit</th>
+          <th style="text-align:right">Total</th>
+          <th>Clientes</th>
+        </tr>
+      </thead>
+      <tbody>
+${rows}
+      </tbody>
+    </table>
+    <div class="foot">
+      <span>Productos: <b>${products.length}</b></span>
+      <span>Unidades: <b>${totalUnits}</b></span>
+      <span class="total">Valor estimado: ${formatCOP(totalValue)}</span>
+    </div>
+  </div>
+  <div class="actions">
+    <button onclick="window.print()">🖨 Imprimir</button>
+    <button onclick="window.close()">Cerrar</button>
+  </div>
+</body>
+</html>`;
+}
+
 function buildPDF(products: any[], dateStr: string, dateFromStr: string, dateToStr: string): Buffer {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
@@ -321,6 +447,16 @@ export async function GET(request: NextRequest) {
         headers: {
           'Content-Type': 'application/vnd.ms-excel; charset=utf-8',
           'Content-Disposition': `attachment; filename="lista-compras-${fileDate}.xls"`,
+        },
+      });
+    }
+
+    if (format === 'html') {
+      const html = buildHTML(products, dateStr, dateFromStr, dateToStr);
+      return new NextResponse(html, {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Content-Disposition': `attachment; filename="lista-compras-${fileDate}.html"`,
         },
       });
     }
