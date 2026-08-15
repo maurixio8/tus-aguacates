@@ -2480,16 +2480,21 @@ ${rowsXml}
     doc.text(`Total de productos: ${totalItems}`, 14, finalY + 8);
     doc.text(`Total de unidades: ${totalQuantity}`, 14, finalY + 13);
 
-    // Descargar PDF — data URL (Arc Android falla con blob URL + click)
+    // Descargar PDF — abrir en pestaña nueva (Arc Android bloquea link.click con data URL)
+    // Arc muestra su visor de PDF nativo, desde ahí se puede descargar/compartir
     const fileName = `lista-compras-${new Date().toISOString().split('T')[0]}.pdf`;
     const dataUrl = doc.output('datauristring');
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUrl);
-    link.setAttribute('download', fileName);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const win = window.open(dataUrl, '_blank');
+    if (!win) {
+      // Fallback: descarga directa si el popup fue bloqueado
+      const link = document.createElement('a');
+      link.setAttribute('href', dataUrl);
+      link.setAttribute('download', fileName);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   const handleCopyAll = async () => {
