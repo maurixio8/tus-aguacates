@@ -110,6 +110,20 @@ function formatCOP(value: number): string {
   }).format(value);
 }
 
+/**
+ * Texto de cantidad a comprar:
+ * - Usa purchase_text (presentación completa calculada en la página: gramos, kilos, bandejas, etc.)
+ * - Fallback: texto simplificado con total_quantity y variante
+ */
+function getQuantityLabel(p: any): string {
+  if (p.purchase_text) return String(p.purchase_text);
+  if (p.total_physical_units && p.physical_unit_name) {
+    const plural = p.total_physical_units === 1 ? p.physical_unit_name : `${p.physical_unit_name}s`;
+    return `${p.total_physical_units} ${plural}`;
+  }
+  return `${p.total_quantity} ${p.variant_name || 'unidad'}`;
+}
+
 function buildCSV(products: any[]): string {
   const BOM = '\uFEFF';
   const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
@@ -122,7 +136,7 @@ function buildCSV(products: any[]): string {
 
     rows.push([
       p.product_name,
-      `${p.total_quantity} ${p.variant_name || 'unidad'}`,
+      getQuantityLabel(p),
       p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
       totalCost > 0 ? formatCOP(totalCost) : '-',
       customerNames,
@@ -151,7 +165,7 @@ function buildXLS(products: any[]): string {
     const totalCost = p.unit_price * p.total_quantity;
     const cells = [
       p.product_name,
-      `${p.total_quantity} ${p.variant_name || 'unidad'}`,
+      getQuantityLabel(p),
       p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
       totalCost > 0 ? formatCOP(totalCost) : '-',
       customerNames,
@@ -198,7 +212,7 @@ function escapeHtml(value: any): string {
  * HTML compacto para compartir: se ve completo en una sola pantalla,
  * letras ajustadas a las columnas, organización clara.
  */
-function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateToStr: string): string {
+function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateToStr: string, combos?: any[]): string {
   const totalUnits = products.reduce((s, p) => s + p.total_quantity, 0);
   const totalValue = products.reduce((s, p) => s + p.unit_price * p.total_quantity, 0);
 
@@ -210,13 +224,28 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
         .join('<br>');
       return `<tr>
         <td class="prod">${escapeHtml(p.product_name)}${p.variant_name ? `<span class="variant"> · ${escapeHtml(p.variant_name)}</span>` : ''}</td>
-        <td class="qty">${p.total_quantity}</td>
+        <td class="qty">${escapeHtml(getQuantityLabel(p))}</td>
         <td class="num">${p.unit_price > 0 ? formatCOP(p.unit_price) : '-'}</td>
         <td class="num">${totalCost > 0 ? formatCOP(totalCost) : '-'}</td>
         <td class="cust">${customers}</td>
       </tr>`;
     })
     .join('\n');
+
+  // Sección de combos con descripción de qué trae cada uno
+  const combosSection = combos && combos.length > 0
+    ? `<div class="combos">
+  <h2>🎁 Combos</h2>
+  ${combos.map(c => `
+  <div class="combo">
+    <div class="combo-head">
+      <b>${escapeHtml(c.name)}</b>
+      <span>× ${c.quantity}</span>
+    </div>
+    ${c.description ? `<div class="combo-desc">${escapeHtml(c.description)}</div>` : ''}
+  </div>`).join('\n')}
+</div>`
+    : '';
 
   return `<!DOCTYPE html>
 <html lang="es">
@@ -241,6 +270,13 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
   .head h1 { font-size:15px; font-weight:700; color:#C8A227; white-space:nowrap; }
   .head .meta { font-size:10px; color:#b8c4bd; text-align:right; line-height:1.35; }
   .head .meta b { color:#fff; }
+  .combos { padding:10px 14px; border-bottom:1px solid #e5e9e5; background:#fdfaf0; }
+  .combos h2 { font-size:12px; color:#C8A227; margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
+  .combo { padding:6px 10px; border:1px solid #ece5d0; border-radius:8px; margin-bottom:6px; background:#fff; }
+  .combo:last-child { margin-bottom:0; }
+  .combo-head { display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#07180f; }
+  .combo-head span { color:#C8A227; font-weight:700; }
+  .combo-desc { margin-top:3px; font-size:10px; color:#6b7280; line-height:1.4; }
   table { width:100%; border-collapse:collapse; }
   thead th {
     background:#0D2818; color:#C8A227; text-align:left; font-size:10px;
@@ -270,7 +306,7 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
     .card { box-shadow:none; border-radius:0; max-width:100%; }
     .actions { display:none; }
     thead th { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    .head, .foot { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .head, .foot, .combos, .combo { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   }
 </style>
 </head>
@@ -283,11 +319,12 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
         <div>${dateFromStr && dateToStr ? `Pedidos: <b>${escapeHtml(dateFromStr)}</b> → <b>${escapeHtml(dateToStr)}</b>` : ''}</div>
       </div>
     </div>
+    ${combosSection}
     <table>
       <thead>
         <tr>
           <th>Producto</th>
-          <th style="text-align:center">Cant.</th>
+          <th style="text-align:center">Cant. a comprar</th>
           <th style="text-align:right">P. Unit</th>
           <th style="text-align:right">Total</th>
           <th>Clientes</th>
@@ -331,7 +368,7 @@ function buildPDF(products: any[], dateStr: string, dateFromStr: string, dateToS
     const totalCost = p.unit_price * p.total_quantity;
     return [
       p.product_name,
-      `${p.total_quantity} ${p.variant_name || 'unidad'}`,
+      getQuantityLabel(p),
       p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
       totalCost > 0 ? formatCOP(totalCost) : '-',
     ];
@@ -364,64 +401,102 @@ function buildPDF(products: any[], dateStr: string, dateFromStr: string, dateToS
   return Buffer.from(doc.output('arraybuffer'));
 }
 
-export async function GET(request: NextRequest) {
+/**
+ * Función central: genera el archivo a partir de productos.
+ * Los productos vienen con purchase_text (presentación completa calculada en la página)
+ * o se calculan server-side como fallback.
+ */
+async function handleExport(request: NextRequest, isPost: boolean) {
   try {
     const auth = await verifyAdminAuth(request);
     if (!auth.success) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const url = new URL(request.url);
-    const dateFrom = url.searchParams.get('dateFrom') || '';
-    const dateTo = url.searchParams.get('dateTo') || '';
-    const format = (url.searchParams.get('format') || 'pdf').toLowerCase();
+    let dateFrom = '';
+    let dateTo = '';
+    let format = 'pdf';
+    let products: any[] = [];
+    let combos: any[] = [];
+
+    if (isPost) {
+      const formData = await request.formData();
+      dateFrom = String(formData.get('dateFrom') || '');
+      dateTo = String(formData.get('dateTo') || '');
+      format = String(formData.get('format') || 'pdf').toLowerCase();
+      const productsRaw = formData.get('products');
+      if (productsRaw) {
+        try {
+          products = JSON.parse(String(productsRaw));
+        } catch (e) {
+          return NextResponse.json({ error: 'Datos de productos inválidos' }, { status: 400 });
+        }
+      }
+      const combosRaw = formData.get('combos');
+      if (combosRaw) {
+        try {
+          combos = JSON.parse(String(combosRaw));
+        } catch (e) {
+          combos = [];
+        }
+      }
+    } else {
+      const url = new URL(request.url);
+      dateFrom = url.searchParams.get('dateFrom') || '';
+      dateTo = url.searchParams.get('dateTo') || '';
+      format = (url.searchParams.get('format') || 'pdf').toLowerCase();
+    }
 
     if (!dateFrom || !dateTo) {
       return NextResponse.json({ error: 'Se requieren dateFrom y dateTo' }, { status: 400 });
     }
 
-    const supabase = createSupabaseClient();
+    // Si no llegaron productos procesados (GET o POST sin products), calcular server-side
+    if (!products || products.length === 0) {
+      const supabase = createSupabaseClient();
 
-    // Rango en UTC (fechas locales Bogotá -05:00)
-    const fromDate = new Date(`${dateFrom}T00:00:00-05:00`).toISOString();
-    const toDate = new Date(`${dateTo}T23:59:59-05:00`).toISOString();
+      // Rango en UTC (fechas locales Bogotá -05:00)
+      const fromDate = new Date(`${dateFrom}T00:00:00-05:00`).toISOString();
+      const toDate = new Date(`${dateTo}T23:59:59-05:00`).toISOString();
 
-    const [ordersResult, guestsResult] = await Promise.all([
-      supabase
-        .from('orders')
-        .select('*')
-        .gte('created_at', fromDate)
-        .lte('created_at', toDate),
-      supabase
-        .from('guest_orders')
-        .select('*')
-        .gte('created_at', fromDate)
-        .lte('created_at', toDate),
-    ]);
+      const [ordersResult, guestsResult] = await Promise.all([
+        supabase
+          .from('orders')
+          .select('*')
+          .gte('created_at', fromDate)
+          .lte('created_at', toDate),
+        supabase
+          .from('guest_orders')
+          .select('*')
+          .gte('created_at', fromDate)
+          .lte('created_at', toDate),
+      ]);
 
-    if (ordersResult.error) {
-      console.error('❌ Export API: error orders:', ordersResult.error);
-      return NextResponse.json({ error: 'Error consultando pedidos' }, { status: 500 });
-    }
-    if (guestsResult.error) {
-      console.error('❌ Export API: error guest_orders:', guestsResult.error);
-      return NextResponse.json({ error: 'Error consultando pedidos invitados' }, { status: 500 });
-    }
-
-    const allOrders = [...(ordersResult.data || []), ...(guestsResult.data || [])].filter(
-      (o: any) => !['cancelled', 'cancelado'].includes(o.status || o.order_status || '')
-    );
-
-    const items: ExportItem[] = [];
-    allOrders.forEach(o => {
-      let orderData = o.order_data;
-      if (typeof orderData === 'string') {
-        try { orderData = JSON.parse(orderData); } catch { orderData = null; }
+      if (ordersResult.error) {
+        console.error('❌ Export API: error orders:', ordersResult.error);
+        return NextResponse.json({ error: 'Error consultando pedidos' }, { status: 500 });
       }
-      items.push(...extractOrderItems({ ...o, order_data: orderData }));
-    });
+      if (guestsResult.error) {
+        console.error('❌ Export API: error guest_orders:', guestsResult.error);
+        return NextResponse.json({ error: 'Error consultando pedidos invitados' }, { status: 500 });
+      }
 
-    const products = groupProducts(items);
+      const allOrders = [...(ordersResult.data || []), ...(guestsResult.data || [])].filter(
+        (o: any) => !['cancelled', 'cancelado'].includes(o.status || o.order_status || '')
+      );
+
+      const items: ExportItem[] = [];
+      allOrders.forEach(o => {
+        let orderData = o.order_data;
+        if (typeof orderData === 'string') {
+          try { orderData = JSON.parse(orderData); } catch { orderData = null; }
+        }
+        items.push(...extractOrderItems({ ...o, order_data: orderData }));
+      });
+
+      products = groupProducts(items);
+    }
+
     if (products.length === 0) {
       return NextResponse.json({ error: 'No hay productos en el rango seleccionado' }, { status: 400 });
     }
@@ -452,7 +527,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (format === 'html') {
-      const html = buildHTML(products, dateStr, dateFromStr, dateToStr);
+      const html = buildHTML(products, dateStr, dateFromStr, dateToStr, combos);
       return new NextResponse(html, {
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
@@ -474,4 +549,12 @@ export async function GET(request: NextRequest) {
     console.error('❌ Export API error:', error);
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
+}
+
+export async function GET(request: NextRequest) {
+  return handleExport(request, false);
+}
+
+export async function POST(request: NextRequest) {
+  return handleExport(request, true);
 }

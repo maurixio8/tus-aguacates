@@ -2293,32 +2293,72 @@ const normalizeVariant = (variant: string | null): string => {
 
 
 
-  // Exportar a Excel (CSV) — descarga server-side (funciona en Arc Android)
+  // Exportar a Excel (CSV) — descarga server-side con datos procesados (funciona en Arc Android)
   const exportToExcel = () => {
     if (!dateFrom || !dateTo) return;
-    const url = `/api/admin/lista-compras/export?format=csv&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
-    window.location.href = url;
+    submitExport('csv');
   };
 
-  // Exportar a XLS — descarga server-side (funciona en Arc Android)
+  // Exportar a XLS — descarga server-side con datos procesados (funciona en Arc Android)
   const exportToXLS = () => {
     if (!dateFrom || !dateTo) return;
-    const url = `/api/admin/lista-compras/export?format=xls&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
-    window.location.href = url;
+    submitExport('xls');
   };
 
-  // Exportar a PDF — descarga server-side (funciona en Arc Android)
+  // Exportar a PDF — descarga server-side con datos procesados (funciona en Arc Android)
   const exportToPDF = () => {
     if (!dateFrom || !dateTo) return;
-    const url = `/api/admin/lista-compras/export?format=pdf&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
-    window.location.href = url;
+    submitExport('pdf');
   };
 
   // Exportar HTML compacto — para compartir en una sola pantalla
   const exportToHTML = () => {
     if (!dateFrom || !dateTo) return;
-    const url = `/api/admin/lista-compras/export?format=html&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}`;
-    window.location.href = url;
+    submitExport('html');
+  };
+
+  // Envía los productos agrupados (con presentación completa) al endpoint de exportación
+  // vía formulario POST oculto → descarga HTTP real, compatible con Arc Android
+  const submitExport = (format: string) => {
+    // Preparar productos con texto de presentación ya calculado por la página
+    const payloadProducts = groupedProducts.map(p => ({
+      product_name: p.product_name,
+      variant_name: p.variant_name || null,
+      display_name: p.display_name,
+      purchase_text: getPurchaseQuantityText(p),
+      total_quantity: p.total_quantity,
+      total_physical_units: p.total_physical_units ?? p.total_quantity,
+      physical_unit_name: p.physical_unit_name || null,
+      unit_price: p.unit_price,
+      customer_breakdown: p.customer_breakdown.map(c => ({
+        customer_name: c.customer_name,
+        customer_address: c.customer_address || '',
+      })),
+    }));
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/admin/lista-compras/export';
+    form.style.display = 'none';
+
+    const addField = (name: string, value: string) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    };
+
+    addField('format', format);
+    addField('dateFrom', dateFrom);
+    addField('dateTo', dateTo);
+    addField('products', JSON.stringify(payloadProducts));
+    addField('combos', JSON.stringify(orderedCombos || []));
+
+    document.body.appendChild(form);
+    form.submit();
+    // Limpiar el form después de un momento (el submit navega/descarga)
+    setTimeout(() => document.body.removeChild(form), 1000);
   };
 
   const handleCopyAll = async () => {
