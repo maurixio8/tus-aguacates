@@ -13,8 +13,17 @@ export default function AdminLoginPage() {
   useEffect(() => {
     let cancelled = false;
 
+    // En Android/iOS la API de Credential Management puede lanzar
+    // NotSupportedError síncrono y romper el render de Next.js
+    // ("Application error: a client-side exception has occurred").
+    // En móvil la omitimos por completo.
+    const isMobile = typeof navigator !== 'undefined' &&
+      /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+
     const restoreSavedCredential = async () => {
       try {
+        if (isMobile) return;
+
         const credentialsApi = navigator.credentials as unknown as
           | {
               get?: (options?: unknown) => Promise<unknown>;
@@ -54,6 +63,10 @@ export default function AdminLoginPage() {
 
   const persistCredential = async () => {
     try {
+      const isMobile = typeof navigator !== 'undefined' &&
+        /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+      if (isMobile) return;
+
         const credentialsApi = navigator.credentials as unknown as
           | {
               store?: (credential: Credential) => Promise<void>;
