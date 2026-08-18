@@ -151,6 +151,39 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
     console.log('✅ API: Product updated successfully:', data);
 
+    // SYNC AUTOMÁTICO DE PRECIO A VARIANTE ÚNICA
+    // Cuando se actualiza el precio base del producto (body.price) y el body NO incluye
+    // variantes explícitas, pero el producto tiene una SOLA variante activa,
+    // sincronizamos esa variante al nuevo precio para que tienda y crear pedido
+    // (que leen variant.price) muestren el mismo valor.
+    if (body.price !== undefined && !(body.variants && Array.isArray(body.variants))) {
+      try {
+        const { data: activeVariants } = await supabase
+          .from('product_variants')
+          .select('id, price')
+          .eq('product_id', productId)
+          .eq('is_active', true);
+
+        if (activeVariants && activeVariants.length === 1) {
+          const solo = activeVariants[0];
+          if (solo.price !== Number(body.price)) {
+            console.log(`🔄 API: Auto-sync variante única ${productId} → price ${body.price} (antes ${solo.price})`);
+            const { error: syncErr } = await supabase
+              .from('product_variants')
+              .update({ price: Number(body.price), price_adjustment: 0, updated_at: new Date().toISOString() })
+              .eq('id', solo.id);
+            if (syncErr) {
+              console.error('⚠️ API: Error auto-sync variante:', syncErr.message);
+            } else {
+              console.log('✅ API: Variante única sincronizada al nuevo precio');
+            }
+          }
+        }
+      } catch (autoSyncError) {
+        console.error('⚠️ API: Error en auto-sync de variante única:', autoSyncError);
+      }
+    }
+
     // Sync variants if provided
     if (body.variants && Array.isArray(body.variants)) {
       console.log(`📦 API: Syncing ${body.variants.length} variants for product ${productId}`);
