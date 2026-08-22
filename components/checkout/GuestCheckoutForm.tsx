@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import CouponInput from './CouponInput';
 import CheckoutSummary from './CheckoutSummary';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
+import { validateCheckoutCart, formatCartValidationError } from '@/lib/validate-checkout-cart';
 import dynamic from 'next/dynamic';
 
 // Lazy load de modales pesados (framer-motion)
@@ -219,6 +220,15 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         setShowDuplicateModal(true);
         setLoading(false);
         return; // DETENER EJECUCIÓN AQUÍ
+      }
+
+      // 1. VALIDAR EL CARRITO CONTRA EL CATÁLOGO VIVO
+      // Evita aceptar productos desactivados, variantes eliminadas o precios viejos.
+      const cartValidation = await validateCheckoutCart(items);
+      if (!cartValidation.valid) {
+        setError(formatCartValidationError(cartValidation));
+        setLoading(false);
+        return;
       }
 
       // 1. Crear pedido de invitado (sin procesar pago aún)
@@ -484,6 +494,14 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
     setError('');
 
     try {
+      // Validar nuevamente contra el catálogo vivo antes de crear el pedido.
+      const cartValidation = await validateCheckoutCart(items);
+      if (!cartValidation.valid) {
+        setError(formatCartValidationError(cartValidation));
+        setLoading(false);
+        return;
+      }
+
       const orderData = {
         items: items.map(item => ({
           productName: item.product.name,

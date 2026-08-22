@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import CheckoutSummary from './CheckoutSummary';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
+import { validateCheckoutCart, formatCartValidationError } from '@/lib/validate-checkout-cart';
 import CouponInput from './CouponInput';
 import dynamic from 'next/dynamic';
 
@@ -334,6 +335,22 @@ export function EnhancedAuthenticatedCheckoutForm({
     if (paymentMethod !== 'bold') {
       setStep('processing');
     }
+
+    try {
+      const cartValidation = await validateCheckoutCart(items);
+      if (!cartValidation.valid) {
+        setError(formatCartValidationError(cartValidation));
+        setLoading(false);
+        setStep('payment-method');
+        return;
+      }
+    } catch {
+      setError('No pudimos verificar el carrito. Intenta de nuevo.');
+      setLoading(false);
+      setStep('payment-method');
+      return;
+    }
+
     try {
       // Save payment preference
       await supabase
