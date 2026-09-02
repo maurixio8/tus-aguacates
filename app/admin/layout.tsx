@@ -115,6 +115,7 @@ export default function AdminLayout({
     { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
     { name: 'Ruta de Hoy', href: '/admin/ruta', icon: Truck },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
+    { name: 'Revisor de Ventas', href: '/admin/ventas/clientes', icon: BarChart3 },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
     { name: 'Banner Mensajes', href: '/admin/banner-mensajes', icon: MessageSquare },
