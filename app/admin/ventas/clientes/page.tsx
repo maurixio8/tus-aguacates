@@ -13,6 +13,7 @@ type Data = { summary: { orders:number; delivered:number; pending:number; custom
 const money = (n:number) => new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(n);
 const date = (s:string|null) => s ? new Date(s).toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'}) : 'Sin fecha';
 const phone = (s:string) => { const d=(s||'').replace(/\D/g,''); return d.startsWith('57')?d:`57${d}`; };
+const CAMPAIGN_COUPON = 'TEQUEREMOSDEVUELTA';
 
 export default function CustomerInsightsPage() {
   const [data,setData]=useState<Data|null>(null); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
@@ -22,9 +23,9 @@ export default function CustomerInsightsPage() {
   const tabs=[['highRisk','Alto riesgo','🔴'],['atRisk','En riesgo','⚠️'],['best','Mejores clientes','🏆'],['potential','Potenciales','⭐'],['pending','Pedidos pendientes','📦']];
   const list=useMemo(()=>data?.segments?.[tab]||[],[data,tab]);
   const message=(c:Customer)=>{
-    if(tab==='best') return `Hola ${c.name}. Queremos agradecerte por confiar en Tus Aguacates 🥑\n\nEres uno de nuestros clientes especiales y queremos darte un beneficio exclusivo en tu próximo pedido.\n\nPuedes comprar aquí:\nhttps://tus-aguacates.vercel.app\n\n¡Gracias por seguir con nosotros!`;
-    if(tab==='potential') return `Hola ${c.name}. Esperamos que hayas disfrutado tu pedido de Tus Aguacates 🥑\n\nTenemos un beneficio especial para tu segunda compra. Puedes volver a comprar aquí:\nhttps://tus-aguacates.vercel.app`;
-    return `Hola ${c.name}. Te hemos extrañado en Tus Aguacates 🥑\n\nQueremos darte un beneficio especial para que vuelvas a disfrutar tus productos favoritos.\n\nPuedes hacer tu pedido aquí:\nhttps://tus-aguacates.vercel.app`;
+    if(tab==='best') return `Hola ${c.name}. Queremos agradecerte por confiar en Tus Aguacates 🥑\n\nEres uno de nuestros clientes especiales y queremos darte un beneficio exclusivo: $5.000 de descuento en compras superiores a $50.000.\n\nUsa el código ${CAMPAIGN_COUPON} antes del 30 de septiembre.\n\nPuedes comprar aquí:\nhttps://tus-aguacates.vercel.app\n\n¡Gracias por seguir con nosotros!`;
+    if(tab==='potential') return `Hola ${c.name}. Esperamos que hayas disfrutado tu pedido de Tus Aguacates 🥑\n\nTenemos un beneficio especial para tu segunda compra: $5.000 de descuento en compras superiores a $50.000. Usa el código ${CAMPAIGN_COUPON} antes del 30 de septiembre.\n\nPuedes volver a comprar aquí:\nhttps://tus-aguacates.vercel.app`;
+    return `Hola ${c.name}. Te hemos extrañado en Tus Aguacates 🥑\n\nQueremos darte $5.000 de descuento en compras superiores a $50.000. Usa el código ${CAMPAIGN_COUPON} antes del 30 de septiembre.\n\nPuedes hacer tu pedido aquí:\nhttps://tus-aguacates.vercel.app`;
   };
   const copy=async(c:Customer)=>{await navigator.clipboard.writeText(message(c));setCopied(c.key);setTimeout(()=>setCopied(null),1800)};
   const whatsapp=(c:Customer)=>{if(!c.phone)return;window.open(`https://wa.me/${phone(c.phone)}?text=${encodeURIComponent(message(c))}`,'_blank','noopener,noreferrer')};
@@ -37,6 +38,7 @@ export default function CustomerInsightsPage() {
       {loading&&<div className="p-8 text-center text-gray-500">Analizando pedidos reales...</div>}
       {error&&<div className="p-4 rounded-lg bg-red-50 text-red-700">{error}</div>}
       {data&&<>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"><div><p className="font-bold text-amber-900 dark:text-amber-200">Campaña Amor y Amistad</p><p className="text-sm text-amber-800 dark:text-amber-300">$5.000 de descuento desde $50.000 · válida hasta el 30 de septiembre</p></div><code className="px-3 py-2 rounded-lg bg-white dark:bg-gray-900 text-amber-700 dark:text-amber-300 font-bold text-sm">{CAMPAIGN_COUPON}</code></div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[['Pedidos',data.summary.orders,Users],['Entregados',data.summary.delivered,Trophy],['Pendientes',data.summary.pending,Clock],['Clientes unificados',data.summary.customers,Users]].map(([label,value,Icon]:any)=><div key={label as string} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"><Icon size={18} className="text-green-600 mb-2"/><div className="text-2xl font-bold text-gray-900 dark:text-white">{value}</div><div className="text-xs text-gray-500 dark:text-gray-400">{label}</div></div>)}
         </div>
