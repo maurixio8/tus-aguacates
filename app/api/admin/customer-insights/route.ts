@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       segments: {
         highRisk: customers.filter(c => c.segment === 'high_risk').sort((a, b) => b.totalSpent - a.totalSpent),
         atRisk: customers.filter(c => c.segment === 'at_risk').sort((a, b) => b.totalSpent - a.totalSpent),
-        best: customers.filter(c => c.segment === 'best').sort((a, b) => b.totalSpent - a.totalSpent),
+        best: customers.filter(c => c.delivered > 0).sort((a, b) => b.totalSpent - a.totalSpent).slice(0, 20),
         potential: customers.filter(c => c.segment === 'potential').sort((a, b) => b.daysSince - a.daysSince),
         pending: customers.filter(c => c.segment === 'pending').sort((a, b) => (b.lastOrder || '').localeCompare(a.lastOrder || '')),
       },
