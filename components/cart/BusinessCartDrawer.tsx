@@ -105,8 +105,15 @@ export function BusinessCartDrawer() {
                           )}
                         </div>
                         <button
-                          onClick={() => removeItem(item.product.id, item.variant?.id)}
-                          className="text-red-500 hover:text-red-700 text-xs font-medium"
+                          type="button"
+                          aria-label={`Eliminar ${item.product.name}${item.variant ? ` (${item.variant.variant_value})` : ''}`}
+                          title="Eliminar producto del carrito"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            removeItem(item.product.id, item.variant?.id);
+                          }}
+                          className="min-w-[5rem] h-10 px-3 py-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all flex-shrink-0 flex items-center justify-center touch-manipulation"
                         >
                           Eliminar
                         </button>
