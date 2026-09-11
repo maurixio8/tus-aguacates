@@ -279,11 +279,11 @@ export default function ListaComprasPage() {
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
     ],
     'combo ahorro #2': [
-      { name: 'Kiwi', quantity: 2, unit: 'bandeja', variant: '400grs' },
-      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1000 gr' }
+      { name: 'Kiwis', quantity: 1, unit: 'bandeja', variant: '900g' },
+      { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1kg' }
     ],
     'combo ahorro #3': [
-      { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500grs' },
+      { name: 'Fresas premium', quantity: 1, unit: 'contenedor', variant: '500g' },
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' },
       { name: 'Paquete 4 Unidades injerto', quantity: 1, unit: 'paq', variant: '4 unidades' }
     ],
@@ -1350,8 +1350,8 @@ const normalizeVariant = (variant: string | null): string => {
         // Es una caja, retornar 1 (contar cajas, no contenido interno)
         return 1;
       }
-      if (productLower.includes('paquete') && productLower.includes('unidad')) {
-        // Es un paquete, retornar 1 (contar paquetes, no las unidades internas)
+      if (productLower.includes('paquete') && (productLower.includes('unidad') || /\buni\b/.test(productLower))) {
+        // Es un paquete, retornar 1 (las unidades internas no son paquetes adicionales)
         return 1;
       }
     }
@@ -1434,7 +1434,10 @@ const normalizeVariant = (variant: string | null): string => {
   const getPurchaseQuantityText = (product: ProductGrouped): string => {
     const physicalTotal = product.total_physical_units ?? product.total_quantity;
     const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
-    const pluralUnit = physicalTotal === 1 ? physicalUnit : `${physicalUnit}s`;
+    const pluralUnit = physicalTotal === 1 ? physicalUnit : ({
+      caja: 'cajas', paquete: 'paquetes', contenedor: 'contenedores', bandeja: 'bandejas',
+      malla: 'mallas', kilo: 'kilos', libra: 'libras', unidad: 'unidades'
+    } as Record<string, string>)[physicalUnit] || `${physicalUnit}s`;
     const volumeMl = extractVolumeFromVariant(product.variant_name || null);
     if (volumeMl) {
       return `${physicalTotal} ${pluralUnit} de ${volumeMl} ml`;
