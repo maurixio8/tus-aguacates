@@ -760,8 +760,29 @@ export default function ListaComprasPage() {
   // Extraer items de order_data si no hay order_items
   // Extraer items de order_data si no hay order_items
   const extractItemsFromOrder = (order: Order): OrderItem[] => {
-    // Primero extraer desde order_data (para pedidos de invitados y registrados que guardan variantes ahí)
-    // Esto tiene prioridad porque ahí se guarda la información correcta de variantes
+    // Fuente primaria: order_items. Esta tabla refleja las ediciones actuales
+    // del pedido y no debe ser reemplazada por el snapshot histórico de order_data.
+    if (order.order_items && order.order_items.length > 0) {
+      return order.order_items.map((item: any) => {
+        const variantInfo = extractVariantInfo(item);
+
+        return {
+          ...item,
+          variantName: variantInfo.variantDisplay,
+          variant_value: variantInfo.variantValue,
+          product_snapshot: {
+            ...item.product_snapshot,
+            name: item.product_snapshot?.name || item.products?.name || item.product_name || 'Producto',
+            variant_name: variantInfo.variantType,
+            variant_value: variantInfo.variantValue
+          },
+          weight: item.weight ?? null,
+          unit: item.unit ?? null
+        };
+      });
+    }
+
+    // Respaldo para pedidos invitados: normalmente viven en order_data.items.
     if (order.order_data?.items) {
       return order.order_data.items.map((item: any, index: number) => {
         const variantInfo = extractVariantInfo(item);
