@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     const [productsResult, variantsResult, ordersResult, guestsResult] = await Promise.all([
       supabase.from('products').select('*').limit(5000),
       supabase.from('product_variants').select('*').limit(10000),
-      supabase.from('orders').select('id,order_number,created_at,status,order_status,order_data,order_items').order('created_at', { ascending: false }).limit(1000),
+      supabase.from('orders').select('id,order_number,created_at,status,order_status,order_data').order('created_at', { ascending: false }).limit(1000),
       supabase.from('guest_orders').select('id,created_at,status,order_status,order_data').order('created_at', { ascending: false }).limit(1000),
     ]);
 
@@ -96,6 +96,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, generatedAt: new Date().toISOString(), summary: { products: products.length, variants: variants.length, ordersAudited: allOrders.length, referencedProducts: referencedProducts.size, referencedVariants: referencedVariants.size, ...counts }, findings });
   } catch (error) {
     console.error('Error en auditoría de catálogo:', error);
-    return NextResponse.json({ success: false, error: 'No se pudo auditar el catálogo', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'No se pudo auditar el catálogo', details: error instanceof Error ? error.message : JSON.stringify(error) }, { status: 500 });
   }
 }
