@@ -1382,6 +1382,9 @@ const normalizeVariant = (variant: string | null): string => {
   const normalizePhysicalUnit = (unit: string | null | undefined, variant?: string | null, productName?: string): string | undefined => {
     const text = `${unit || ''} ${variant || ''} ${productName || ''}`.toLowerCase();
     const normalizedProduct = normalizeProductName(productName || '', null).toLowerCase();
+    // Las cajas son siempre la unidad operativa de compra. El número interno
+    // (7, 12, 18, 24 unidades) describe contenido y nunca debe multiplicar cajas.
+    if (normalizedProduct.includes('caja')) return 'Caja';
     // Presentaciones operativas definidas por Mao, por encima de unidades históricas del pedido.
     if (normalizedProduct.includes('lechuga batavia') || normalizedProduct.includes('alcachofa') ||
         normalizedProduct.includes('repollo') || normalizedProduct.includes('coco') || normalizedProduct.includes('cidra')) return 'unidad';
