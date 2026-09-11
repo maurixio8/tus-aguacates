@@ -232,20 +232,9 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
     })
     .join('\n');
 
-  // Sección de combos con descripción de qué trae cada uno
-  const combosSection = combos && combos.length > 0
-    ? `<div class="combos">
-  <h2>🎁 Combos</h2>
-  ${combos.map(c => `
-  <div class="combo">
-    <div class="combo-head">
-      <b>${escapeHtml(c.name)}</b>
-      <span>× ${c.quantity}</span>
-    </div>
-    ${c.description ? `<div class="combo-desc">${escapeHtml(c.description)}</div>` : ''}
-  </div>`).join('\n')}
-</div>`
-    : '';
+  // En la exportación HTML no mostramos los combos originales:
+  // la tabla ya contiene sus componentes reales de compra.
+  const combosSection = '';
 
   return `<!DOCTYPE html>
 <html lang="es">
