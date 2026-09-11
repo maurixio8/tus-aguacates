@@ -279,7 +279,7 @@ export default function ListaComprasPage() {
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
     ],
     'combo ahorro #2': [
-      { name: 'Kiwis', quantity: 1, unit: 'bandeja', variant: '900g' },
+      { name: 'Kiwis', quantity: 2, unit: 'bandeja', variant: '450g' },
       { name: 'Fresas premium', quantity: 1, unit: 'kg', variant: '1kg' }
     ],
     'combo ahorro #3': [
