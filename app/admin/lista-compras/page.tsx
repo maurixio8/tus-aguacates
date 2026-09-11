@@ -1363,6 +1363,9 @@ const normalizeVariant = (variant: string | null): string => {
     const bandejaMatch = text.match(/^(\d+)\s*bandeja/i);
     if (bandejaMatch) return parseInt(bandejaMatch[1], 10);
 
+    // Los volúmenes (X500 ml, X1000 ml) no son multiplicadores físicos.
+    if (/\bml\b/i.test(text)) return 1;
+
     // "X2", "x 2"
     const xMatch = text.match(/^x\s*(\d+)/i);
     if (xMatch) return parseInt(xMatch[1], 10);
@@ -1402,7 +1405,7 @@ const normalizeVariant = (variant: string | null): string => {
     if (normalizedProduct.includes('naranja')) return 'Malla';
     if (normalizedProduct.includes('zumo')) return 'unidad';
     if (normalizedProduct.includes('batata rosada') || normalizedProduct.includes('cebolla larga')) return 'kilo';
-    if (normalizedProduct.includes('germinad') || normalizedProduct.includes('fresa premium') || normalizedProduct.includes('arandano')) return 'Contenedor';
+    if (normalizedProduct.includes('germinad') || normalizedProduct.includes('fresa premium') || normalizedProduct.includes('fresas premium') || normalizedProduct.includes('arandano')) return 'Contenedor';
     // Presentaciones definidas por catálogo aunque el pedido histórico solo guarde el peso.
     if (normalizedProduct.includes('fresa') && (normalizedProduct.includes('econom') || normalizedProduct.includes('econ'))) return 'Bandeja';
     if (text.includes('bandeja')) return 'Bandeja';
