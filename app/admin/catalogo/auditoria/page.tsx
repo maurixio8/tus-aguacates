@@ -1,0 +1,21 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { AlertTriangle, CheckCircle2, RefreshCw, ShieldAlert, Info } from 'lucide-react';
+
+type Finding={severity:'critical'|'warning'|'info';type:string;title:string;detail:string;context?:any};
+type Audit={generatedAt:string;summary:{products:number;variants:number;ordersAudited:number;referencedProducts:number;referencedVariants:number;critical:number;warning:number;info:number};findings:Finding[]};
+
+const colors={critical:'border-red-200 bg-red-50 text-red-800',warning:'border-amber-200 bg-amber-50 text-amber-800',info:'border-blue-200 bg-blue-50 text-blue-800'};
+const icons={critical:ShieldAlert,warning:AlertTriangle,info:Info};
+export default function CatalogAuditPage(){
+ const [audit,setAudit]=useState<Audit|null>(null);const [loading,setLoading]=useState(true);const [error,setError]=useState('');const [filter,setFilter]=useState<'all'|'critical'|'warning'|'info'>('all');
+ const load=async()=>{setLoading(true);setError('');try{const r=await fetch('/api/admin/catalog-audit?_t='+Date.now(),{credentials:'include',cache:'no-store'});const d=await r.json();if(!r.ok||!d.success)throw Error(d.error||'Error');setAudit(d)}catch(e){setError('No se pudo ejecutar la auditoría. Intenta nuevamente.')}finally{setLoading(false)}};
+ useEffect(()=>{load()},[]);
+ const findings=(audit?.findings||[]).filter(f=>filter==='all'||f.severity===filter);
+ return <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-6"><div className="max-w-7xl mx-auto space-y-5">
+  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"><div><h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Auditoría del Catálogo</h1><p className="text-gray-600 dark:text-gray-300 mt-1">Revisión de productos, variantes, precios, combos y pedidos históricos</p></div><button onClick={load} className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200"><RefreshCw size={16}/> Ejecutar auditoría</button></div>
+  {loading&&<div className="p-8 text-center text-gray-500">Auditando catálogo y pedidos...</div>}{error&&<div className="p-4 rounded-lg bg-red-50 text-red-700">{error}</div>}
+  {audit&&<><div className="grid grid-cols-2 lg:grid-cols-5 gap-3">{[['Productos',audit.summary.products],['Variantes',audit.summary.variants],['Pedidos auditados',audit.summary.ordersAudited],['Errores críticos',audit.summary.critical],['Advertencias',audit.summary.warning]].map(([l,v])=><div key={l as string} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"><div className="text-2xl font-bold text-gray-900 dark:text-white">{v}</div><div className="text-xs text-gray-500 dark:text-gray-400">{l}</div></div>)}</div><div className="flex flex-wrap gap-2">{[['all','Todos'],['critical','Críticos'],['warning','Advertencias'],['info','Informativos']].map(([k,l])=><button key={k} onClick={()=>setFilter(k as any)} className={`px-3 py-2 rounded-lg text-sm border ${filter===k?'bg-green-700 text-white border-green-700':'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border-gray-200 dark:border-gray-700'}`}>{l} ({k==='all'?audit.findings.length:audit.findings.filter(f=>f.severity===k).length})</button>)}</div><div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">{findings.length===0?<div className="p-10 text-center text-green-700"><CheckCircle2 className="mx-auto mb-2"/>No se encontraron hallazgos en este filtro.</div>:<div className="divide-y divide-gray-100 dark:divide-gray-700">{findings.map((f,i)=>{const Icon=icons[f.severity];return <div key={`${f.type}-${i}`} className="p-4"><div className={`rounded-lg border p-4 ${colors[f.severity]}`}><div className="flex gap-3"><Icon size={20} className="shrink-0 mt-0.5"/><div><h2 className="font-bold">{f.title}</h2><p className="text-sm mt-1">{f.detail}</p>{f.context&&<pre className="text-[10px] mt-3 whitespace-pre-wrap opacity-70">{JSON.stringify(f.context,null,2)}</pre>}</div></div></div></div>})}</div>}</div><p className="text-xs text-gray-500">Generada: {new Date(audit.generatedAt).toLocaleString('es-CO')}</p></>}
+ </div></main>;
+}

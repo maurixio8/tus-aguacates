@@ -21,7 +21,8 @@ import {
   Layers,
   Building2,
   ClipboardList,
-  Truck
+  Truck,
+  ShieldCheck
 } from 'lucide-react';
 
 interface AdminUser {
@@ -110,6 +111,7 @@ export default function AdminLayout({
   const allNavigation = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Productos', href: '/admin/productos', icon: Package },
+    { name: 'Auditoría Catálogo', href: '/admin/catalogo/auditoria', icon: ShieldCheck },
     { name: 'Categorías', href: '/admin/categorias', icon: Layers },
     { name: 'Pedidos', href: '/admin/pedidos', icon: ShoppingCart },
     { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
