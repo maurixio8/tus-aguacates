@@ -18,7 +18,6 @@ export function GeoSchemas() {
     "name": "Tus Aguacates",
     "description": "El proveedor líder de aguacates premium y productos frescos del Eje Cafetero. Entrega directa a hogares y negocios en Bogotá.",
     "url": "https://tusaguacates.com",
-    "telephone": "+573203062007",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Bogotá",
@@ -36,46 +35,10 @@ export function GeoSchemas() {
     },
     "priceRange": "$$",
     "openingHours": "Mo-Sa 08:00-18:00",
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "127",
-      "bestRating": "5"
-    },
     "image": "https://tusaguacates.com/images/og-social.png",
     "sameAs": [
       "https://www.instagram.com/tusaguacates"
     ]
-  };
-
-  const productSchema = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    "name": "Aguacate Hass Premium",
-    "description": "Aguacate Hass del Eje Cafetero, el más solicitado para guacamole y preparaciones gourmet. Piel rugosa que cambia a negra al madurar, pulpa cremosa.",
-    "image": "https://tusaguacates.com/images/aguacate-hass.png",
-    "brand": {
-      "@type": "Brand",
-      "name": "Tus Aguacates"
-    },
-    "category": "Frutas y Verduras",
-    "offers": {
-      "@type": "Offer",
-      "url": "https://tusaguacates.com",
-      "priceCurrency": "COP",
-      "price": "8500",
-      "priceValidUntil": "2026-12-31",
-      "availability": "https://schema.org/InStock",
-      "seller": {
-        "@type": "Organization",
-        "name": "Tus Aguacates"
-      }
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "89"
-    }
   };
 
   const faqSchema = {
@@ -114,10 +77,6 @@ export function GeoSchemas() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />
       <script
         type="application/ld+json"
