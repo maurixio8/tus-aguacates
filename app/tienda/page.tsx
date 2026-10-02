@@ -19,7 +19,19 @@ export const metadata: Metadata = {
 export default function TiendaPage() {
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <main className="container mx-auto px-4 py-12">
+      <header className="mb-10 text-center">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900">Tienda de aguacates, frutas y verduras</h1>
+        <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
+          Compra productos frescos a domicilio en Bogotá. Explora por categoría, compara presentaciones y revisa el precio y la disponibilidad actual antes de añadir al carrito.
+        </p>
+        <nav aria-label="Navegación de la tienda" className="mt-6 flex flex-wrap justify-center gap-3">
+          <Link href="/tienda/todos" className="rounded-full border border-green-700 px-4 py-2 font-semibold text-green-800 hover:bg-green-50">Ver todos los productos</Link>
+          <Link href="/ofertas" className="rounded-full border border-amber-600 px-4 py-2 font-semibold text-amber-700 hover:bg-amber-50">Ver promociones</Link>
+          <Link href="/faq" className="rounded-full border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50">Preguntas frecuentes</Link>
+        </nav>
+      </header>
+
       {/* Categories Grid Premium */}
       <PremiumCategoryGrid />
 
@@ -56,13 +68,13 @@ export default function TiendaPage() {
           Explora nuestro catálogo completo y descubre la calidad que nos caracteriza
         </p>
         <Link
-          href="/tienda"
+          href="/tienda/todos"
           prefetch={false}
           className="inline-block bg-green-600 hover:bg-green-700 text-white font-bold px-8 py-4 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
         >
           Ver Todos los Productos
         </Link>
       </div>
-    </div>
+    </main>
   );
 }
