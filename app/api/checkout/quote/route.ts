@@ -127,8 +127,8 @@ export async function POST(request: NextRequest) {
 
     const subtotal = quotedItems.reduce((total, item) => total + Number(item.line_total), 0);
     const isChia = normalize(location) === 'chia';
-    const freeShipping = false;
-    const shipping = isChia ? CHIA_SHIPPING_COST : (subtotal >= FREE_SHIPPING_MIN ? 0 : SHIPPING_COST);
+    const freeShipping = !isChia && subtotal >= FREE_SHIPPING_MIN;
+    const shipping = isChia ? CHIA_SHIPPING_COST : (freeShipping ? 0 : SHIPPING_COST);
     return response({
       valid: true,
       quote_type: 'preview_only',
