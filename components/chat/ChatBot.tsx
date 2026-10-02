@@ -18,7 +18,7 @@ const FAQ_DATABASE: FAQItem[] = [
   // === ENVÍOS Y ENTREGAS ===
   {
     keywords: ['envío', 'envio', 'domicilio', 'entrega', 'entregan', 'llega', 'delivery', 'despacho', 'cuando llega', 'cuando entregan'],
-    response: '🚚 **Información de Envíos**\n\n• **Días de entrega:** Martes y Viernes\n• **Horario:** 8:00 am a 6:00 pm\n• **Costo:** $7.400 COP\n• **¡GRATIS en pedidos mayores a $68.900!**\n\nEl día de tu entrega te escribimos por WhatsApp con la hora aproximada de llegada.',
+    response: '🚚 **Información de Envíos**\n\n• **Días de entrega:** Martes y Viernes\n• **Horario:** 8:00 am a 6:00 pm\n• **Bogotá y Soacha:** $7.400 COP; ¡GRATIS en pedidos mayores a $68.900!\n• **Chía:** domicilio fijo de $13.000 COP\n\nEl día de tu entrega te escribimos por WhatsApp con la hora aproximada de llegada.',
     followUp: [
       { label: '📍 ¿Dónde entregan?', value: 'zonas cobertura' },
       { label: '💰 ¿Cuánto cuesta el envío?', value: 'costo envío' },

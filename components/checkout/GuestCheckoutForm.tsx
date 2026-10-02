@@ -62,6 +62,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     name: '',
     email: '',
     phone: '',
+    city: 'Bogotá',
     address: '',
     createAccount: false,
     password: '',
@@ -224,7 +225,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
       // 1. VALIDAR EL CARRITO CONTRA EL CATÁLOGO VIVO
       // Evita aceptar productos desactivados, variantes eliminadas o precios viejos.
-      const cartValidation = await validateCheckoutCart(items);
+      const cartValidation = await validateCheckoutCart(items, formData.city, formData.paymentMethod);
       if (!cartValidation.valid) {
         setError(formatCartValidationError(cartValidation));
         setLoading(false);
@@ -495,7 +496,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
 
     try {
       // Validar nuevamente contra el catálogo vivo antes de crear el pedido.
-      const cartValidation = await validateCheckoutCart(items);
+      const cartValidation = await validateCheckoutCart(items, formData.city, formData.paymentMethod);
       if (!cartValidation.valid) {
         setError(formatCartValidationError(cartValidation));
         setLoading(false);
@@ -804,6 +805,23 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                       </div>
 
                       <div>
+                        <label className="block text-sm font-medium mb-1">Ciudad de Entrega *</label>
+                        <select
+                          required
+                          value={formData.city}
+                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate bg-white"
+                        >
+                          <option value="Bogotá">Bogotá</option>
+                          <option value="Chía">Chía</option>
+                          <option value="Soacha">Soacha</option>
+                        </select>
+                        {formData.city === 'Chía' && (
+                          <p className="mt-1 text-sm text-amber-700">Domicilio fijo a Chía: $13.000</p>
+                        )}
+                      </div>
+
+                      <div>
                         <label className="block text-sm font-medium mb-1">Dirección de Entrega *</label>
                         <textarea
                           required
@@ -864,7 +882,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                   </div>
 
                   <p className="text-sm text-gray-600 text-center">
-                    Entregas martes y viernes en Bogotá
+                    Entregas martes y viernes en {formData.city}
                   </p>
                 </form>
               </div>
@@ -1092,7 +1110,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
               {/* Sidebar */}
               <div className="space-y-6">
                 {/* Order Summary */}
-                <CheckoutSummary />
+                <CheckoutSummary location={formData.city} />
               </div>
             </div>
           </div>

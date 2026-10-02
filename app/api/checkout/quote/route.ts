@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const items: QuoteItem[] = Array.isArray(body?.items) ? body.items : [];
     const location = String(body?.location || 'Bogotá').trim();
+    const paymentMethod = normalize(String(body?.payment_method || ''));
 
     if (!items.length) return response({ valid: false, code: 'EMPTY_CART', error: 'El carrito está vacío.' }, 400);
     if (items.length > 100) return response({ valid: false, code: 'TOO_MANY_ITEMS', error: 'La cotización supera el límite de productos.' }, 400);
@@ -129,6 +130,10 @@ export async function POST(request: NextRequest) {
     const isChia = normalize(location) === 'chia';
     const freeShipping = !isChia && subtotal >= FREE_SHIPPING_MIN;
     const shipping = isChia ? CHIA_SHIPPING_COST : (freeShipping ? 0 : SHIPPING_COST);
+    const paymentFee = ['bold', 'tarjeta', 'pse', 'card_visa_mastercard', 'card_other'].includes(paymentMethod)
+      ? Math.round((subtotal + shipping) * 0.049)
+      : 0;
+    const total = subtotal + shipping + paymentFee;
     return response({
       valid: true,
       quote_type: 'preview_only',
@@ -139,11 +144,13 @@ export async function POST(request: NextRequest) {
       items: quotedItems,
       subtotal,
       shipping,
+      payment_method: paymentMethod || null,
+      payment_fee: paymentFee,
       free_shipping: freeShipping,
       free_shipping_minimum: isChia ? null : FREE_SHIPPING_MIN,
       amount_for_free_shipping: isChia ? 0 : Math.max(0, FREE_SHIPPING_MIN - subtotal),
       discount: 0,
-      total: subtotal + shipping,
+      total,
       next_step: 'Confirma los datos y continúa al checkout para crear el pedido.',
       checkout_url: 'https://tusaguacates.com/checkout',
       generated_at: new Date().toISOString(),

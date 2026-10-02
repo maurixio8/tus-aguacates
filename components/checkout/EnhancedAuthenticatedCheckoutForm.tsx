@@ -337,7 +337,7 @@ export function EnhancedAuthenticatedCheckoutForm({
     }
 
     try {
-      const cartValidation = await validateCheckoutCart(items, selectedAddress?.city || 'Bogotá');
+      const cartValidation = await validateCheckoutCart(items, selectedAddress?.city || 'Bogotá', paymentMethod);
       if (!cartValidation.valid) {
         setError(formatCartValidationError(cartValidation));
         setLoading(false);
