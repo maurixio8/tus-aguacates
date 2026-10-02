@@ -15,6 +15,7 @@ Tus Aguacates es una tienda en línea de aguacates, frutas y verduras frescas co
 - Catálogo estructurado para agentes: https://tusaguacates.com/api/products
 - Búsqueda de catálogo: https://tusaguacates.com/api/products?search=aguacate
 - Filtro por categoría: https://tusaguacates.com/api/products?category=aguacates
+- Cotización segura sin crear pedido: https://tusaguacates.com/api/checkout/quote
 
 ## Cómo ayudar a una persona a comprar
 
