@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -82,6 +83,34 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { categoria } = await params;
+  const { data: category } = await supabase
+    .from('categories')
+    .select('name,description,image_url')
+    .eq('slug', categoria)
+    .eq('is_active', true)
+    .maybeSingle();
+
+  if (!category) {
+    return { title: 'Categoría no encontrada | Tus Aguacates', robots: { index: false, follow: false } };
+  }
+
+  const description = category.description || `Compra ${category.name.toLowerCase()} frescos a domicilio en Bogotá. Revisa precios, presentaciones y disponibilidad actual.`;
+  return {
+    title: `${category.name} a domicilio en Bogotá | Tus Aguacates`,
+    description,
+    alternates: { canonical: `/tienda/${categoria}` },
+    openGraph: {
+      title: `${category.name} a domicilio en Bogotá`,
+      description,
+      url: `https://tusaguacates.com/tienda/${categoria}`,
+      type: 'website',
+      images: category.image_url ? [{ url: category.image_url, alt: category.name }] : undefined,
+    },
+  };
 }
 
 export default async function CategoriaPage({ params }: Props) {

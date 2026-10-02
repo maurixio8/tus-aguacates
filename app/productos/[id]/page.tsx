@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { getProducts } from '@/lib/productStorage';
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
@@ -58,6 +59,33 @@ async function getProductById(id: string) {
   return allProducts.find(p => p.id === id);
 }
 
+export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  const { id } = await params;
+  const product = await getProductById(id);
+  if (!product) {
+    return { title: 'Producto no encontrado | Tus Aguacates', robots: { index: false, follow: false } };
+  }
+
+  const price = product.discount_price || product.price;
+  const description = product.description || `${product.name} fresco a domicilio en Bogotá. Consulta presentación, precio y disponibilidad actual.`;
+  return {
+    title: `${product.name} | Tus Aguacates`,
+    description: description.slice(0, 160),
+    alternates: { canonical: `/productos/${product.slug || product.id}` },
+    openGraph: {
+      title: `${product.name} | Tus Aguacates`,
+      description,
+      url: `https://tusaguacates.com/productos/${product.slug || product.id}`,
+      type: 'website',
+      images: product.main_image_url ? [{ url: product.main_image_url, alt: product.name }] : undefined,
+    },
+    other: {
+      'product:price:amount': String(price),
+      'product:price:currency': 'COP',
+    },
+  };
+}
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
   const product = await getProductById(id);
@@ -65,6 +93,35 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) {
     notFound();
   }
+
+  const productUrl = `https://tusaguacates.com/productos/${product.slug || product.id}`;
+  const productPrice = product.discount_price || product.price;
+  const productJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: product.name,
+    description: product.description || `${product.name} fresco a domicilio en Bogotá.`,
+    image: [product.main_image_url].filter(Boolean),
+    sku: product.sku || product.id,
+    category: product.category || 'Frutas y verduras',
+    brand: { '@type': 'Brand', name: 'Tus Aguacates' },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'COP',
+      price: productPrice,
+      availability: (product.stock || 0) > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+      seller: { '@type': 'Organization', name: 'Tus Aguacates' },
+    },
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Tienda', item: 'https://tusaguacates.com/tienda' },
+      { '@type': 'ListItem', position: 2, name: product.name, item: productUrl },
+    ],
+  };
 
   const allProducts = await getProducts();
   // Get 3 related products from same category
@@ -76,7 +133,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const discount = hasDiscount ? Math.round(((product.price - product.discount_price!) / product.price) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-20 pb-24">
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
+      <div className="min-h-screen bg-gray-50 pt-20 pb-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         {/* Breadcrumb Navigation */}
@@ -265,5 +325,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
         )}
       </div>
     </div>
+    </>
   );
 }

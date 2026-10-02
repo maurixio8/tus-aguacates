@@ -1,9 +1,20 @@
-'use client';
-
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SearchTrigger } from '@/components/tienda/SearchTrigger';
 import PremiumCategoryGrid from '@/components/categories/PremiumCategoryGrid';
 import { FeaturedProductsCarousel } from '@/components/home/FeaturedProductsCarousel';
+
+export const metadata: Metadata = {
+  title: 'Comprar aguacates, frutas y verduras en Bogotá | Tus Aguacates',
+  description: 'Compra aguacates, frutas y verduras frescas a domicilio en Bogotá. Revisa presentaciones, precios, promociones y disponibilidad actual en nuestra tienda.',
+  alternates: { canonical: '/tienda' },
+  openGraph: {
+    title: 'Tienda de aguacates, frutas y verduras en Bogotá',
+    description: 'Productos frescos, promociones y compra en línea con domicilio en Bogotá.',
+    url: 'https://tusaguacates.com/tienda',
+    type: 'website',
+  },
+};
 
 export default function TiendaPage() {
 
