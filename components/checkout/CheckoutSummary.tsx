@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Truck, ShoppingBag, DollarSign, Tag, Check, Calendar, CreditCard } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 
-export default function CheckoutSummary() {
+export default function CheckoutSummary({ location = 'Bogotá' }: { location?: string }) {
   const {
     items,
     appliedCoupon,
@@ -38,7 +38,7 @@ export default function CheckoutSummary() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
-      body: JSON.stringify({ items: JSON.parse(cartSignature), location: 'Bogotá' }),
+      body: JSON.stringify({ items: JSON.parse(cartSignature), location }),
     })
       .then(async (response) => {
         const data = await response.json().catch(() => null);
@@ -53,7 +53,7 @@ export default function CheckoutSummary() {
       });
 
     return () => { cancelled = true; };
-  }, [cartSignature, items.length]);
+  }, [cartSignature, items.length, location]);
 
   // Debug logs for shipping calculation
   console.log('🚚 CheckoutSummary Debug:', {
@@ -278,7 +278,7 @@ export default function CheckoutSummary() {
             <span className="font-medium text-gray-800">Entrega</span>
           </div>
           <p className="text-sm text-gray-700">
-            Entregas disponibles: Martes y Viernes en Bogotá
+            Entregas disponibles: Martes y Viernes en {location}
           </p>
           <p className="text-xs text-gray-600 mt-1">
             El horario de entrega es 8am-12pm y 2pm-6pm

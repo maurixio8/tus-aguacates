@@ -21,7 +21,7 @@ export interface CheckoutValidationResult {
   quote?: CheckoutQuote;
 }
 
-export async function validateCheckoutCart(items: CheckoutValidationItem[]): Promise<CheckoutValidationResult> {
+export async function validateCheckoutCart(items: CheckoutValidationItem[], location = 'Bogotá'): Promise<CheckoutValidationResult> {
   const response = await fetch('/api/checkout/validate-cart', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -63,7 +63,7 @@ export async function validateCheckoutCart(items: CheckoutValidationItem[]): Pro
         variantId: item.variant?.id || null,
         quantity: item.quantity,
       })),
-      location: 'Bogotá',
+      location,
     }),
   });
   const quoteData = await quoteResponse.json().catch(() => null);

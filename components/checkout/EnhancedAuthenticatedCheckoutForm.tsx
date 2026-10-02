@@ -337,7 +337,7 @@ export function EnhancedAuthenticatedCheckoutForm({
     }
 
     try {
-      const cartValidation = await validateCheckoutCart(items);
+      const cartValidation = await validateCheckoutCart(items, selectedAddress?.city || 'Bogotá');
       if (!cartValidation.valid) {
         setError(formatCartValidationError(cartValidation));
         setLoading(false);
@@ -1113,7 +1113,7 @@ ${orderData.appliedCoupon.description}
       <div className="lg:col-span-1">
         <div className="sticky top-4 space-y-4">
           <CouponInput />
-          <CheckoutSummary />
+          <CheckoutSummary location={selectedAddress?.city || 'Bogotá'} />
 
           {/* Quick Info */}
         </div>

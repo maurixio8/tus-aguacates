@@ -94,7 +94,7 @@ export function AuthenticatedCheckoutForm({ onSuccess }: AuthenticatedCheckoutFo
     setStep('processing');
 
     try {
-      const cartValidation = await validateCheckoutCart(items);
+      const cartValidation = await validateCheckoutCart(items, selectedAddress?.city || 'Bogotá');
       if (!cartValidation.valid) {
         setError(formatCartValidationError(cartValidation));
         setLoading(false);
@@ -470,7 +470,7 @@ ${selectedAddress.additional_info ? `• Referencias: ${selectedAddress.addition
       <div className="lg:col-span-1">
         <div className="sticky top-4 space-y-4">
           <CouponInput />
-          <CheckoutSummary />
+          <CheckoutSummary location={selectedAddress?.city || 'Bogotá'} />
         </div>
       </div>
     </div>
