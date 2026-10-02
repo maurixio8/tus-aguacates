@@ -19,31 +19,54 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
   const itemCount = getItemCount();
   const [catalogStatus, setCatalogStatus] = useState<'idle' | 'checking' | 'verified' | 'error'>('idle');
   const [catalogError, setCatalogError] = useState('');
+  const [quote, setQuote] = useState<{ subtotal: number; shipping: number; payment_fee: number; free_shipping: boolean; total: number } | null>(null);
   const cartSignature = JSON.stringify(items.map((item) => ({
     productId: item.product.id,
     variantId: item.variant?.id || null,
     quantity: item.quantity,
   })));
 
+  const normalizedCity = location.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const deliveryMessage = quote
+    ? (normalizedCity === 'chia'
+        ? 'Domicilio fijo a Chía: $13.000'
+        : (quote.free_shipping ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400'))
+    : shipping?.message;
+  const displayShipping = quote ? quote.shipping : totals.shipping;
+  const displayFreeShipping = quote ? quote.free_shipping : !!shipping?.freeShipping;
+  const displayPaymentFee = quote ? quote.payment_fee : totals.paymentFee;
+  const displayTotal = quote ? quote.total : totals.total;
+
   useEffect(() => {
     if (!items.length) {
       setCatalogStatus('idle');
+      setQuote(null);
       return;
     }
 
     let cancelled = false;
     setCatalogStatus('checking');
     setCatalogError('');
+    setQuote(null);
     fetch('/api/checkout/quote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       cache: 'no-store',
-      body: JSON.stringify({ items: JSON.parse(cartSignature), location }),
+      body: JSON.stringify({ items: JSON.parse(cartSignature), location, payment_method: paymentMethod }),
     })
       .then(async (response) => {
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.valid) throw new Error(data?.error || 'No se pudo verificar el catálogo.');
-        if (!cancelled) setCatalogStatus('verified');
+        if (!cancelled) {
+          setCatalogStatus('verified');
+          setQuote({
+            subtotal: data.subtotal,
+            shipping: data.shipping,
+            payment_fee: data.payment_fee,
+            free_shipping: data.free_shipping,
+            total: data.total,
+          });
+        }
       })
       .catch((error) => {
         if (!cancelled) {
@@ -53,7 +76,7 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
       });
 
     return () => { cancelled = true; };
-  }, [cartSignature, items.length, location]);
+  }, [cartSignature, items.length, location, paymentMethod]);
 
   // Debug logs for shipping calculation
   console.log('🚚 CheckoutSummary Debug:', {
@@ -202,31 +225,39 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-blue-600" />
                 <span className="text-gray-600">Envío</span>
-                {shipping.freeShipping && (
+                {displayFreeShipping && (
                   <span className="text-xs text-green-600 font-medium ml-1">
                     (GRATIS)
                   </span>
                 )}
               </div>
               <div className="text-right">
-                {shipping.freeShipping ? (
+                {displayFreeShipping ? (
                   <span className="font-medium text-green-600">
                     GRATIS
                   </span>
                 ) : (
                   <>
-                    {shipping.amountForFreeShipping > 0 && (
-                      <p className="text-xs text-blue-600 line-through">
-                        {formatCurrency(totals.subtotal)}
-                      </p>
-                    )}
-                    <span className="font-medium text-gray-900">
-                      {formatCurrency(totals.shipping)}
-                    </span>
-                    {shipping.amountForFreeShipping > 0 && (
-                      <p className="text-xs text-blue-600">
-                        ¡Te faltan {formatCurrency(shipping.amountForFreeShipping)} para envío gratis!
-                      </p>
+                    {quote ? (
+                      <span className="font-medium text-gray-900">
+                        {formatCurrency(displayShipping)}
+                      </span>
+                    ) : (
+                      <>
+                        {shipping.amountForFreeShipping > 0 && (
+                          <p className="text-xs text-blue-600 line-through">
+                            {formatCurrency(totals.subtotal)}
+                          </p>
+                        )}
+                        <span className="font-medium text-gray-900">
+                          {formatCurrency(totals.shipping)}
+                        </span>
+                        {shipping.amountForFreeShipping > 0 && (
+                          <p className="text-xs text-blue-600">
+                            ¡Te faltan {formatCurrency(shipping.amountForFreeShipping)} para envío gratis!
+                          </p>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -234,7 +265,7 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
             </div>
           )}
 
-          {totals.paymentFee > 0 && (
+          {displayPaymentFee > 0 && (
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4 text-orange-600" />
@@ -244,7 +275,7 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
                 </div>
               </div>
               <span className="font-medium text-orange-600">
-                {formatCurrency(totals.paymentFee)}
+                {formatCurrency(displayPaymentFee)}
               </span>
             </div>
           )}
@@ -252,7 +283,7 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
           <div className="flex justify-between items-center pt-4 border-t border-gray-200">
             <span className="text-lg font-bold text-gray-900">Total</span>
             <span className="text-xl font-bold text-verde-bosque">
-              {formatCurrency(totals.total)}
+              {formatCurrency(displayTotal)}
             </span>
           </div>
         </div>
@@ -265,8 +296,9 @@ export default function CheckoutSummary({ location = 'Bogotá' }: { location?: s
               <span className="font-medium text-blue-800">Información de Entrega</span>
             </div>
             <div className="text-sm text-blue-700 space-y-1">
-              <p>{shipping.message}</p>
-              <p>Entrega estimada en {shipping.estimatedDays} día{shipping.estimatedDays !== 1 ? 's' : ''}</p>
+              <p>{deliveryMessage}</p>
+              <p>Entregas martes y viernes en {location}</p>
+              <p>Horario: 8am-12pm y 2pm-6pm</p>
             </div>
           </div>
         )}
