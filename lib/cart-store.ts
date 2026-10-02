@@ -16,26 +16,23 @@ const BOLD_FEES = {
 /**
  * Default shipping information fallback
  */
-const getDefaultShippingInfo = (subtotal: number = 0): ShippingInfo => {
-  const freeShippingMin = 68900;
-  const shippingCost = 7400;
-  const freeShipping = subtotal >= freeShippingMin;
+const getDefaultShippingInfo = (subtotal: number = 0, location = 'Bogotá'): ShippingInfo => {
+  const normalizedLocation = location.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const isChia = normalizedLocation === 'chia';
+  const freeShippingMin = isChia ? 0 : 68900;
+  const shippingCost = isChia ? 13000 : 7400;
+  const freeShipping = false;
+  const message = isChia ? 'Domicilio fijo a Chía: $13.000' : (subtotal >= 68900 ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400');
 
-  console.log('🚚 getDefaultShippingInfo:', {
-    subtotal,
-    freeShippingMin,
-    shippingCost,
-    freeShipping,
-    comparison: `subtotal (${subtotal}) >= freeShippingMin (${freeShippingMin}) = ${subtotal >= freeShippingMin}`
-  });
+  console.log('🚚 getDefaultShippingInfo:', { subtotal, location, shippingCost, freeShipping });
 
   return {
     cost: freeShipping ? 0 : shippingCost,
     freeShipping,
     freeShippingMin,
-    amountForFreeShipping: freeShipping ? 0 : Math.max(0, freeShippingMin - subtotal),
-    estimatedDays: freeShipping ? 2 : 1,
-    message: freeShipping ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400'
+    amountForFreeShipping: isChia ? 0 : Math.max(0, freeShippingMin - subtotal),
+    estimatedDays: 1,
+    message,
   };
 };
 
@@ -251,7 +248,7 @@ export const useCartStore = create<CartState>()(
           // Validate subtotal - don't call API if cart is empty or subtotal is 0
           if (typeof subtotal !== 'number' || subtotal < 0 || !isFinite(subtotal) || subtotal === 0) {
             console.log('📦 Cart is empty or subtotal is 0, using default shipping:', { subtotal });
-            set({ shipping: getDefaultShippingInfo(subtotal) });
+            set({ shipping: getDefaultShippingInfo(subtotal, location) });
             return;
           }
 
@@ -299,16 +296,16 @@ export const useCartStore = create<CartState>()(
           } else if (!data.success) {
             console.error('❌ Shipping calculation failed (API returned success=false):', data);
             console.error('❌ API Response:', JSON.stringify(data, null, 2));
-            set({ shipping: getDefaultShippingInfo(subtotal) });
+            set({ shipping: getDefaultShippingInfo(subtotal, location) });
           } else if (!data.shipping) {
             console.error('❌ Shipping calculation failed (missing shipping object):', data);
-            set({ shipping: getDefaultShippingInfo(subtotal) });
+            set({ shipping: getDefaultShippingInfo(subtotal, location) });
           }
         } catch (error) {
           console.error('❌ Error calculating shipping:', error);
           const subtotal = get().getSubtotal();
           console.log('🚚 Falling back to default shipping with subtotal:', subtotal);
-          set({ shipping: getDefaultShippingInfo(subtotal) });
+          set({ shipping: getDefaultShippingInfo(subtotal, location) });
         }
       },
 

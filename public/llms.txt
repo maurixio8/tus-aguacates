@@ -38,3 +38,5 @@ Tus Aguacates es una tienda en línea de aguacates, frutas y verduras frescas co
 ## Fuente de verdad
 
 Los precios y la disponibilidad deben tomarse de las fichas actuales de la tienda. No asumir que una promoción, producto o variante sigue vigente solo por aparecer en contenido antiguo o en un pedido histórico.
+
+Regla de domicilio: en Chía el costo es fijo de $13.000, sin envío gratis por superar un mínimo. En Bogotá y las demás zonas habilitadas aplica la regla vigente de la tienda.

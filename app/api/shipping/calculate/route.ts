@@ -143,23 +143,22 @@ export async function POST(request: NextRequest) {
     let freeShippingMin = 0;
     let freeShipping = false;
 
-    // Always use default rule to ensure consistency
-    // Ignore database rules to avoid configuration conflicts
-    freeShippingMin = 68900; // $68.900
-    shippingCost = 7400; // $7.400
-    freeShipping = subtotal >= freeShippingMin;
+    const normalizedLocation = String(location).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isChia = normalizedLocation === 'chia';
+    freeShippingMin = isChia ? 0 : 68900;
+    shippingCost = isChia ? 13000 : 7400;
+    freeShipping = false;
 
-    console.log('🚚 Applied default shipping rule (hardcoded):', {
-      freeShippingMin,
-      shippingCost,
+    console.log('🚚 Applied shipping rule:', {
+      location,
       subtotal,
+      shippingCost,
       freeShipping,
-      comparison: `subtotal (${subtotal}) >= freeShippingMin (${freeShippingMin}) = ${subtotal >= freeShippingMin}`,
-      note: 'Database rules ignored to prevent configuration conflicts'
+      rule: isChia ? 'Chía: domicilio fijo $13.000' : 'Bogotá/otras zonas: gratis desde $68.900',
     });
 
-    // Calculate amount needed for free shipping
-    const amountForFreeShipping = freeShipping ? 0 : Math.max(0, freeShippingMin - subtotal);
+    // Chía nunca obtiene envío gratis por superar el mínimo de Bogotá.
+    const amountForFreeShipping = isChia ? 0 : Math.max(0, freeShippingMin - subtotal);
 
     const response = {
       success: true,

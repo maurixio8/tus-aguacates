@@ -10,6 +10,7 @@ interface QuoteItem {
 }
 
 const SHIPPING_COST = 7400;
+const CHIA_SHIPPING_COST = 13000;
 const FREE_SHIPPING_MIN = 68900;
 const DELIVERY_AREAS = new Set(['bogota', 'bogotá', 'chia', 'chía', 'soacha']);
 
@@ -125,8 +126,9 @@ export async function POST(request: NextRequest) {
     }
 
     const subtotal = quotedItems.reduce((total, item) => total + Number(item.line_total), 0);
-    const freeShipping = subtotal >= FREE_SHIPPING_MIN;
-    const shipping = freeShipping ? 0 : SHIPPING_COST;
+    const isChia = normalize(location) === 'chia';
+    const freeShipping = false;
+    const shipping = isChia ? CHIA_SHIPPING_COST : (subtotal >= FREE_SHIPPING_MIN ? 0 : SHIPPING_COST);
     return response({
       valid: true,
       quote_type: 'preview_only',
@@ -138,8 +140,8 @@ export async function POST(request: NextRequest) {
       subtotal,
       shipping,
       free_shipping: freeShipping,
-      free_shipping_minimum: FREE_SHIPPING_MIN,
-      amount_for_free_shipping: freeShipping ? 0 : FREE_SHIPPING_MIN - subtotal,
+      free_shipping_minimum: isChia ? null : FREE_SHIPPING_MIN,
+      amount_for_free_shipping: isChia ? 0 : Math.max(0, FREE_SHIPPING_MIN - subtotal),
       discount: 0,
       total: subtotal + shipping,
       next_step: 'Confirma los datos y continúa al checkout para crear el pedido.',
