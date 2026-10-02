@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Truck, ShoppingBag, DollarSign, Tag, Check, Calendar, CreditCard } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 
@@ -16,6 +17,43 @@ export default function CheckoutSummary() {
 
   const totals = getTotals();
   const itemCount = getItemCount();
+  const [catalogStatus, setCatalogStatus] = useState<'idle' | 'checking' | 'verified' | 'error'>('idle');
+  const [catalogError, setCatalogError] = useState('');
+  const cartSignature = JSON.stringify(items.map((item) => ({
+    productId: item.product.id,
+    variantId: item.variant?.id || null,
+    quantity: item.quantity,
+  })));
+
+  useEffect(() => {
+    if (!items.length) {
+      setCatalogStatus('idle');
+      return;
+    }
+
+    let cancelled = false;
+    setCatalogStatus('checking');
+    setCatalogError('');
+    fetch('/api/checkout/quote', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      body: JSON.stringify({ items: JSON.parse(cartSignature), location: 'Bogotá' }),
+    })
+      .then(async (response) => {
+        const data = await response.json().catch(() => null);
+        if (!response.ok || !data?.valid) throw new Error(data?.error || 'No se pudo verificar el catálogo.');
+        if (!cancelled) setCatalogStatus('verified');
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setCatalogStatus('error');
+          setCatalogError(error instanceof Error ? error.message : 'No se pudo verificar el catálogo.');
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [cartSignature, items.length]);
 
   // Debug logs for shipping calculation
   console.log('🚚 CheckoutSummary Debug:', {
@@ -68,6 +106,22 @@ export default function CheckoutSummary() {
       </div>
 
       <div className="p-6 space-y-4">
+        {catalogStatus === 'checking' && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800" role="status">
+            Verificando precios, presentaciones y disponibilidad actuales...
+          </div>
+        )}
+        {catalogStatus === 'verified' && (
+          <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800" role="status">
+            <Check className="h-4 w-4" /> Catálogo verificado. Precios y disponibilidad actualizados.
+          </div>
+        )}
+        {catalogStatus === 'error' && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800" role="alert">
+            {catalogError} El pedido se volverá a verificar antes de crearse.
+          </div>
+        )}
+
         {/* Items Summary */}
         <div className="space-y-3">
           {items.slice(0, 3).map((item, index) => (
