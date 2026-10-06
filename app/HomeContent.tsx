@@ -6,14 +6,6 @@ import Image from 'next/image';
 import dynamic from 'next/dynamic';
 
 // Lazy loading de componentes pesados para mejor rendimiento
-const PromotionSlider = dynamic(
-  () => import('@/components/promotions/PromotionSlider'),
-  {
-    loading: () => <div className="h-48 bg-gray-100 animate-pulse rounded-lg" />,
-    ssr: true
-  }
-);
-
 const UnifiedCategories = dynamic(
   () => import('@/components/categories/UnifiedCategories'),
   {
@@ -25,14 +17,6 @@ const UnifiedCategories = dynamic(
       </div>
     ),
     ssr: true
-  }
-);
-
-const PersonalizedHero = dynamic(
-  () => import('@/components/home/PersonalizedHero').then(mod => ({ default: mod.PersonalizedHero })),
-  {
-    loading: () => <div className="h-96 bg-gray-100 animate-pulse rounded-lg" />,
-    ssr: false // No renderizar en servidor por contenido personalizado
   }
 );
 
@@ -149,16 +133,6 @@ export default function HomeContent() {
           />
         </div>
       </section>
-
-      {/* Promotion Slider - Destacado después del Hero */}
-      <section className="py-8 bg-gradient-to-b from-verde-bosque-50 to-white">
-        <div className="container mx-auto px-4">
-          <PromotionSlider />
-        </div>
-      </section>
-
-      {/* Personalized content for authenticated users */}
-      <PersonalizedHero />
 
       {/* Last Order Summary (Only for Authenticated Users) */}
       <LastOrderSummary />
