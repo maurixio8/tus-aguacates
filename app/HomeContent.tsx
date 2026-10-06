@@ -67,10 +67,10 @@ const UrgencyBanner = dynamic(
   }
 );
 
-const ConversionHero = dynamic(
-  () => import('@/components/home/ConversionHero').then(mod => ({ default: mod.ConversionHero })),
+const PromotionHeroCarousel = dynamic(
+  () => import('@/components/promotions/PromotionHeroCarousel').then(mod => ({ default: mod.PromotionHeroCarousel })),
   {
-    loading: () => <div className="h-[85vh] bg-gradient-to-r from-verde-bosque-700 to-verde-aguacate animate-pulse" />,
+    loading: () => <div className="h-[420px] bg-verde-bosque animate-pulse md:h-[560px]" />,
     ssr: false
   }
 );
@@ -108,8 +108,8 @@ export default function HomeContent() {
       {/* Sprint 1: Urgency Banner at top */}
       <UrgencyBanner />
 
-      {/* Sprint 1: New Conversion Hero for guests, PersonalizedHero for authenticated users */}
-      <ConversionHero />
+      {/* Hero promocional dinámico: reemplaza la imagen hero estática */}
+      <PromotionHeroCarousel />
 
       {/* Explora por Categoría - Movido después del Hero */}
       <section className="py-12 bg-white">
