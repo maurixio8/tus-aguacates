@@ -88,6 +88,17 @@ export function PromotionHeroCarousel() {
     setPaused(false);
   };
 
+  const endTouch = () => {
+    if (touchStart.current === null) return;
+    if (Math.abs(dragOffset) > 55) {
+      if (dragOffset < 0) next();
+      else previous();
+    }
+    touchStart.current = null;
+    setDragOffset(0);
+    setPaused(false);
+  };
+
   const active = promotions[activeIndex] || FALLBACK_PROMOTION;
   const relativeIndex = (index: number) => {
     if (!promotions.length) return 0;
@@ -129,9 +140,9 @@ export function PromotionHeroCarousel() {
         onMouseLeave={endPointer}
         onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; setPaused(true); }}
         onTouchMove={(event) => { if (touchStart.current !== null) setDragOffset((event.touches[0]?.clientX ?? 0) - touchStart.current); }}
-        onTouchEnd={() => { setDragStart(touchStart.current); endPointer(); touchStart.current = null; }}
+        onTouchEnd={endTouch}
       >
-        <div className="pointer-events-none absolute inset-y-8 left-1/2 hidden w-[78%] -translate-x-1/2 rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_30px_100px_rgba(0,0,0,0.35)] backdrop-blur-sm md:block" />
+        <div className="pointer-events-none absolute inset-y-8 left-1/2 hidden w-[78%] -translate-x-1/2 rounded-[2rem] border border-white/10 bg-white/[0.04] shadow-[0_30px_100px_rgba(0,0,0,0.35)] md:block" />
 
         <div className="relative z-10 grid w-full items-center gap-8 md:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.3fr)] md:gap-12">
           <div className="order-2 px-2 md:order-1 md:pl-8">
@@ -163,11 +174,11 @@ export function PromotionHeroCarousel() {
                       key={promotion.id}
                       type="button"
                       onClick={() => isActive ? undefined : goTo(index)}
-                      className="absolute aspect-[16/10] w-[78%] overflow-hidden rounded-[1.6rem] border text-left transition-all duration-700 ease-out"
+                      className="absolute aspect-[16/10] w-[78%] overflow-hidden rounded-[1.6rem] border text-left transition-all duration-[380ms] ease-out"
                       style={{
                         transform: `translateX(${sideX}%) scale(${isActive ? 1 : absDistance === 1 ? 0.82 : 0.68})`,
                         opacity: isActive ? 1 : absDistance === 1 ? 0.62 : 0.24,
-                        filter: isActive ? 'blur(0)' : `blur(${absDistance === 1 ? 1 : 4}px)`,
+                        filter: isActive ? 'blur(0)' : `blur(${absDistance === 1 ? 0.5 : 2}px)`,
                         zIndex: isActive ? 10 : 8 - absDistance,
                         borderColor: isActive ? 'rgba(200,162,39,0.45)' : 'rgba(255,255,255,0.12)',
                         boxShadow: isActive ? '0 30px 80px rgba(0,0,0,0.48), 0 0 45px rgba(200,162,39,0.14)' : '0 20px 45px rgba(0,0,0,0.28)',
