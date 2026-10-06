@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 
 interface Promotion {
   id: string;
@@ -26,7 +26,7 @@ export function PromotionHeroCarousel() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [paused, setPaused] = useState(false);
+  const [focusedPromotion, setFocusedPromotion] = useState<Promotion | null>(null);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const touchStart = useRef<number | null>(null);
@@ -62,14 +62,13 @@ export function PromotionHeroCarousel() {
   const previous = useCallback(() => goTo(activeIndex - 1), [activeIndex, goTo]);
 
   useEffect(() => {
-    if (paused || promotions.length < 2) return;
-    const timer = window.setInterval(next, 6000);
+    if (promotions.length < 2) return;
+    const timer = window.setInterval(next, 1800);
     return () => window.clearInterval(timer);
-  }, [next, paused, promotions.length]);
+  }, [next, promotions.length]);
 
   const startPointer = (clientX: number) => {
     setDragStart(clientX);
-    setPaused(true);
   };
 
   const movePointer = (clientX: number) => {
@@ -85,7 +84,6 @@ export function PromotionHeroCarousel() {
     }
     setDragStart(null);
     setDragOffset(0);
-    setPaused(false);
   };
 
   const endTouch = () => {
@@ -96,7 +94,6 @@ export function PromotionHeroCarousel() {
     }
     touchStart.current = null;
     setDragOffset(0);
-    setPaused(false);
   };
 
   const active = promotions[activeIndex] || FALLBACK_PROMOTION;
@@ -121,12 +118,9 @@ export function PromotionHeroCarousel() {
       className="relative overflow-hidden bg-[#07180f] text-white"
       aria-roledescription="carrusel de promociones"
       aria-label="Promociones destacadas"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => { if (dragStart === null) setPaused(false); }}
       onKeyDown={(event) => {
         if (event.key === 'ArrowLeft') previous();
         if (event.key === 'ArrowRight') next();
-        if (event.key === ' ') setPaused((value) => !value);
       }}
       tabIndex={0}
     >
@@ -138,7 +132,7 @@ export function PromotionHeroCarousel() {
         onMouseMove={(event) => movePointer(event.clientX)}
         onMouseUp={endPointer}
         onMouseLeave={endPointer}
-        onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; setPaused(true); }}
+        onTouchStart={(event) => { touchStart.current = event.touches[0]?.clientX ?? null; }}
         onTouchMove={(event) => { if (touchStart.current !== null) setDragOffset((event.touches[0]?.clientX ?? 0) - touchStart.current); }}
         onTouchEnd={endTouch}
       >
@@ -155,10 +149,9 @@ export function PromotionHeroCarousel() {
               <Link href={active.link || '/tienda/promociones'} className="inline-flex min-h-12 items-center gap-2 rounded-full bg-[#C8A227] px-6 py-3 font-bold text-[#07180f] shadow-[0_8px_30px_rgba(200,162,39,0.25)] transition hover:scale-[1.03] hover:bg-[#e0bd35]">
                 Ver promoción <ExternalLink className="h-4 w-4" />
               </Link>
-              <button type="button" onClick={() => setPaused((value) => !value)} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-3 text-sm font-semibold backdrop-blur-md transition hover:bg-white/15" aria-label={paused ? 'Reanudar promociones' : 'Pausar promociones'}>
-                {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-                {paused ? 'Reanudar' : 'Pausar'}
-              </button>
+              <Link href="/tienda" className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/25 bg-white/10 px-6 py-3 font-bold text-white backdrop-blur-md transition hover:bg-white/20">
+                Ver productos
+              </Link>
             </div>
           </div>
 
@@ -173,7 +166,7 @@ export function PromotionHeroCarousel() {
                     <button
                       key={promotion.id}
                       type="button"
-                      onClick={() => isActive ? undefined : goTo(index)}
+                      onClick={() => isActive ? setFocusedPromotion(promotion) : goTo(index)}
                       className="absolute aspect-[16/10] w-[78%] overflow-hidden rounded-[1.6rem] border text-left transition-all duration-[380ms] ease-out"
                       style={{
                         transform: `translateX(${sideX}%) scale(${isActive ? 1 : absDistance === 1 ? 0.82 : 0.68})`,
@@ -209,6 +202,26 @@ export function PromotionHeroCarousel() {
           {promotions.map((promotion, index) => <button key={promotion.id} type="button" onClick={() => goTo(index)} className={`h-2 rounded-full transition-all ${index === activeIndex ? 'w-8 bg-[#C8A227]' : 'w-2 bg-white/45 hover:bg-white/80'}`} aria-label={`Ver promoción ${index + 1}`} aria-selected={index === activeIndex} role="tab" />)}
         </div>
       </div>
+
+      {focusedPromotion && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={focusedPromotion.title} onClick={() => setFocusedPromotion(null)}>
+          <div className="relative w-full max-w-5xl overflow-hidden rounded-3xl border border-[#C8A227]/40 bg-[#07180f] shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <button type="button" onClick={() => setFocusedPromotion(null)} className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md hover:bg-black/75" aria-label="Cerrar imagen ampliada">
+              <X className="h-6 w-6" />
+            </button>
+            <img src={focusedPromotion.image_url} alt={focusedPromotion.title} className="max-h-[78vh] w-full object-contain" />
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 p-5">
+              <div>
+                <h2 className="text-xl font-bold text-white md:text-2xl">{focusedPromotion.title}</h2>
+                {focusedPromotion.description && <p className="mt-1 text-white/70">{focusedPromotion.description}</p>}
+              </div>
+              <Link href={focusedPromotion.link || '/tienda/promociones'} onClick={() => setFocusedPromotion(null)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-[#C8A227] px-5 py-3 font-bold text-[#07180f]">
+                Ver promoción <ExternalLink className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
