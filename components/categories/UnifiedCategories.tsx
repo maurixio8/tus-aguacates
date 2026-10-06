@@ -174,7 +174,18 @@ export default function UnifiedCategories({
             color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
           }));
 
-          setCategories(formattedCategories);
+          setCategories([
+            {
+              id: 'virtual-promociones',
+              name: 'Promociones',
+              slug: 'promociones',
+              icon: '✨',
+              image: '/categories/ofertas.jpg',
+              description: 'Productos destacados y ofertas de la semana',
+              color: 'from-yellow-500 to-orange-600'
+            },
+            ...formattedCategories.filter(category => category.slug !== 'promociones')
+          ].slice(0, maxItems));
         } else if (!error) {
           // Si no hay error pero tampoco hay categorías, usar fallback
           console.log('⚠️ No hay categorías activas en la base de datos');
