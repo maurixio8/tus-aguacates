@@ -89,10 +89,21 @@ export function PromotionHeroCarousel() {
   };
 
   const active = promotions[activeIndex] || FALLBACK_PROMOTION;
+  const relativeIndex = (index: number) => {
+    if (!promotions.length) return 0;
+    let distance = index - activeIndex;
+    if (distance > promotions.length / 2) distance -= promotions.length;
+    if (distance < -promotions.length / 2) distance += promotions.length;
+    return distance;
+  };
 
   if (loading) {
     return <div className="h-[420px] animate-pulse bg-verde-bosque md:h-[560px]" aria-label="Cargando promociones" />;
   }
+
+  const visiblePromotions = promotions
+    .map((promotion, index) => ({ promotion, index, distance: relativeIndex(index) }))
+    .filter(({ distance }) => Math.abs(distance) <= 2);
 
   return (
     <section
@@ -141,12 +152,38 @@ export function PromotionHeroCarousel() {
           </div>
 
           <div className="order-1 min-w-0 md:order-2">
-            <div className="relative mx-auto aspect-[16/10] w-full max-w-[760px] select-none" style={{ transform: `translateX(${dragOffset}px)` }}>
-              <div className="absolute -inset-5 rounded-[2rem] bg-[#C8A227]/10 blur-2xl" />
-              <div className="relative h-full overflow-hidden rounded-[1.6rem] border border-white/20 bg-[#0D2818]/80 shadow-[0_25px_70px_rgba(0,0,0,0.45)] backdrop-blur-xl">
-                <img src={active.image_url} alt={active.title} className="h-full w-full object-cover" draggable={false} />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07180f]/70 via-transparent to-white/10" />
-                <div className="absolute inset-0 rounded-[1.6rem] ring-1 ring-inset ring-[#C8A227]/25" />
+            <div className="relative mx-auto h-[260px] w-full max-w-[860px] select-none sm:h-[340px] md:h-[430px]" style={{ transform: `translateX(${dragOffset}px)` }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                {visiblePromotions.map(({ promotion, index, distance }) => {
+                  const isActive = distance === 0;
+                  const absDistance = Math.abs(distance);
+                  const sideX = distance * (window.innerWidth < 768 ? 44 : 62);
+                  return (
+                    <button
+                      key={promotion.id}
+                      type="button"
+                      onClick={() => isActive ? undefined : goTo(index)}
+                      className="absolute aspect-[16/10] w-[78%] overflow-hidden rounded-[1.6rem] border text-left transition-all duration-700 ease-out"
+                      style={{
+                        transform: `translateX(${sideX}%) scale(${isActive ? 1 : absDistance === 1 ? 0.82 : 0.68})`,
+                        opacity: isActive ? 1 : absDistance === 1 ? 0.62 : 0.24,
+                        filter: isActive ? 'blur(0)' : `blur(${absDistance === 1 ? 1 : 4}px)`,
+                        zIndex: isActive ? 10 : 8 - absDistance,
+                        borderColor: isActive ? 'rgba(200,162,39,0.45)' : 'rgba(255,255,255,0.12)',
+                        boxShadow: isActive ? '0 30px 80px rgba(0,0,0,0.48), 0 0 45px rgba(200,162,39,0.14)' : '0 20px 45px rgba(0,0,0,0.28)',
+                      }}
+                      aria-label={isActive ? `Promoción activa: ${promotion.title}` : `Ver promoción: ${promotion.title}`}
+                    >
+                      <img src={promotion.image_url} alt={promotion.title} className="h-full w-full object-cover" draggable={false} />
+                      <span className="absolute inset-0 bg-gradient-to-t from-[#07180f]/70 via-transparent to-white/10" />
+                      {isActive && <>
+                        <span className="pointer-events-none absolute -inset-[2px] rounded-[1.6rem] border border-[#C8A227]/35" />
+                        <span className="pointer-events-none absolute inset-[7%] rounded-[1.25rem] border border-white/15 bg-white/[0.035] shadow-[inset_0_0_35px_rgba(255,255,255,0.08)] backdrop-blur-[1px]" />
+                        <span className="pointer-events-none absolute -inset-8 rounded-full bg-[#C8A227]/10 blur-3xl" />
+                      </>}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
