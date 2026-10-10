@@ -46,8 +46,14 @@ export async function POST(request: NextRequest) {
     const invalidItems: Array<{ productId?: string; variantId?: string | null; name: string; reason: string; currentPrice?: number }> = [];
 
     for (const item of items) {
+      const quantity = Number(item.quantity);
       const product = item.productId ? productMap.get(item.productId) : undefined;
       const name = product?.name || 'Producto no identificado';
+
+      if (!Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
+        invalidItems.push({ productId: item.productId, variantId: item.variantId, name, reason: 'la cantidad no es válida' });
+        continue;
+      }
 
       if (!product) {
         invalidItems.push({ productId: item.productId, variantId: item.variantId, name, reason: 'ya no existe' });

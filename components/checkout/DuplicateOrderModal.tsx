@@ -99,7 +99,7 @@ export default function DuplicateOrderModal({
                             <p className="text-gray-600">
                                 {canRetryPayment
                                     ? 'Parece que el pago anterior no se completó. Puedes intentar pagar de nuevo o consultarnos por WhatsApp.'
-                                    : 'Para garantizar el mejor servicio, solo procesamos un pedido por día por persona.'
+                                    : 'Para garantizar el mejor servicio, solo procesamos un pedido confirmado por día por persona.'
                                 }
                             </p>
 

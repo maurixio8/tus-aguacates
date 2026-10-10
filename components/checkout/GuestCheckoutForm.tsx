@@ -48,12 +48,25 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
   // Detectar si venimos de un reintento de pago (desde DuplicateOrderModal)
   useEffect(() => {
     const retryOrderId = sessionStorage.getItem('retry_order_id');
+    const retryPaymentMethod = sessionStorage.getItem('retry_payment_method');
     if (retryOrderId) {
       sessionStorage.removeItem('retry_order_id');
+      sessionStorage.removeItem('retry_payment_method');
       setOrderId(retryOrderId);
       setShowPaymentModal(true);
+      if (retryPaymentMethod) {
+        const methodMap: Record<string, PaymentMethod> = {
+          bold: 'card_visa_mastercard',
+          tarjeta: 'card_visa_mastercard',
+          daviplata: 'daviplata',
+          nequi: 'nequi',
+          efectivo: 'cash',
+        };
+        setFormData(prev => ({ ...prev, paymentMethod: retryPaymentMethod }));
+        setPaymentMethod(methodMap[retryPaymentMethod] || 'cash');
+      }
     }
-  }, []);
+  }, [setPaymentMethod]);
   
   // Si no ha seleccionado método de pago, solo mostrar los botones
   const showPaymentOnly = showPaymentModal;
@@ -175,6 +188,8 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const normalizedPhone = normalizePhone(formData.phone);
       const closedStatuses = new Set(['cancelado', 'cancelled', 'entregado', 'delivered', 'completado', 'completed']);
+      const pendingRetryWindowMs = 30 * 60 * 1000;
+      const nowMs = Date.now();
 
       console.log('🔍 Verificando pedidos existentes...', {
         phone: formData.phone,
@@ -184,7 +199,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
       const { data: existingOrders, error: checkError } = await supabase
         .from('guest_orders')
-        .select('id, created_at, status, payment_method, order_data, guest_phone')
+        .select('id, created_at, status, payment_status, payment_method, order_data, guest_phone')
         .gte('created_at', today + 'T00:00:00.000Z')
         .lte('created_at', today + 'T23:59:59.999Z')
         .order('created_at', { ascending: false })
@@ -193,7 +208,14 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
       const existingOrder = (existingOrders || []).find((order) => {
         const storedPhone = normalizePhone(order.guest_phone || '');
         const orderStatus = String(order.status || '').toLowerCase().trim();
-        return storedPhone === normalizedPhone && !closedStatuses.has(orderStatus);
+        const paymentStatus = String(order.payment_status || '').toLowerCase().trim();
+        const createdAtMs = new Date(order.created_at).getTime();
+        const orderAgeMs = Number.isFinite(createdAtMs) ? Math.max(0, nowMs - createdAtMs) : 0;
+
+        if (storedPhone !== normalizedPhone || closedStatuses.has(orderStatus)) return false;
+        if (paymentStatus === 'pagado' || ['pagado', 'confirmado', 'pendiente_entrega'].includes(orderStatus)) return true;
+        if (['pendiente', 'pago_fallido'].includes(orderStatus)) return orderAgeMs < pendingRetryWindowMs;
+        return true;
       });
 
       console.log('🔍 Resultado búsqueda pedidos:', {
