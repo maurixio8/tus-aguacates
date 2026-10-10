@@ -109,6 +109,7 @@ export default function HomeContent() {
           <UnifiedCategories
             variant="scroll"
             showProductCount={false}
+            autoScroll
           />
         </div>
       </section>

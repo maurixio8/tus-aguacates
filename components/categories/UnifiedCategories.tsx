@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Image as ImageIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Image as ImageIcon, Pause, Play } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { OptimizedImage } from '@/components/optimization/OptimizedImage';
 
@@ -25,6 +25,7 @@ interface UnifiedCategoriesProps {
   showProductCount?: boolean;
   maxItems?: number;
   baseHref?: string; // Base path for category links (default: '/tienda')
+  autoScroll?: boolean;
 }
 
 // Mapeo unificado de categorías (sincronizado con productos-master.json)
@@ -128,11 +129,20 @@ export default function UnifiedCategories({
   onCategoryChange,
   showProductCount = false,
   maxItems = 8,
-  baseHref = '/tienda'
+  baseHref = '/tienda',
+  autoScroll = false
 }: UnifiedCategoriesProps) {
   const [categories, setCategories] = useState<UnifiedCategory[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAutoScrollPaused, setIsAutoScrollPaused] = useState(false);
+  const [isMotionEnabled, setIsMotionEnabled] = useState(false);
+  const [loopCopies, setLoopCopies] = useState(1);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [motionPreferenceReady, setMotionPreferenceReady] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const firstSequenceRef = useRef<HTMLDivElement>(null);
+  const interactionPausedRef = useRef(false);
+  const manualPauseUntilRef = useRef(0);
 
   // Cargar categorías desde Supabase (DB es la fuente principal)
   useEffect(() => {
@@ -206,6 +216,83 @@ export default function UnifiedCategories({
     loadCategories();
   }, [maxItems]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updatePreference = (event: MediaQueryListEvent) => setPrefersReducedMotion(event.matches);
+
+    setPrefersReducedMotion(mediaQuery.matches);
+    setMotionPreferenceReady(true);
+    mediaQuery.addEventListener('change', updatePreference);
+    return () => mediaQuery.removeEventListener('change', updatePreference);
+  }, []);
+
+  useEffect(() => {
+    if (variant !== 'scroll' || !autoScroll || categories.length < 2 || !motionPreferenceReady || (prefersReducedMotion && !isMotionEnabled) || isAutoScrollPaused) {
+      return;
+    }
+
+    const viewport = scrollRef.current;
+    const firstSequence = firstSequenceRef.current;
+    if (!viewport || !firstSequence) return;
+
+    let frameId = 0;
+    let lastTimestamp = 0;
+    let sequenceWidth = firstSequence.scrollWidth;
+    let fractionalRemainder = 0;
+    let isInViewport = true;
+    const updateSequenceWidth = () => {
+      sequenceWidth = firstSequence.scrollWidth;
+      const requiredCopies = sequenceWidth > 0 && viewport.clientWidth > 0
+        ? Math.ceil(viewport.clientWidth / sequenceWidth) + 1
+        : 1;
+      setLoopCopies((currentCopies) => currentCopies === requiredCopies ? currentCopies : requiredCopies);
+    };
+    const resizeObserver = typeof ResizeObserver !== 'undefined'
+      ? new ResizeObserver(updateSequenceWidth)
+      : null;
+    resizeObserver?.observe(firstSequence);
+    resizeObserver?.observe(viewport);
+    const intersectionObserver = typeof IntersectionObserver !== 'undefined'
+      ? new IntersectionObserver(([entry]) => { isInViewport = entry?.isIntersecting ?? true; })
+      : null;
+    intersectionObserver?.observe(viewport);
+    window.addEventListener('resize', updateSequenceWidth);
+    updateSequenceWidth();
+
+    const animate = (timestamp: number) => {
+      if (lastTimestamp > 0) {
+        const elapsed = Math.min(timestamp - lastTimestamp, 50);
+        const interactionPaused = interactionPausedRef.current || timestamp < manualPauseUntilRef.current;
+
+        if (!document.hidden && isInViewport && !interactionPaused) {
+          const accumulatedPixels = elapsed * 0.025 + fractionalRemainder;
+          const wholePixels = Math.floor(accumulatedPixels);
+          fractionalRemainder = accumulatedPixels - wholePixels;
+
+          if (wholePixels > 0) {
+            viewport.scrollLeft += wholePixels;
+            if (sequenceWidth > 0 && viewport.scrollLeft >= sequenceWidth) {
+              viewport.scrollLeft %= sequenceWidth;
+            }
+          }
+        } else {
+          fractionalRemainder = 0;
+        }
+      }
+
+      lastTimestamp = timestamp;
+      frameId = window.requestAnimationFrame(animate);
+    };
+
+    frameId = window.requestAnimationFrame(animate);
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      resizeObserver?.disconnect();
+      intersectionObserver?.disconnect();
+      window.removeEventListener('resize', updateSequenceWidth);
+    };
+  }, [autoScroll, categories.length, isAutoScrollPaused, isMotionEnabled, motionPreferenceReady, prefersReducedMotion, variant]);
+
   const handleCategoryClick = (category: UnifiedCategory) => {
     if (onCategoryChange) {
       onCategoryChange(category.slug);
@@ -228,8 +315,66 @@ export default function UnifiedCategories({
 
   // Variante Scroll (para Home y tiendas)
   if (variant === 'scroll') {
+    const shouldLoopCategories = autoScroll && categories.length > 1 && motionPreferenceReady && (!prefersReducedMotion || isMotionEnabled);
+    const needsMotionOptIn = prefersReducedMotion && !isMotionEnabled;
+    const isMotionRunning = !needsMotionOptIn && !isAutoScrollPaused;
+    const renderCategoryLinks = (isDuplicate = false) => categories.map((category) => (
+      <Link
+        key={`${isDuplicate ? 'duplicate-' : ''}${category.id}`}
+        href={`${baseHref}/${category.slug}`}
+        className="flex-shrink-0 flex flex-col items-center group"
+        onClick={() => handleCategoryClick(category)}
+        aria-hidden={isDuplicate || undefined}
+        tabIndex={isDuplicate ? -1 : undefined}
+      >
+        {/* Imagen optimizada */}
+        <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
+          {category.image ? (
+            <img
+              src={category.image}
+              alt={category.name}
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+              loading="lazy"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <ImageIcon className="w-12 h-12 text-gray-400" />
+            </div>
+          )}
+
+          {/* Badge de conteo de productos */}
+          {showProductCount && category.productCount && (
+            <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold shadow-lg">
+              {category.productCount}
+            </div>
+          )}
+        </div>
+
+        {/* Nombre */}
+        <span className="text-sm md:text-base font-semibold text-gray-700 text-center w-24 md:w-32">
+          {category.name}
+        </span>
+      </Link>
+    ));
+
     return (
-      <div className="relative">
+      <div
+        className="relative"
+        onMouseEnter={() => { interactionPausedRef.current = true; }}
+        onMouseLeave={() => { interactionPausedRef.current = false; }}
+        onFocusCapture={() => { interactionPausedRef.current = true; }}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+            interactionPausedRef.current = false;
+          }
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType !== 'mouse') {
+            manualPauseUntilRef.current = performance.now() + 2200;
+          }
+        }}
+        onWheel={() => { manualPauseUntilRef.current = performance.now() + 1800; }}
+      >
         {/* Botones de navegación - Desktop */}
         {categories.length > 4 && (
           <>
@@ -253,45 +398,53 @@ export default function UnifiedCategories({
         {/* Scroll Container */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-2 md:px-12"
+          role="region"
+          aria-label="Categorías de productos"
+          className="overflow-x-auto scrollbar-hide pb-4 px-2 md:px-12"
         >
-          {categories.map((category) => (
-            <Link
-              key={category.id}
-              href={`${baseHref}/${category.slug}`}
-              className="flex-shrink-0 flex flex-col items-center group"
-              onClick={() => handleCategoryClick(category)}
+          <div className="flex w-max">
+            <div
+              ref={firstSequenceRef}
+              data-category-sequence="original"
+              className={`flex gap-4 ${shouldLoopCategories ? 'pr-4' : ''}`}
             >
-              {/* Imagen optimizada */}
-              <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
-                {category.image ? (
-                  <img
-                    src={category.image}
-                    alt={category.name}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-gray-400" />
-                  </div>
-                )}
-
-                {/* Badge de conteo de productos */}
-                {showProductCount && category.productCount && (
-                  <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-semibold shadow-lg">
-                    {category.productCount}
-                  </div>
-                )}
+              {renderCategoryLinks()}
+            </div>
+            {shouldLoopCategories && Array.from({ length: loopCopies }, (_, copyIndex) => (
+              <div
+                data-category-sequence="duplicate"
+                key={`duplicate-sequence-${copyIndex}`}
+                className="flex gap-4 pr-4"
+                aria-hidden="true"
+                inert
+              >
+                {renderCategoryLinks(true)}
               </div>
-
-              {/* Nombre */}
-              <span className="text-sm md:text-base font-semibold text-gray-700 text-center w-24 md:w-32">
-                {category.name}
-              </span>
-            </Link>
-          ))}
+            ))}
+          </div>
         </div>
+
+        {autoScroll && motionPreferenceReady && categories.length > 1 && (
+          <div className="mt-1 flex justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                if (needsMotionOptIn) {
+                  setIsMotionEnabled(true);
+                  setIsAutoScrollPaused(false);
+                } else {
+                  setIsAutoScrollPaused((paused) => !paused);
+                }
+              }}
+              className="inline-flex min-h-9 items-center gap-2 rounded-full px-3 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-verde-aguacate"
+              aria-label={needsMotionOptIn ? 'Activar movimiento de categorías' : isAutoScrollPaused ? 'Reanudar movimiento de categorías' : 'Pausar movimiento de categorías'}
+              aria-pressed={isMotionRunning}
+            >
+              {needsMotionOptIn || isAutoScrollPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+              {needsMotionOptIn ? 'Activar movimiento' : isAutoScrollPaused ? 'Reanudar movimiento' : 'Pausar movimiento'}
+            </button>
+          </div>
+        )}
 
         {/* CSS para ocultar scrollbar */}
         <style jsx>{`

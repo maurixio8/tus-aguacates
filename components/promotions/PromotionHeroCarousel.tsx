@@ -179,10 +179,10 @@ export function PromotionHeroCarousel() {
                       aria-label={isActive ? `Promoción activa: ${promotion.title}` : `Ver promoción: ${promotion.title}`}
                     >
                       <img src={promotion.image_url} alt={promotion.title} className="h-full w-full object-cover" draggable={false} />
-                      <span className="absolute inset-0 bg-gradient-to-t from-[#07180f]/70 via-transparent to-white/10" />
+                      <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07180f]/25 via-transparent to-transparent" />
                       {isActive && <>
                         <span className="pointer-events-none absolute -inset-[2px] rounded-[1.6rem] border border-[#C8A227]/35" />
-                        <span className="pointer-events-none absolute inset-[7%] rounded-[1.25rem] border border-white/15 bg-white/[0.035] shadow-[inset_0_0_35px_rgba(255,255,255,0.08)] backdrop-blur-[1px]" />
+                        <span className="pointer-events-none absolute inset-[7%] rounded-[1.25rem] border border-white/15" />
                         <span className="pointer-events-none absolute -inset-8 rounded-full bg-[#C8A227]/10 blur-3xl" />
                       </>}
                     </button>
