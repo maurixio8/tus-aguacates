@@ -292,6 +292,7 @@ export async function GET(request: NextRequest) {
             }
           }
 
+          const usedOrderDataItems = new Set<any>();
           const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any, index: number) => {
             let variantName = item.variant_name || item.variant_value || item.product_snapshot?.variant_value || null;
 
@@ -301,12 +302,25 @@ export async function GET(request: NextRequest) {
               if (odVariant) variantName = odVariant.variant_value || odVariant.variant_name;
             }
 
-            // Fallback 2: emparejar por posición con order_data.items y consultar
-            // la variante real en product_variants por variant_id
+            // Fallback 2: cruzar por product_id; si el pedido histórico tiene un
+            // product_id incorrecto, usar posición y luego precio/cantidad únicos.
             const odByPosition = orderDataItems[index];
-            const odForItem = odByPosition?.product_id === item.product_id || odByPosition?.productId === item.product_id
-              ? odByPosition
-              : orderDataItems.find((od: any) => (od.product_id || od.productId) === item.product_id);
+            let odForItem = orderDataItems.find((od: any) =>
+              (od.product_id || od.productId) === item.product_id && !usedOrderDataItems.has(od)
+            );
+            if (!odForItem && odByPosition && !usedOrderDataItems.has(odByPosition)) {
+              odForItem = odByPosition;
+            }
+            if (!odForItem) {
+              odForItem = orderDataItems.find((od: any) =>
+                !usedOrderDataItems.has(od) &&
+                Number(od.price) === Number(item.unit_price) &&
+                Number(od.quantity) === Number(item.quantity)
+              );
+            }
+            if (odForItem) usedOrderDataItems.add(odForItem);
+
+            // Consultar la variante real por variant_id cuando el snapshot está incompleto.
             if (!variantName && odForItem?.variant_id) {
               try {
                 const { data: variantRow } = await supabase
