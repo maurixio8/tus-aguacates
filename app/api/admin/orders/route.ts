@@ -278,14 +278,35 @@ export async function GET(request: NextRequest) {
           }
 
           // Agregar variant_name a cada item del pedido para la lista de compras
-          const orderItemsWithVariants = order.order_items?.map((item: any) => ({
-            ...item,
-            variantName: item.variant_name || item.variant_value || null,
-            product_snapshot: {
-              ...item.product_snapshot,
-              variant_name: item.variant_name || item.variant_value || null,
-              variant_value: item.variant_value || null
+          // Si el item tiene variant_id pero el snapshot histórico perdió la variante,
+          // se recupera de product_variants.
+          const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any) => {
+            let variantName = item.variant_name || item.variant_value || item.product_snapshot?.variant_value || null;
+
+            if (!variantName && item.variant_id) {
+              try {
+                const { data: variantRow } = await supabase
+                  .from('product_variants')
+                  .select('variant_name, variant_value')
+                  .eq('id', item.variant_id)
+                  .maybeSingle();
+                if (variantRow) variantName = variantRow.variant_value || variantRow.variant_name;
+              } catch (e) {
+                console.log('⚠️ No se pudo recuperar la variante para item', item.id);
+              }
             }
+
+            return {
+              ...item,
+              variantName,
+              variant_name: variantName,
+              product_snapshot: {
+                ...item.product_snapshot,
+                name: item.product_snapshot?.name || item.products?.name || item.product_name || 'Producto',
+                variant_name: variantName ? (item.product_snapshot?.variant_name || 'Presentación') : null,
+                variant_value: variantName
+              }
+            };
           })) || [];
 
           return {
@@ -664,7 +685,10 @@ export async function POST(request: NextRequest) {
         quantity: item.quantity,
         price: itemPrice,
         total: itemTotal,
-        ...variantInfo
+        variant_id: item.variant_id || null,
+        variant_name: variantInfo ? variantInfo.variant_name : null,
+        variant_value: variantInfo ? variantInfo.variant_value : null,
+        ...(variantInfo || {})
       });
     }
 
@@ -819,7 +843,7 @@ export async function POST(request: NextRequest) {
       subtotal: item.total,
       product_snapshot: {
         name: item.product_name || 'Producto',
-        variant_name: item.variant_name || null,
+        variant_name: item.variant_value ? (item.variant_name || 'Presentación') : null,
         variant_value: item.variant_value || null,
         description: item.product_description || null
       },
