@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     const isChia = normalizedLocation === 'chia';
     freeShippingMin = isChia ? 0 : 68900;
     shippingCost = isChia ? 13000 : 7400;
-    freeShipping = false;
+    freeShipping = !isChia && subtotal >= freeShippingMin;
 
     console.log('🚚 Applied shipping rule:', {
       location,

@@ -21,8 +21,8 @@ const getDefaultShippingInfo = (subtotal: number = 0, location = 'Bogotá'): Shi
   const isChia = normalizedLocation === 'chia';
   const freeShippingMin = isChia ? 0 : 68900;
   const shippingCost = isChia ? 13000 : 7400;
-  const freeShipping = false;
-  const message = isChia ? 'Domicilio fijo a Chía: $13.000' : (subtotal >= 68900 ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400');
+  const freeShipping = !isChia && subtotal >= 68900;
+  const message = isChia ? 'Domicilio fijo a Chía: $13.000' : (freeShipping ? '¡Envío GRATIS en tu pedido!' : 'Envío: $7.400');
 
   console.log('🚚 getDefaultShippingInfo:', { subtotal, location, shippingCost, freeShipping });
 
