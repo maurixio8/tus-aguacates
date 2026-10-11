@@ -287,7 +287,7 @@ export async function GET(request: NextRequest) {
             if (pid && !variantByProduct.has(pid)) {
               variantByProduct.set(pid, {
                 variant_name: odItem.variant_name || odItem.variantName || null,
-                variant_value: odItem.variant_value || odItem.variantValue || odItem.variantName || odItem.variant_name || null
+                variant_value: odItem.variant_value || odItem.variantValue || null
               });
             }
           }
@@ -296,13 +296,13 @@ export async function GET(request: NextRequest) {
           const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any, index: number) => {
             let variantName = item.variant_name || item.variant_value || item.product_snapshot?.variant_value || null;
 
-            // Fallback 1: variante guardada en order_data.items (pedidos del dashboard)
-            if (!variantName) {
-              const odVariant = variantByProduct.get(item.product_id);
-              if (odVariant) variantName = odVariant.variant_value || odVariant.variant_name;
+            // Fallback 1: usar el valor de presentación guardado en order_data.
+            // Un nombre genérico como "Peso" no reemplaza el valor real (X125grs,
+            // 250g, 1 Kilo), que se recupera abajo mediante variant_id.
+            const odVariant = variantByProduct.get(item.product_id);
+            if (!variantName && odVariant?.variant_value) {
+              variantName = odVariant.variant_value;
             }
-
-            // Fallback 2: cruzar por product_id; si el pedido histórico tiene un
             // product_id incorrecto, usar posición y luego precio/cantidad únicos.
             const odByPosition = orderDataItems[index];
             let odForItem = orderDataItems.find((od: any) =>
