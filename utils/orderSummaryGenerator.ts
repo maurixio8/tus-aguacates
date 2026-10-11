@@ -294,7 +294,7 @@ export function generateOrderSummary(order: Order): string {
   // Compact customer-facing WhatsApp summary from dashboard.
   // Se usa un símbolo sonriente BMP (☺) para evitar el triángulo de emoji
   // en dispositivos que no soportan el emoji 😊.
-  const message = greetingLine.replace(/ 😊$/, ' ☺') + "\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  *Entrega: " + formattedDeliveryDate + "*\n  *Dirección: " + deliveryAddress + "*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
+  const message = greetingLine + " ☺\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  *Entrega: " + formattedDeliveryDate + "*\n  *Dirección: " + deliveryAddress + "*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
 
   return message;
 }
