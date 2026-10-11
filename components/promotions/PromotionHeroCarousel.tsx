@@ -29,6 +29,7 @@ export function PromotionHeroCarousel() {
   const [focusedPromotion, setFocusedPromotion] = useState<Promotion | null>(null);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const [failedPromotionIds, setFailedPromotionIds] = useState<Set<string>>(() => new Set());
   const touchStart = useRef<number | null>(null);
 
   useEffect(() => {
@@ -156,7 +157,7 @@ export function PromotionHeroCarousel() {
           </div>
 
           <div className="order-1 min-w-0 md:order-2">
-            <div className="relative mx-auto h-[260px] w-full max-w-[860px] select-none sm:h-[340px] md:h-[430px]" style={{ transform: `translateX(${dragOffset}px)` }}>
+            <div className="relative mx-auto aspect-[16/10] w-full max-w-[688px] select-none" style={{ transform: `translateX(${dragOffset}px)` }}>
               <div className="absolute inset-0 flex items-center justify-center">
                 {visiblePromotions.map(({ promotion, index, distance }) => {
                   const isActive = distance === 0;
@@ -167,7 +168,7 @@ export function PromotionHeroCarousel() {
                       key={promotion.id}
                       type="button"
                       onClick={() => isActive ? setFocusedPromotion(promotion) : goTo(index)}
-                      className="absolute aspect-[16/10] w-[78%] overflow-hidden rounded-[1.6rem] border text-left transition-all duration-[380ms] ease-out"
+                      className={`absolute aspect-[16/10] ${isActive ? 'w-full sm:w-[92%] md:w-[78%]' : 'hidden md:block w-[78%]'} overflow-hidden rounded-[1.6rem] border bg-[#0d2818] text-left transition-all duration-[380ms] ease-out`}
                       style={{
                         transform: `translateX(${sideX}%) scale(${isActive ? 1 : absDistance === 1 ? 0.82 : 0.68})`,
                         opacity: isActive ? 1 : absDistance === 1 ? 0.62 : 0.24,
@@ -178,7 +179,19 @@ export function PromotionHeroCarousel() {
                       }}
                       aria-label={isActive ? `Promoción activa: ${promotion.title}` : `Ver promoción: ${promotion.title}`}
                     >
-                      <img src={promotion.image_url} alt={promotion.title} className="h-full w-full object-cover" draggable={false} />
+                      {failedPromotionIds.has(promotion.id) ? (
+                        <span className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0d2818] to-[#07180f] p-6 text-center">
+                          <span className="text-xl font-bold text-white md:text-2xl">{promotion.title}</span>
+                        </span>
+                      ) : (
+                        <img
+                          src={promotion.image_url}
+                          alt={promotion.title}
+                          className="h-full w-full object-contain"
+                          draggable={false}
+                          onError={() => setFailedPromotionIds((failed) => new Set(failed).add(promotion.id))}
+                        />
+                      )}
                       <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#07180f]/25 via-transparent to-transparent" />
                       {isActive && <>
                         <span className="pointer-events-none absolute -inset-[2px] rounded-[1.6rem] border border-[#C8A227]/35" />

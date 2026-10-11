@@ -96,7 +96,7 @@ export default function HomeContent() {
       <PromotionHeroCarousel />
 
       {/* Explora por Categoría - Movido después del Hero */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
@@ -115,7 +115,7 @@ export default function HomeContent() {
       </section>
 
       {/* Productos Destacados - Carrusel Automático */}
-      <section className="py-12 bg-gradient-to-b from-white to-verde-bosque-50">
+      <section className="py-12 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="text-center mb-8">
             <h2 className="font-display font-bold text-2xl md:text-3xl mb-2">
@@ -145,7 +145,7 @@ export default function HomeContent() {
       <Testimonials />
 
       {/* Beneficios */}
-      <section className="py-12 bg-white">
+      <section className="py-12 bg-transparent">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">

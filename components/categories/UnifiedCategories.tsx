@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, Image as ImageIcon, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { OptimizedImage } from '@/components/optimization/OptimizedImage';
 
 // Interface para categorías unificadas
 interface UnifiedCategory {
@@ -28,6 +27,55 @@ interface UnifiedCategoriesProps {
   autoScroll?: boolean;
 }
 
+const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
+  aguacates: '/categories/aguacates-photo.jpg',
+  'ofertas-combos': '/categories/ofertas.jpg',
+  promociones: '/categories/ofertas.jpg',
+  'frutas-tropicales': '/categories/tropicales-photo.jpg',
+  'frutos-rojos': '/categories/frutos-rojos-photo.jpg',
+  saludables: '/categories/saludables-photo.jpg',
+};
+
+const CATEGORY_ICONS: Record<string, string> = {
+  aguacates: '🥑',
+  'ofertas-combos': '🧺',
+  promociones: '✨',
+  'frutas-tropicales': '🍍',
+  'frutos-rojos': '🍓',
+  aromaticas: '🌿',
+  saludables: '🥗',
+  especias: '🧂',
+  desgranados: '🌽',
+  gourmet: '🍅',
+  'productos-nuevos': '✨',
+};
+
+function CategoryPhoto({ category, className }: { category: UnifiedCategory; className: string }) {
+  const fallbackImage = LOCAL_CATEGORY_IMAGES[category.slug];
+  const [src, setSrc] = useState(category.image);
+
+  useEffect(() => setSrc(category.image), [category.image]);
+
+  if (!src) {
+    return (
+      <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
+        <span className="text-4xl md:text-5xl">{category.icon || '🛒'}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt=""
+      className={className}
+      loading="lazy"
+      decoding="async"
+      onError={() => setSrc((current) => current && fallbackImage && current !== fallbackImage ? fallbackImage : undefined)}
+    />
+  );
+}
+
 // Mapeo unificado de categorías (sincronizado con productos-master.json)
 // ✅ Estas 8 categorías coinciden exactamente con las del JSON
 const UNIFIED_CATEGORIES: UnifiedCategory[] = [
@@ -36,7 +84,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Aguacates',
     slug: 'aguacates',
     icon: '🥑',
-    image: '/categories/aguacates.jpg',
+    image: '/categories/aguacates-photo.jpg',
     description: 'Aguacates frescos de la mejor calidad',
     color: 'from-green-500 to-green-700'
   },
@@ -44,7 +92,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     id: 'cat-ofertas',
     name: 'Ofertas y Combos',
     slug: 'ofertas-combos',
-    icon: '🔥',
+    icon: '🧺',
     image: '/categories/ofertas.jpg',
     description: 'Combos especiales y ofertas del día',
     color: 'from-red-500 to-orange-500'
@@ -53,8 +101,8 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     id: 'cat-2',
     name: 'Frutas Tropicales',
     slug: 'frutas-tropicales',
-    icon: '🍊',
-    image: '/categories/tropicales.jpg',
+    icon: '🍍',
+    image: '/categories/tropicales-photo.jpg',
     description: 'Frutas exóticas y tropicales',
     color: 'from-orange-500 to-red-600'
   },
@@ -63,7 +111,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Frutos Rojos',
     slug: 'frutos-rojos',
     icon: '🍓',
-    image: '/categories/frutos-rojos.jpg',
+    image: '/categories/frutos-rojos-photo.jpg',
     description: 'Deliciosas frutas rojas y bayas',
     color: 'from-red-500 to-pink-600'
   },
@@ -72,7 +120,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Aromáticas',
     slug: 'aromaticas',
     icon: '🌿',
-    image: '/categories/aromaticas.jpg',
+    image: undefined,
     description: 'Hierbas aromáticas frescas',
     color: 'from-emerald-500 to-teal-600'
   },
@@ -81,7 +129,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Saludables',
     slug: 'saludables',
     icon: '🥗',
-    image: '/categories/saludables.jpg',
+    image: '/categories/saludables-photo.jpg',
     description: 'Productos naturales y saludables',
     color: 'from-emerald-500 to-teal-600'
   },
@@ -89,8 +137,8 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     id: 'cat-6',
     name: 'Especias',
     slug: 'especias',
-    icon: '🥗🌱☘️',
-    image: '/categories/especias.jpg',
+    icon: '🧂',
+    image: undefined,
     description: 'Especias y condimentos naturales',
     color: 'from-yellow-500 to-orange-600'
   },
@@ -99,7 +147,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Desgranados',
     slug: 'desgranados',
     icon: '🌽',
-    image: '/categories/desgranados.jpg',
+    image: undefined,
     description: 'Productos desgranados frescos',
     color: 'from-yellow-400 to-amber-600'
   },
@@ -108,7 +156,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Gourmet',
     slug: 'gourmet',
     icon: '🍅🌽',
-    image: '/categories/gourmet.jpg',
+    image: undefined,
     description: 'Productos gourmet premium',
     color: 'from-red-500 to-orange-700'
   },
@@ -117,7 +165,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Productos Nuevos',
     slug: 'productos-nuevos',
     icon: '✨',
-    image: '/categories/gourmet.jpg',
+    image: undefined,
     description: 'Últimos productos agregados a nuestra tienda',
     color: 'from-purple-500 to-pink-600'
   }
@@ -158,31 +206,22 @@ export default function UnifiedCategories({
           .limit(maxItems);
 
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
-          // Mapeo de slug a imagen local para fallback
-          const localImageMap: Record<string, string> = {
-            'aguacates': '/categories/aguacates.jpg',
-            'ofertas-combos': '/categories/gourmet.jpg',
-            'frutas-tropicales': '/categories/tropicales.jpg',
-            'frutos-rojos': '/categories/frutos-rojos.jpg',
-            'aromaticas': '/categories/aromaticas.jpg',
-            'saludables': '/categories/saludables.jpg',
-            'especias': '/categories/especias.jpg',
-            'desgranados': '/categories/desgranados.jpg',
-            'gourmet': '/categories/gourmet.jpg',
-            'productos-nuevos': '/categories/gourmet.jpg',
-          };
-
           // Convertir datos de Supabase al formato UnifiedCategory
-          const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => ({
-            id: cat.id,
-            name: cat.name,
-            slug: cat.slug,
-            icon: '', // Las imágenes reemplazan los íconos
-            // Usar image_url de Supabase, o fallback a imagen local basada en slug
-            image: cat.image_url || localImageMap[cat.slug] || undefined,
-            description: cat.description || undefined,
-            color: 'from-verde-aguacate to-verde-bosque' // Color por defecto
-          }));
+          const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => {
+            const imageUrl = cat.image_url?.trim() || undefined;
+            const localImage = LOCAL_CATEGORY_IMAGES[cat.slug];
+            const isLegacyLocalCategoryImage = imageUrl?.startsWith('/categories/');
+
+            return {
+              id: cat.id,
+              name: cat.name,
+              slug: cat.slug,
+              icon: CATEGORY_ICONS[cat.slug] || '🛒',
+              image: isLegacyLocalCategoryImage ? localImage : imageUrl || localImage,
+              description: cat.description || undefined,
+              color: 'from-verde-aguacate to-verde-bosque'
+            };
+          });
 
           setCategories([
             {
@@ -329,18 +368,10 @@ export default function UnifiedCategories({
       >
         {/* Imagen optimizada */}
         <div className="relative w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden bg-gradient-to-br from-verde-aguacate/20 to-verde-bosque/20 mb-2 group-hover:shadow-xl transition-all group-hover:scale-105">
-          {category.image ? (
-            <img
-              src={category.image}
-              alt={category.name}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-              loading="lazy"
-            />
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <ImageIcon className="w-12 h-12 text-gray-400" />
-            </div>
-          )}
+          <CategoryPhoto
+            category={category}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          />
 
           {/* Badge de conteo de productos */}
           {showProductCount && category.productCount && (
@@ -474,18 +505,14 @@ export default function UnifiedCategories({
             {/* Imagen de fondo optimizada */}
             {category.image ? (
               <>
-                <OptimizedImage
-                  src={category.image}
-                  alt={category.name}
-                  fill
-                  priority={false}
-                  className="object-cover"
-                />
+                <CategoryPhoto category={category} className="absolute inset-0 h-full w-full object-cover" />
                 {/* Overlay oscuro */}
                 <div className="absolute inset-0 bg-gradient-to-br from-black/40 to-black/60 group-hover:from-black/30 group-hover:to-black/50 transition-all" />
               </>
             ) : (
-              <div className={`absolute inset-0 bg-gradient-to-br ${category.color || 'from-gray-500 to-gray-700'} opacity-90`} />
+              <div className={`absolute inset-0 flex items-center justify-center bg-gradient-to-br ${category.color || 'from-gray-500 to-gray-700'} opacity-90`}>
+                <span className="text-6xl" aria-hidden="true">{category.icon || '🛒'}</span>
+              </div>
             )}
 
             {/* Content */}

@@ -71,25 +71,31 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
   // Mostrar splash screen si está activo
   if (showSplash) {
     return (
-      <>
-        <SplashScreen onComplete={handleSplashComplete} variant={splashVariant} />
-      </>
+      <div className="site-theme">
+        <div className="site-theme-motion" aria-hidden="true" />
+        <div className="site-theme-shell">
+          <SplashScreen onComplete={handleSplashComplete} variant={splashVariant} />
+        </div>
+      </div>
     );
   }
 
   return (
-    <>
-      <ServiceWorkerRegistration />
-      <Header />
-      <main className="min-h-screen">
-        {children}
-      </main>
-      {isEmpresasRoute ? <EmpresasFooter /> : <Footer />}
-      <CartDrawer />
-      {!isEmpresasRoute && <CartAssistant />}
-      {!isEmpresasRoute && <BottomNavigation />}
-      <InstallPrompt />
-    </>
+    <div className="site-theme">
+      <div className="site-theme-motion" aria-hidden="true" />
+      <div className="site-theme-shell">
+        <ServiceWorkerRegistration />
+        <Header />
+        <main className="min-h-screen">
+          <div className="site-theme-content">{children}</div>
+        </main>
+        {isEmpresasRoute ? <EmpresasFooter /> : <Footer />}
+        <CartDrawer />
+        {!isEmpresasRoute && <CartAssistant />}
+        {!isEmpresasRoute && <BottomNavigation />}
+        <InstallPrompt />
+      </div>
+    </div>
   );
 }
 

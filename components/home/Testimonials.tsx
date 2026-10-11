@@ -32,7 +32,7 @@ const testimonials = [
 
 export function Testimonials() {
     return (
-        <section className="bg-gradient-to-b from-white to-verde-aguacate-50 py-16">
+        <section className="bg-transparent py-16">
             <div className="container mx-auto px-4">
                 {/* Header */}
                 <div className="text-center mb-12">

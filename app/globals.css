@@ -17,6 +17,237 @@ body {
   color: #f3f4f6;
 }
 
+.site-theme {
+  --site-forest: #0D2818;
+  --site-text: #F4F7EF;
+  --site-muted: #D3DFD0;
+  --site-leaf: #D7E7CF;
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background-color: var(--site-forest);
+  color: var(--site-text);
+}
+
+.site-theme-motion {
+  position: fixed;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 16% 22%, rgba(107, 142, 35, 0.34), transparent 34%),
+    radial-gradient(ellipse at 78% 28%, rgba(200, 162, 39, 0.13), transparent 29%),
+    radial-gradient(ellipse at 48% 82%, rgba(36, 94, 61, 0.48), transparent 39%);
+  transform: translate3d(0, 0, 0) scale(1);
+  animation: forest-current 28s ease-in-out infinite alternate;
+}
+
+.site-theme-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.site-theme-content {
+  color: var(--site-text);
+}
+
+@keyframes forest-current {
+  0% {
+    transform: translate3d(-1.5%, -1%, 0) scale(1.02);
+  }
+  50% {
+    transform: translate3d(1.5%, 1%, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(-0.5%, 1.5%, 0) scale(1.03);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-theme-motion {
+    animation: none;
+  }
+}
+
+/* Continue the animated forest canvas through customer-facing routes. */
+.site-theme-content > :is(
+  .min-h-screen,
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .gradient-suave,
+  .bg-gradient-suave
+) {
+  background: transparent !important;
+  color: var(--site-text);
+}
+
+.site-theme-content section:is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .gradient-suave,
+  .bg-gradient-suave,
+  [class~="from-white"],
+  [class~="to-white"]
+) {
+  background: transparent !important;
+}
+
+/* Light-theme text utilities become light enough for the forest canvas. */
+.site-theme-content > * :is(
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400,
+  .text-black
+) {
+  color: var(--site-muted);
+}
+
+.site-theme-content > * :is(
+  .text-verde-bosque,
+  .text-verde-bosque-600,
+  .text-verde-bosque-700,
+  .text-verde-bosque-800,
+  .text-verde-aguacate,
+  .text-verde-aguacate-600,
+  .text-verde-aguacate-700,
+  .text-verde-aguacate-800,
+  .text-verde-aguacate-900,
+  .text-green-700,
+  .text-green-800
+) {
+  color: var(--site-leaf);
+}
+
+.site-theme-content > * [class~="from-yellow-400"].text-verde-bosque-700 {
+  color: #122009;
+}
+
+/* Preserve dark readable text inside light cards and form surfaces. */
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+) {
+  color: #1F2937;
+}
+
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+):is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-black),
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+) :is(.text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500, .text-black) {
+  color: #374151;
+}
+
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+):is(.text-verde-bosque, .text-verde-bosque-600, .text-verde-bosque-700, .text-verde-bosque-800, .text-green-700, .text-green-800),
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+) :is(.text-verde-bosque, .text-verde-bosque-600, .text-verde-bosque-700, .text-verde-bosque-800, .text-green-700, .text-green-800) {
+  color: #2D5016;
+}
+
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+):is(.text-verde-aguacate, .text-verde-aguacate-600, .text-verde-aguacate-700, .text-verde-aguacate-800, .text-verde-aguacate-900),
+.site-theme-content > * :not(section):is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-gray-200,
+  .bg-green-50,
+  .bg-green-100,
+  .bg-verde-bosque-50,
+  .bg-verde-bosque-100,
+  .bg-verde-aguacate-50,
+  .bg-verde-aguacate-100,
+  [class~="bg-white/90"],
+  [class~="bg-white/95"]
+) :is(.text-verde-aguacate, .text-verde-aguacate-600, .text-verde-aguacate-700, .text-verde-aguacate-800, .text-verde-aguacate-900) {
+  color: #415515;
+}
+
+.site-theme-content :is(input:not([type="checkbox"]):not([type="radio"]), textarea, select) {
+  color: #17251C;
+  background-color: #FFFEF5;
+}
+
+.site-theme-content :is(input, textarea)::placeholder {
+  color: #64748B;
+  opacity: 1;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   font-weight: 700;

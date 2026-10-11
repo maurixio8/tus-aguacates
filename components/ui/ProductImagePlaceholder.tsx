@@ -148,12 +148,12 @@ export function ProductImagePlaceholder({
         )}
 
         {/* Imagen real - Usar fill para responsive + object-cover para recortar y llenar cuadrado */}
-        <div className={`relative w-full h-full overflow-hidden rounded-xl ${isLoading ? 'opacity-0' : 'opacity-100'} transition-all duration-300`}>
+        <div className={`relative w-full h-full overflow-hidden rounded-xl bg-white ${isLoading ? 'opacity-0' : 'opacity-100'} transition-all duration-300`}>
           <Image
             src={imageUrl}
             alt={productName}
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             priority={priority}
             quality={75}
             placeholder="blur"
