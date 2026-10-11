@@ -35,6 +35,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [addedFeedback, setAddedFeedback] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
@@ -144,7 +145,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
         // Mostrar toast de éxito
         setShowToast(true);
+        setAddedFeedback(true);
         setTimeout(() => setShowToast(false), 2000);
+        setTimeout(() => setAddedFeedback(false), 1800);
     };
 
   const handleImageClick = (e: React.MouseEvent) => {
@@ -160,7 +163,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
   return (
     <>
-      <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1 flex flex-col h-full">
+      <div className="bg-white rounded-2xl overflow-hidden shadow-soft hover:shadow-medium transition-all duration-200 hover:-translate-y-1 flex flex-col h-full group">
         {/* Imagen con ProductImagePlaceholder - Clickable */}
         <div
           className="relative aspect-square overflow-hidden cursor-pointer"
@@ -209,9 +212,16 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Contenido - Se expande para llenar altura */}
         <div className="p-3 flex flex-col flex-1">
           {/* Nombre centrado debajo de la imagen */}
-          <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
+          <h3 className="font-semibold text-base text-gray-900 mb-1 line-clamp-2 text-center">
             {product.name}
           </h3>
+          <button
+            type="button"
+            onClick={handleImageClick}
+            className="mb-2 text-xs font-semibold text-verde-bosque underline underline-offset-2 hover:text-verde-aguacate"
+          >
+            Ver detalles
+          </button>
 
           {/* Rating compacto */}
           {(product.review_count ?? 0) > 0 && (
@@ -307,7 +317,7 @@ export function ProductCard({ product }: ProductCardProps) {
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
             >
               <ShoppingCart className="w-4 h-4" />
-              {(product.stock || 0) > 0 ? 'Agregar' : 'Agotado'}
+              {addedFeedback ? '¡Agregado!' : ((product.stock || 0) > 0 ? 'Agregar' : 'Agotado')}
             </button>
           </div>
         </div>

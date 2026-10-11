@@ -33,6 +33,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const [quantity, setQuantity] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
@@ -81,6 +82,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     }
 
     if (isOpen) {
+      setIsDescriptionExpanded(false);
       loadVariants();
     }
   }, [product, isOpen]);
@@ -239,7 +241,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               </div>
             </div>
 
-            {/* Descripción: expandida para combos */}
+            {/* Descripción con expansión */}
             {product.description ? (
               product.name.toLowerCase().includes('combo') || product.description.includes('Qué Incluye') || product.description.includes('Qué incluye') ? (
                 <div className="text-xs text-gray-600 space-y-0.5">
@@ -250,7 +252,20 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-500 line-clamp-2">{product.description}</p>
+                <>
+                  <p className={`text-xs text-gray-600 leading-relaxed ${isDescriptionExpanded ? '' : 'line-clamp-2'}`}>
+                    {product.description}
+                  </p>
+                  {(product.description.length > 150 || product.description.split('\n').length > 2) && (
+                    <button
+                      type="button"
+                      onClick={() => setIsDescriptionExpanded((value) => !value)}
+                      className="mt-1 text-xs font-semibold text-verde-bosque underline underline-offset-2 hover:text-verde-aguacate"
+                    >
+                      {isDescriptionExpanded ? 'Ver menos' : 'Ver más'}
+                    </button>
+                  )}
+                </>
               )
             ) : (
               <p className="text-xs text-gray-500">Producto fresco de Tus Aguacates</p>
