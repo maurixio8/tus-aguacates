@@ -277,18 +277,38 @@ export async function GET(request: NextRequest) {
             );
           }
 
-          // Agregar variant_name a cada item del pedido para la lista de compras
-          // Si el item tiene variant_id pero el snapshot histórico perdió la variante,
-          // se recupera de product_variants.
+          // Agregar variant_name a cada item del pedido para la lista de compras.
+          // order_items (tabla) no siempre tiene variant_id/variant_name; en pedidos
+          // del dashboard la variante vive en order_data.items. Se cruzan por product_id.
+          const orderDataItems = Array.isArray(order.order_data?.items) ? order.order_data.items : [];
+          const variantByProduct = new Map<string, { variant_name: string | null; variant_value: string | null }>();
+          for (const odItem of orderDataItems) {
+            const pid = odItem.product_id || odItem.productId;
+            if (pid && !variantByProduct.has(pid)) {
+              variantByProduct.set(pid, {
+                variant_name: odItem.variant_name || odItem.variantName || null,
+                variant_value: odItem.variant_value || odItem.variantValue || odItem.variantName || odItem.variant_name || null
+              });
+            }
+          }
+
           const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any) => {
             let variantName = item.variant_name || item.variant_value || item.product_snapshot?.variant_value || null;
 
-            if (!variantName && item.variant_id) {
+            // Fallback 1: variante guardada en order_data.items (pedidos del dashboard)
+            if (!variantName) {
+              const odVariant = variantByProduct.get(item.product_id);
+              if (odVariant) variantName = odVariant.variant_value || odVariant.variant_name;
+            }
+
+            // Fallback 2: si hay variant_id en order_data, consultar product_variants
+            const odItemForVariant = orderDataItems.find((od: any) => (od.product_id || od.productId) === item.product_id);
+            if (!variantName && odItemForVariant?.variant_id) {
               try {
                 const { data: variantRow } = await supabase
                   .from('product_variants')
                   .select('variant_name, variant_value')
-                  .eq('id', item.variant_id)
+                  .eq('id', odItemForVariant.variant_id)
                   .maybeSingle();
                 if (variantRow) variantName = variantRow.variant_value || variantRow.variant_name;
               } catch (e) {
