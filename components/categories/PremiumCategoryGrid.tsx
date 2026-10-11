@@ -158,20 +158,22 @@ export default function PremiumCategoryGrid() {
 
   return (
     <div className="mb-12">
-      {/* Título de sección */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-gray-900 flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-verde-aguacate-500" />
-            <style>{sectionStyles}</style>
-            <span className="typewriter-title font-serif tracking-wide text-gray-900" style={{ fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif' }}>
-              Explora Nuestras Categorías
-            </span>
-          </h2>
-          <p className="fade-slide-sub text-gray-600 mt-1 text-base md:text-lg">
-            Productos frescos y de calidad premium
-          </p>
+      {/* Título de sección - Centrado y vistoso */}
+      <div className="text-center mb-8">
+        <style>{sectionStyles}</style>
+        <div className="inline-flex items-center justify-center gap-2 mb-2">
+          <span className="h-[2px] w-8 md:w-14 bg-gradient-to-r from-transparent to-[#C8A227] rounded-full" />
+          <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-[#C8A227]" />
+          <span className="h-[2px] w-8 md:w-14 bg-gradient-to-l from-transparent to-[#C8A227] rounded-full" />
         </div>
+        <h2 className="font-serif tracking-wide text-gray-900" style={{ fontFamily: 'var(--font-playfair), "Playfair Display", Georgia, serif' }}>
+          <span className="typewriter-title text-3xl md:text-5xl font-extrabold block text-center">
+            Explora Nuestras Categorías
+          </span>
+        </h2>
+        <p className="fade-slide-sub text-gray-600 mt-3 text-base md:text-lg max-w-xl mx-auto">
+          Productos frescos y de calidad premium
+        </p>
       </div>
 
       {/* Grid de categorías */}

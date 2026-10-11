@@ -20,7 +20,11 @@ export default function TiendaPage() {
 
   return (
     <main className="container mx-auto px-4 py-12">
-      <header className="mb-10 text-center">
+      {/* Categories Grid Premium - Ahora primero */}
+      <PremiumCategoryGrid />
+
+      {/* Header de la tienda - Movido debajo de las categorías */}
+      <header className="mt-4 mb-12 text-center">
         <h1 className="text-4xl md:text-5xl font-bold text-gray-900">Tienda de aguacates, frutas y verduras</h1>
         <p className="mx-auto mt-4 max-w-3xl text-lg text-gray-600">
           Compra productos frescos a domicilio en Bogotá. Explora por categoría, compara presentaciones y revisa el precio y la disponibilidad actual antes de añadir al carrito.
@@ -31,9 +35,6 @@ export default function TiendaPage() {
           <Link href="/faq" className="rounded-full border border-gray-300 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50">Preguntas frecuentes</Link>
         </nav>
       </header>
-
-      {/* Categories Grid Premium */}
-      <PremiumCategoryGrid />
 
       {/* Mobile Search Section - Added between categories and featured products */}
       <div className="mb-12 md:hidden">
