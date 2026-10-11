@@ -27,6 +27,7 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
 
   // Detectar ruta de empresas para ocultar componentes
   const isEmpresasRoute = pathname?.startsWith('/empresas');
+  const isTikTokRoute = pathname?.startsWith('/tiktok');
 
   // Determinar variante del splash
   const splashVariant = isEmpresasRoute ? 'empresas' : 'tienda';
@@ -66,6 +67,11 @@ function ClientLayoutContent({ children }: { children: React.ReactNode }) {
         {children}
       </main>
     );
+  }
+
+  // TikTok Creator Studio tiene su propia shell móvil para la grabación de la demo.
+  if (isTikTokRoute) {
+    return <main className="min-h-screen">{children}</main>;
   }
 
   // Mostrar splash screen si está activo
