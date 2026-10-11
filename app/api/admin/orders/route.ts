@@ -292,7 +292,7 @@ export async function GET(request: NextRequest) {
             }
           }
 
-          const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any) => {
+          const orderItemsWithVariants = await Promise.all((order.order_items || []).map(async (item: any, index: number) => {
             let variantName = item.variant_name || item.variant_value || item.product_snapshot?.variant_value || null;
 
             // Fallback 1: variante guardada en order_data.items (pedidos del dashboard)
@@ -301,14 +301,18 @@ export async function GET(request: NextRequest) {
               if (odVariant) variantName = odVariant.variant_value || odVariant.variant_name;
             }
 
-            // Fallback 2: si hay variant_id en order_data, consultar product_variants
-            const odItemForVariant = orderDataItems.find((od: any) => (od.product_id || od.productId) === item.product_id);
-            if (!variantName && odItemForVariant?.variant_id) {
+            // Fallback 2: emparejar por posición con order_data.items y consultar
+            // la variante real en product_variants por variant_id
+            const odByPosition = orderDataItems[index];
+            const odForItem = odByPosition?.product_id === item.product_id || odByPosition?.productId === item.product_id
+              ? odByPosition
+              : orderDataItems.find((od: any) => (od.product_id || od.productId) === item.product_id);
+            if (!variantName && odForItem?.variant_id) {
               try {
                 const { data: variantRow } = await supabase
                   .from('product_variants')
                   .select('variant_name, variant_value')
-                  .eq('id', odItemForVariant.variant_id)
+                  .eq('id', odForItem.variant_id)
                   .maybeSingle();
                 if (variantRow) variantName = variantRow.variant_value || variantRow.variant_name;
               } catch (e) {
