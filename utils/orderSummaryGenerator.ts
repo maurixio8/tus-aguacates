@@ -291,10 +291,9 @@ export function generateOrderSummary(order: Order): string {
   const extractedAddress = order.delivery_address || formatAddressToString(order.shipping_address);
   let deliveryAddress = extractedAddress || 'N/A';
 
-  // Compact customer-facing WhatsApp summary from dashboard.
-  // Se usa un símbolo sonriente BMP (☺) para evitar el triángulo de emoji
-  // en dispositivos que no soportan el emoji 😊.
-  const message = greetingLine + " ☺\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  *Entrega: " + formattedDeliveryDate + "*\n  *Dirección: " + deliveryAddress + "*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
+  // Resumen customer-facing sin emojis: algunos clientes/dispositivos convierten
+  // símbolos Unicode en el carácter de reemplazo �. El mensaje debe ser universal.
+  const message = greetingLine + "\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  *Entrega: " + formattedDeliveryDate + "*\n  *Dirección: " + deliveryAddress + "*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
 
   return message;
 }
