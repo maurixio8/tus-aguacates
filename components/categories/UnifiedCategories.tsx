@@ -211,13 +211,14 @@ export default function UnifiedCategories({
             const imageUrl = cat.image_url?.trim() || undefined;
             const localImage = LOCAL_CATEGORY_IMAGES[cat.slug];
             const isLegacyLocalCategoryImage = imageUrl?.startsWith('/categories/');
+            const reviewedPhoto = localImage?.endsWith('-photo.jpg') ? localImage : undefined;
 
             return {
               id: cat.id,
               name: cat.name,
               slug: cat.slug,
               icon: CATEGORY_ICONS[cat.slug] || '🛒',
-              image: isLegacyLocalCategoryImage ? localImage : imageUrl || localImage,
+              image: reviewedPhoto || (isLegacyLocalCategoryImage ? localImage : imageUrl || localImage),
               description: cat.description || undefined,
               color: 'from-verde-aguacate to-verde-bosque'
             };
