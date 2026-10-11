@@ -318,6 +318,15 @@ export async function GET(request: NextRequest) {
                 Number(od.quantity) === Number(item.quantity)
               );
             }
+            if (!odForItem) {
+              const remainingVariantItems = orderDataItems.filter((od: any) =>
+                !usedOrderDataItems.has(od) && od.variant_id
+              );
+              // Algunos pedidos históricos tienen un product_id y precio alterados
+              // en order_items. Si queda una sola variante sin emparejar, es seguro
+              // usarla para recuperar el detalle de ese item.
+              if (remainingVariantItems.length === 1) odForItem = remainingVariantItems[0];
+            }
             if (odForItem) usedOrderDataItems.add(odForItem);
 
             // Consultar la variante real por variant_id cuando el snapshot está incompleto.
