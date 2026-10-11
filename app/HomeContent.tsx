@@ -131,6 +131,7 @@ export default function HomeContent() {
             showDots={true}
             showArrows={true}
             maxProducts={8}
+            viewMode="view"
           />
         </div>
       </section>

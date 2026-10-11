@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import { UnifiedProduct } from '@/lib/types';
@@ -13,6 +14,30 @@ interface FeaturedProductsCarouselProps {
   showArrows?: boolean;
   maxProducts?: number;
   className?: string;
+  /** Si es true, muestra "Ver producto" en lugar de "Agregar" en las tarjetas */
+  viewMode?: 'view' | 'add';
+}
+
+
+/** En modo 'view', envuelve la tarjeta y muestra "Ver producto" en lugar de "Agregar" */
+function FeaturedProductSlot({ product, viewMode }: { product: UnifiedProduct; viewMode: 'view' | 'add' }) {
+  if (viewMode === 'add') {
+    return <ProductCard product={product} />;
+  }
+  const href = `/productos/${(product as any).slug || product.id}`;
+  return (
+    <Link href={href} className="block group/card">
+      <ProductCard product={product} />
+      <button
+        type="button"
+        className="mt-2 w-full bg-verde-bosque hover:bg-verde-bosque/90 text-white font-bold py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
+        onClick={(e) => e.preventDefault()}
+      >
+        <Eye className="w-4 h-4" />
+        Ver producto
+      </button>
+    </Link>
+  );
 }
 
 // Cache para productos
@@ -26,7 +51,8 @@ export function FeaturedProductsCarousel({
   showDots = true,
   showArrows = true,
   maxProducts = 8,
-  className = ''
+  className = '',
+  viewMode = 'add'
 }: FeaturedProductsCarouselProps) {
   const [products, setProducts] = useState<UnifiedProduct[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -143,7 +169,7 @@ export function FeaturedProductsCarousel({
             {products.map((product) => (
               <div key={product.id} className="flex items-center justify-center">
                 <div className="w-full max-w-[280px]">
-                  <ProductCard product={product} />
+                  <FeaturedProductSlot product={product} viewMode={viewMode} />
                 </div>
               </div>
             ))}
@@ -208,7 +234,7 @@ export function FeaturedProductsCarousel({
                 style={{ width: `${100 / itemsPerPage}%` }}
               >
                 <div className="w-full max-w-[280px]">
-                  <ProductCard product={product} />
+                  <FeaturedProductSlot product={product} viewMode={viewMode} />
                 </div>
               </div>
             ))}
