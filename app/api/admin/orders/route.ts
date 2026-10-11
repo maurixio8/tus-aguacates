@@ -1227,7 +1227,16 @@ export async function PATCH(request: NextRequest) {
         // Actualizar datos dentro del objeto JSON
         orderData.items = guestItems;
         orderData.subtotal = subtotal;
+        orderData.shipping = shippingCost;
         orderData.shipping_cost = shippingCost;
+        orderData.shippingInfo = {
+          ...(orderData.shippingInfo && typeof orderData.shippingInfo === 'object' ? orderData.shippingInfo : {}),
+          cost: shippingCost,
+          freeShipping: shippingCost === 0,
+          message: shippingCost === 0 ? '¡Envío GRATIS en tu pedido!' : `Envío: $${shippingCost.toLocaleString('es-CO')}`,
+          amountForFreeShipping: shippingCost === 0 ? 0 : Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal),
+          freeShippingMin: FREE_SHIPPING_THRESHOLD
+        };
         orderData.total = newTotal;
         orderData.total_amount = newTotal;
 

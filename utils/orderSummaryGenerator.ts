@@ -127,8 +127,8 @@ export function generateOrderSummary(order: Order): string {
   
   if (order.order_type === 'guest' && order.order_data) {
     const orderData = order.order_data as any;
-    shippingCost = orderData.shipping_cost || orderData.shippingFee || orderData.shipping || 0;
-    discount = orderData.discount || orderData.discount_amount || 0;
+    shippingCost = orderData.shipping_cost ?? orderData.shippingFee ?? orderData.shipping ?? 0;
+    discount = orderData.discount ?? orderData.discount_amount ?? 0;
   } else {
     shippingCost = (order as any).shipping_fee || (order as any).shipping_cost || 0;
     discount = (order as any).discount || (order as any).discount_amount || 0;
