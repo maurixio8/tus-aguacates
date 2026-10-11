@@ -22,6 +22,8 @@ const FALLBACK_PROMOTION: Promotion = {
   sort_order: 0,
 };
 
+const ROTATION_MS = 1800;
+
 export function PromotionHeroCarousel() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -64,7 +66,7 @@ export function PromotionHeroCarousel() {
 
   useEffect(() => {
     if (promotions.length < 2) return;
-    const timer = window.setInterval(next, 1800);
+    const timer = window.setInterval(next, ROTATION_MS);
     return () => window.clearInterval(timer);
   }, [next, promotions.length]);
 
@@ -143,7 +145,39 @@ export function PromotionHeroCarousel() {
           <div className="order-2 px-2 md:order-1 md:pl-8">
             <p className="mb-3 text-xs font-bold uppercase tracking-[0.25em] text-[#C8A227]">Promoción destacada</p>
             <div aria-live="polite">
-              <h1 className="max-w-xl font-display text-4xl font-bold leading-[0.98] md:text-6xl lg:text-7xl">{active.title}</h1>
+              <style>{`
+                @keyframes promoTypewriter {
+                  from { width: 0; }
+                  to { width: 100%; }
+                }
+                @keyframes promoCaret {
+                  50% { border-color: transparent; }
+                }
+                .promo-typewriter {
+                  display: inline-block;
+                  max-width: 100%;
+                  overflow: hidden;
+                  white-space: nowrap;
+                  border-right: 3px solid #C8A227;
+                  animation: promoTypewriter var(--promo-type-ms, 1400ms) steps(24, end) both, promoCaret .6s step-end infinite;
+                }
+                @media (prefers-reduced-motion: reduce) {
+                  .promo-typewriter {
+                    width: auto;
+                    animation: none;
+                    border-right: 0;
+                  }
+                }
+              `}</style>
+              <h1 className="max-w-xl font-display text-4xl font-bold leading-[0.98] md:text-6xl lg:text-7xl">
+                <span
+                  key={active.id}
+                  className="promo-typewriter"
+                  style={{ ['--promo-type-ms' as string]: `${Math.min(1400, Math.max(600, ROTATION_MS - 400))}ms` }}
+                >
+                  {active.title}
+                </span>
+              </h1>
               {active.description && <p className="mt-5 max-w-lg text-base leading-relaxed text-white/75 md:text-xl">{active.description}</p>}
             </div>
             <div className="mt-7 flex flex-wrap items-center gap-3">
