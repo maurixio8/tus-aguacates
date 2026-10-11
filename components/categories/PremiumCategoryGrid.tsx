@@ -201,19 +201,25 @@ export default function PremiumCategoryGrid() {
                 />
               </div>
 
-              {/* Overlay sutil solo para el texto */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              {/* Overlay de contraste para el texto */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/5" />
 
               {/* Contenido */}
               <div className="relative h-full flex flex-col items-end justify-end p-4 text-white">
-                {/* Nombre de categoría */}
-                <h3 className="text-base md:text-lg font-bold text-center drop-shadow-md w-full">
+                {/* Nombre de categoría con contraste reforzado */}
+                <h3
+                  className="text-lg md:text-xl font-extrabold text-center w-full tracking-wide"
+                  style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 1px 2px rgba(0,0,0,0.9)' }}
+                >
                   {category.name}
                 </h3>
 
                 {/* Descripción (solo en hover en pantallas grandes) */}
                 {category.description && (
-                  <p className="hidden md:block text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow w-full">
+                  <p
+                    className="hidden md:block text-xs text-center mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 w-full"
+                    style={{ textShadow: '0 1px 4px rgba(0,0,0,0.9)' }}
+                  >
                     {category.description}
                   </p>
                 )}
