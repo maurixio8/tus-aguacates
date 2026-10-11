@@ -28,12 +28,16 @@ interface UnifiedCategoriesProps {
 }
 
 const LOCAL_CATEGORY_IMAGES: Record<string, string> = {
-  aguacates: '/categories/aguacates-photo.jpg',
+  aguacates: '/categories/aguacates.jpg',
   'ofertas-combos': '/categories/ofertas.jpg',
   promociones: '/categories/ofertas.jpg',
-  'frutas-tropicales': '/categories/tropicales-photo.jpg',
-  'frutos-rojos': '/categories/frutos-rojos-photo.jpg',
-  saludables: '/categories/saludables-photo.jpg',
+  'frutas-tropicales': '/categories/tropicales.jpg',
+  'frutos-rojos': '/categories/frutos-rojos.jpg',
+  aromaticas: '/categories/aromaticas.jpg',
+  saludables: '/categories/saludables.jpg',
+  especias: '/categories/especias.jpg',
+  desgranados: '/categories/desgranados.jpg',
+  gourmet: '/categories/gourmet.jpg',
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -84,7 +88,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Aguacates',
     slug: 'aguacates',
     icon: '🥑',
-    image: '/categories/aguacates-photo.jpg',
+    image: '/categories/aguacates.jpg',
     description: 'Aguacates frescos de la mejor calidad',
     color: 'from-green-500 to-green-700'
   },
@@ -102,7 +106,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Frutas Tropicales',
     slug: 'frutas-tropicales',
     icon: '🍍',
-    image: '/categories/tropicales-photo.jpg',
+    image: '/categories/tropicales.jpg',
     description: 'Frutas exóticas y tropicales',
     color: 'from-orange-500 to-red-600'
   },
@@ -111,7 +115,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Frutos Rojos',
     slug: 'frutos-rojos',
     icon: '🍓',
-    image: '/categories/frutos-rojos-photo.jpg',
+    image: '/categories/frutos-rojos.jpg',
     description: 'Deliciosas frutas rojas y bayas',
     color: 'from-red-500 to-pink-600'
   },
@@ -129,7 +133,7 @@ const UNIFIED_CATEGORIES: UnifiedCategory[] = [
     name: 'Saludables',
     slug: 'saludables',
     icon: '🥗',
-    image: '/categories/saludables-photo.jpg',
+    image: '/categories/saludables.jpg',
     description: 'Productos naturales y saludables',
     color: 'from-emerald-500 to-teal-600'
   },
@@ -208,17 +212,17 @@ export default function UnifiedCategories({
         if (!error && supabaseCategories && supabaseCategories.length > 0) {
           // Convertir datos de Supabase al formato UnifiedCategory
           const formattedCategories: UnifiedCategory[] = supabaseCategories.map(cat => {
+            // Fuente primaria: imagen configurada en el panel de administración (Supabase).
+            // Plan B: imagen local del repositorio solo si la BD no tiene imagen.
             const imageUrl = cat.image_url?.trim() || undefined;
             const localImage = LOCAL_CATEGORY_IMAGES[cat.slug];
-            const isLegacyLocalCategoryImage = imageUrl?.startsWith('/categories/');
-            const reviewedPhoto = localImage?.endsWith('-photo.jpg') ? localImage : undefined;
 
             return {
               id: cat.id,
               name: cat.name,
               slug: cat.slug,
               icon: CATEGORY_ICONS[cat.slug] || '🛒',
-              image: reviewedPhoto || (isLegacyLocalCategoryImage ? localImage : imageUrl || localImage),
+              image: imageUrl || localImage,
               description: cat.description || undefined,
               color: 'from-verde-aguacate to-verde-bosque'
             };
