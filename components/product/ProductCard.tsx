@@ -212,16 +212,9 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Contenido - Se expande para llenar altura */}
         <div className="p-3 flex flex-col flex-1">
           {/* Nombre centrado debajo de la imagen */}
-          <h3 className="font-semibold text-base text-gray-900 mb-1 line-clamp-2 text-center">
+          <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
             {product.name}
           </h3>
-          <button
-            type="button"
-            onClick={handleImageClick}
-            className="mb-2 text-xs font-semibold text-verde-bosque underline underline-offset-2 hover:text-verde-aguacate"
-          >
-            Ver detalles
-          </button>
 
           {/* Rating compacto */}
           {(product.review_count ?? 0) > 0 && (
