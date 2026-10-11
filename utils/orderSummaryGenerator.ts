@@ -291,9 +291,10 @@ export function generateOrderSummary(order: Order): string {
   const extractedAddress = order.delivery_address || formatAddressToString(order.shipping_address);
   let deliveryAddress = extractedAddress || 'N/A';
 
-  // 😊 es un emoji ampliamente soportado por WhatsApp. Se escribe como escape
-  // Unicode para evitar problemas de codificación del archivo fuente.
-  const greetingEmoji = '\u{1F60A}';
+  // WhatsApp's prefilled wa.me/api.whatsapp.com page corrupts many emoji
+  // codepoints into �. ✦ is a WhatsApp-safe decorative symbol that survives
+  // the prefilled-message path without changing to a replacement character.
+  const greetingEmoji = '\u{2726}';
   const message = greetingLine + ` ${greetingEmoji}\n\n═══ RESUMEN PEDIDO #${orderNumber} ═══\n\n${productList}\n\n${financialSummary}\n  *Entrega: ${formattedDeliveryDate}*\n  *Dirección: ${deliveryAddress}*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?`;
 
   return message;
