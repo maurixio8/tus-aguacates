@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from 'lucide-react';
 import type { Product } from '@/lib/productStorage';
 import { dedupeVariants } from '@/lib/product-variants';
@@ -34,6 +34,8 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const [showToast, setShowToast] = useState(false);
   const [showShareToast, setShowShareToast] = useState(false);
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isDescriptionClamped, setIsDescriptionClamped] = useState(false);
+  const descriptionRef = useRef<HTMLParagraphElement | null>(null);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
@@ -83,9 +85,21 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
 
     if (isOpen) {
       setIsDescriptionExpanded(false);
+      setIsDescriptionClamped(false);
       loadVariants();
     }
   }, [product, isOpen]);
+
+  // Detectar si la descripción realmente quedó recortada por line-clamp
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = descriptionRef.current;
+    if (!el) return;
+    const timer = window.setTimeout(() => {
+      setIsDescriptionClamped(el.scrollHeight > el.clientHeight + 2);
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, product.description, isDescriptionExpanded]);
 
   // Manejar clic en el botón de favoritos
   const handleWishlistClick = async () => {
@@ -253,10 +267,13 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
                 </div>
               ) : (
                 <>
-                  <p className={`text-xs text-gray-600 leading-relaxed ${isDescriptionExpanded ? '' : 'line-clamp-2'}`}>
+                  <p
+                    ref={descriptionRef}
+                    className={`text-xs text-gray-600 leading-relaxed ${isDescriptionExpanded ? '' : 'line-clamp-2'}`}
+                  >
                     {product.description}
                   </p>
-                  {(product.description.length > 150 || product.description.split('\n').length > 2) && (
+                  {(isDescriptionClamped || isDescriptionExpanded) && (
                     <button
                       type="button"
                       onClick={() => setIsDescriptionExpanded((value) => !value)}
