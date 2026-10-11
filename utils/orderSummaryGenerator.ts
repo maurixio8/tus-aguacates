@@ -273,15 +273,17 @@ export function generateOrderSummary(order: Order): string {
       : `  ${item.quantity}x ${itemName} - ${formatCurrency(itemTotal)}${weightSuffix}`;
   }).join('\n');
 
-  // Build compact financial summary - sin emojis
+  // Build compact financial summary - domicilio primero y total destacado
   const financialLines = [];
-  financialLines.push("  Total: " + formatCurrency(total));
   if (shippingCost > 0) {
     financialLines.push("  Domicilio: " + formatCurrency(shippingCost));
+  } else {
+    financialLines.push("  Domicilio: GRATIS");
   }
   if (hasDiscount && discount > 0) {
     financialLines.push("  Descuento aplicado: -" + formatCurrency(discount));
   }
+  financialLines.push("  *Total: " + formatCurrency(total) + "*");
   const financialSummary = financialLines.join('\n');
 
   // Generate delivery address - extract complete address for guest orders
@@ -290,8 +292,9 @@ export function generateOrderSummary(order: Order): string {
   let deliveryAddress = extractedAddress || 'N/A';
 
   // Compact customer-facing WhatsApp summary from dashboard.
-  // Texto plano + solo 😊 en saludo para máxima compatibilidad en todos los dispositivos
-  const message = greetingLine + " 😊\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  Entrega: " + formattedDeliveryDate + "\n  Dirección: " + deliveryAddress + "\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
+  // Se usa un símbolo sonriente BMP (☺) para evitar el triángulo de emoji
+  // en dispositivos que no soportan el emoji 😊.
+  const message = greetingLine.replace(/ 😊$/, ' ☺') + "\n\n═══ RESUMEN PEDIDO #" + orderNumber + " ═══\n\n" + productList + "\n\n" + financialSummary + "\n  *Entrega: " + formattedDeliveryDate + "*\n  *Dirección: " + deliveryAddress + "*\n\nConfírmame si la información de tu pedido está correcta. Hay algo que cambiar o todo está bien?";
 
   return message;
 }
