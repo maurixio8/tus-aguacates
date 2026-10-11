@@ -51,8 +51,8 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
           unoptimized
         />
 
-        {/* Overlay sutil solo en la parte inferior para el texto */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+        {/* Overlay de contraste para el texto */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/10" />
 
         {/* Contenido superpuesto */}
         <div className="relative h-full flex flex-col justify-between p-4 md:p-6">
@@ -67,10 +67,16 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
 
           {/* Título y descripción abajo */}
           <div className="text-white">
-            <h1 className="text-3xl md:text-4xl lg:text-5xl font-display font-bold mb-2 drop-shadow-lg">
+            <h1
+              className="text-3xl md:text-4xl lg:text-5xl font-display font-extrabold mb-2 tracking-wide"
+              style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.9)' }}
+            >
               {category.name}
             </h1>
-            <p className="text-white/95 text-base md:text-lg max-w-2xl drop-shadow-md">
+            <p
+              className="text-white text-base md:text-lg max-w-2xl"
+              style={{ textShadow: '0 1px 5px rgba(0,0,0,0.9)' }}
+            >
               {category.description || 'Explora nuestra selección de productos frescos'}
             </p>
           </div>
