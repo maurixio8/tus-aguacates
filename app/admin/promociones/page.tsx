@@ -320,10 +320,12 @@ export default function AdminPromocionesPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
                 <p className="font-medium text-blue-800 mb-1">📐 Tamaño recomendado de imagen:</p>
                 <p className="text-blue-700">
-                    <strong>1200 x 400 píxeles</strong> (ratio 3:1) • Formato: WebP, JPG o PNG • Máximo: 5MB
+                    <strong>1170 x 658 píxeles</strong> (ratio 16:9) • Formato: WebP, JPG o PNG • Máximo: 5MB
                 </p>
                 <p className="text-blue-600 mt-1 text-xs">
-                    Las imágenes se muestran en móvil y desktop, asegúrate de que el contenido importante esté centrado.
+                    Este es el tamaño de la imagen de "Aceite de Aguacate", la que mejor se ve en el hero.
+                    La galería recorta las imágenes al ratio 16:10, así que diseña en 16:9 y deja el contenido
+                    importante centrado para no perder nada en móvil ni desktop.
                 </p>
             </div>
 
