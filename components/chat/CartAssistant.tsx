@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingCart, X, ChevronRight, Sparkles, ArrowRight, CheckCircle, Package } from 'lucide-react';
+import { ShoppingCart, X, ChevronRight, Sparkles, ArrowRight, CheckCircle, Package, Minus, Plus, Trash2 } from 'lucide-react';
 import { useCartStore } from '@/lib/cart-store';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -14,7 +14,7 @@ export function CartAssistant() {
   const [hasBeenDismissed, setHasBeenDismissed] = useState(false);
   const [pulseCount, setPulseCount] = useState(0);
   const router = useRouter();
-  const { items, getSubtotal, getTotals } = useCartStore();
+  const { items, getSubtotal, getTotals, removeItem, updateQuantity } = useCartStore();
   const subtotal = getSubtotal();
   const totals = getTotals();
 
@@ -100,6 +100,22 @@ export function CartAssistant() {
     setIsOpen(false);
     setHasBeenDismissed(true);
     router.push('/checkout');
+  };
+
+  const decreaseItem = (item: typeof items[number]) => {
+    if (item.quantity <= 1) {
+      removeItem(item.product.id, item.variant?.id);
+      return;
+    }
+    updateQuantity(item.product.id, item.quantity - 1, item.variant?.id);
+  };
+
+  const increaseItem = (item: typeof items[number]) => {
+    updateQuantity(item.product.id, item.quantity + 1, item.variant?.id);
+  };
+
+  const deleteItem = (item: typeof items[number]) => {
+    removeItem(item.product.id, item.variant?.id);
   };
 
   // No mostrar si se cerró
@@ -246,12 +262,25 @@ export function CartAssistant() {
 
                 {/* Items en carrito */}
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {items.slice(0, 4).map((item, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                  {items.slice(0, 4).map((item) => (
+                    <div key={`${item.product.id}-${item.variant?.id || 'base'}`} className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
                       <span className="text-lg">{getProductEmoji(item.product.name)}</span>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-medium text-gray-800 truncate">{item.product.name}</p>
-                        <p className="text-xs text-gray-500">{item.quantity}x ${item.price.toLocaleString('es-CO')}</p>
+                        {item.variant?.variant_value && <p className="text-[10px] text-gray-400 truncate">{item.variant.variant_value}</p>}
+                        <p className="text-xs text-gray-500">${item.price.toLocaleString('es-CO')} c/u</p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button type="button" onClick={() => decreaseItem(item)} className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100" aria-label={`Quitar una unidad de ${item.product.name}`}>
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="min-w-[18px] text-center text-xs font-bold text-gray-800">{item.quantity}</span>
+                        <button type="button" onClick={() => increaseItem(item)} className="flex h-7 w-7 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-600 hover:bg-gray-100" aria-label={`Agregar una unidad de ${item.product.name}`}>
+                          <Plus className="h-3 w-3" />
+                        </button>
+                        <button type="button" onClick={() => deleteItem(item)} className="ml-1 flex h-7 w-7 items-center justify-center rounded-md text-red-500 hover:bg-red-50 hover:text-red-700" aria-label={`Eliminar ${item.product.name} del carrito`}>
+                          <Trash2 className="h-3 w-3" />
+                        </button>
                       </div>
                     </div>
                   ))}

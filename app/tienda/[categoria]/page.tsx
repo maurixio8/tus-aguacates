@@ -67,11 +67,35 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
 
           {/* Título y descripción abajo */}
           <div className="text-white">
+            <style>{`
+              @keyframes categoryTypewriter {
+                from { width: 0; }
+                to { width: 100%; }
+              }
+              @keyframes categoryCaret {
+                50% { border-color: transparent; }
+              }
+              .category-typewriter {
+                display: inline-block;
+                max-width: 100%;
+                overflow: hidden;
+                white-space: nowrap;
+                border-right: 3px solid #C8A227;
+                animation: categoryTypewriter 1.6s steps(28, end) both, categoryCaret .75s step-end infinite;
+              }
+              @media (prefers-reduced-motion: reduce) {
+                .category-typewriter {
+                  width: auto;
+                  animation: none;
+                  border-right: 0;
+                }
+              }
+            `}</style>
             <h1
               className="text-3xl md:text-4xl lg:text-5xl font-display font-extrabold mb-2 tracking-wide"
               style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 1px 3px rgba(0,0,0,0.9)' }}
             >
-              {category.name}
+              <span className="category-typewriter">{category.name}</span>
             </h1>
             <p
               className="text-white text-base md:text-lg max-w-2xl"
