@@ -5,7 +5,7 @@ export interface CatalogSearchParts {
 
 // Product terms and presentation terms are combined with AND in the routes.
 
-const PRESENTATION_PATTERN = /^(?:\d+(?:[.,]\d+)?(?:kg|g|gr|lb|ml|l)|\d+x\d+|\d+(?:unidad|unidades))$/i;
+const PRESENTATION_PATTERN = /^(?:\d+(?:[.,]\d+)?(?:kg|g|gr|grs|lb|ml|l)|\d+x\d+|\d+(?:unidad|unidades))$/i;
 
 export function normalizeSearch(value: string): string {
   return value
