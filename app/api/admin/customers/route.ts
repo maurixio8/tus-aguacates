@@ -48,6 +48,48 @@ const buildPhoneCandidates = (...phones: Array<string | null | undefined>): stri
   return Array.from(candidates);
 };
 
+const buildPhoneSearchFilters = (column: string, input: string): string[] => {
+  const raw = input.trim();
+  const digits = raw.replace(/\D/g, '');
+  const candidates = new Set<string>([
+    ...buildPhoneCandidates(raw),
+    raw,
+    digits,
+  ]);
+
+  if (digits.length === 12 && digits.startsWith('57')) {
+    candidates.add(`+${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`);
+    candidates.add(`${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`);
+  }
+
+  return Array.from(candidates)
+    .filter(Boolean)
+    .map((candidate) => `${column}.ilike.%${candidate.replace(/[(),]/g, '')}%`);
+};
+
+const buildCustomerSearchFilter = (search: string): string => {
+  const normalized = normalizeText(search);
+  const filters = [
+    `name.ilike.%${search.replace(/[(),]/g, '')}%`,
+    `name.ilike.%${normalized.replace(/[(),]/g, '')}%`,
+    `email.ilike.%${search.replace(/[(),]/g, '')}%`,
+    ...buildPhoneSearchFilters('phone', search),
+  ];
+
+  return Array.from(new Set(filters)).join(',');
+};
+
+const buildProfileSearchFilter = (search: string): string => {
+  const normalized = normalizeText(search);
+  const filters = [
+    `full_name.ilike.%${search.replace(/[(),]/g, '')}%`,
+    `full_name.ilike.%${normalized.replace(/[(),]/g, '')}%`,
+    ...buildPhoneSearchFilters('phone', search),
+  ];
+
+  return Array.from(new Set(filters)).join(',');
+};
+
 const isActiveGuestOrderStatus = (status?: string | null): boolean => {
   const normalized = normalizeText(status || '');
   return !['cancelado', 'cancelled', 'entregado', 'delivered', 'completado', 'completed'].includes(normalized);
@@ -292,7 +334,7 @@ export async function GET(request: NextRequest) {
 
         // Búsqueda (solo en la primera consulta para obtener IDs filtrados)
         if (search) {
-          customersQuery = customersQuery.or(`name.ilike.%${search}%,phone.ilike.%${search}%,email.ilike.%${search}%`);
+          customersQuery = customersQuery.or(buildCustomerSearchFilter(search));
         }
 
         const { data: customersData, error: customersError, count } = await customersQuery;
@@ -355,7 +397,7 @@ export async function GET(request: NextRequest) {
         .eq('role', 'customer');
 
       if (search) {
-        profilesQuery = profilesQuery.or(`full_name.ilike.%${search}%,phone.ilike.%${search}%`);
+        profilesQuery = profilesQuery.or(buildProfileSearchFilter(search));
       }
 
       const { data: profilesData, error: profilesError } = await profilesQuery;
