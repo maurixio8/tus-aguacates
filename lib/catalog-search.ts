@@ -27,10 +27,16 @@ export function extractPresentationTerms(search: string): CatalogSearchParts {
   const normalized = compactPresentation(normalizeSearch(search));
   const words = normalized.split(/\s+/).filter(Boolean);
   const presentationTerms = words.filter((word) => PRESENTATION_PATTERN.test(word));
-  const productTerm = words
+  let productTerm = words
     .filter((word) => !PRESENTATION_PATTERN.test(word))
     .join(' ')
     .trim();
+
+  // In this catalog, a generic weighted "limón" request maps to the
+  // standard Limón Tahití product rather than Limón Mandarino.
+  if (productTerm === 'limon' && presentationTerms.length > 0) {
+    productTerm = 'limon tahiti';
+  }
 
   return { productTerm, presentationTerms };
 }
