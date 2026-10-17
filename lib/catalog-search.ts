@@ -3,6 +3,8 @@ export interface CatalogSearchParts {
   presentationTerms: string[];
 }
 
+// Product terms and presentation terms are combined with AND in the routes.
+
 const PRESENTATION_PATTERN = /^(?:\d+(?:[.,]\d+)?(?:kg|g|gr|lb|ml|l)|\d+x\d+|\d+(?:unidad|unidades))$/i;
 
 export function normalizeSearch(value: string): string {
