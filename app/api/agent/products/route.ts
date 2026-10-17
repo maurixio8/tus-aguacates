@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { requireAgentAuth, createUnauthorizedResponse } from '@/lib/agent-auth';
+import {
+  buildIlikeConditions,
+  extractPresentationTerms,
+  getSearchForms,
+} from '@/lib/catalog-search';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
-
-interface ProductVariant {
-  id: string;
-  variant_name: string;
-  variant_value: string;
-  price: number;
-  stock_quantity: number;
-  is_active: boolean;
-}
 
 interface AgentVariant {
   id: string;
@@ -45,147 +41,6 @@ function getCategoryValue(category: { id?: string; name?: string } | Array<{ id?
     return category[0] || null;
   }
   return category || null;
-}
-
-// Normalize accents: áéíóúüñ -> aeioun
-function normalizeAccents(str: string): string {
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
-    .replace(/ü/g, 'u')
-    .replace(/ñ/g, 'n');
-}
-
-const STOP_WORDS = new Set(['de','la','el','en','del','las','los','para','por','con','un','una','al','que','es','se','su','lo','y','a','e','o','le','les','mis','tus','sus','nos','os']);
-
-// Get singular and plural variants of a word (simple Spanish rules)
-// Returns array with both forms for matching
-function getSingularPluralVariants(word: string): string[] {
-  if (word.length <= 2) return [word];
-  
-  const variants = new Set<string>();
-  variants.add(word);
-  
-  // If ends in 's', add singular form (remove 's')
-  if (word.endsWith('s')) {
-    const singular = word.slice(0, -1);
-    if (singular.length > 1) variants.add(singular);
-    // Also try removing 'es' for words like "flores" -> "flor"
-    if (word.endsWith('es') && word.length > 3) {
-      variants.add(word.slice(0, -2));
-    }
-  } else {
-    // If doesn't end in 's', add plural form (add 's')
-    variants.add(word + 's');
-  }
-  
-  return Array.from(variants);
-}
-
-// Check if product matches search term (accent-insensitive, plural/singular aware)
-// Supports multi-word: "aceite coco" matches "Aceite de coco" (all words must be present)
-function productMatchesSearch(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): boolean {
-  const normalizedName = normalizeAccents(product.name);
-  const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
-  const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
-
-  // Try exact phrase first (with plural/singular variants)
-  const normalizedSearch = normalizeAccents(searchTerm);
-  const searchVariants = getSingularPluralVariants(normalizedSearch);
-  
-  for (const variant of searchVariants) {
-    if (normalizedName.includes(variant) || normalizedDesc.includes(variant) || normalizedSku.includes(variant)) {
-      return true;
-    }
-  }
-
-  // Multi-word: all individual words must appear in name or description (with variants)
-  const words = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
-  if (words.length > 1) {
-    const allWordsInName = words.every(w => {
-      const variants = getSingularPluralVariants(w);
-      return variants.some(v => normalizedName.includes(v));
-    });
-    const allWordsInDesc = words.every(w => {
-      const variants = getSingularPluralVariants(w);
-      return variants.some(v => normalizedDesc.includes(v));
-    });
-    if (allWordsInName || allWordsInDesc) {
-      return true;
-    }
-  }
-  
-  // Single meaningful word: check if at least one non-stop word matches
-  if (words.length === 1) {
-    if (normalizedName.includes(words[0]) || normalizedDesc.includes(words[0])) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-function calculateSearchScore(product: { name: string; description?: string | null; sku?: string | null }, searchTerm: string): number {
-  const normalizedSearch = normalizeAccents(searchTerm);
-  const normalizedName = normalizeAccents(product.name);
-  const normalizedDesc = product.description ? normalizeAccents(product.description) : '';
-  const normalizedSku = product.sku ? normalizeAccents(product.sku) : '';
-  const searchVariants = getSingularPluralVariants(normalizedSearch);
-
-  // Exact match (case + accent insensitive) = 100
-  if (normalizedName === normalizedSearch) {
-    return 100;
-  }
-
-  // Starts with = 85
-  const startsWithVariant = searchVariants.find(v => normalizedName.startsWith(v));
-  if (startsWithVariant) {
-    return 85;
-  }
-
-  // Word boundary match (product name contains search as a whole word) = 75
-  const boundaryVariant = searchVariants.find(v => {
-    const wordBoundaryRegex = new RegExp(`\\b${escapeRegex(v)}\\b`, 'i');
-    return wordBoundaryRegex.test(normalizedName);
-  });
-  if (boundaryVariant) {
-    return 75;
-  }
-
-  // Contains in name = 60
-  const containsVariant = searchVariants.find(v => normalizedName.includes(v));
-  if (containsVariant) {
-    return 60;
-  }
-
-  // Multi-word: all words in name = 55 (with singular/plural)
-  const searchWords = normalizedSearch.split(/\s+/).filter(w => w.length > 1 && !STOP_WORDS.has(w));
-  if (searchWords.length > 1) {
-    const allWordsInName = searchWords.every(w => {
-      const wVariants = getSingularPluralVariants(w);
-      return wVariants.some(v => normalizedName.includes(v));
-    });
-    if (allWordsInName) {
-      return 55;
-    }
-  }
-
-  // SKU match = 50
-  if (normalizedSku && normalizedSku.includes(normalizedSearch)) {
-    return 50;
-  }
-
-  // Contains in description = 20
-  if (normalizedDesc && normalizedDesc.includes(normalizedSearch)) {
-    return 20;
-  }
-
-  return 0;
-}
-
-function escapeRegex(str: string): string {
-  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function getSupabaseClient() {
@@ -311,9 +166,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // When searching, fetch ALL products and filter in JavaScript for accent-insensitive matching
-    // This is necessary because Supabase/PostgreSQL ilike doesn't handle accents properly
-    const fetchLimit = search ? 500 : limit;
+    const searchParts = extractPresentationTerms(search);
+    const productForms = searchParts.productTerm
+      ? getSearchForms(searchParts.productTerm)
+      : [];
+
+    let variantProductIds: string[] = [];
+    if (searchParts.presentationTerms.length > 0) {
+      const variantForms = searchParts.presentationTerms.flatMap(getSearchForms);
+      const { data: matchingVariants, error: variantsError } = await supabase
+        .from('product_variants')
+        .select('product_id')
+        .eq('is_active', true)
+        .or(buildIlikeConditions(['variant_name', 'variant_value'], variantForms));
+
+      if (variantsError) {
+        console.error('Error searching product variants:', variantsError);
+        return NextResponse.json(
+          { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to search product variants' } },
+          { status: 500 },
+        );
+      }
+
+      variantProductIds = Array.from(
+        new Set((matchingVariants || []).map((row) => row.product_id).filter(Boolean)),
+      );
+    }
 
     let query = supabase
       .from('products')
@@ -321,85 +199,36 @@ export async function GET(request: NextRequest) {
         id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
         categories:category_id ( id, name ),
         product_variants ( id, variant_name, variant_value, price, stock_quantity, is_active )
-      `)
+      `);
+
+    if (activeOnly) query = query.eq('is_active', true);
+
+    if (search) {
+      if (productForms.length > 0) {
+        query = query.or(buildIlikeConditions(['name', 'description', 'sku'], productForms));
+      }
+      if (searchParts.presentationTerms.length > 0) {
+        if (variantProductIds.length > 0) {
+          query = query.in('id', variantProductIds);
+        } else {
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+    }
+
+    const { data, error } = await query
       .order('created_at', { ascending: false })
-      .limit(fetchLimit);
-
-    if (activeOnly) {
-      query = query.eq('is_active', true);
-    }
-
-    const { data, error } = await query;
-
-    if (error && error.message?.includes('product_variants')) {
-      // Fallback without variants
-      let fallbackQuery = supabase
-        .from('products')
-        .select(`
-          id, name, sku, price, discount_price, stock, unit, is_active, description, main_image_url,
-          categories:category_id ( id, name )
-        `)
-        .order('created_at', { ascending: false })
-        .limit(fetchLimit);
-
-      if (activeOnly) {
-        fallbackQuery = fallbackQuery.eq('is_active', true);
-      }
-
-      const fallbackResult = await fallbackQuery;
-
-      if (fallbackResult.error) {
-        console.error('Error fetching products:', fallbackResult.error);
-        return NextResponse.json(
-          { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch products' } },
-          { status: 500 }
-        );
-      }
-
-      let products: Product[] = (fallbackResult.data || []).map((item) => {
-        const category = getCategoryValue(item.categories);
-        return {
-          id: item.id,
-          name: item.name,
-          sku: item.sku,
-          price: item.price,
-          discount_price: item.discount_price,
-          stock: item.stock,
-          unit: item.unit,
-          is_active: item.is_active,
-          category: { id: category?.id || '', name: category?.name || 'Uncategorized' },
-          image: item.main_image_url,
-          description: item.description,
-          has_variants: false,
-          variants: [],
-        };
-      });
-
-      // Apply accent-insensitive search filtering and relevance ranking
-      if (search) {
-        products = products
-          .filter(p => productMatchesSearch(p, search))
-          .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
-          .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
-          .slice(0, limit);
-      }
-
-      return NextResponse.json({
-        success: true,
-        data: products,
-        meta: { query: search, count: products.length },
-      });
-    }
+      .limit(limit);
 
     if (error) {
       console.error('Error fetching products:', error);
       return NextResponse.json(
         { success: false, error: { code: 'INTERNAL_ERROR', message: 'Failed to fetch products' } },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
-    let products: Product[] = (data || []).map((item) => {
+    const products: Product[] = (data || []).map((item) => {
       const variants = Array.isArray(item.product_variants) ? item.product_variants : [];
       const category = getCategoryValue(item.categories);
       const hasVariants = variants.length > 0;
@@ -429,15 +258,6 @@ export async function GET(request: NextRequest) {
           })),
       };
     });
-
-    // Apply accent-insensitive search filtering and relevance ranking
-    if (search) {
-      products = products
-        .filter(p => productMatchesSearch(p, search))
-        .map(p => ({ ...p, _searchScore: calculateSearchScore(p, search) }))
-        .sort((a, b) => (b._searchScore! - a._searchScore!) || a.name.localeCompare(b.name))
-        .slice(0, limit);
-    }
 
     return NextResponse.json({
       success: true,

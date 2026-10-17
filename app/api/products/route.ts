@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import {
+  buildIlikeConditions,
+  extractPresentationTerms,
+  getSearchForms,
+} from '@/lib/catalog-search';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -15,6 +20,39 @@ function createSupabaseClient() {
   });
 }
 
+interface PublicVariantRow {
+  id: string;
+  variant_name: string | null;
+  variant_value: string | null;
+  price: number | null;
+  stock_quantity: number | null;
+  is_active: boolean | null;
+}
+
+interface PublicCategoryRow {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface PublicProductRow {
+  id: string;
+  name: string;
+  slug: string | null;
+  sku: string | null;
+  description: string | null;
+  price: number | null;
+  discount_price: number | null;
+  unit: string | null;
+  weight: number | null;
+  stock: number | null;
+  is_active: boolean;
+  is_featured: boolean;
+  main_image_url: string | null;
+  category: PublicCategoryRow | PublicCategoryRow[] | null;
+  variants: PublicVariantRow[] | null;
+}
+
 function normalize(value: string) {
   return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -28,7 +66,31 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 100, 1), 500);
     const supabase = createSupabaseClient();
 
-    const { data: products, error } = await supabase
+    const searchParts = extractPresentationTerms(search);
+    const productForms = searchParts.productTerm
+      ? getSearchForms(searchParts.productTerm)
+      : [];
+    let variantProductIds: string[] = [];
+
+    if (searchParts.presentationTerms.length > 0) {
+      const variantForms = searchParts.presentationTerms.flatMap(getSearchForms);
+      const { data: matchingVariants, error: variantsError } = await supabase
+        .from('product_variants')
+        .select('product_id')
+        .eq('is_active', true)
+        .or(buildIlikeConditions(['variant_name', 'variant_value'], variantForms));
+
+      if (variantsError) {
+        console.error('Error searching public variants:', variantsError);
+        return NextResponse.json({ error: 'Error searching product variants' }, { status: 500 });
+      }
+
+      variantProductIds = Array.from(
+        new Set((matchingVariants || []).map((row) => row.product_id).filter(Boolean)),
+      );
+    }
+
+    let query = supabase
       .from('products')
       .select(`
         id, name, slug, sku, description, price, discount_price, unit, weight,
@@ -36,7 +98,22 @@ export async function GET(request: NextRequest) {
         category:categories!category_id ( id, name, slug ),
         variants:product_variants ( id, variant_name, variant_value, price, stock_quantity, is_active )
       `)
-      .eq('is_active', true)
+      .eq('is_active', true);
+
+    if (search) {
+      if (productForms.length > 0) {
+        query = query.or(buildIlikeConditions(['name', 'description', 'sku'], productForms));
+      }
+      if (searchParts.presentationTerms.length > 0) {
+        if (variantProductIds.length > 0) {
+          query = query.in('id', variantProductIds);
+        } else {
+          query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+    }
+
+    const { data: products, error } = await query
       .order('name')
       .limit(limit);
 
@@ -46,11 +123,11 @@ export async function GET(request: NextRequest) {
     }
 
     const formattedProducts = (products || [])
-      .map((product: any) => {
+      .map((product: PublicProductRow) => {
         const categoryData = Array.isArray(product.category) ? product.category[0] : product.category;
         const activeVariants = (product.variants || [])
-          .filter((variant: any) => variant.is_active !== false)
-          .map((variant: any) => ({
+          .filter((variant: PublicVariantRow) => variant.is_active !== false)
+          .map((variant: PublicVariantRow) => ({
             id: variant.id,
             name: variant.variant_name || variant.variant_value || 'Presentación estándar',
             value: variant.variant_value || '',
@@ -59,7 +136,6 @@ export async function GET(request: NextRequest) {
             availability: Number(variant.stock_quantity ?? 0) > 0 ? 'InStock' : 'OutOfStock',
           }));
         const currentPrice = Number(product.discount_price ?? product.price ?? 0);
-        const searchable = normalize(`${product.name} ${product.description || ''} ${categoryData?.name || ''}`);
         return {
           id: product.id,
           name: product.name,
@@ -78,15 +154,12 @@ export async function GET(request: NextRequest) {
           image: product.main_image_url || null,
           purchase_url: `https://tusaguacates.com/productos/${product.slug || product.id}`,
           variants: activeVariants,
-          _searchable: searchable,
         };
       })
-      .filter((product: any) => {
-        const matchesSearch = !search || product._searchable.includes(search);
-        const matchesCategory = !category || normalize(product.category?.slug || '').includes(category) || normalize(product.category?.name || '').includes(category);
-        return matchesSearch && matchesCategory;
+      .filter((product) => {
+        return !category || normalize(product.category?.slug || '').includes(category) || normalize(product.category?.name || '').includes(category);
       })
-      .map(({ _searchable, ...product }: any) => product);
+      .map((product) => product);
 
     return NextResponse.json(
       {
