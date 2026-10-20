@@ -924,12 +924,34 @@ export default function ListaComprasPage() {
       };
     }
 
-    // Verduras y Hierbas
+    // Hierbas y aromáticas: separadas de las verduras para alistamiento.
+    const hierbas = ['cilantro', 'perejil', 'albahaca', 'hierbabuena', 'menta', 'romero', 'tomillo',
+      'orégano', 'oregano', 'eneldo', 'salvia', 'eucalipto', 'diente de leon', 'diente de león', 'lavanda'];
+    if (hierbas.some(h => name.includes(h))) {
+      return {
+        bg: 'bg-lime-50 dark:bg-lime-900/30',
+        border: 'border-l-4 border-l-lime-500 dark:border-l-lime-400',
+        label: 'Hierbas',
+        color: 'text-lime-700 dark:text-lime-300'
+      };
+    }
+
+    // Tubérculos y raíces: separados de las verduras.
+    const tuberculos = ['papa', 'yuca', 'batata', 'camote', 'ñame', 'name', 'arracacha', 'malanga', 'oca'];
+    if (tuberculos.some(t => name.includes(t))) {
+      return {
+        bg: 'bg-amber-50 dark:bg-amber-900/30',
+        border: 'border-l-4 border-l-amber-600 dark:border-l-amber-400',
+        label: 'Tubérculo',
+        color: 'text-amber-700 dark:text-amber-300'
+      };
+    }
+
+    // Verduras (sin hierbas ni tubérculos, que ya fueron clasificadas arriba).
     const verduras = ['lechuga', 'espinaca', 'kale', 'rúgula', 'rugula', 'acelga', 'apio', 'brócoli',
-      'brocoli', 'coliflor', 'zanahoria', 'pepino', 'tomate', 'cebolla', 'ajo', 'cilantro',
-      'perejil', 'albahaca', 'hierbabuena', 'menta', 'romero', 'tomillo', 'orégano', 'oregano',
-      'papa', 'yuca', 'plátano', 'platano', 'maíz', 'maiz', 'arveja', 'habichuela',
-      'calabacín', 'calabacin', 'berenjena', 'pimentón', 'pimenton', 'champiñón', 'champiñon'];
+      'brocoli', 'coliflor', 'zanahoria', 'pepino', 'tomate', 'cebolla', 'ajo',
+      'pimentón', 'pimenton', 'habichuela', 'arveja', 'calabacín', 'calabacin',
+      'berenjena', 'champiñón', 'champiñon', 'maíz', 'maiz', 'plátano', 'platano'];
     if (verduras.some(v => name.includes(v))) {
       return {
         bg: 'bg-green-50 dark:bg-green-900/30',
@@ -2873,11 +2895,27 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredProducts
                   .filter(product => !hidePurchased || !purchasedProducts.has(product.grouping_key))
-                  .map(product => {
+                  .map((product, productIndex, mobileProducts) => {
                     const isPurchased = purchasedProducts.has(product.grouping_key);
                     const isExpanded = expandedProducts.has(product.grouping_key);
                     const totalCost = product.unit_price * product.total_quantity;
+                    const categoryStyle = getCategoryStyle(product.product_name);
+                    const previousCategory = productIndex > 0
+                      ? getCategoryStyle(mobileProducts[productIndex - 1].product_name).label
+                      : '';
+                    const showCategoryHeader = productIndex === 0 || previousCategory !== categoryStyle.label;
                     return (
+                      <> 
+                        {showCategoryHeader && (
+                          <div className={`px-3 py-2.5 border-y border-gray-200 dark:border-gray-700 ${categoryStyle.bg}`}>
+                            <div className="flex items-center justify-between gap-2">
+                              <span className={`font-bold text-xs uppercase tracking-wide ${categoryStyle.color}`}>
+                                {categoryStyle.label || 'Otros'}
+                              </span>
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400">alistamiento</span>
+                            </div>
+                          </div>
+                        )}
                       <article
                         key={product.grouping_key}
                         className={`p-3 ${isPurchased ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-gray-800'}`}
@@ -2941,6 +2979,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                           </div>
                         </div>
                       </article>
+                      </>
                     );
                   })}
               </div>
