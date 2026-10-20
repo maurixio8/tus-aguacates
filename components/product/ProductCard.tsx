@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
@@ -37,6 +37,9 @@ export function ProductCard({ product }: ProductCardProps) {
   const [showToast, setShowToast] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [animatedProductName, setAnimatedProductName] = useState('');
+  const productNameRef = useRef<HTMLHeadingElement>(null);
+  const hasAnimatedProductName = useRef(false);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
@@ -83,6 +86,46 @@ export function ProductCard({ product }: ProductCardProps) {
       loadVariantsFromSupabase();
     }
   }, [product.id, product.price, product.discount_price, product.base_price, product.variants]);
+
+  // Los nombres se escriben cuando la tarjeta entra al viewport. Cada tarjeta
+  // dispara su propia animación al hacer scroll, respetando reduced motion.
+  useEffect(() => {
+    const element = productNameRef.current;
+    if (!element) return;
+
+    hasAnimatedProductName.current = false;
+    setAnimatedProductName('');
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      setAnimatedProductName(product.name);
+      hasAnimatedProductName.current = true;
+      return;
+    }
+
+    let timer: number | undefined;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting || hasAnimatedProductName.current) return;
+
+      hasAnimatedProductName.current = true;
+      observer.disconnect();
+      let index = 0;
+      timer = window.setInterval(() => {
+        index += 1;
+        setAnimatedProductName(product.name.slice(0, index));
+        if (index >= product.name.length && timer !== undefined) {
+          window.clearInterval(timer);
+          timer = undefined;
+        }
+      }, 38);
+    }, { threshold: 0.65 });
+
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, [product.id, product.name]);
 
   // Manejar clic en el botón de favoritos
   const handleWishlistClick = async (e: React.MouseEvent) => {
@@ -212,8 +255,13 @@ export function ProductCard({ product }: ProductCardProps) {
         {/* Contenido - Se expande para llenar altura */}
         <div className="p-3 flex flex-col flex-1">
           {/* Nombre centrado debajo de la imagen */}
-          <h3 className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center">
-            {product.name}
+          <h3
+            ref={productNameRef}
+            data-testid="product-name"
+            aria-label={product.name}
+            className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center"
+          >
+            {animatedProductName || '\u00A0'}
           </h3>
 
           {/* Rating compacto */}
