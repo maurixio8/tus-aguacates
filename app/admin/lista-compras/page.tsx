@@ -2525,24 +2525,24 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
             {/* Stats Compactos (Una sola fila) - MEJORADO */}
               {orders.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-3 md:p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Pedidos</p>
                     <p className="text-2xl font-bold text-gray-900 dark:text-white">{orders.length}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{selectedOrders.size} seleccionados</p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-3 md:p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos a Comprar</p>
                     <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{groupedProducts.length}</p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{purchaseProgress.purchased} comprados</p>
                   </div>
-                  <div className="bg-white dark:bg-gray-800 rounded-xl p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
+                  <div className="bg-white dark:bg-gray-800 rounded-xl p-3 md:p-4 text-center border border-gray-200 dark:border-gray-700 shadow-sm">
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes</p>
                     <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                       {new Set(orders.filter(o => selectedOrders.has(o.id)).map(o => o.customer_name)).size}
                     </p>
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">en pedidos seleccionados</p>
                   </div>
-                  <div className={`rounded-xl p-4 text-center border shadow-sm ${selectedOrders.size > 0 ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
+                  <div className={`rounded-xl p-3 md:p-4 text-center border shadow-sm ${selectedOrders.size > 0 ? 'bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
                     <p className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Valor Estimado</p>
                     <p className={`text-2xl font-bold ${selectedOrders.size > 0 ? 'text-green-700 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                       {selectedOrders.size > 0 ? formatPrice(salesSummary.grandTotal) : '-'}
@@ -2712,7 +2712,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                 </div>
               )}
               <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row gap-4 justify-between items-center bg-gray-50 dark:bg-gray-900">
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 w-full md:w-auto">
                   {/* Barra de búsqueda */}
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -2721,7 +2721,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                       placeholder="Buscar producto..."
                       value={productSearch}
                       onChange={(e) => setProductSearch(e.target.value)}
-                      className="pl-9 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none w-48"
+                      className="pl-9 pr-4 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none w-full md:w-48 col-span-2 md:col-span-1"
                     />
                     {productSearch && (
                       <button
@@ -2869,7 +2869,84 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                 </div>
               )}
 
-              <div className="overflow-x-auto">
+              {/* Vista móvil compacta: tarjetas legibles en teléfonos como Galaxy S22 Ultra */}
+              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredProducts
+                  .filter(product => !hidePurchased || !purchasedProducts.has(product.grouping_key))
+                  .map(product => {
+                    const isPurchased = purchasedProducts.has(product.grouping_key);
+                    const isExpanded = expandedProducts.has(product.grouping_key);
+                    const totalCost = product.unit_price * product.total_quantity;
+                    return (
+                      <article
+                        key={product.grouping_key}
+                        className={`p-3 ${isPurchased ? 'bg-purple-50 dark:bg-purple-900/20' : 'bg-white dark:bg-gray-800'}`}
+                      >
+                        <div className="flex items-start gap-2">
+                          <button
+                            onClick={() => togglePurchased(product.grouping_key)}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isPurchased ? 'bg-purple-600' : 'bg-purple-100 dark:bg-purple-800'}`}
+                            title={isPurchased ? 'Desmarcar como comprado' : 'Marcar como comprado'}
+                          >
+                            {isPurchased ? <CheckCircle className="w-5 h-5 text-white" /> : <div className="w-4 h-4 border-2 border-purple-400 rounded-md" />}
+                          </button>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className={`font-semibold text-sm leading-tight break-words ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+                                {getWhatsAppSafeEmoji(product.product_name)} {product.display_name}
+                              </p>
+                              <p className="text-sm font-bold text-orange-600 dark:text-orange-400 whitespace-nowrap">
+                                {totalCost > 0 ? formatPrice(totalCost) : '-'}
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                              <div className="rounded-md bg-green-50 dark:bg-green-900/30 px-2 py-1.5">
+                                <span className="block text-gray-500 dark:text-gray-400">Comprar</span>
+                                <span className="font-bold text-green-700 dark:text-green-300 break-words">{getPurchaseQuantityText(product)}</span>
+                              </div>
+                              <div className="rounded-md bg-gray-50 dark:bg-gray-700/50 px-2 py-1.5">
+                                <span className="block text-gray-500 dark:text-gray-400">Precio c/u</span>
+                                <span className="font-semibold text-gray-700 dark:text-gray-200">{product.unit_price > 0 ? formatPrice(product.unit_price) : '-'}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between gap-2 mt-2">
+                              <span className="text-[11px] text-gray-500 dark:text-gray-400">
+                                {product.customer_breakdown.length} cliente{product.customer_breakdown.length === 1 ? '' : 's'}
+                              </span>
+                              <button
+                                onClick={() => toggleProductExpanded(product.grouping_key)}
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-300"
+                              >
+                                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                {isExpanded ? 'Ocultar detalle' : 'Ver detalle'}
+                              </button>
+                            </div>
+                            {isExpanded && (
+                              <div className="mt-2 space-y-1.5 border-t border-gray-200 dark:border-gray-700 pt-2">
+                                {product.customer_breakdown.map((customer, idx) => (
+                                  <div key={`${customer.order_id}-${idx}`} className="rounded-md bg-gray-50 dark:bg-gray-700/40 p-2 text-xs">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <span className="font-semibold text-gray-800 dark:text-gray-100 break-words">{customer.customer_name}</span>
+                                      <span className="font-bold text-green-700 dark:text-green-300 whitespace-nowrap">{customer.quantity}x</span>
+                                    </div>
+                                    <div className="mt-1 text-gray-500 dark:text-gray-400 break-words">
+                                      {customer.variant_name && !['peso','cantidad','presentación','presentacion','volumen','unidad','unidades'].includes(customer.variant_name.toLowerCase().trim()) && <span>📦 {customer.variant_name} · </span>}
+                                      {customer.weight_display && <span>⚖️ {customer.weight_display} · </span>}
+                                      {customer.customer_address && <span>📍 {customer.customer_address}</span>}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+              </div>
+
+              {/* Tabla de escritorio */}
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                     <tr>
