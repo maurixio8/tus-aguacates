@@ -104,8 +104,8 @@ export function ProductCard({ product }: ProductCardProps) {
     }
 
     let timer: number | undefined;
-    const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting || hasAnimatedProductName.current) return;
+    const startTyping = () => {
+      if (hasAnimatedProductName.current) return;
 
       hasAnimatedProductName.current = true;
       observer.disconnect();
@@ -118,11 +118,23 @@ export function ProductCard({ product }: ProductCardProps) {
           timer = undefined;
         }
       }, 38);
-    }, { threshold: 0.65 });
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) startTyping();
+    }, { threshold: 0.01 });
 
     observer.observe(element);
+    // Algunos navegadores no notifican inmediatamente el primer elemento
+    // ya visible; comprobarlo una vez después del primer paint.
+    const firstPaint = window.requestAnimationFrame(() => {
+      const rect = element.getBoundingClientRect();
+      if (rect.bottom > 0 && rect.top < window.innerHeight) startTyping();
+    });
+
     return () => {
       observer.disconnect();
+      window.cancelAnimationFrame(firstPaint);
       if (timer !== undefined) window.clearInterval(timer);
     };
   }, [product.id, product.name]);
