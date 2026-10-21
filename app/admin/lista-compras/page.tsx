@@ -273,7 +273,36 @@ export default function ListaComprasPage() {
   // - Combo Ahorro #2: Caja 24 aguacates + Arándanos 250g
   // - Combo Ahorro #3: Fresas económica 500g + Arándanos 250g + Paquete 4 aguacates injerto
   // - Combo Mercado Semanal: Caja 24 aguacates, Fresa económica, Banano 1kg, Tomate 500g, Cebolla 500g, etc.
-  const COMBO_COMPONENTS: Record<string, Array<{ name: string; quantity: number; unit: string; variant?: string }>> = {
+  type ComboComponent = { name: string; quantity: number; unit: string; variant?: string; productId?: string; variantId?: string };
+
+  // Resolver por ID primero: los nombres comerciales pueden cambiar, pero el
+  // product_id del pedido identifica de forma estable el combo comprado.
+  const COMBO_COMPONENTS_BY_PRODUCT_ID: Record<string, ComboComponent[]> = {
+    // Doble Caja Hass: 48 unidades. El regalo es opcional según disponibilidad
+    // y no se suma como compra obligatoria.
+    '56ac11a8-afce-4007-8ec4-d597282c4eab': [
+      { name: 'Caja de 24 unidades hass mediano', quantity: 2, unit: 'caja', variant: '24 unidades' }
+    ],
+    // Despensa Semanal de 12 Productos. La definición sale del catálogo vivo.
+    // La descripción usa “fresas” genérico; la regla operativa vigente del
+    // dashboard es Fresa Económica de 500 g, no Fresas Premium.
+    'be158303-96c9-4aec-942d-dd41df1f8182': [
+      { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
+      { name: 'Fresa Económica', quantity: 1, unit: 'paq', variant: '500g', productId: '857aa25f-c3a6-4ddc-b91a-87a4422d86ce', variantId: 'da05db19-5c30-4e62-b34a-0f66f606803e' },
+      { name: 'Banano criollo', quantity: 1, unit: 'kg', variant: '1 Kilo', productId: '4a5f1f59-f973-41a6-8358-c05a78c2ba5e', variantId: 'a474e93c-2049-4819-b5ad-ed0c2ea7b57d' },
+      { name: 'Tomate chonto tamaño mixto', quantity: 1, unit: 'lb', variant: '500g', productId: '3719ea97-ed39-4763-b5db-922366e02b23' },
+      { name: 'Cebolla cabezona blanca', quantity: 1, unit: 'lb', variant: '500g', productId: 'a7e9b0cc-b200-4346-81ed-e51e32c447c1' },
+      { name: 'Papa sabanera', quantity: 1, unit: 'lb', variant: 'X 500 grs', productId: '71493836-b898-4153-8f95-6d278e0b8cad', variantId: 'e642f685-3f21-4b34-b0d5-19696116cbd0' },
+      { name: 'Zanahoria', quantity: 1, unit: 'lb', variant: '500g', productId: '74af5db4-50bd-40e6-bfe0-c8906e807280', variantId: 'd5f3d0ed-3de5-4264-abbc-3a759e6ab580' },
+      { name: 'Pasta de Ajo', quantity: 1, unit: 'unidad', variant: 'x100 gr', productId: 'b688f1cd-58c0-41c7-9d56-943427d442dd', variantId: 'b6b05f48-7193-4864-a86c-43f932c08146' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X125grs', productId: 'e325c45f-7f5b-4474-bd22-11e1a9de285a', variantId: '1140c2be-68d9-4b65-a2d4-0cdbd3dde691' },
+      { name: 'Uva isabelina', quantity: 1, unit: 'bandeja', variant: '400g', productId: 'd2c3f695-1c55-47d2-bccf-12901cad7b73', variantId: 'b5c74de2-30c7-47c7-836b-91ce8eeebc82' },
+      { name: 'Duraznos', quantity: 1, unit: 'lb', variant: '500g', productId: 'cba0ef23-bfb4-4cce-9a0e-17afce4e3b06', variantId: 'cb72416b-4a82-4823-89d8-7eab30ae60f2' },
+      { name: 'Limón tahiti', quantity: 1, unit: 'kg', variant: '1kg', productId: '3ff8d4c5-47eb-48a6-845b-fceab6682d5c', variantId: '58a4f9ad-bca0-4dcd-8da6-aa3dfcec4125' }
+    ]
+  };
+
+  const COMBO_COMPONENTS: Record<string, ComboComponent[]> = {
     'combo ahorro #1': [
       { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
@@ -1544,7 +1573,7 @@ const normalizeVariant = (variant: string | null): string => {
           'Producto sin nombre';
           
         const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS[comboKey] ||
+        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
           Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
           
         if (comboComponents) {
@@ -1597,7 +1626,7 @@ const normalizeVariant = (variant: string | null): string => {
 
         // Verificar si es un combo y obtener sus componentes
         const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS[comboKey] ||
+        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
           Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
 
         if (comboComponents) {
