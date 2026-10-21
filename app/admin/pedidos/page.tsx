@@ -302,7 +302,8 @@ export default function OrdersPage() {
       const countText = words[count] || String(count);
       const isBox = /\bcaja(?:s)?\b/i.test(itemName);
       if (isBox) return `${countText} ${count === 1 ? 'caja' : 'cajas'}`;
-      return `${countText} ${count === 1 ? 'producto' : 'productos'}`;
+      if (count === 1) return '1';
+      return `${count} unidades de`;
     };
 
     const summaryLines: string[] = [];
@@ -319,7 +320,8 @@ export default function OrdersPage() {
       const details = [variant && `Variante: ${variant}`, weight && `Peso: ${weight}`].filter(Boolean).join(' | ');
       const emoji = getWhatsAppSafeEmoji(itemName);
       const quantityLabel = getSummaryQuantityLabel(itemName, quantity);
-      summaryLines.push(`${emoji} ${quantityLabel}: ${itemName}${details ? ` | ${details}` : ''}`);
+      const quantitySeparator = quantityLabel === '1' || quantityLabel.endsWith(' de') ? ' ' : ': ';
+      summaryLines.push(`${emoji} ${quantityLabel}${quantitySeparator}${itemName}${details ? ` | ${details}` : ''}`);
       summaryLines.push('');
     });
 
