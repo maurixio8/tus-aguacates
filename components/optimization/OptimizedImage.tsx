@@ -68,7 +68,7 @@ export function OptimizedImage({
     onError?.();
   };
 
-  // Imagen de fallback en caso de error
+  const isSupabaseImage = src.includes('gxqkmaaqoehydulksudj.supabase.co/storage');
   if (hasError) {
     return (
       <div
@@ -96,6 +96,7 @@ export function OptimizedImage({
         fill={fill}
         sizes={sizes}
         quality={quality}
+        unoptimized={isSupabaseImage}
         priority={priority}
         placeholder={placeholder}
         blurDataURL={placeholder === 'blur' ? generateBlurDataURL() : undefined}

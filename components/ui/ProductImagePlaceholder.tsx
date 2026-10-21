@@ -133,7 +133,7 @@ export function ProductImagePlaceholder({
     setIsLoading(false);
   };
 
-  // Si hay imagen real y no hay error, mostrar la imagen real
+  const isSupabaseImage = Boolean(imageUrl?.includes('gxqkmaaqoehydulksudj.supabase.co/storage'));
   if (imageUrl && !imageError) {
     // Si se pasa className, no usar estilos inline para permitir responsive design
     const containerStyle = className ? {} : { width, height };
@@ -156,6 +156,7 @@ export function ProductImagePlaceholder({
             className="object-contain object-center"
             priority={priority}
             quality={75}
+            unoptimized={isSupabaseImage}
             placeholder="blur"
             blurDataURL={generateBlurDataURL(productName)}
             loading={priority ? 'eager' : 'lazy'}
