@@ -260,6 +260,52 @@ export default function OrdersPage() {
   // Generar resumen del pedido para EMPAQUE (copiar al portapapeles)
   // Formato optimizado para verificación: lista de productos, variantes visibles, estado de pago, fecha entrega
   const getOrderSummaryText = (order: Order, customerName: string, orderItems: any[]): string => {
+    // Resumen operativo para alistamiento: solo dirección, cliente, productos
+    // con variante/peso y total final. No incluir pedido, teléfono, domicilio,
+    // estado de pago ni fecha de entrega.
+    const formatSummaryMoney = (amount: number) => new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(Number(amount || 0));
+
+    const getSummaryVariant = (item: any): string => String(
+      item.variantName ||
+      item.variant_value ||
+      item.variant_name ||
+      item.product_snapshot?.variant_value ||
+      item.product_snapshot?.variant_name ||
+      ''
+    ).trim();
+
+    const getSummaryWeight = (item: any): string => {
+      const weight = item.weight ?? item.product_snapshot?.weight;
+      const unit = item.unit || item.product_snapshot?.unit || '';
+      if (weight === null || weight === undefined || weight === '') return '';
+      return `${weight}${unit || 'g'}`;
+    };
+
+    const summaryLines: string[] = [];
+    summaryLines.push(`DIRECCIÓN: ${getAddressText(order) || 'Sin dirección'}`);
+    summaryLines.push(`CLIENTE: ${customerName || 'Sin nombre'}`);
+    summaryLines.push('');
+    summaryLines.push('PRODUCTOS:');
+
+    orderItems.forEach((item: any) => {
+      const itemName = item.product_snapshot?.name || item.products?.name || item.product_name || item.productName || 'Producto';
+      const quantity = Number(item.quantity || 1);
+      const variant = getSummaryVariant(item);
+      const weight = getSummaryWeight(item);
+      const details = [variant && `Variante: ${variant}`, weight && `Peso: ${weight}`].filter(Boolean).join(' | ');
+      summaryLines.push(`- ${quantity}x ${itemName}${details ? ` | ${details}` : ''}`);
+    });
+
+    const calculated = calculateOrderSummary(order, orderItems);
+    const total = Number(order.total_amount ?? order.total ?? calculated.total ?? 0);
+    summaryLines.push('');
+    summaryLines.push(`TOTAL A PAGAR: ${formatSummaryMoney(total)}`);
+    return summaryLines.join('\n');
+
     // Formatear moneda
     const formatMoney = (amount: number) => {
       return new Intl.NumberFormat('es-CO', {
@@ -1306,14 +1352,19 @@ export default function OrdersPage() {
                         name: item.productName,
                         price: item.price,
                         main_image_url: null,
-                        unit: null
+                        unit: item.unit || null,
+                        variant_name: item.variantType || null,
+                        variant_value: item.variantName || item.variant_value || item.variant_name || null,
+                        weight: item.weight || null
                       },
                       quantity: item.quantity,
                       unit_price: item.price,
                       subtotal: item.quantity * item.price,
                       weight: item.weight || null,
                       unit: item.unit || null,
-                      variantName: item.variantName || null
+                      variantName: item.variantName || item.variant_value || item.variant_name || null,
+                      variant_value: item.variant_value || null,
+                      variant_name: item.variant_name || null
                     }));
                   }
 
