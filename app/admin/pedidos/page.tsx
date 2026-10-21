@@ -297,7 +297,9 @@ export default function OrdersPage() {
       const variant = getSummaryVariant(item);
       const weight = getSummaryWeight(item);
       const details = [variant && `Variante: ${variant}`, weight && `Peso: ${weight}`].filter(Boolean).join(' | ');
-      summaryLines.push(`- ${quantity}x ${itemName}${details ? ` | ${details}` : ''}`);
+      const emoji = getWhatsAppSafeEmoji(itemName);
+      summaryLines.push(`${emoji} ${quantity}x ${itemName}${details ? ` | ${details}` : ''}`);
+      summaryLines.push('');
     });
 
     const calculated = calculateOrderSummary(order, orderItems);
