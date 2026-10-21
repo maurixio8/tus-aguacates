@@ -285,6 +285,26 @@ export default function OrdersPage() {
       return `${weight}${unit || 'g'}`;
     };
 
+    const getSummaryQuantityLabel = (itemName: string, quantity: number): string => {
+      const words: Record<number, string> = {
+        1: 'Una',
+        2: 'Dos',
+        3: 'Tres',
+        4: 'Cuatro',
+        5: 'Cinco',
+        6: 'Seis',
+        7: 'Siete',
+        8: 'Ocho',
+        9: 'Nueve',
+        10: 'Diez'
+      };
+      const count = Number.isFinite(quantity) ? Math.max(0, Math.trunc(quantity)) : 0;
+      const countText = words[count] || String(count);
+      const isBox = /\bcaja(?:s)?\b/i.test(itemName);
+      if (isBox) return `${countText} ${count === 1 ? 'caja' : 'cajas'}`;
+      return `${countText} ${count === 1 ? 'producto' : 'productos'}`;
+    };
+
     const summaryLines: string[] = [];
     summaryLines.push(`DIRECCIÓN: ${getAddressText(order) || 'Sin dirección'}`);
     summaryLines.push(`CLIENTE: ${customerName || 'Sin nombre'}`);
@@ -298,7 +318,8 @@ export default function OrdersPage() {
       const weight = getSummaryWeight(item);
       const details = [variant && `Variante: ${variant}`, weight && `Peso: ${weight}`].filter(Boolean).join(' | ');
       const emoji = getWhatsAppSafeEmoji(itemName);
-      summaryLines.push(`${emoji} ${quantity}x ${itemName}${details ? ` | ${details}` : ''}`);
+      const quantityLabel = getSummaryQuantityLabel(itemName, quantity);
+      summaryLines.push(`${emoji} ${quantityLabel}: ${itemName}${details ? ` | ${details}` : ''}`);
       summaryLines.push('');
     });
 
