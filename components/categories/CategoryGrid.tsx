@@ -65,6 +65,7 @@ export default function CategoryGrid() {
               alt={category.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform"
+              unoptimized
               onError={(e) => {
                 // Ocultar imagen si falla, mostrar fallback
                 e.currentTarget.style.display = 'none';

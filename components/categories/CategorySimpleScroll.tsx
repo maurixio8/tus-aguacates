@@ -106,6 +106,7 @@ export default function CategorySimpleScroll() {
                 alt={category.name}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform"
+                unoptimized
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}
