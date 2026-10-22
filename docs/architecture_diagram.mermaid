@@ -1,0 +1,111 @@
+%% =====================================================
+%% EL MAYORDOMO "MAGISTRAL" - ARQUITECTURA EMPRESARIAL
+%% Sistema RAG con Memoria Persistente y Proactividad
+%% =====================================================
+
+flowchart TB
+    subgraph FRONTEND["🖥️ FRONTEND (Next.js)"]
+        UI[ChatBot.tsx<br/>UI Principal]
+        ProactiveTrigger[ProactiveEngine<br/>Triggers Inteligentes]
+        CartStore[Zustand Cart Store<br/>Estado del Carrito]
+        LocalHistory[localStorage<br/>Cache Local]
+
+        UI --> ProactiveTrigger
+        CartStore --> UI
+        LocalHistory --> UI
+    end
+
+    subgraph API["⚡ API LAYER (Next.js)"]
+        ChatRoute["/api/chat/route.ts"<br/>Endpoint Principal]
+        HistoryRoute["/api/chat/history<br/>Gestión de Historial"]
+        VectorRoute["/api/products/search<br/>Búsqueda Semántica"]
+    end
+
+    subgraph N8N["🧠 N8N (Orquestador IA)"]
+        Webhook[Webhook Trigger<br/>Entrada de Mensajes]
+
+        subgraph AGENT["🤖 Agente con Herramientas"]
+            LLM[Claude/GPT<br/>Motor de IA]
+
+            subgraph TOOLS["🔧 Herramientas (Tools)"]
+                SearchTool[🔍 Buscar Producto<br/>Vector Search Tool]
+                CartTool[🛒 Analizar Carrito<br/>Cart Context Tool]
+                HistoryTool[📚 Leer Historial<br/>Memory Tool]
+                CategoryTool[📂 Explorar Categorías<br/>Category Browser]
+            end
+        end
+
+        ResponseBuilder[Timeline Builder<br/>Construye Respuesta]
+
+        Webhook --> LLM
+        LLM --> TOOLS
+        TOOLS --> ResponseBuilder
+    end
+
+    subgraph SUPABASE["🗄️ SUPABASE (Persistencia)"]
+        subgraph VECTORSTORE["🧬 Vector Store"]
+            Embeddings[(product_embeddings<br/>Vectores de Productos)]
+            EmbeddingIndex[HNSW Index<br/>Búsqueda Rápida]
+        end
+
+        subgraph MEMORY["💾 Memoria"]
+            ChatHistory[(chat_history<br/>Historial de Chats)]
+            UserContext[(user_context<br/>Preferencias Usuario)]
+        end
+
+        subgraph CATALOG["📦 Catálogo"]
+            Products[(products<br/>200+ Productos)]
+            Categories[(categories<br/>Categorías)]
+            ProductImages[(Storage: product-images<br/>Imágenes)]
+        end
+
+        subgraph AUTH["🔐 Auth"]
+            Profiles[(profiles<br/>Usuarios)]
+            Sessions[(auth.sessions<br/>Sesiones)]
+        end
+    end
+
+    subgraph SCRIPTS["📜 SCRIPTS (Mantenimiento)"]
+        VectorizeScript[vectorize-catalog.ts<br/>Indexar Productos]
+        SyncScript[sync-products.ts<br/>Sincronizar Catálogo]
+    end
+
+    %% CONEXIONES FRONTEND -> API
+    UI -->|POST /api/chat| ChatRoute
+    UI -->|GET /api/chat/history| HistoryRoute
+    ProactiveTrigger -->|trigger_proactive| ChatRoute
+
+    %% CONEXIONES API -> N8N
+    ChatRoute -->|POST webhook| Webhook
+
+    %% CONEXIONES N8N -> SUPABASE
+    SearchTool -->|Vector Query| Embeddings
+    HistoryTool -->|SELECT últimos chats| ChatHistory
+    CategoryTool -->|SELECT categorías| Categories
+
+    %% CONEXIONES API -> SUPABASE (directas)
+    HistoryRoute -->|INSERT/SELECT| ChatHistory
+    VectorRoute -->|RPC match_products| Embeddings
+
+    %% RESPUESTAS
+    ResponseBuilder -->|Timeline JSON| ChatRoute
+    ChatRoute -->|Render Messages| UI
+
+    %% SCRIPTS -> SUPABASE
+    VectorizeScript -->|Batch INSERT| Embeddings
+    SyncScript -->|UPSERT| Products
+
+    %% ESTILOS
+    classDef frontend fill:#61dafb,stroke:#000,color:#000
+    classDef api fill:#f7df1e,stroke:#000,color:#000
+    classDef n8n fill:#ff6d5a,stroke:#000,color:#000
+    classDef supabase fill:#3ecf8e,stroke:#000,color:#000
+    classDef scripts fill:#9b59b6,stroke:#fff,color:#fff
+    classDef tools fill:#fff3cd,stroke:#856404,color:#856404
+
+    class UI,ProactiveTrigger,CartStore,LocalHistory frontend
+    class ChatRoute,HistoryRoute,VectorRoute api
+    class Webhook,LLM,ResponseBuilder n8n
+    class SearchTool,CartTool,HistoryTool,CategoryTool tools
+    class Embeddings,EmbeddingIndex,ChatHistory,UserContext,Products,Categories,ProductImages,Profiles,Sessions supabase
+    class VectorizeScript,SyncScript scripts

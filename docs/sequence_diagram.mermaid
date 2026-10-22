@@ -1,0 +1,103 @@
+%% =====================================================
+%% EL MAYORDOMO "MAGISTRAL" - DIAGRAMA DE SECUENCIA
+%% Flujo completo de una conversación con RAG
+%% =====================================================
+
+sequenceDiagram
+    autonumber
+    participant U as 👤 Usuario
+    participant CB as 🖥️ ChatBot.tsx
+    participant PE as ⚡ ProactiveEngine
+    participant API as 🔌 /api/chat
+    participant N8N as 🧠 n8n Agent
+    participant VS as 🔍 Vector Search
+    participant SB as 🗄️ Supabase
+    participant LLM as 🤖 Claude/GPT
+
+    %% === FLUJO PROACTIVO ===
+    Note over U,LLM: 🌟 FASE 1: TRIGGER PROACTIVO
+
+    U->>CB: Abre la página
+    CB->>PE: Iniciar monitoreo
+    PE->>SB: Obtener historial usuario
+    SB-->>PE: Últimas 3 compras
+
+    alt Usuario recurrente + 30s inactivo
+        PE->>CB: trigger_proactive_help
+        CB->>API: POST {trigger: "proactive", context}
+        API->>N8N: Webhook con contexto
+        N8N->>LLM: "Generar saludo personalizado"
+        LLM-->>N8N: Saludo + sugerencias
+        N8N-->>API: Timeline response
+        API-->>CB: Mostrar burbuja proactiva
+        CB->>U: "¡Hola Juan! ¿Buscas aguacates?"
+    end
+
+    %% === FLUJO DE CONSULTA ===
+    Note over U,LLM: 🔍 FASE 2: BÚSQUEDA SEMÁNTICA (RAG)
+
+    U->>CB: "Quiero algo para ensalada"
+    CB->>API: POST {message, history, cartContext}
+
+    API->>SB: Guardar mensaje en chat_history
+    API->>N8N: Webhook con payload completo
+
+    N8N->>LLM: Analizar intención del usuario
+
+    rect rgb(255, 243, 205)
+        Note over N8N,VS: 🔧 Tool Call: Buscar Producto
+        LLM->>VS: search_products("ensalada")
+        VS->>SB: RPC match_products(embedding)
+        SB-->>VS: [Lechuga, Tomate, Aguacate, Pepino]
+        VS-->>LLM: Productos relevantes (score > 0.7)
+    end
+
+    LLM->>N8N: Respuesta estructurada
+    N8N->>N8N: Construir Timeline
+
+    N8N-->>API: Timeline JSON
+    Note right of N8N: {timeline: [<br/>  {type: "typing", duration: 1500},<br/>  {type: "text", content: "Para ensalada..."},<br/>  {type: "products", items: [...]}]<br/>}
+
+    API->>SB: Guardar respuesta en chat_history
+    API-->>CB: Timeline response
+    CB->>CB: processTimeline()
+    CB->>U: Muestra typing → texto → productos
+
+    %% === FLUJO DE CONTEXTO ===
+    Note over U,LLM: 💾 FASE 3: MEMORIA Y CONTEXTO
+
+    U->>CB: "El aguacate más maduro"
+    CB->>API: POST {message, history: últimos 10}
+
+    API->>SB: SELECT chat_history WHERE user_id
+    SB-->>API: Historial completo
+
+    API->>N8N: Webhook + contexto extendido
+    N8N->>LLM: Mensaje + historial + compras previas
+
+    rect rgb(209, 231, 221)
+        Note over N8N,SB: 🔧 Tool Call: Leer Historial
+        LLM->>SB: get_user_preferences(user_id)
+        SB-->>LLM: "Prefiere orgánicos, compra semanal"
+    end
+
+    LLM->>N8N: "Para hoy te recomiendo el Hass Premium..."
+    N8N-->>API: Timeline personalizada
+    API-->>CB: Response
+    CB->>U: Recomendación contextual
+
+    %% === FLUJO DE CARRITO ===
+    Note over U,LLM: 🛒 FASE 4: INTEGRACIÓN CARRITO
+
+    U->>CB: Click "Agregar al carrito" (Aguacate)
+    CB->>CB: cartStore.addItem()
+    CB->>U: Animación + actualización carrito
+
+    U->>CB: "¿Qué más necesito?"
+    CB->>API: POST {message, cartContext: {items: [Aguacate]}}
+
+    N8N->>LLM: Analizar carrito actual
+    LLM->>N8N: "Complementos: Limón, Cilantro, Sal"
+    N8N-->>API: Sugerencias basadas en carrito
+    API-->>CB: Timeline con productos complementarios
+    CB->>U: "Para acompañar tu aguacate..."
