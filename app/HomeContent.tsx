@@ -133,6 +133,20 @@ export default function HomeContent() {
             maxProducts={8}
             viewMode="view"
           />
+          <nav className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3" aria-label="Explorar más contenido">
+            <Link
+              href="/tienda/ofertas-combos"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#C8A227] px-6 py-3 font-bold text-[#07180f] shadow-[0_8px_30px_rgba(200,162,39,0.2)] transition hover:scale-[1.03] hover:bg-[#e0bd35]"
+            >
+              Ver Ofertas y Combos <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/recetas"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-[#C8A227]/50 bg-[#0D2818]/80 px-6 py-3 font-bold text-[#F4F7EF] transition hover:scale-[1.03] hover:border-[#C8A227] hover:bg-[#164526]"
+            >
+              Ver Recetas <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </nav>
         </div>
       </section>
 
