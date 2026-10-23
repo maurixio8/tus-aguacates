@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import Link from 'next/link';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { ProductCard } from '@/components/product/ProductCard';
 import { UnifiedProduct } from '@/lib/types';
@@ -19,25 +18,14 @@ interface FeaturedProductsCarouselProps {
 }
 
 
-/** En modo 'view', envuelve la tarjeta y muestra "Ver producto" en lugar de "Agregar" */
+/** En modo 'view', la imagen lleva directamente a la ficha del producto. */
 function FeaturedProductSlot({ product, viewMode }: { product: UnifiedProduct; viewMode: 'view' | 'add' }) {
   if (viewMode === 'add') {
     return <ProductCard product={product} />;
   }
+
   const href = `/productos/${(product as any).slug || product.id}`;
-  return (
-    <Link href={href} className="block group/card">
-      <ProductCard product={product} />
-      <button
-        type="button"
-        className="mt-2 w-full bg-verde-bosque hover:bg-verde-bosque/90 text-white font-bold py-2 px-3 rounded-lg transition-all flex items-center justify-center gap-2 text-sm"
-        onClick={(e) => e.preventDefault()}
-      >
-        <Eye className="w-4 h-4" />
-        Ver producto
-      </button>
-    </Link>
-  );
+  return <ProductCard product={product} imageHref={href} />;
 }
 
 // Cache para productos

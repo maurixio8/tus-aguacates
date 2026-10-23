@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { ShoppingCart, Heart } from 'lucide-react';
 import type { UnifiedProduct } from '@/lib/types';
 import { dedupeVariants } from '@/lib/product-variants';
@@ -25,9 +25,11 @@ interface ProductVariant {
 
 interface ProductCardProps {
   product: UnifiedProduct;
+  imageHref?: string;
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+export function ProductCard({ product, imageHref }: ProductCardProps) {
+  const router = useRouter();
   const { addItem } = useCartStore();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
   const { user } = useAuth();
@@ -208,6 +210,10 @@ export function ProductCard({ product }: ProductCardProps) {
   const handleImageClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (imageHref) {
+      router.push(imageHref);
+      return;
+    }
     setIsModalOpen(true);
   };
 
@@ -256,12 +262,13 @@ export function ProductCard({ product }: ProductCardProps) {
             <Heart className={`w-4 h-4 ${isProductInWishlist ? 'fill-current' : ''}`} />
           </button>
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700">
-              Ver detalles
+          {!imageHref && (
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+              <div className="bg-white/90 px-3 py-1 rounded-full text-sm font-medium text-gray-700">
+                Ver detalles
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Contenido - Se expande para llenar altura */}
