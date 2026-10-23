@@ -332,7 +332,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate text-base"
             >
               <ShoppingCart className="w-5 h-5" />
-              {(product.stock || 0) > 0 ? 'Agregar al Carrito' : 'Agotado'}
+              {(product.stock || 0) > 0 ? 'Agregar al carrito' : 'No disponible'}
             </button>
 
             {/* Botones Compartir */}

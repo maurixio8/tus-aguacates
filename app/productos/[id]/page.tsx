@@ -3,8 +3,9 @@ import { getProducts } from '@/lib/productStorage';
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Check, Shield, Truck } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { ProductImagePlaceholder } from '@/components/ui/ProductImagePlaceholder';
+import { ProductPurchasePanel } from '@/components/product/ProductPurchasePanel';
 import { ProductCard } from '@/components/product/ProductCard';
 import { formatPrice } from '@/lib/utils';
 
@@ -136,8 +137,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }} />
-      <div className="min-h-screen bg-gray-50 pt-20 pb-24">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="min-h-screen bg-gray-50 pt-0 pb-24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 pb-8 md:py-8">
 
         {/* Breadcrumb Navigation */}
         <Link
@@ -208,7 +209,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* Pricing Section */}
+            {/* Pricing Section + primary purchase CTA */}
             <div className="py-6 border-b border-gray-200">
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl md:text-5xl font-bold text-verde-bosque font-mono">
@@ -220,96 +221,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600 mt-2">
-                Por {product.unit || 'unidad'}
-              </p>
-            </div>
-
-            {/* Stock Status */}
-            <div className="py-4">
-              {(product.stock || 0) > 0 ? (
-                <div className="flex items-center gap-2 text-green-600 font-medium">
-                  <Check className="w-5 h-5" />
-                  En stock ({product.stock || 'varios'} disponibles)
-                </div>
-              ) : (
-                <div className="text-red-600 font-medium">
-                  ✗ Producto agotado
-                </div>
-              )}
-            </div>
-
-            {/* Product Card with Add to Cart */}
-            <div className="bg-white rounded-xl p-6 border-2 border-gray-200 mt-4">
-              <ProductCard product={product} />
-            </div>
-
-            {/* Trust Badges */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
-              <div className="flex items-start gap-3">
-                <Truck className="w-5 h-5 text-verde-bosque flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">Envío Rápido</p>
-                  <p className="text-xs text-gray-600">A todo el país</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-verde-bosque flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">Productos Frescos</p>
-                  <p className="text-xs text-gray-600">Garantizado</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Shield className="w-5 h-5 text-verde-bosque flex-shrink-0 mt-1" />
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">Devolución Fácil</p>
-                  <p className="text-xs text-gray-600">Sin preguntas</p>
-                </div>
-              </div>
+              <ProductPurchasePanel product={product} />
             </div>
           </div>
-        </div>
-
-        {/* Product Details Section */}
-        <div className="bg-white rounded-xl p-6 md:p-8 shadow-soft mb-16">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Detalles del Producto</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Unidad</p>
-              <p className="font-semibold text-gray-900">{product.unit || 'unidad'}</p>
-            </div>
-            {product.weight && (
-              <div className="border border-gray-200 rounded-lg p-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Peso</p>
-                <p className="font-semibold text-gray-900">{product.weight}</p>
-              </div>
-            )}
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Stock</p>
-              <p className="font-semibold text-gray-900">{product.stock || '∞'}</p>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Mínimo</p>
-              <p className="font-semibold text-gray-900">{product.min_quantity || 1}</p>
-            </div>
-          </div>
-
-          {/* Badges */}
-          {(product.is_organic || product.is_featured) && (
-            <div className="flex flex-wrap gap-3 mt-6 pt-6 border-t border-gray-200">
-              {product.is_organic && (
-                <span className="bg-green-100 text-green-800 px-4 py-2 rounded-full font-semibold text-sm">
-                  🌿 Orgánico
-                </span>
-              )}
-              {product.is_featured && (
-                <span className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-full font-semibold text-sm">
-                  ⭐ Destacado
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {/* Related Products Section */}

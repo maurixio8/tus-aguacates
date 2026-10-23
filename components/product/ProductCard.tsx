@@ -377,7 +377,7 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
               className="w-full bg-gradient-to-r from-yellow-400 to-yellow-600 hover:from-yellow-500 hover:to-yellow-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-verde-bosque-700 font-bold py-2 px-3 rounded-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 border-2 border-verde-aguacate disabled:border-gray-400 text-sm"
             >
               <ShoppingCart className="w-4 h-4" />
-              {addedFeedback ? '¡Agregado!' : ((product.stock || 0) > 0 ? 'Agregar' : 'Agotado')}
+              {addedFeedback ? '¡Agregado al carrito!' : ((product.stock || 0) > 0 ? 'Agregar al carrito' : 'No disponible')}
             </button>
           </div>
         </div>
