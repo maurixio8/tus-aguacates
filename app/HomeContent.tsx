@@ -89,11 +89,11 @@ export default function HomeContent() {
 
   return (
     <div>
-      {/* Sprint 1: Urgency Banner at top */}
-      <UrgencyBanner />
-
       {/* Hero promocional dinámico: reemplaza la imagen hero estática */}
       <PromotionHeroCarousel />
+
+      {/* Cinta promocional inmediatamente debajo del banner principal */}
+      <UrgencyBanner />
 
       {/* Explora por Categoría - Movido después del Hero */}
       <section className="py-12 bg-transparent">
@@ -133,14 +133,6 @@ export default function HomeContent() {
             maxProducts={8}
             viewMode="view"
           />
-        </div>
-      </section>
-
-      {/* Cinta promocional después de los productos principales */}
-      <section className="promo-ribbon" aria-label="Información de entrega y envío">
-        <div className="promo-ribbon__track">
-          <span>🥑 Aguacates premium del Eje Cafetero · Entrega en Bogotá martes y viernes · Envío gratis desde $68.900 ·</span>
-          <span aria-hidden="true">🥑 Aguacates premium del Eje Cafetero · Entrega en Bogotá martes y viernes · Envío gratis desde $68.900 ·</span>
         </div>
       </section>
 
