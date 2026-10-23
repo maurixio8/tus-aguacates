@@ -136,6 +136,14 @@ export default function HomeContent() {
         </div>
       </section>
 
+      {/* Cinta promocional después de los productos principales */}
+      <section className="promo-ribbon" aria-label="Información de entrega y envío">
+        <div className="promo-ribbon__track">
+          <span>🥑 Aguacates premium del Eje Cafetero · Entrega en Bogotá martes y viernes · Envío gratis desde $68.900 ·</span>
+          <span aria-hidden="true">🥑 Aguacates premium del Eje Cafetero · Entrega en Bogotá martes y viernes · Envío gratis desde $68.900 ·</span>
+        </div>
+      </section>
+
       {/* Last Order Summary (Only for Authenticated Users) */}
       <LastOrderSummary />
 

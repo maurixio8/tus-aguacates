@@ -391,9 +391,47 @@ button {
     padding-bottom: 0.375rem !important;
   }
   
-  /* Modal compacto en landscape */
   .max-w-sm {
     max-width: 360px !important;
     max-height: 95vh !important;
   }
+}
+
+/* Cinta promocional debajo de Productos Más Populares */
+.promo-ribbon {
+  width: 100%;
+  overflow: hidden;
+  background: linear-gradient(90deg, #0d2818, #1d6331, #0d2818);
+  border-top: 1px solid rgba(200, 162, 39, 0.45);
+  border-bottom: 1px solid rgba(200, 162, 39, 0.45);
+  color: #f4f7ef;
+  padding: 0.8rem 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.promo-ribbon__track {
+  display: flex;
+  width: max-content;
+  min-width: 200%;
+  animation: promo-ribbon-scroll 24s linear infinite;
+  will-change: transform;
+}
+
+.promo-ribbon__track span {
+  flex: 0 0 50%;
+  white-space: nowrap;
+  text-align: center;
+  padding: 0 2rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  font-size: clamp(0.78rem, 1.5vw, 1rem);
+}
+
+@keyframes promo-ribbon-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .promo-ribbon__track { animation: none; }
 }
