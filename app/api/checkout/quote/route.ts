@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     if (!items.length) return response({ valid: false, code: 'EMPTY_CART', error: 'El carrito está vacío.' }, 400);
     if (items.length > 100) return response({ valid: false, code: 'TOO_MANY_ITEMS', error: 'La cotización supera el límite de productos.' }, 400);
     if (!DELIVERY_AREAS.has(normalize(location))) {
-      return response({ valid: false, code: 'OUT_OF_COVERAGE', error: 'Por ahora no tenemos cobertura en esa ciudad.', delivery_area: ['Bogotá', 'Chía', 'Soacha'] }, 422);
+      return response({ valid: false, code: 'OUT_OF_COVERAGE', error: 'Por ahora no tenemos cobertura en esa ciudad. Para casos especiales, escríbenos al 304 258 2777.', delivery_area: ['Bogotá', 'Chía', 'Soacha'] }, 422);
     }
 
     const productIds = [...new Set(items.map(item => item.productId).filter(Boolean))] as string[];
