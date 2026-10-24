@@ -16,7 +16,12 @@ export default function AllProducts() {
         .select('*, variants:product_variants(*)')
         .eq('is_active', true)
         .order('name', { ascending: true });
-      if (!error) setProducts(data || []);
+      if (!error) {
+        setProducts((data || []).map((product) => ({
+          ...product,
+          variants: (product.variants || []).filter((variant: { is_active?: boolean }) => variant.is_active !== false),
+        })));
+      }
       setLoading(false);
     }
     loadProducts();

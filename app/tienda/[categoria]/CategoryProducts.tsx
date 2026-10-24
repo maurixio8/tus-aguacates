@@ -52,7 +52,10 @@ export function CategoryProducts({ categoria }: { categoria: string }) {
       }
 
       console.log(`✅ Encontrados ${productsData?.length || 0} productos activos para ${categoria}`);
-      setProducts(productsData || []);
+      setProducts((productsData || []).map((product) => ({
+        ...product,
+        variants: (product.variants || []).filter((variant: { is_active?: boolean }) => variant.is_active !== false),
+      })));
 
     } catch (error) {
       console.error('❌ Error in fetchProducts:', error);

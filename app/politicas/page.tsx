@@ -97,7 +97,7 @@ export default function PoliticasPage() {
 
               <div>
                 <h3 className="font-semibold mb-2">3. Costos de envío</h3>
-                <p>Los costos de envío varían según la ubicación y el monto del pedido. En Bogotá y Soacha, los pedidos desde $68.900 tienen envío gratuito.</p>
+                <p>Los costos de envío varían según la ubicación y el monto del pedido. En Bogotá, Chía y Soacha, los pedidos desde $68.900 tienen envío gratuito.</p>
               </div>
 
               <div>

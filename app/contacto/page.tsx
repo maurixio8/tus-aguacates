@@ -111,8 +111,8 @@ export default function ContactoPage() {
                     ¿Cuál es el tiempo de entrega?
                   </h3>
                   <p className="text-gray-600 text-sm">
-                    Realizamos entregas en Bogotá los días martes y viernes. Los pedidos deben realizarse 
-                    antes de las 10:00 AM del día de entrega.
+                    Realizamos entregas martes y viernes, de 2:00 p. m. a 8:00 p. m. Los pedidos deben realizarse
+                    antes de las 10:00 a. m. del día de entrega.
                   </p>
                 </div>
                 

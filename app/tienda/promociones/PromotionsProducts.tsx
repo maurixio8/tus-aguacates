@@ -30,7 +30,10 @@ export default function PromotionsProducts() {
           console.error('Error cargando promociones:', error);
           setProducts([]);
         } else {
-          setProducts((data || []) as UnifiedProduct[]);
+          setProducts((data || []).map((product) => ({
+            ...product,
+            variants: (product.variants || []).filter((variant: { is_active?: boolean }) => variant.is_active !== false),
+          })) as UnifiedProduct[]);
         }
         setLoading(false);
       }

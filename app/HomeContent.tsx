@@ -178,7 +178,7 @@ export default function HomeContent() {
               </div>
               <h3 className="font-display font-bold text-xl mb-2">Entrega Rápida</h3>
               <p className="text-gray-600">
-                Entregas martes y viernes en Bogotá
+                Entregas martes y viernes, de 2:00 p. m. a 8:00 p. m.; pide antes de las 10:00 a. m. del día de entrega.
               </p>
             </div>
             <div className="text-center">

@@ -21,6 +21,7 @@ interface ProductVariant {
   variant_value: string;
   price_adjustment: number;
   price: number;
+  is_active?: boolean;
 }
 
 interface ProductCardProps {
@@ -28,14 +29,14 @@ interface ProductCardProps {
   imageHref?: string;
 }
 
-function getUnitLabel(product: UnifiedProduct): string {
-  const raw = String(product.unit || '').trim().toLowerCase();
-  if (raw === 'unit' || raw === 'unidad' || !raw) return 'unidad';
-  if (raw === 'kg' || raw === 'kilo' || raw === 'kilos') return 'kilo';
-  if (raw === 'tray' || raw === 'bandeja') return 'bandeja';
-  if (raw === 'pack' || raw === 'paquete') return 'paquete';
-  if (raw === 'combo') return 'combo';
-  return raw;
+function getUnitLabel(product: UnifiedProduct, variant?: ProductVariant | null): string {
+  const raw = [product.unit, product.name, variant?.variant_value].filter(Boolean).join(' ').trim().toLowerCase();
+  if (raw.includes('bandeja')) return 'bandeja';
+  if (raw.includes('combo')) return 'combo';
+  if (raw.includes('pack') || raw.includes('paquete')) return 'paquete';
+  if (raw.includes('uni') || raw.includes('unidad')) return 'unidad';
+  if (raw.includes('kg') || raw.includes('kilo') || /\d+\s*g\b/.test(raw)) return 'kilo';
+  return 'unidad';
 }
 
 export function ProductCard({ product, imageHref }: ProductCardProps) {
@@ -64,7 +65,7 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
       console.log('📦 Usando variantes del producto:', product.name, product.variants);
 
       // ✅ Usar el precio de la variante directamente si existe, no recalcular
-      const variantsWithPrice = dedupeVariants(product.variants).map(v => ({
+      const variantsWithPrice = dedupeVariants(product.variants.filter((variant: ProductVariant) => variant.is_active !== false)).map(v => ({
         ...v,
         // Si la variante ya tiene precio, usarlo; si no, calcular con price_adjustment
         price: (v as any).price || ((product.discount_price || product.price) + ((v as any).price_adjustment || 0))
@@ -375,7 +376,7 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
                   {formatPrice(displayPrice)}
                 </div>
               )}
-              <div className="text-xs text-gray-500">Por {getUnitLabel(product)}</div>
+              <div className="text-xs text-gray-500">Por {getUnitLabel(product, selectedVariant)}</div>
             </div>
           </div>
 

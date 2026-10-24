@@ -126,7 +126,7 @@ export default function ContactForm() {
             value={formData.phone}
             onChange={handleChange}
             className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-verde-aguacate focus:border-transparent outline-none transition-colors"
-            placeholder="+57 300 123 4567"
+            placeholder="+57 304 258 2777"
           />
         </div>
       </div>

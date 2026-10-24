@@ -16,6 +16,7 @@ interface ProductVariant {
   variant_value: string;
   price_adjustment: number;
   price: number;
+  is_active?: boolean;
 }
 
 interface ProductDetailModalProps {
@@ -24,14 +25,14 @@ interface ProductDetailModalProps {
   product: Product;
 }
 
-function getUnitLabel(product: Product): string {
-  const raw = String(product.unit || '').trim().toLowerCase();
-  if (raw === 'unit' || raw === 'unidad' || !raw) return 'unidad';
-  if (raw === 'kg' || raw === 'kilo' || raw === 'kilos') return 'kilo';
-  if (raw === 'tray' || raw === 'bandeja') return 'bandeja';
-  if (raw === 'pack' || raw === 'paquete') return 'paquete';
-  if (raw === 'combo') return 'combo';
-  return raw;
+function getUnitLabel(product: Product, variant?: ProductVariant | null): string {
+  const raw = [product.unit, product.name, variant?.variant_value].filter(Boolean).join(' ').trim().toLowerCase();
+  if (raw.includes('bandeja')) return 'bandeja';
+  if (raw.includes('combo')) return 'combo';
+  if (raw.includes('pack') || raw.includes('paquete')) return 'paquete';
+  if (raw.includes('uni') || raw.includes('unidad')) return 'unidad';
+  if (raw.includes('kg') || raw.includes('kilo') || /\d+\s*g\b/.test(raw)) return 'kilo';
+  return 'unidad';
 }
 
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
@@ -68,7 +69,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
       // Si el producto ya tiene variantes cargadas
       if (product.variants && product.variants.length > 0) {
         // ✅ Usar el precio de la variante directamente si existe
-        const variantsWithPrice = dedupeVariants(product.variants).map((v: any) => ({
+        const variantsWithPrice = dedupeVariants(product.variants.filter((variant: ProductVariant) => variant.is_active !== false)).map((v: any) => ({
           ...v,
           price: v.price || ((product.discount_price || product.price) + (v.price_adjustment || 0))
         }));
@@ -307,7 +308,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               <p className="text-xs text-gray-500">Producto fresco de Tus Aguacates</p>
             )}
 
-            <p className="text-xs text-gray-400">Por {getUnitLabel(product)}</p>
+            <p className="text-xs text-gray-400">Por {getUnitLabel(product, selectedVariant)}</p>
 
             {/* Variantes */}
             {variants.length > 0 && (

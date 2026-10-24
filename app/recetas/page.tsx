@@ -230,7 +230,7 @@ export default async function RecetasPage({ searchParams }: RecetasPageProps) {
             ¿Te faltan ingredientes?
           </h2>
           <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-            Encuentra todos los ingredientes frescos que necesitas en nuestra tienda. Entregas martes y viernes en Bogotá, Chía y Soacha.
+            Encuentra todos los ingredientes frescos que necesitas en nuestra tienda. Entregas martes y viernes, de 2:00 p. m. a 8:00 p. m.; pide antes de las 10:00 a. m. del día de entrega, en Bogotá, Chía y Soacha.
           </p>
           <a
             href="/tienda"
