@@ -660,7 +660,10 @@ export async function POST(request: NextRequest) {
         notes: body.notes || null,
         total_orders: 0,
         total_spent: 0,
-        is_active: true
+        is_active: true,
+        source_origin: 'dashboard',
+        address_updated_at: body.address ? new Date().toISOString() : null,
+        address_source: body.address ? 'dashboard' : null
       })
       .select()
       .single();
@@ -758,6 +761,7 @@ export async function PATCH(request: NextRequest) {
         city: body.city,
         notes: body.notes,
         is_active: body.is_active ?? true,
+        source_origin: 'dashboard',
       });
 
       if (!masterCustomer) {
@@ -792,7 +796,11 @@ export async function PATCH(request: NextRequest) {
     if (body.name !== undefined) updateData.name = body.name;
     if (body.phone !== undefined) updateData.phone = normalizePhoneForDB(body.phone);
     if (body.email !== undefined) updateData.email = body.email || null;
-    if (body.address !== undefined) updateData.address = body.address || null;
+    if (body.address !== undefined) {
+      updateData.address = body.address || null;
+      updateData.address_updated_at = new Date().toISOString();
+      updateData.address_source = 'dashboard';
+    }
     if (body.neighborhood !== undefined) updateData.neighborhood = body.neighborhood || null;
     if (body.city !== undefined) updateData.city = body.city || 'Bogotá';
     if (body.notes !== undefined) updateData.notes = body.notes || null;
@@ -836,6 +844,7 @@ export async function PATCH(request: NextRequest) {
         city: body.city,
         notes: body.notes,
         is_active: body.is_active,
+        source_origin: 'dashboard',
       });
 
       const guestOrdersSynced = await syncGuestOrdersForCustomer(supabase, {

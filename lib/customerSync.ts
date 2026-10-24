@@ -127,6 +127,7 @@ export async function upsertCustomerMasterRecord(
     city?: string | null;
     notes?: string | null;
     is_active?: boolean;
+    source_origin?: 'whatsapp' | 'pwa' | 'dashboard' | 'olaclick_legado';
   }
 ): Promise<{ customer: Record<string, any>; isNew: boolean } | null> {
   const normalizedPhone = payload.phone ? normalizePhoneForDB(payload.phone) : '';
@@ -165,6 +166,10 @@ export async function upsertCustomerMasterRecord(
     if (normalizedPhone) updateData.phone = normalizedPhone;
     if (payload.email !== undefined) updateData.email = trimOrNull(payload.email);
     if (payload.address !== undefined) updateData.address = trimOrNull(payload.address);
+    if (payload.address !== undefined) {
+      updateData.address_updated_at = new Date().toISOString();
+      updateData.address_source = payload.source_origin || 'dashboard';
+    }
     if (payload.neighborhood !== undefined) updateData.neighborhood = trimOrNull(payload.neighborhood);
     if (payload.city !== undefined) updateData.city = trimOrNull(payload.city) || 'Bogotá';
     if (payload.notes !== undefined) updateData.notes = trimOrNull(payload.notes);
@@ -198,6 +203,9 @@ export async function upsertCustomerMasterRecord(
     total_orders: 0,
     total_spent: 0,
     is_active: payload.is_active !== false,
+    source_origin: payload.source_origin || 'dashboard',
+    address_updated_at: payload.address !== undefined ? new Date().toISOString() : null,
+    address_source: payload.address !== undefined ? (payload.source_origin || 'dashboard') : null,
   };
 
   const { data, error } = await supabase
