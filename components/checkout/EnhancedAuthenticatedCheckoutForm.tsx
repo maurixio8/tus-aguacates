@@ -14,6 +14,8 @@ import CheckoutSummary from './CheckoutSummary';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { validateCheckoutCart, formatCartValidationError } from '@/lib/validate-checkout-cart';
 import CouponInput from './CouponInput';
+import { decodeAddressMetadata } from '@/lib/address-structured';
+import { evaluateCoverage } from '@/lib/coverage';
 import dynamic from 'next/dynamic';
 
 // Cargar BoldPayButton dinámicamente para evitar errores de SSR
@@ -362,6 +364,8 @@ export function EnhancedAuthenticatedCheckoutForm({
         .eq('id', user.id);
 
       // 1. Crear pedido autenticado
+      const structuredMeta = decodeAddressMetadata(selectedAddress.additional_info);
+      const structuredAddress = { viaType: 'Calle', viaNumber: selectedAddress.street_address, complement: '', neighborhood: structuredMeta.neighborhood || '', city: selectedAddress.city, deliveryNotes: structuredMeta.deliveryNotes || selectedAddress.additional_info || '', latitude: structuredMeta.latitude ?? null, longitude: structuredMeta.longitude ?? null, pinConfidence: structuredMeta.pinConfidence || 'sin_pin' } as const;
       const orderData = {
         items: items.map(item => ({
           productName: item.product.name,
@@ -379,6 +383,10 @@ export function EnhancedAuthenticatedCheckoutForm({
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
+        address_structured: structuredAddress,
+        delivery_notes: structuredAddress.deliveryNotes,
+        pin_confidence: structuredAddress.pinConfidence,
+        coverage_shadow: evaluateCoverage(structuredAddress),
       };
 
       // Snapshot de la dirección (copia de los datos al momento del pedido)

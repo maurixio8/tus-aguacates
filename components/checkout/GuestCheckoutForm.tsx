@@ -10,6 +10,8 @@ import CheckoutSummary from './CheckoutSummary';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { validateCheckoutCart, formatCartValidationError } from '@/lib/validate-checkout-cart';
 import dynamic from 'next/dynamic';
+import { formatStructuredAddress, type StructuredAddress } from '@/lib/address-structured';
+import { evaluateCoverage } from '@/lib/coverage';
 
 // Lazy load de modales pesados (framer-motion)
 const OrderSuccessModal = dynamic(() => import('./OrderSuccessModal'), {
@@ -81,6 +83,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     password: '',
     paymentMethod: 'daviplata'
   });
+  const [addressStructured, setAddressStructured] = useState<StructuredAddress>({
+    viaType: 'Calle', viaNumber: '', complement: '', neighborhood: '', city: 'Bogotá', deliveryNotes: '', latitude: null, longitude: null, pinConfidence: 'sin_pin'
+  });
+  const structuredAddressText = formatStructuredAddress(addressStructured);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -182,6 +188,11 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     e.preventDefault();
     setLoading(true);
     setError('');
+    if (!addressStructured.viaNumber.trim() || !addressStructured.neighborhood.trim()) {
+      setError('Completa el número de vía y el barrio para continuar.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // 0. VALIDACIÓN: Verificar si ya existe un pedido hoy con este teléfono
@@ -281,6 +292,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
+        address_structured: addressStructured,
+        delivery_notes: addressStructured.deliveryNotes,
+        pin_confidence: addressStructured.pinConfidence,
+        coverage_shadow: evaluateCoverage(addressStructured),
       };
 
       console.log('📦 Order data prepared:', orderData);
@@ -291,7 +306,7 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
           guest_name: formData.name,
           guest_email: formData.email,
           guest_phone: normalizePhone(formData.phone),
-          guest_address: formData.address,
+          guest_address: structuredAddressText,
           order_data: orderData,
           total_amount: totals.total,
           status: 'pendiente',
@@ -347,6 +362,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
+        address_structured: addressStructured,
+        delivery_notes: addressStructured.deliveryNotes,
+        pin_confidence: addressStructured.pinConfidence,
+        coverage_shadow: evaluateCoverage(addressStructured),
       };
 
       // Generar mensaje para WhatsApp (como si el cliente lo escribiera - tono natural)
@@ -390,7 +409,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
 👤 *Mis datos:*
 • Nombre: ${firstName}
 • Teléfono: ${formData.phone}
-• Dirección: ${formData.address}
+• Dirección: ${structuredAddressText}
 
 💳 *Pago:* ${formData.paymentMethod === 'efectivo' ? 'Efectivo contra entrega' : formData.paymentMethod === 'nequi' ? 'Nequi' : formData.paymentMethod === 'daviplata' ? 'Daviplata' : 'Tarjeta/PSE'}`;
 
@@ -434,7 +453,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
             customer: {
               name: formData.name,
               phone: formData.phone,
-              address: formData.address,
+              address: structuredAddressText,
               email: formData.email,
               isGuest: true
             },
@@ -471,7 +490,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
               user_id: authData.user.id,
               full_name: formData.name,
               phone: formData.phone,
-              address: formData.address
+              address: structuredAddressText
             });
 
             // Migrar pedido de invitado a pedido de usuario
@@ -479,7 +498,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
               user_id: authData.user.id,
               total: totals.total,
               status: 'pagado',
-              shipping_address: formData.address,
+              shipping_address: structuredAddressText,
               created_from_guest: true,
               guest_order_id: orderId
             });
@@ -515,6 +534,11 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
     // Versión sin pago (para testing o pago contra entrega)
     setLoading(true);
     setError('');
+    if (!addressStructured.viaNumber.trim() || !addressStructured.neighborhood.trim()) {
+      setError('Completa el número de vía y el barrio para continuar.');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Validar nuevamente contra el catálogo vivo antes de crear el pedido.
@@ -542,6 +566,10 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
+        address_structured: addressStructured,
+        delivery_notes: addressStructured.deliveryNotes,
+        pin_confidence: addressStructured.pinConfidence,
+        coverage_shadow: evaluateCoverage(addressStructured),
       };
 
       const { data: guestOrder, error: orderError } = await supabase
@@ -550,7 +578,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
           guest_name: formData.name,
           guest_email: formData.email,
           guest_phone: normalizePhone(formData.phone),
-          guest_address: formData.address,
+          guest_address: structuredAddressText,
           order_data: orderData,
           total_amount: totals.total,
           status: 'pendiente_entrega',
@@ -604,7 +632,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
 👤 *Mis datos:*
 • Me llamo ${firstName}
 • Tel: ${formData.phone}
-• Dirección: ${formData.address}
+• Dirección: ${structuredAddressText}
 
 💳 *Pago:* Efectivo contra entrega
 
@@ -641,7 +669,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
             customer: {
               name: formData.name,
               phone: formData.phone,
-              address: formData.address,
+              address: structuredAddressText,
               email: formData.email,
               isGuest: true
             },
@@ -831,7 +859,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                         <select
                           required
                           value={formData.city}
-                          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                          onChange={(e) => { setFormData({ ...formData, city: e.target.value }); setAddressStructured({ ...addressStructured, city: e.target.value }); }}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate bg-white"
                         >
                           <option value="Bogotá">Bogotá</option>
@@ -843,15 +871,19 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-sm font-medium mb-1">Dirección de Entrega *</label>
-                        <textarea
-                          required
-                          value={formData.address}
-                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                          rows={3}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde-aguacate"
-                        />
+                      <div className="space-y-3 rounded-lg border border-dashed border-green-300 p-4">
+                        <p className="font-medium">Dirección estructurada *</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <select aria-label="Tipo de vía" value={addressStructured.viaType} onChange={(e) => setAddressStructured({ ...addressStructured, viaType: e.target.value })} className="w-full px-3 py-2 border rounded-lg"><option>Calle</option><option>Carrera</option><option>Diagonal</option><option>Transversal</option><option>Avenida</option></select>
+                          <input aria-label="Número de vía" required value={addressStructured.viaNumber} onChange={(e) => setAddressStructured({ ...addressStructured, viaNumber: e.target.value })} placeholder="123 # 45-67" className="w-full px-3 py-2 border rounded-lg" />
+                        </div>
+                        <input aria-label="Complemento" value={addressStructured.complement} onChange={(e) => setAddressStructured({ ...addressStructured, complement: e.target.value })} placeholder="Torre, apto, interior..." className="w-full px-3 py-2 border rounded-lg" />
+                        <input aria-label="Barrio" required value={addressStructured.neighborhood} onChange={(e) => setAddressStructured({ ...addressStructured, neighborhood: e.target.value })} placeholder="Barrio obligatorio" list="guest-neighborhoods" className="w-full px-3 py-2 border rounded-lg" />
+                        <datalist id="guest-neighborhoods"><option value="Chapinero" /><option value="Kennedy" /><option value="Suba" /><option value="Teusaquillo" /><option value="Usaquén" /></datalist>
+                        <div className="grid grid-cols-2 gap-3"><input aria-label="Latitud" type="number" step="any" placeholder="Latitud (opcional)" value={addressStructured.latitude ?? ''} onChange={(e) => setAddressStructured({ ...addressStructured, latitude: e.target.value ? Number(e.target.value) : null, pinConfidence: e.target.value ? 'pin' : 'sin_pin' })} /><input aria-label="Longitud" type="number" step="any" placeholder="Longitud (opcional)" value={addressStructured.longitude ?? ''} onChange={(e) => setAddressStructured({ ...addressStructured, longitude: e.target.value ? Number(e.target.value) : null, pinConfidence: e.target.value ? 'pin' : 'sin_pin' })} /></div>
+                        <button type="button" className="text-sm underline" onClick={() => navigator.geolocation?.getCurrentPosition((position) => setAddressStructured({ ...addressStructured, latitude: position.coords.latitude, longitude: position.coords.longitude, pinConfidence: 'pin' }))}>Usar mi ubicación para marcar el pin</button>
+                        <textarea aria-label="Notas de entrega" value={addressStructured.deliveryNotes} onChange={(e) => setAddressStructured({ ...addressStructured, deliveryNotes: e.target.value })} rows={2} placeholder="Notas de entrega separadas: portería, horario..." className="w-full px-3 py-2 border rounded-lg" />
+                        <p className="text-xs text-gray-600">Sin pin: el pedido queda con confianza sin_pin y no se bloquea.</p>
                       </div>
                     </div>
                   </div>
@@ -1096,7 +1128,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                             customerEmail={formData.email}
                             customerName={formData.name}
                             customerPhone={formData.phone}
-                            customerAddress={formData.address}
+                            customerAddress={structuredAddressText}
                           />
                         )}
                       </>
@@ -1227,7 +1259,7 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
           customerEmail={formData.email}
           customerName={formData.name}
           customerPhone={formData.phone}
-          customerAddress={formData.address}
+          customerAddress={structuredAddressText}
           redirectUrl={`${typeof window !== 'undefined' ? window.location.origin : ''}/checkout/success`}
           disabled={loading}
         />

@@ -1,0 +1,34 @@
+{
+  "mode": "shadow",
+  "city": "Bogotá",
+  "allowedLocalities": [
+    "Antonio Nariño",
+    "Barrios Unidos",
+    "Bosa",
+    "Chapinero",
+    "Ciudad Bolívar",
+    "Engativá",
+    "Fontibón",
+    "Kennedy",
+    "La Candelaria",
+    "Los Mártires",
+    "Puente Aranda",
+    "Rafael Uribe Uribe",
+    "San Cristóbal",
+    "Santa Fe",
+    "Suba",
+    "Teusaquillo",
+    "Tunjuelito",
+    "Usaquén",
+    "Usme"
+  ],
+  "excludedCities": ["Chía"],
+  "warehouse": {
+    "name": "Corabastos Bogotá",
+    "latitude": 4.6372,
+    "longitude": -74.1574
+  },
+  "maxDistanceKm": 25,
+  "maxTravelMinutes": 90,
+  "contactPhone": "3203062007"
+}
