@@ -27,7 +27,7 @@ const faqData = [
   },
   {
     question: "¿Ofrecen entregas recurrentes?",
-    answer: "Por ahora no contamos con un sistema de suscripciones. Puedes hacer cada pedido directamente desde nuestra tienda cuando lo necesites."
+    answer: "Por ahora no ofrecemos entregas recurrentes. Puedes hacer cada pedido directamente desde nuestra tienda cuando lo necesites."
   },
   {
     question: "¿Cómo funcionan las devoluciones?",
