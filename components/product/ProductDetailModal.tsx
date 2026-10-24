@@ -26,12 +26,17 @@ interface ProductDetailModalProps {
 }
 
 function getUnitLabel(product: Product, variant?: ProductVariant | null): string {
-  const raw = [product.unit, product.name, variant?.variant_value].filter(Boolean).join(' ').trim().toLowerCase();
-  if (raw.includes('bandeja')) return 'bandeja';
-  if (raw.includes('combo')) return 'combo';
-  if (raw.includes('pack') || raw.includes('paquete')) return 'paquete';
-  if (raw.includes('uni') || raw.includes('unidad')) return 'unidad';
-  if (raw.includes('kg') || raw.includes('kilo') || /\d+\s*g\b/.test(raw)) return 'kilo';
+  const name = String(product.name || '').toLowerCase();
+  const description = String(product.description || '').toLowerCase();
+  const variantValue = String(variant?.variant_value || '').toLowerCase();
+  if (name.includes('combo') || name.includes('kit')) return 'combo';
+  if (name.includes('pack') || name.includes('paquete')) return 'paquete';
+  if (name.includes('caja')) return 'caja';
+  if (name.includes('aceite') || description.includes('botella')) return 'botella';
+  if (description.includes('bandeja') || variantValue.includes('bandeja')) return 'bandeja';
+  if (variantValue.includes('kg') || variantValue.includes('kilo') || /\d+\s*g\b/.test(variantValue)) return 'kilo';
+  if (variantValue.includes('uni') || variantValue.includes('unidad')) return 'unidad';
+  if (String(product.unit || '').toLowerCase().includes('kg')) return 'kilo';
   return 'unidad';
 }
 

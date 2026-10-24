@@ -30,12 +30,17 @@ interface ProductCardProps {
 }
 
 function getUnitLabel(product: UnifiedProduct, variant?: ProductVariant | null): string {
-  const raw = [product.unit, product.name, variant?.variant_value].filter(Boolean).join(' ').trim().toLowerCase();
-  if (raw.includes('bandeja')) return 'bandeja';
-  if (raw.includes('combo')) return 'combo';
-  if (raw.includes('pack') || raw.includes('paquete')) return 'paquete';
-  if (raw.includes('uni') || raw.includes('unidad')) return 'unidad';
-  if (raw.includes('kg') || raw.includes('kilo') || /\d+\s*g\b/.test(raw)) return 'kilo';
+  const name = String(product.name || '').toLowerCase();
+  const description = String(product.description || '').toLowerCase();
+  const variantValue = String(variant?.variant_value || '').toLowerCase();
+  if (name.includes('combo') || name.includes('kit')) return 'combo';
+  if (name.includes('pack') || name.includes('paquete')) return 'paquete';
+  if (name.includes('caja')) return 'caja';
+  if (name.includes('aceite') || description.includes('botella')) return 'botella';
+  if (description.includes('bandeja') || variantValue.includes('bandeja')) return 'bandeja';
+  if (variantValue.includes('kg') || variantValue.includes('kilo') || /\d+\s*g\b/.test(variantValue)) return 'kilo';
+  if (variantValue.includes('uni') || variantValue.includes('unidad')) return 'unidad';
+  if (String(product.unit || '').toLowerCase().includes('kg')) return 'kilo';
   return 'unidad';
 }
 
@@ -50,6 +55,7 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
   const [showToast, setShowToast] = useState(false);
   const [addedFeedback, setAddedFeedback] = useState(false);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [wishlistNotice, setWishlistNotice] = useState(false);
   const [animatedProductName, setAnimatedProductName] = useState('');
   const productNameRef = useRef<HTMLHeadingElement>(null);
   const hasAnimatedProductName = useRef(false);
@@ -158,8 +164,8 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
     e.stopPropagation();
 
     if (!user) {
-      // Si no está logueado, redirigir a login
-      window.location.href = '/auth/login';
+      setWishlistNotice(true);
+      window.setTimeout(() => setWishlistNotice(false), 2600);
       return;
     }
 
@@ -289,7 +295,19 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
             ref={productNameRef}
             data-testid="product-name"
             aria-label={product.name}
-            className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center"
+            className="font-semibold text-base text-gray-900 mb-2 line-clamp-2 text-center cursor-pointer hover:text-verde-bosque"
+            role="button"
+            tabIndex={0}
+            onClick={(event) => {
+              event.stopPropagation();
+              setIsModalOpen(true);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setIsModalOpen(true);
+              }
+            }}
           >
             {animatedProductName || '\u00A0'}
           </h3>
@@ -399,6 +417,12 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
         <div className="fixed top-4 right-4 bg-green-600 text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-pulse">
           <span className="text-lg">🛒</span>
           <span className="font-medium">¡Agregado al carrito!</span>
+        </div>
+      )}
+
+      {wishlistNotice && (
+        <div className="fixed bottom-4 right-4 z-[60] rounded-lg bg-verde-bosque px-4 py-3 text-sm font-medium text-white shadow-lg" role="status">
+          Inicia sesión para guardar tus favoritos
         </div>
       )}
 

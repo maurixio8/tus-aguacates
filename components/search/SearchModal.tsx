@@ -5,7 +5,7 @@ import { Search, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import type { UnifiedProduct } from '@/lib/types';
 import { ProductCard } from '../product/ProductCard';
-import { ProductQuickViewModal } from '../product/ProductQuickViewModal';
+
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -16,14 +16,14 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<UnifiedProduct[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<UnifiedProduct | null>(null);
+
 
   // Resetear query cuando se abre/cierra
   useEffect(() => {
     if (!isOpen) {
       setQuery('');
       setResults([]);
-      setSelectedProduct(null);
+
     }
   }, [isOpen]);
 
@@ -36,24 +36,25 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
   useEffect(() => {
     if (!query || query.length < 2) {
       setResults([]);
+      setLoading(false);
       return;
     }
 
+    setLoading(true);
     const timer = setTimeout(async () => {
       try {
         setLoading(true);
         const normalizedQuery = normalizeText(query);
 
-        // ✅ Consultar directamente a Supabase con variantes
+        // Traer el catálogo activo y normalizar localmente para que la
+        // búsqueda ignore tildes, mayúsculas y variantes de presentación.
         const { data, error } = await supabase
           .from('products')
           .select(`
             *,
             variants:product_variants(*)
           `)
-          .eq('is_active', true)
-          .or(`name.ilike.%${query}%,description.ilike.%${query}%`)
-          .limit(50); // Traer más para filtrar mejor
+          .eq('is_active', true);
 
         if (error) {
           console.error('Error searching products:', error);
@@ -61,8 +62,19 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
           return;
         }
 
-        // ✅ Ordenar por relevancia: primero los que empiezan con la búsqueda
-        const sortedResults = (data || [])
+        const filteredResults = (data || []).filter((product) => {
+          const searchable = normalizeText([
+            product.name,
+            product.description,
+            ...(product.variants || [])
+              .filter((variant: { is_active?: boolean }) => variant.is_active !== false)
+              .flatMap((variant: { variant_name?: string; variant_value?: string }) => [variant.variant_name, variant.variant_value]),
+          ].filter(Boolean).join(' '));
+          return searchable.includes(normalizedQuery);
+        });
+
+        // Ordenar por relevancia: primero los que empiezan con la búsqueda
+        const sortedResults = filteredResults
           .map(product => ({
             ...product,
             // Calcular score de relevancia
@@ -162,19 +174,8 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
               <p className="text-sm text-gray-500 mb-4">
                 {results.length} {results.length === 1 ? 'producto encontrado' : 'productos encontrados'}
               </p>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {results.map((product) => (
-                  <div
-                    key={product.id}
-                    onClick={() => {
-                      console.log('SearchModal: Clicked product:', product.name, 'Variants:', product.variants);
-                      setSelectedProduct(product);
-                    }}
-                    className="cursor-pointer hover:scale-105 transition-transform duration-200"
-                  >
-                    <ProductCard product={product} />
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {results.map((product) => <ProductCard key={product.id} product={product} />)}
               </div>
             </>
           )}
@@ -221,14 +222,7 @@ export function SearchModal({ isOpen, onClose }: SearchModalProps) {
         </div>
       </div>
 
-      {/* Product Quick View Modal */}
-      {selectedProduct && (
-        <ProductQuickViewModal
-          isOpen={true}
-          product={selectedProduct as any}
-          onClose={() => setSelectedProduct(null)}
-        />
-      )}
+
     </div>
   );
 }
