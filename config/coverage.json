@@ -1,5 +1,7 @@
 {
   "mode": "shadow",
+  "sourceGeoJSON": "config/zonas-entrega.geojson",
+  "rule": "entrega si cae en zona verde; zona roja manda; lo no marcado queda por confirmar",
   "city": "Bogotá",
   "allowedLocalities": [
     "Antonio Nariño",
