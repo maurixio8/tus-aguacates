@@ -1,4 +1,5 @@
 export interface StructuredAddress {
+  rawAddress?: string;
   viaType: string;
   viaNumber: string;
   complement: string;
@@ -23,10 +24,9 @@ export const emptyStructuredAddress: StructuredAddress = {
 };
 
 export function formatStructuredAddress(a: StructuredAddress): string {
+  if (a.rawAddress?.trim()) return a.rawAddress.trim();
   const main = [a.viaType, a.viaNumber].filter(Boolean).join(' ').trim();
-  return [main, a.complement.trim(), a.neighborhood.trim(), a.city.trim()]
-    .filter(Boolean)
-    .join(', ');
+  return [main, a.complement.trim(), a.neighborhood.trim(), a.city.trim()].filter(Boolean).join(', ');
 }
 
 export function encodeAddressMetadata(a: StructuredAddress): string {

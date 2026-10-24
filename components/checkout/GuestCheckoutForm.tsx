@@ -12,6 +12,7 @@ import { validateCheckoutCart, formatCartValidationError } from '@/lib/validate-
 import dynamic from 'next/dynamic';
 import { formatStructuredAddress, type StructuredAddress } from '@/lib/address-structured';
 import { evaluateCoverage } from '@/lib/coverage';
+import { AddressAutocompleteField } from './AddressAutocompleteField';
 
 // Lazy load de modales pesados (framer-motion)
 const OrderSuccessModal = dynamic(() => import('./OrderSuccessModal'), {
@@ -188,8 +189,8 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    if (!addressStructured.viaNumber.trim() || !addressStructured.neighborhood.trim()) {
-      setError('Completa el número de vía y el barrio para continuar.');
+    if (!addressStructured.rawAddress?.trim()) {
+      setError('Escribe una dirección para continuar.');
       setLoading(false);
       return;
     }
@@ -534,8 +535,8 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
     // Versión sin pago (para testing o pago contra entrega)
     setLoading(true);
     setError('');
-    if (!addressStructured.viaNumber.trim() || !addressStructured.neighborhood.trim()) {
-      setError('Completa el número de vía y el barrio para continuar.');
+    if (!addressStructured.rawAddress?.trim()) {
+      setError('Escribe una dirección para continuar.');
       setLoading(false);
       return;
     }
@@ -872,18 +873,8 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
                       </div>
 
                       <div className="space-y-3 rounded-lg border border-dashed border-green-300 p-4">
-                        <p className="font-medium">Dirección estructurada *</p>
-                        <div className="grid grid-cols-2 gap-3">
-                          <select aria-label="Tipo de vía" value={addressStructured.viaType} onChange={(e) => setAddressStructured({ ...addressStructured, viaType: e.target.value })} className="w-full px-3 py-2 border rounded-lg"><option>Calle</option><option>Carrera</option><option>Diagonal</option><option>Transversal</option><option>Avenida</option></select>
-                          <input aria-label="Número de vía" required value={addressStructured.viaNumber} onChange={(e) => setAddressStructured({ ...addressStructured, viaNumber: e.target.value })} placeholder="123 # 45-67" className="w-full px-3 py-2 border rounded-lg" />
-                        </div>
-                        <input aria-label="Complemento" value={addressStructured.complement} onChange={(e) => setAddressStructured({ ...addressStructured, complement: e.target.value })} placeholder="Torre, apto, interior..." className="w-full px-3 py-2 border rounded-lg" />
-                        <input aria-label="Barrio" required value={addressStructured.neighborhood} onChange={(e) => setAddressStructured({ ...addressStructured, neighborhood: e.target.value })} placeholder="Barrio obligatorio" list="guest-neighborhoods" className="w-full px-3 py-2 border rounded-lg" />
-                        <datalist id="guest-neighborhoods"><option value="Chapinero" /><option value="Kennedy" /><option value="Suba" /><option value="Teusaquillo" /><option value="Usaquén" /></datalist>
-                        <div className="grid grid-cols-2 gap-3"><input aria-label="Latitud" type="number" step="any" placeholder="Latitud (opcional)" value={addressStructured.latitude ?? ''} onChange={(e) => setAddressStructured({ ...addressStructured, latitude: e.target.value ? Number(e.target.value) : null, pinConfidence: e.target.value ? 'pin' : 'sin_pin' })} /><input aria-label="Longitud" type="number" step="any" placeholder="Longitud (opcional)" value={addressStructured.longitude ?? ''} onChange={(e) => setAddressStructured({ ...addressStructured, longitude: e.target.value ? Number(e.target.value) : null, pinConfidence: e.target.value ? 'pin' : 'sin_pin' })} /></div>
-                        <button type="button" className="text-sm underline" onClick={() => navigator.geolocation?.getCurrentPosition((position) => setAddressStructured({ ...addressStructured, latitude: position.coords.latitude, longitude: position.coords.longitude, pinConfidence: 'pin' }))}>Usar mi ubicación para marcar el pin</button>
+                        <AddressAutocompleteField value={addressStructured} onChange={setAddressStructured} />
                         <textarea aria-label="Notas de entrega" value={addressStructured.deliveryNotes} onChange={(e) => setAddressStructured({ ...addressStructured, deliveryNotes: e.target.value })} rows={2} placeholder="Notas de entrega separadas: portería, horario..." className="w-full px-3 py-2 border rounded-lg" />
-                        <p className="text-xs text-gray-600">Sin pin: el pedido queda con confianza sin_pin y no se bloquea.</p>
                       </div>
                     </div>
                   </div>
