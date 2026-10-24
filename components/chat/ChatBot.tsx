@@ -152,7 +152,7 @@ const FAQ_DATABASE: FAQItem[] = [
   // === DEVOLUCIONES Y GARANTÍA ===
   {
     keywords: ['problema', 'queja', 'reclamo', 'devolución', 'devolver', 'mal estado', 'dañado', 'podrido', 'golpeado'],
-    response: '😔 **¿Problema con tu Pedido?**\n\n¡Lo sentimos! Tu satisfacción es nuestra prioridad.\n\n**¿Qué hacer?**\n1. Toma fotos del producto\n2. Escríbenos por WhatsApp\n3. Tienes máximo **12-18 horas** después de recibir para reportar\n\n✅ Te hacemos **cambio o devolución** del dinero como prefieras.\n\nHaz clic abajo para reportar tu problema 👇',
+    response: '😔 **¿Problema con tu Pedido?**\n\n¡Lo sentimos! Tu satisfacción es nuestra prioridad.\n\n**¿Qué hacer?**\n1. Toma fotos del producto\n2. Escríbenos por WhatsApp\n3. Tienes máximo **24 horas** después de recibir para reportar\n\n✅ Te hacemos **cambio o devolución** del dinero como prefieras.\n\nHaz clic abajo para reportar tu problema 👇',
     followUp: [
       { label: '📲 Reportar problema', value: 'abrir whatsapp problema' }
     ]

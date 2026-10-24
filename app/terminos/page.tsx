@@ -59,7 +59,7 @@ export default function TerminosPage() {
                 Devoluciones y Reembolsos
               </h2>
               <p className="text-gray-600">
-                Aceptamos devoluciones en un plazo de 3 días hábiles si el producto llega en
+                Aceptamos solicitudes dentro de las primeras 24 horas después de recibir el pedido si el producto llega en
                 mal estado o no corresponde con lo solicitado.
               </p>
             </section>

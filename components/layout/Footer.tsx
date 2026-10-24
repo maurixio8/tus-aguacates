@@ -90,7 +90,7 @@ export function Footer() {
         </div>
 
         <div className="border-t border-verde-bosque-600 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>2025 Tus Aguacates. Todos los derechos reservados.</p>
+          <p>2026 Tus Aguacates. Todos los derechos reservados.</p>
           <p className="mt-2">
             <Link href="/terminos" className="hover:text-verde-aguacate-200 transition-colors">
               Términos y Condiciones

@@ -24,6 +24,16 @@ interface ProductDetailModalProps {
   product: Product;
 }
 
+function getUnitLabel(product: Product): string {
+  const raw = String(product.unit || '').trim().toLowerCase();
+  if (raw === 'unit' || raw === 'unidad' || !raw) return 'unidad';
+  if (raw === 'kg' || raw === 'kilo' || raw === 'kilos') return 'kilo';
+  if (raw === 'tray' || raw === 'bandeja') return 'bandeja';
+  if (raw === 'pack' || raw === 'paquete') return 'paquete';
+  if (raw === 'combo') return 'combo';
+  return raw;
+}
+
 export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailModalProps) {
   const { addItem } = useCartStore();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
@@ -39,6 +49,15 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   const isWishlisted = isInWishlist(product.id);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
 
   const hasDiscount = product.discount_price && product.discount_price < product.price;
   const discount = hasDiscount ? calculateDiscount(product.price, product.discount_price!) : 0;
@@ -177,7 +196,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
     const shareUrl = getShareUrl();
     const displayPrice = selectedVariant?.price || product.discount_price || product.price;
     const shareText = `🥑 ${product.name} - ${formatPrice(displayPrice)}\n${shareUrl}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
+    window.open(`https://wa.me/573042582777?text=${encodeURIComponent(shareText)}`, '_blank', 'noopener');
   };
 
   const handleAddToCart = () => {
@@ -211,7 +230,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
       <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
 
       {/* Modal Compacto */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3" onClick={onClose}>
         <div
           className="w-full max-w-sm max-h-[85vh] overflow-y-auto rounded-2xl bg-white shadow-2xl relative"
           onClick={(e) => e.stopPropagation()}
@@ -288,7 +307,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
               <p className="text-xs text-gray-500">Producto fresco de Tus Aguacates</p>
             )}
 
-            <p className="text-xs text-gray-400">Por {product.unit || 'unidad'}</p>
+            <p className="text-xs text-gray-400">Por {getUnitLabel(product)}</p>
 
             {/* Variantes */}
             {variants.length > 0 && (

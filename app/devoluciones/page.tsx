@@ -18,7 +18,7 @@ export default function DevolucionesPage() {
           <div className="space-y-4 text-gray-700">
             <div>
               <h3 className="font-semibold mb-2">Plazo de devolución</h3>
-              <p>Tienes hasta 24 horas después de recibir tu pedido para solicitar una devolución por cualquier motivo.</p>
+              <p>Tienes hasta 24 horas después de recibir tu pedido para reportar un producto dañado o incorrecto y solicitar una solución.</p>
             </div>
 
             <div>
@@ -71,7 +71,7 @@ export default function DevolucionesPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="bg-white p-4 rounded-lg">
                 <h3 className="font-semibold mb-2">Por WhatsApp</h3>
-                <p className="text-sm">Envíanos un mensaje al +57 300 123 4567 con tu número de pedido.</p>
+                <p className="text-sm">Envíanos un mensaje al +57 304 258 2777 con tu número de pedido.</p>
               </div>
               
               <div className="bg-white p-4 rounded-lg">

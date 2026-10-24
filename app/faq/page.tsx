@@ -11,7 +11,7 @@ const faqData = [
   },
   {
     question: "¿Cuánto tarda la entrega?",
-    answer: "Los tiempos de entrega varían según tu ubicación. Generalmente, las entregas en Bogotá y áreas metropolitanas se realizan en 24-48 horas. Para otras ciudades, el tiempo puede ser de 2-3 días hábiles."
+    answer: "Los tiempos de entrega son: Bogotá, Chía y Soacha los martes y viernes, de 2:00 p. m. a 8:00 p. m. Los pedidos deben realizarse antes de las 10:00 a. m. del día de entrega."
   },
   {
     question: "¿Los productos son frescos?",
@@ -26,12 +26,12 @@ const faqData = [
     answer: "Si recibes algún producto en mal estado, contáctanos inmediatamente. Te ofreceremos un reemplazo o un reembolso completo según tu preferencia."
   },
   {
-    question: "¿Ofrecen suscripciones?",
-    answer: "Sí, tenemos un sistema de suscripciones donde puedes recibir productos regularmente con descuentos especiales. Puedes configurar la frecuencia y productos que deseas recibir."
+    question: "¿Ofrecen entregas recurrentes?",
+    answer: "Por ahora no contamos con un sistema de suscripciones. Puedes hacer cada pedido directamente desde nuestra tienda cuando lo necesites."
   },
   {
     question: "¿Cómo funcionan las devoluciones?",
-    answer: "Si no estás satisfecho con tu compra, puedes solicitar una devolución dentro de las primeras 24 horas. El producto debe estar en su estado original. Contáctanos para iniciar el proceso."
+    answer: "Los productos dañados o incorrectos deben reportarse dentro de las primeras 24 horas después de recibir el pedido. Contáctanos para iniciar el proceso."
   }
 ];
 

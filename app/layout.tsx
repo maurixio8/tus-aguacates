@@ -47,7 +47,7 @@ export const metadata: Metadata = {
     url: 'https://tusaguacates.com',
     siteName: 'Tus Aguacates',
     title: 'Tus Aguacates - El #1 en Aguacates Premium del Eje Cafetero',
-    description: 'El proveedor líder de aguacates premium. Entrega el mismo día en Bogotá. +500 clientes satisfechos.',
+    description: 'El proveedor líder de aguacates premium. Entregas martes y viernes en Bogotá, Chía y Soacha. Más de 500 clientes satisfechos.',
     images: [
       {
         url: 'https://tusaguacates.com/images/og-social.png',
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Tus Aguacates - El #1 en Aguacates Premium',
-    description: 'El proveedor líder de aguacates premium. Entrega el mismo día en Bogotá.',
+    description: 'El proveedor líder de aguacates premium. Entregas martes y viernes en Bogotá, Chía y Soacha.',
     images: ['https://tusaguacates.com/images/og-social.png'],
   },
   // Otros metadatos

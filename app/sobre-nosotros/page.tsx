@@ -197,7 +197,7 @@ export default function SobreNosotrosPage() {
               <p className="text-gray-600">Familias Satisfechas</p>
             </div>
             <div className="text-center">
-              <div className="text-4xl font-bold text-verde-aguacate mb-2">50+</div>
+              <div className="text-4xl font-bold text-verde-aguacate mb-2">más de 190</div>
               <p className="text-gray-600">Productos Frescos</p>
             </div>
             <div className="text-center">
@@ -215,8 +215,7 @@ export default function SobreNosotrosPage() {
             Únete a la Familia Tus Aguacates
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Descubre el sabor auténtico y la frescura inigualable de los productos 
-           直接 del Eje Cafetero a tu mesa.
+            Descubre la frescura y calidad de nuestros productos, desde el Eje Cafetero hasta tu mesa.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a

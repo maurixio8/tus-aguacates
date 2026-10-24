@@ -81,7 +81,7 @@ export function EmpresasFooter() {
         </div>
 
         <div className="border-t border-verde-bosque-600 mt-8 pt-8 text-center text-sm text-gray-400">
-          <p>2025 Tus Aguacates. Canal Empresarial.</p>
+          <p>2026 Tus Aguacates. Canal Empresarial.</p>
           <p className="mt-2">
             <Link href="/terminos" className="hover:text-naranja-frutal transition-colors">
               Términos y Condiciones

@@ -30,7 +30,7 @@ export default function PoliticasPage() {
 
               <div>
                 <h3 className="font-semibold mb-2">3. Registro y cuenta de usuario</h3>
-                <p>Para realizar compras, debes crear una cuenta con información veraz y actualizada. Eres responsable de mantener la confidencialidad de tu contraseña.</p>
+                <p>Para realizar compras no es obligatorio crear una cuenta: también puedes comprar como invitado proporcionando los datos necesarios para la entrega.</p>
               </div>
 
               <div>
@@ -84,21 +84,20 @@ export default function PoliticasPage() {
             <div className="space-y-4 text-gray-700">
               <div>
                 <h3 className="font-semibold mb-2">1. Áreas de cobertura</h3>
-                <p>Realizamos envíos a Bogotá y áreas metropolitanas. Pronto扩展remos nuestra cobertura a otras ciudades.</p>
+                <p>Realizamos envíos a Bogotá, Chía y Soacha. Próximamente ampliaremos nuestra cobertura a otras ciudades.</p>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-2">2. Tiempos de entrega</h3>
                 <ul className="list-disc list-inside space-y-1 ml-4">
-                  <li>Bogotá: 24-48 horas</li>
-                  <li>Áreas metropolitanas: 48-72 horas</li>
-                  <li>Pedidos realizados antes de las 12:00 pm se procesan el mismo día</li>
+                  <li>Bogotá, Chía y Soacha: martes y viernes, de 2:00 p. m. a 8:00 p. m.</li>
+                  <li>Los pedidos deben realizarse antes de las 10:00 a. m. del día de entrega.</li>
                 </ul>
               </div>
 
               <div>
                 <h3 className="font-semibold mb-2">3. Costos de envío</h3>
-                <p>Los costos de envío varían según la ubicación y el monto del pedido. Pedidos superiores a $50.000 tienen envío gratuito en Bogotá.</p>
+                <p>Los costos de envío varían según la ubicación y el monto del pedido. En Bogotá y Soacha, los pedidos desde $68.900 tienen envío gratuito.</p>
               </div>
 
               <div>

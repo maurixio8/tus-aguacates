@@ -28,6 +28,16 @@ interface ProductCardProps {
   imageHref?: string;
 }
 
+function getUnitLabel(product: UnifiedProduct): string {
+  const raw = String(product.unit || '').trim().toLowerCase();
+  if (raw === 'unit' || raw === 'unidad' || !raw) return 'unidad';
+  if (raw === 'kg' || raw === 'kilo' || raw === 'kilos') return 'kilo';
+  if (raw === 'tray' || raw === 'bandeja') return 'bandeja';
+  if (raw === 'pack' || raw === 'paquete') return 'paquete';
+  if (raw === 'combo') return 'combo';
+  return raw;
+}
+
 export function ProductCard({ product, imageHref }: ProductCardProps) {
   const router = useRouter();
   const { addItem } = useCartStore();
@@ -365,7 +375,7 @@ export function ProductCard({ product, imageHref }: ProductCardProps) {
                   {formatPrice(displayPrice)}
                 </div>
               )}
-              <div className="text-xs text-gray-500">Por {product.unit}</div>
+              <div className="text-xs text-gray-500">Por {getUnitLabel(product)}</div>
             </div>
           </div>
 
