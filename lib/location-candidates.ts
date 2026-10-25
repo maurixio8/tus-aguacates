@@ -8,6 +8,11 @@ function localityKey(candidate: any) {
 }
 
 function levelFor(candidate: any, multipleLocalities: boolean): CandidateLevel {
+  if (candidate.provider === 'google') {
+    if (candidate.multipleResults || candidate.partialMatch === true || candidate.locationType === 'RANGE_INTERPOLATED') return 'ambiguo';
+    if (candidate.hasStreetNumber !== true || candidate.locationType === 'GEOMETRIC_CENTER' || candidate.locationType === 'APPROXIMATE') return 'calle';
+    return candidate.locationType === 'ROOFTOP' && (candidate.types || []).some((type: string) => type === 'street_address' || type === 'premise') ? 'fuerte' : 'ambiguo';
+  }
   if (candidate.matchType === 'match_by_street') return 'calle';
   if (multipleLocalities) return 'ambiguo';
   if (candidate.provider === 'geoapify') {
