@@ -30,6 +30,7 @@ import {
 
 import RouteMap from '@/components/admin/RouteMap';
 import ManualLocationPicker from '@/components/admin/ManualLocationPicker';
+import { formatNormalizedDeliveryAddress } from '@/lib/location-resolution';
 
 interface RouteItem {
   id: string;
@@ -56,6 +57,8 @@ interface RouteItem {
   city: string;
   resolutionStatus: 'sin_coordenadas' | 'candidata' | 'confirmada' | 'rechazada';
   resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string }[];
+  correctedAddress?: string | null;
+  normalizedAddress?: string | null;
 }
 
 interface ZoneData {
@@ -97,6 +100,8 @@ export default function RutaPage() {
   const [shadowLoading, setShadowLoading] = useState(false);
   const [manualOrder, setManualOrder] = useState<RouteItem | null>(null);
   const [locationSaving, setLocationSaving] = useState(false);
+  const [addressDrafts, setAddressDrafts] = useState<Record<string, string>>({});
+  const [correctionLoading, setCorrectionLoading] = useState<string | null>(null);
 
   const fetchRoute = useCallback(async () => {
     setLoading(true);
@@ -153,10 +158,31 @@ export default function RutaPage() {
     } finally { setShadowLoading(false); }
   };
 
+  const correctAddress = async (order: RouteItem) => {
+    const correctedAddress = (addressDrafts[order.id] || order.correctedAddress || order.deliveryAddress).trim();
+    if (!correctedAddress) return;
+    setCorrectionLoading(order.id);
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ruta/locations', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'correct', orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress, city: order.city }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo corregir la dirección');
+      setAddressDrafts(previous => ({ ...previous, [order.id]: correctedAddress }));
+      await fetchRoute();
+    } catch (err: any) {
+      setError(err.message || 'Error corrigiendo dirección');
+    } finally {
+      setCorrectionLoading(null);
+    }
+  };
+
   const saveLocation = async (order: RouteItem, action: 'confirm' | 'whatsapp', candidate?: { latitude: number; longitude: number; label?: string; provider?: string }) => {
     setLocationSaving(true);
     try {
-      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, originalAddress: order.deliveryAddress, city: order.city, normalizedAddress: undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', candidates: order.resolutionCandidates }) });
+      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || addressDrafts[order.id] || order.deliveryAddress, city: order.city, normalizedAddress: order.normalizedAddress || undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', candidates: order.resolutionCandidates }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo guardar la ubicación');
       setManualOrder(null);
@@ -549,11 +575,20 @@ export default function RutaPage() {
           <div className="flex items-center justify-between gap-2"><h2 className="font-semibold text-amber-950">Ubicaciones pendientes</h2><span className="rounded-full bg-amber-200 px-2 py-1 text-xs text-amber-950">{data.orders.filter(order => order.latitude == null || order.longitude == null).length}</span></div>
           <p className="mt-1 text-xs text-amber-900">Solo las ubicaciones confirmadas aparecen como paradas. No se adivinan coordenadas.</p>
           <div className="mt-3 space-y-3">
-            {data.orders.filter(order => order.latitude == null || order.longitude == null).map(order => <div key={order.id} className="rounded-lg border border-amber-200 bg-white p-3 text-sm">
-              <div className="font-medium text-gray-900">{order.customerName}</div><div className="text-xs text-gray-600">{order.deliveryAddress || 'Sin dirección'}</div>
-              {order.resolutionCandidates.length > 0 ? <div className="mt-2 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos Nominatim</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className="block w-full rounded border border-gray-200 px-2 py-1 text-left text-xs hover:bg-green-50"><b>Confirmar candidato {index + 1}</b> · {candidate.label} · {candidate.confidence}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">Nominatim no devolvió una coincidencia exacta.</div>}
-              <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-1.5 text-xs font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-1.5 text-xs font-medium text-green-800">Marcar para WhatsApp</button></div>
-            </div>)}
+            {data.orders.filter(order => order.latitude == null || order.longitude == null).map(order => {
+              const draftAddress = addressDrafts[order.id] ?? order.correctedAddress ?? order.deliveryAddress;
+              const normalizedPreview = order.correctedAddress ? formatNormalizedDeliveryAddress(order.correctedAddress, order.city) : null;
+              return <div key={order.id} className="rounded-lg border border-amber-200 bg-white p-3 text-sm">
+                <div className="font-medium text-gray-900">{order.customerName}</div>
+                <div className="mt-1 text-xs text-gray-500">Dirección original: {order.deliveryAddress || 'Sin dirección'}</div>
+                <label className="mt-3 block text-xs font-semibold text-gray-700" htmlFor={`route-address-${order.id}`}>Corregir dirección antes de buscar</label>
+                <textarea id={`route-address-${order.id}`} value={draftAddress} onChange={event => setAddressDrafts(previous => ({ ...previous, [order.id]: event.target.value }))} rows={2} className="mt-1 min-h-20 w-full rounded-lg border border-gray-300 px-3 py-2 text-base leading-6 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200" />
+                <button type="button" disabled={correctionLoading === order.id || !draftAddress.trim()} onClick={() => correctAddress(order)} className="mt-2 w-full rounded-lg bg-amber-600 px-3 py-2.5 text-base font-semibold text-white disabled:opacity-50">{correctionLoading === order.id ? 'Buscando candidatos...' : 'Corregir dirección'}</button>
+                {normalizedPreview && <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-900"><b>Versión normalizada:</b> {normalizedPreview}</div>}
+                {order.resolutionCandidates.length > 0 ? <div className="mt-3 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos de ubicación</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className="block w-full rounded border border-gray-200 px-3 py-2 text-left text-sm hover:bg-green-50"><b>Confirmar candidato {index + 1}</b> · {candidate.label} · {candidate.confidence}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">No hay candidato exacto todavía. Si sigue así, usa pin manual o WhatsApp.</div>}
+                <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button></div>
+              </div>;
+            })}
           </div>
         </section>
       )}

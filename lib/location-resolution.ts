@@ -27,6 +27,27 @@ export function normalizeDeliveryAddress(address: string, city = ''): string {
   return value.replace(/\s+/g, ' ').trim();
 }
 
+export function formatNormalizedDeliveryAddress(address: string, city = ''): string {
+  let value = String(address || '').replace(/\s+/g, ' ').trim();
+  value = value
+    .replace(/\b(carrera|cra\.?|cr\.?|kr\.?)\s*/gi, 'Cra ')
+    .replace(/\b(calle|cll?\.?|cl\.?)\s*/gi, 'Cll ')
+    .replace(/\b(avenida|avda?\.?|ak\.?)\s*/gi, 'Av ')
+    .replace(/\b(transversal|transv?\.?|tv\.?)\s*/gi, 'Tv ')
+    .replace(/\b(diagonal|diag\.?|dgn\.?)\s*/gi, 'Dg ')
+    .replace(/\b(numero|número|no\.?|n\.?)\s*/gi, '# ')
+    .replace(/\s*#\s*/g, ' # ')
+    .replace(/\s*,\s*/g, ', ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const cleanCity = String(city || '').replace(/\s+/g, ' ').trim();
+  if (cleanCity && !value.toLowerCase().includes(cleanCity.toLowerCase())) {
+    value = value ? `${value}, ${cleanCity}` : cleanCity;
+  }
+  return value;
+}
+
 export function resolutionFromRow(row: any): {
   originalAddress: string;
   normalizedAddress: string;

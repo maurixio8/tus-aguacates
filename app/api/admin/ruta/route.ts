@@ -88,7 +88,13 @@ async function fetchResolutions() {
   const supabase = createSupabaseClient();
   const { data, error } = await supabase.from('delivery_location_resolutions').select('*').limit(2000);
   if (error) throw error;
-  return new Map((data || []).map((row: any) => [row.normalized_address, row]));
+  const resolutions = new Map<string, any>();
+  for (const row of data || []) {
+    if (row.normalized_address) resolutions.set(row.normalized_address, row);
+    if (row.original_address) resolutions.set(normalizeDeliveryAddress(row.original_address, 'Bogotá'), row);
+    if (row.corrected_address) resolutions.set(normalizeDeliveryAddress(row.corrected_address, 'Bogotá'), row);
+  }
+  return resolutions;
 }
 
 async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolutions: Map<string, any>): Promise<AdminRouteOrder> {
@@ -140,6 +146,8 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
     deliveryAddress: parts.address, deliveryDate: deliveryDateOf(row), createdAt: row.created_at || null, totalAmount: Number(row.total_amount || row.total || 0), items, itemCount: items.length,
     isDelivered: Boolean(row.delivered_at) || ['delivered', 'entregado'].includes(normalizeStatus(row)), paymentStatus: String(row.payment_status || 'pending'), notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
     latitude, longitude, coordinateSource, confidence, coverage, coverageReason, coverageZone, city: parts.city || 'Bogotá', resolutionStatus, resolutionCandidates,
+    correctedAddress: saved?.corrected_address || null,
+    normalizedAddress: saved?.normalized_address || normalizedAddress,
   };
 }
 

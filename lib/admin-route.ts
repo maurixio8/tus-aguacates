@@ -36,6 +36,8 @@ export interface AdminRouteOrder {
   city: string;
   resolutionStatus: 'sin_coordenadas' | 'candidata' | 'confirmada' | 'rechazada';
   resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string }[];
+  correctedAddress?: string | null;
+  normalizedAddress?: string | null;
 }
 
 export function parseOrderData(row: any): any {
