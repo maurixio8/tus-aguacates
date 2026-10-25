@@ -97,7 +97,28 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
     map.fitBounds(bounds, { padding: 35, maxZoom: 14, duration: 0 });
   }
 
-  return <div className="space-y-2"><div className="text-xs text-gray-500">{lineOrderIds.length ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).' : 'Sin ruta shadow generada: se muestran todos los pedidos con coordenadas; la línea no representa una ruta optimizada.'}</div><div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} /></div>;
+  const unresolved = orders.filter(order => order.latitude == null || order.longitude == null);
+  const located = orders.length - unresolved.length;
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs text-gray-500">
+        {lineOrderIds.length
+          ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).'
+          : `Mapa: ${located} ubicado${located === 1 ? '' : 's'} · ${unresolved.length} pendiente${unresolved.length === 1 ? '' : 's'} de ubicación.`}
+      </div>
+      <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />
+      {unresolved.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+          <p className="font-semibold">Pedidos seleccionados sin parada en el mapa</p>
+          <p className="mt-1">No tienen coordenadas confirmadas. No se dibuja una ubicación aproximada para evitar enviar al conductor al lugar equivocado.</p>
+          <ul className="mt-2 space-y-1">
+            {unresolved.map(order => <li key={order.id}><b>{escapeHtml(order.customerName)}</b> — {escapeHtml(order.coordinateSource === 'sin_coordenadas' ? 'sin coordenadas / verificar barrio' : order.coordinateSource)}</li>)}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function escapeHtml(value: string) {
