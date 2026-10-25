@@ -3,14 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
+import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
 import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
 const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
-const geocodeCache = new Map<string, any>();
-let nominatimQueue = Promise.resolve();
-let lastNominatimAt = 0;
 
 async function fetchAll(table: 'orders' | 'guest_orders') {
   const supabase = createSupabaseClient();
@@ -22,67 +20,6 @@ async function fetchAll(table: 'orders' | 'guest_orders') {
     if (!data || data.length < 1000) break;
   }
   return rows;
-}
-
-function queryVariants(address: string, city: string) {
-  const base = address.trim();
-  if (!base) return [];
-  const expanded = base.replace(/\b(cra|cr|kr)\.?\b/gi, 'Carrera').replace(/\b(cl|cll)\.?\b/gi, 'Calle').replace(/\b(av|avda|ak)\.?\b/gi, 'Avenida').replace(/\s*#\s*/g, ' ');
-  const suffix = city || 'Bogotá';
-  return Array.from(new Set([`${base}, ${suffix}, Colombia`, `${expanded}, ${suffix}, Colombia`, `${base}, Bogotá, Colombia`].map(x => x.replace(/\s+/g, ' ').trim())));
-}
-
-async function nominatim(query: string) {
-  const run = async () => {
-    const wait = Math.max(0, 1000 - (Date.now() - lastNominatimAt));
-    if (wait) await new Promise(resolve => setTimeout(resolve, wait));
-    lastNominatimAt = Date.now();
-    const params = new URLSearchParams({ format: 'jsonv2', addressdetails: '1', limit: '5', countrycodes: 'co', bounded: '1', viewbox: '-74.25,4.85,-73.95,4.45', q: query });
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, { headers: { 'User-Agent': 'TusAguacates/admin-location-resolution/1.0' }, next: { revalidate: 86400 } });
-    if (!res.ok) return [];
-    const rows = await res.json();
-    return Array.isArray(rows) ? rows : [];
-  };
-  const result = nominatimQueue.then(run, run);
-  nominatimQueue = result.then(() => undefined, () => undefined);
-  return result;
-}
-
-async function geoapify(query: string) {
-  const apiKey = process.env.GEOAPIFY_API_KEY;
-  if (!apiKey) return [];
-  try {
-    const params = new URLSearchParams({ text: query, filter: 'countrycode:co', bias: 'proximity:-74.1,4.65', limit: '5', apiKey });
-    const res = await fetch(`https://api.geoapify.com/v1/geocode/search?${params}`, { next: { revalidate: 86400 } });
-    if (!res.ok) return [];
-    const body = await res.json();
-    return (body.features || []).map((feature: any) => ({ latitude: Number(feature.properties.lat), longitude: Number(feature.properties.lon), label: feature.properties.formatted || query, confidence: Number(feature.properties.rank?.confidence || 0) >= 0.9 ? 'alta' : 'media', provider: 'geoapify' })).filter((candidate: any) => Number.isFinite(candidate.latitude) && Number.isFinite(candidate.longitude));
-  } catch { return []; }
-}
-
-async function geocode(address: string, city: string) {
-  const key = normalizeDeliveryAddress(address, city);
-  if (!key) return [];
-  if (geocodeCache.has(key)) return geocodeCache.get(key);
-  const candidates: any[] = [];
-  for (const query of queryVariants(address, city)) {
-    try {
-      const rows = await nominatim(query);
-      for (const row of rows) {
-        const addr = row.address || {};
-        const candidate = { latitude: Number(row.lat), longitude: Number(row.lon), label: row.display_name || query, confidence: addr.house_number && (addr.city || addr.town || addr.municipality) ? 'alta' : 'media', provider: 'nominatim' };
-        if (Number.isFinite(candidate.latitude) && Number.isFinite(candidate.longitude) && !candidates.some(x => x.latitude === candidate.latitude && x.longitude === candidate.longitude)) candidates.push(candidate);
-      }
-      if (candidates.some(x => x.confidence === 'alta')) break;
-      await new Promise(resolve => setTimeout(resolve, 1000));
-    } catch { /* keep the address unresolved */ }
-  }
-  if (!candidates.length) {
-    const fallback = await geoapify(`${address}, ${city || 'Bogotá'}, Colombia`);
-    candidates.push(...fallback);
-  }
-  geocodeCache.set(key, candidates);
-  return candidates;
 }
 
 async function fetchResolutions() {
@@ -127,11 +64,10 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
       resolutionStatus = 'sin_coordenadas';
       resolutionCandidates = [];
     } else if (parts.address) {
-      resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : classifyLocationCandidates(await geocode(parts.address, parts.city || 'Bogotá'), parts.address, parts.city || 'Bogotá');
-      if (resolutionCandidates.length && resolutionCandidates[0].confidence === 'alta' && resolutionCandidates[0].recommended !== false) {
-        latitude = resolutionCandidates[0].latitude; longitude = resolutionCandidates[0].longitude; coordinateSource = 'geocodificado'; confidence = 'alta'; resolutionStatus = 'confirmada';
-      } else if (resolutionCandidates.length) {
-        resolutionStatus = 'candidata'; confidence = resolutionCandidates[0].confidence === 'alta' ? 'alta' : 'media';
+      resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : classifyLocationCandidates(await geocodeDeliveryAddress(parts.address, parts.city || 'Bogotá'), parts.address, parts.city || 'Bogotá');
+      if (resolutionCandidates.length) {
+        resolutionStatus = 'candidata';
+        confidence = resolutionCandidates[0].confidence === 'alta' ? 'alta' : 'media';
       }
     }
   }
@@ -182,11 +118,6 @@ export async function GET(request: NextRequest) {
     const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
     const selected = all.filter(({ row }) => isEligible(row) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
     const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source, resolutionBundle.resolutions, resolutionBundle.historyByOriginal)));
-    const autoConfirmed = normalized.filter(order => order.resolutionStatus === 'confirmada' && order.coordinateSource === 'geocodificado' && order.latitude != null && order.longitude != null);
-    if (autoConfirmed.length) {
-      const supabase = createSupabaseClient();
-      await supabase.from('delivery_location_resolutions').upsert(autoConfirmed.map(order => ({ original_address: order.deliveryAddress, normalized_address: normalizeDeliveryAddress(order.deliveryAddress, order.city), latitude: order.latitude, longitude: order.longitude, provider: 'nominatim', confidence: 'alta', status: 'confirmada', candidates: order.resolutionCandidates, resolved_at: new Date().toISOString(), confirmed_by: 'auto_exact_high', rejection_reason: null, updated_at: new Date().toISOString() })), { onConflict: 'normalized_address' });
-    }
     normalized.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
     const counts = {
       total: normalized.length, conPin: normalized.filter(o => o.coordinateSource === 'pin').length,
