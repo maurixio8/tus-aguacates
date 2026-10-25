@@ -1,248 +1,144 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { createSupabaseClient } from '@/lib/auth-admin';
+import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
+import { evaluateCoverage } from '@/lib/coverage';
+import {
+  addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf,
+  isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData,
+} from '@/lib/admin-route';
 
 export const dynamic = 'force-dynamic';
+const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
+const geocodeCache = new Map<string, any>();
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': process.env.NODE_ENV === 'production'
-    ? 'https://tus-aguacates.vercel.app'
-    : 'http://localhost:3000',
-  'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Cookie, Set-Cookie',
-  'Access-Control-Allow-Credentials': 'true',
-  'Access-Control-Max-Age': '86400',
-};
-
-export async function OPTIONS() {
-  return new NextResponse(null, { headers: corsHeaders });
+async function fetchAll(table: 'orders' | 'guest_orders') {
+  const supabase = createSupabaseClient();
+  const rows: any[] = [];
+  for (let from = 0; from < 10000; from += 1000) {
+    const { data, error } = await supabase.from(table).select('*').range(from, from + 999);
+    if (error) throw error;
+    rows.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return rows;
 }
 
-// GET /api/admin/ruta - Obtener pedidos pendientes para la ruta
+async function geocode(address: string) {
+  const key = address.trim().toLowerCase();
+  if (!key) return null;
+  if (geocodeCache.has(key)) return geocodeCache.get(key);
+  try {
+    const params = new URLSearchParams({ format: 'jsonv2', addressdetails: '1', limit: '5', countrycodes: 'co', bounded: '1', viewbox: '-74.25,4.85,-73.95,4.45', q: address });
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, { headers: { 'User-Agent': 'TusAguacates/admin-route-phase3b' }, next: { revalidate: 86400 } });
+    const rows = await res.json();
+    const first = Array.isArray(rows) ? rows[0] : null;
+    const addr = first?.address || {};
+    const result = first ? {
+      latitude: Number(first.lat), longitude: Number(first.lon),
+      confidence: addr.house_number && (addr.city || addr.town || addr.municipality) ? 'alta' : 'media',
+      label: first.display_name || '',
+    } : null;
+    geocodeCache.set(key, result);
+    return result;
+  } catch {
+    geocodeCache.set(key, null);
+    return null;
+  }
+}
+
+async function normalizeRow(row: any, source: 'orders' | 'guest_orders'): Promise<AdminRouteOrder> {
+  const data = parseOrderData(row);
+  const parts = addressParts(row);
+  let latitude = parts.latitude;
+  let longitude = parts.longitude;
+  let coordinateSource: AdminRouteOrder['coordinateSource'] = latitude != null && longitude != null ? 'pin' : 'sin_coordenadas';
+  let confidence: AdminRouteOrder['confidence'] = coordinateSource === 'pin' ? 'alta' : 'sin_coordenadas';
+
+  if (latitude == null || longitude == null) {
+    const result = await geocode(parts.address);
+    if (result && result.confidence === 'alta') {
+      latitude = result.latitude; longitude = result.longitude;
+      coordinateSource = 'geocodificado'; confidence = 'alta';
+    } else if (result) {
+      coordinateSource = 'sin_coordenadas'; confidence = result.confidence;
+    } else {
+      coordinateSource = 'sin_coordenadas';
+      confidence = parts.address ? 'baja' : 'sin_coordenadas';
+    }
+  }
+
+  let coverage: AdminRouteOrder['coverage'] = 'por_confirmar';
+  let coverageReason: string | null = 'sin_coordenadas';
+  let coverageZone: string | null = null;
+  if (isChia(parts.city, parts.address)) {
+    coverage = 'chia'; coverageReason = 'chia_no_entregar_por_ahora';
+  } else if (latitude != null && longitude != null && coordinateSource !== 'sin_coordenadas') {
+    const result = evaluateCoverage({ rawAddress: parts.address, viaType: '', viaNumber: '', complement: '', neighborhood: '', city: parts.city || 'Bogotá', deliveryNotes: '', latitude, longitude, pinConfidence: coordinateSource === 'pin' ? 'pin' : 'sin_pin' });
+    coverage = result.decision === 'dentro' ? 'dentro' : result.decision === 'fuera' ? 'fuera' : 'por_confirmar';
+    coverageReason = result.reasons[0] || null;
+    coverageZone = result.zone;
+  } else if (coordinateSource === 'sin_coordenadas') {
+    coverage = 'por_confirmar'; coverageReason = parts.address ? 'verificar_barrio' : 'sin_coordenadas';
+  }
+
+  const items = orderItems(row, data);
+  return {
+    id: String(row.id), source, orderNumber: String(row.order_number || row.orderNumber || row.id || ''),
+    customerName: String(row.customer_name || row.guest_name || row.name || 'Cliente'),
+    customerPhone: String(row.customer_phone || row.guest_phone || row.phone || ''),
+    deliveryAddress: parts.address, deliveryDate: deliveryDateOf(row), createdAt: row.created_at || null,
+    totalAmount: Number(row.total_amount || row.total || 0), items, itemCount: items.length,
+    isDelivered: Boolean(row.delivered_at) || ['delivered', 'entregado'].includes(normalizeStatus(row)),
+    paymentStatus: String(row.payment_status || 'pending'), notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
+    latitude, longitude, coordinateSource, confidence, coverage, coverageReason, coverageZone, city: parts.city || 'Bogotá',
+  };
+}
+
+function isEligible(row: any) {
+  const status = normalizeStatus(row);
+  return CONFIRMED_ROUTE_STATUSES.has(status) && !row.delivered_at;
+}
+
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient();
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'pendiente';
-    const limit = parseInt(searchParams.get('limit') || '200');
-    const desde = searchParams.get('desde');
-    const hasta = searchParams.get('hasta');
-    const origin = searchParams.get('origin') || '';
-
-    // Construir query base
-    let query = supabase
-      .from('orders')
-      .select(`
-        id,
-        order_number,
-        customer_name,
-        customer_phone,
-        delivery_address,
-        shipping_address,
-        total_amount,
-        order_data,
-        created_at,
-        delivered_at,
-        payment_status,
-        notes,
-        delivery_notes
-      `)
-      .is('delivered_at', null)
-      .or(`order_status.eq.${status},status.eq.${status}`);
-
-    // Filtro por rango de fechas
-    if (desde) {
-      query = query.gte('created_at', desde);
-    }
-    if (hasta) {
-      const hastaEnd = hasta.length === 10 ? hasta + 'T23:59:59.999Z' : hasta;
-      query = query.lte('created_at', hastaEnd);
-    }
-
-    const { data: orders, error } = await query
-      .order('created_at', { ascending: true })
-      .limit(limit);
-
-    if (error) {
-      console.error('❌ Error fetching ruta orders:', error);
-      return NextResponse.json({ error: 'Error al obtener pedidos' }, {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-    // Procesar cada pedido para extraer items
-    const processed = (orders || []).map((order) => {
-      const orderData = typeof order.order_data === 'string'
-        ? JSON.parse(order.order_data)
-        : (order.order_data || {});
-
-      let items: any[] = [];
-      if (Array.isArray(orderData?.items)) {
-        items = orderData.items;
-      } else if (typeof orderData === 'object') {
-        // Intentar extraer items de diferentes formatos
-        const possibleItems = (orderData as any).items || (orderData as any).products || [];
-        items = Array.isArray(possibleItems) ? possibleItems : [];
-      }
-
-      // Extraer dirección limpia
-      const rawAddress = order.delivery_address || '';
-      const shippingAddr = order.shipping_address || {};
-      let cleanAddress = rawAddress;
-      
-      return {
-        id: order.id,
-        orderNumber: order.order_number,
-        customerName: order.customer_name || 'Cliente',
-        customerPhone: order.customer_phone || '',
-        deliveryAddress: cleanAddress.replace(/\?/g, '').trim(),
-        totalAmount: order.total_amount || 0,
-        items: items.map((item: any) => ({
-          name: item.product_name || item.name || 'Producto',
-          quantity: item.quantity || 1,
-          price: item.price || 0,
-        })),
-        itemCount: items.length,
-        createdAt: order.created_at,
-        isDelivered: !!order.delivered_at,
-        paymentStatus: order.payment_status || 'pending',
-        notes: order.notes || order.delivery_notes || '',
-      };
-    });
-
-    // Agrupar por zona (aproximación por localidad)
-    const zones = groupByZone(processed);
-
-    return NextResponse.json({
-      orders: processed,
-      zones,
-      total: processed.length,
-      totalAmount: processed.reduce((sum, o) => sum + (o.totalAmount || 0), 0),
-    }, { headers: corsHeaders });
-
+    const desde = searchParams.get('desde') || searchParams.get('dateFrom') || nextDeliveryDate();
+    const hasta = searchParams.get('hasta') || searchParams.get('dateTo') || desde;
+    const [orders, guests] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders')]);
+    const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
+    const selected = all.filter(({ row }) => isEligible(row) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
+    const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source)));
+    normalized.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
+    const counts = {
+      total: normalized.length,
+      conPin: normalized.filter(o => o.coordinateSource === 'pin').length,
+      geocodificados: normalized.filter(o => o.coordinateSource === 'geocodificado').length,
+      porVerificar: normalized.filter(o => o.coordinateSource === 'verificar_barrio' || o.coordinateSource === 'sin_coordenadas').length,
+      fueraCobertura: normalized.filter(o => o.coverage === 'fuera').length,
+      chia: normalized.filter(o => o.coverage === 'chia').length,
+      dentro: normalized.filter(o => o.coverage === 'dentro').length,
+      porConfirmar: normalized.filter(o => o.coverage === 'por_confirmar').length,
+    };
+    const zones = normalized.length ? { todos: { name: 'Pedidos del rango', orders: normalized, count: normalized.length } } : {};
+    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 10:00; no es filtro created_at', origin: CORABASTOS });
   } catch (error) {
-    console.error('❌ Error in GET /api/admin/ruta:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, {
-      status: 500,
-      headers: corsHeaders,
-    });
+    console.error('Error in GET /api/admin/ruta', error);
+    return NextResponse.json({ error: 'Error al obtener pedidos de ruta' }, { status: 500 });
   }
 }
 
-// PATCH /api/admin/ruta - Marcar pedidos como entregados
 export async function PATCH(request: NextRequest) {
   try {
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
     const supabase = createSupabaseClient();
-    const body = await request.json();
-    const { orderIds } = body;
-
-    if (!orderIds || !Array.isArray(orderIds) || orderIds.length === 0) {
-      return NextResponse.json({ error: 'Se requieren orderIds' }, {
-        status: 400,
-        headers: corsHeaders,
-      });
-    }
-
+    const { orderIds } = await request.json();
+    if (!Array.isArray(orderIds) || orderIds.length === 0) return NextResponse.json({ error: 'Se requieren orderIds' }, { status: 400 });
     const now = new Date().toISOString();
-
-    const { data, error } = await supabase
-      .from('orders')
-      .update({
-        delivered_at: now,
-        updated_at: now,
-        order_status: 'entregado',
-        status: 'delivered',
-      })
-      .in('id', orderIds)
-      .select('id, order_number, customer_name');
-
-    if (error) {
-      console.error('❌ Error marking orders as delivered:', error);
-      return NextResponse.json({ error: 'Error al marcar pedidos' }, {
-        status: 500,
-        headers: corsHeaders,
-      });
-    }
-
-    return NextResponse.json({
-      success: true,
-      marked: data?.length || 0,
-      orders: data || [],
-    }, { headers: corsHeaders });
-
-  } catch (error) {
-    console.error('❌ Error in PATCH /api/admin/ruta:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, {
-      status: 500,
-      headers: corsHeaders,
-    });
-  }
-}
-
-// Agrupar pedidos por zona/localidad aproximada
-function groupByZone(orders: any[]) {
-  const zones: Record<string, { name: string; orders: any[]; count: number }> = {
-    chapinero: { name: 'Chapinero', orders: [], count: 0 },
-    usaquen: { name: 'Usaquén', orders: [], count: 0 },
-    suba: { name: 'Suba', orders: [], count: 0 },
-    engativa: { name: 'Engativá', orders: [], count: 0 },
-    fontibon: { name: 'Fontibón', orders: [], count: 0 },
-    teusaquillo: { name: 'Teusaquillo', orders: [], count: 0 },
-    barrios_unidos: { name: 'Barrios Unidos', orders: [], count: 0 },
-    puente_aranda: { name: 'Puente Aranda', orders: [], count: 0 },
-    martires: { name: 'Mártires', orders: [], count: 0 },
-    antonio_narino: { name: 'Antonio Nariño', orders: [], count: 0 },
-    san_cristobal: { name: 'San Cristóbal', orders: [], count: 0 },
-    santa_fe: { name: 'Santa Fe', orders: [], count: 0 },
-    candelaria: { name: 'Candelaria', orders: [], count: 0 },
-    rafael_uribe: { name: 'Rafael Uribe', orders: [], count: 0 },
-    ciudad_bolivar: { name: 'Ciudad Bolívar', orders: [], count: 0 },
-    usme: { name: 'Usme', orders: [], count: 0 },
-    tintal: { name: 'Tintal / Bosa', orders: [], count: 0 },
-    kennedy: { name: 'Kennedy', orders: [], count: 0 },
-    otras: { name: 'Otras', orders: [], count: 0 },
-  };
-
-  const zoneKeywords: Record<string, string[]> = {
-    chapinero: ['chapinero'],
-    usaquen: ['usaquén', 'usAquen', 'cedritos', 'santa bárbara'],
-    suba: ['suba', 'iberia', 'prado', 'mirandela'],
-    engativa: ['engativá', 'engativa', 'normandía', 'villa', 'bonanza'],
-    fontibon: ['fontibón', 'fontibon'],
-    teusaquillo: ['teusaquillo', 'salitre', 'simón bolívar'],
-    barrios_unidos: ['barrios unidos', 'doce de octubre', 'siete de agosto'],
-    puente_aranda: ['puente aranda', 'galerías', 'paloquemao', 'carabelas'],
-    martires: ['mártires', 'martires', 'voto nacional'],
-    tintal: ['tintal', 'bosa', 'porvenir', 'olimpia'],
-    kennedy: ['kennedy', 'britalia', 'patio bonito', 'marsella', 'dindalito'],
-    ciudad_bolivar: ['ciudad bolívar', 'ciudad bolivar', 'arboleda'],
-    rafael_uribe: ['rafael uribe', 'rafael uribe uribe', 'marruecos'],
-    santa_fe: ['santa fe', 'santa fé', 'centro bogotá'],
-    san_cristobal: ['san cristóbal', 'sancristobal', 'veinte de julio', 'socorro'],
-    candelaria: ['candelaria', 'la candelaria'],
-  };
-
-  for (const order of orders) {
-    const addr = (order.deliveryAddress || '').toLowerCase();
-    let assigned = false;
-    
-    for (const [zone, keywords] of Object.entries(zoneKeywords)) {
-      if (keywords.some(k => addr.includes(k))) {
-        zones[zone].orders.push(order);
-        zones[zone].count++;
-        assigned = true;
-        break;
-      }
-    }
-
-    if (!assigned) {
-      zones.otras.orders.push(order);
-      zones.otras.count++;
-    }
-  }
-
-  // Devolver solo las zonas que tienen pedidos
-  return Object.fromEntries(
-    Object.entries(zones).filter(([_, z]) => z.count > 0)
-  );
+    const { data, error } = await supabase.from('orders').update({ delivered_at: now, updated_at: now, order_status: 'entregado', status: 'delivered' }).in('id', orderIds).select('id, order_number, customer_name');
+    if (error) return NextResponse.json({ error: 'Error al marcar pedidos' }, { status: 500 });
+    return NextResponse.json({ success: true, marked: data?.length || 0, orders: data || [] });
+  } catch { return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 }); }
 }

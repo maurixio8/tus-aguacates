@@ -9,7 +9,7 @@ OUT_ROOT = pathlib.Path('/opt/data/cache/phase3-shadow-routes')
 BOGOTA = ZoneInfo('America/Bogota')
 CORABASTOS = {'lat': 4.63205, 'lng': -74.15534, 'address': 'Corabastos, Bogotá'}
 MAX_STOPS = 10
-CONFIRMED = {'confirmado','confirmed','pendiente_entrega','pending_delivery','pagado','paid','processing','en_ruta'}
+CONFIRMED = {'confirmado','confirmed','pendiente_entrega','pending_delivery','pagado','paid','processing','en_ruta','pendiente','pending'}
 
 
 def env():
@@ -41,10 +41,22 @@ def parse_dt(value):
 
 def get_day(row):
     od=row.get('order_data') or {}
-    for key in ('delivery_date','deliveryDate','scheduled_delivery_date'):
-        v=row.get(key) or od.get(key)
+    if isinstance(od, str):
+        try: od=json.loads(od)
+        except Exception: od={}
+    for key in ('delivery_date','deliveryDate','scheduled_delivery_date','fecha_entrega'):
+        v=row.get(key) or (od.get(key) if isinstance(od,dict) else None)
         if v: return str(v)[:10]
-    return None
+    created=parse_dt(row.get('created_at'))
+    if not created: return None
+    weekday=created.weekday()  # Mon=0 ... Sun=6
+    hour=created.hour
+    if weekday < 1: delta=1-weekday
+    elif weekday == 1: delta=0 if hour < 10 else 3
+    elif weekday < 4: delta=4-weekday
+    elif weekday == 4: delta=0 if hour < 10 else 4
+    else: delta=1 if weekday == 5 else 1
+    return (created + timedelta(days=delta)).date().isoformat()
 
 def get_status(row):
     return str(row.get('status') or row.get('order_status') or '').strip().lower()

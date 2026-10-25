@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Filter,
   ChevronLeft,
@@ -992,6 +993,9 @@ export default function OrdersPage() {
       <div>
         <h1 className="text-2xl lg:text-3xl font-bold text-gray-900">Gestión de Pedidos</h1>
         <p className="text-gray-600 mt-1">Administra y da seguimiento a todos los pedidos</p>
+        <Link href={`/admin/ruta${dateFrom || dateTo ? `?${new URLSearchParams({ ...(dateFrom ? { desde: dateFrom } : {}), ...(dateTo ? { hasta: dateTo } : {}) }).toString()}` : ''}`} className="inline-flex mt-3 items-center gap-2 px-3 py-2 rounded-lg bg-green-600 text-white text-sm hover:bg-green-700">
+          <Truck className="w-4 h-4" /> Ver pedidos en el mapa de ruta
+        </Link>
       </div>
 
       {/* Quick Stats Panel */}

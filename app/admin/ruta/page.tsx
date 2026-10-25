@@ -1,6 +1,8 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import React, { useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Truck,
   MapPin,
@@ -41,6 +43,16 @@ interface RouteItem {
   isDelivered: boolean;
   paymentStatus: string;
   notes: string;
+  source: 'orders' | 'guest_orders';
+  deliveryDate: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  coordinateSource: string;
+  confidence: string;
+  coverage: string;
+  coverageReason: string | null;
+  coverageZone: string | null;
+  city: string;
 }
 
 interface ZoneData {
@@ -54,9 +66,15 @@ interface RouteData {
   zones: Record<string, ZoneData>;
   total: number;
   totalAmount: number;
+  counts: { total: number; conPin: number; geocodificados: number; porVerificar: number; fueraCobertura: number; chia: number; dentro: number; porConfirmar: number };
+  dateFrom: string;
+  dateTo: string;
+  canonicalDateSource: string;
+  origin: { lat: number; lng: number; address: string };
 }
 
 export default function RutaPage() {
+  const routeSearch = useSearchParams();
   const [data, setData] = useState<RouteData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -67,11 +85,13 @@ export default function RutaPage() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
-  const [dateDesde, setDateDesde] = useState('');
-  const [dateHasta, setDateHasta] = useState('');
-  const [originAddress, setOriginAddress] = useState('');
+  const [dateDesde, setDateDesde] = useState(() => routeSearch.get('desde') || '');
+  const [dateHasta, setDateHasta] = useState(() => routeSearch.get('hasta') || '');
+  const [originAddress] = useState('Corabastos, Bogotá');
   const [excludedOrders, setExcludedOrders] = useState<Set<string>>(new Set());
   const [showMap, setShowMap] = useState(true);
+  const [shadowResult, setShadowResult] = useState<any>(null);
+  const [shadowLoading, setShadowLoading] = useState(false);
 
   const fetchRoute = useCallback(async () => {
     setLoading(true);
@@ -92,6 +112,8 @@ export default function RutaPage() {
         json.totalAmount = json.orders.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
       }
       setData(json);
+      if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
+      if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
       // Expandir todas las zonas por defecto
       if (json.zones) {
         setExpandedZones(new Set(Object.keys(json.zones)));
@@ -106,6 +128,25 @@ export default function RutaPage() {
   useEffect(() => {
     fetchRoute();
   }, [fetchRoute]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => fetchRoute(), 180000);
+    return () => window.clearInterval(timer);
+  }, [fetchRoute]);
+
+  const generateShadow = async () => {
+    const date = dateDesde || data?.dateFrom;
+    if (!date) return;
+    setShadowLoading(true);
+    try {
+      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo generar la ruta sombra');
+      setShadowResult(json);
+    } catch (err: any) {
+      setError(err.message || 'Error generando ruta sombra');
+    } finally { setShadowLoading(false); }
+  };
 
   // Marcar seleccionados como entregados
   const markAsDelivered = async () => {
@@ -325,30 +366,22 @@ export default function RutaPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Ruta de Hoy</h1>
             <p className="text-sm text-gray-500 capitalize">
-              {getDeliveryDate()}
+              {data?.dateFrom ? `Entrega: ${data.dateFrom}${data.dateTo !== data.dateFrom ? ` → ${data.dateTo}` : ''}` : getDeliveryDate()}
             </p>
           </div>
         </div>
 
         {/* Stats */}
         {data && (
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <p className="text-xs text-gray-500">Pendientes</p>
-              <p className="text-xl font-bold text-gray-900">{data.total}</p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <p className="text-xs text-gray-500">Total</p>
-              <p className="text-xl font-bold text-green-600">
-                ${data.totalAmount.toLocaleString('es-CO')}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg p-3 border border-gray-200">
-              <p className="text-xs text-gray-500">Zonas</p>
-              <p className="text-xl font-bold text-gray-900">
-                {Object.keys(data.zones || {}).length}
-              </p>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 mt-4">
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Total</p><p className="text-xl font-bold text-gray-900">{data.counts.total}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Con pin</p><p className="text-xl font-bold text-green-700">{data.counts.conPin}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Geocodificados</p><p className="text-xl font-bold text-blue-700">{data.counts.geocodificados}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Por verificar</p><p className="text-xl font-bold text-amber-700">{data.counts.porVerificar}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Fuera</p><p className="text-xl font-bold text-red-700">{data.counts.fueraCobertura}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Chía</p><p className="text-xl font-bold text-purple-700">{data.counts.chia}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Dentro</p><p className="text-xl font-bold text-green-700">{data.counts.dentro}</p></div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200"><p className="text-xs text-gray-500">Zonas texto</p><p className="text-xl font-bold text-gray-900">{Object.keys(data.zones || {}).length}</p></div>
           </div>
         )}
 
@@ -386,22 +419,8 @@ export default function RutaPage() {
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Dirección de salida (origen de la ruta)</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={originAddress}
-                  onChange={(e) => setOriginAddress(e.target.value)}
-                  placeholder="Ej: Cra 30 #10-20, Bogotá"
-                  className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-                <button
-                  onClick={fetchRoute}
-                  className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700 transition-colors"
-                >
-                  <Filter className="w-4 h-4" />
-                </button>
-              </div>
+              <label className="block text-xs text-gray-500 mb-1">Origen y llegada fija</label>
+              <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">Corabastos, Bogotá · 4.63205, -74.15534</div>
             </div>
           </div>
         )}
@@ -460,7 +479,10 @@ export default function RutaPage() {
           className="px-3 py-1.5 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
         >
           <RefreshCw className="w-4 h-4" />
-          Recargar
+          Actualizar
+        </button>
+        <button onClick={generateShadow} disabled={shadowLoading} className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
+          {shadowLoading ? 'Generando...' : 'Generar ruta sombra'}
         </button>
 
         {/* Botón abrir todo en Waze */}
@@ -503,6 +525,9 @@ export default function RutaPage() {
         )}
       </div>
 
+      {data && <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900"><b>Fecha canónica:</b> {data.dateFrom}{data.dateTo !== data.dateFrom ? ` a ${data.dateTo}` : ''}. {data.canonicalDateSource}</div>}
+      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} rutas. <span className="ml-2 inline-flex gap-2"><a className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=route-report.json`} target="_blank">Reporte</a><a className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=preview.html`} target="_blank">Preview</a>{(shadowResult.routes || []).map((r: any) => <a key={r.file} className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=spoke-${(r.name || 'Ruta 1').replace('Ruta ', '')}.csv`} target="_blank">{r.name} CSV</a>)}</span></div>}
+
       {/* MAPA DE RUTA */}
       {showMap && data && (
         <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
@@ -519,8 +544,13 @@ export default function RutaPage() {
                 customerName: o.customerName,
                 deliveryAddress: o.deliveryAddress,
                 orderNumber: o.orderNumber,
+                latitude: o.latitude,
+                longitude: o.longitude,
+                coordinateSource: o.coordinateSource,
+                coverage: o.coverage,
               }))}
-            origin={originAddress}
+            lineOrderIds={shadowResult?.routes?.flatMap((r: any) => r.order_ids || []) || []}
+            origin={data.origin}
           />
         </div>
       )}
@@ -701,6 +731,12 @@ function OrderCard({
               {hasQuestion && (
                 <AlertTriangle className="w-3 h-3 text-amber-500 flex-shrink-0" aria-label="Dirección con ?" />
               )}
+            </div>
+
+            <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
+              <span className="px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">{order.coverage}</span>
+              <span className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">{order.coordinateSource}</span>
+              <span className="text-gray-400">confianza: {order.confidence}</span>
             </div>
 
             <div className="flex items-center gap-3 mt-1.5">

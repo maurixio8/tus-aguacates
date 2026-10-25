@@ -1,204 +1,68 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useState, useRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useRef } from 'react';
+import zones from '@/config/zonas-entrega.json';
 
-interface RouteMapOrder {
+export interface RouteMapOrder {
   id: string;
   customerName: string;
   deliveryAddress: string;
   orderNumber: string;
+  latitude: number | null;
+  longitude: number | null;
+  coordinateSource: string;
+  coverage: string;
 }
 
-interface RouteMapProps {
-  orders: RouteMapOrder[];
-  origin: string;
-}
+interface RouteMapProps { orders: RouteMapOrder[]; lineOrderIds?: string[]; origin: { lat: number; lng: number; address: string }; }
 
-export default function RouteMap({ orders, origin }: RouteMapProps) {
+const COLORS: Record<string, string> = { dentro: '#15803d', por_confirmar: '#d97706', chia: '#7c3aed', fuera: '#b91c1c' };
+
+export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
-  const Lref = useRef<any>(null);
-  const markersRef = useRef<any[]>([]);
-  const polylineRef = useRef<any>(null);
-  const geocodedKey = useRef('');
-  const initDone = useRef(false);
-  const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('Cargando mapa...');
+  const layersRef = useRef<any[]>([]);
 
-  // ── 1. Inicializar mapa (solo una vez) ──
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-    let cancel = false;
-
+    let cancelled = false;
     (async () => {
-      try {
-        const L = (await import('leaflet')).default;
-        if (cancel) return;
-
-        delete (L.Icon.Default.prototype as any)._getIconUrl;
-        L.Icon.Default.mergeOptions({
-          iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-        });
-
-        const map = L.map(mapContainer.current!, { zoomControl: true, scrollWheelZoom: true });
-
-        // CartoDB Positron — tiles ligeros, cargan rápido
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; OSM &copy; CARTO',
-          maxZoom: 19,
-          subdomains: 'abcd',
-        }).addTo(map);
-
-        // Bogotá completo desde el inicio
-        map.fitBounds([[4.45, -74.25], [4.85, -73.95]]);
-
-        mapRef.current = map;
-        Lref.current = L;
-        initDone.current = true;
-        setLoading(false);
-
-        // Disparar geocoding ahora que el mapa está listo
-        await geocode(orders, origin);
-      } catch (e) {
-        console.error('Error mapa:', e);
-        setStatus('Error al cargar el mapa');
-        setLoading(false);
-      }
+      if (!mapContainer.current || mapRef.current) return;
+      const L = (await import('leaflet')).default;
+      if (cancelled) return;
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png', iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png' });
+      const map = L.map(mapContainer.current!, { zoomControl: true, scrollWheelZoom: true });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM &copy; CARTO', maxZoom: 19, subdomains: 'abcd' }).addTo(map);
+      L.geoJSON(zones as any, { style: (feature: any) => ({ color: feature?.properties?.tipo === 'exclusion' ? '#b91c1c' : '#15803d', fillOpacity: 0.16, weight: 2 }) }).addTo(map);
+      mapRef.current = map;
+      draw(map, L, orders, lineOrderIds, origin);
     })();
-
-    return () => { cancel = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
   }, []);
 
-  // ── 2. Re-geocodificar si cambian los pedidos ──
-  useEffect(() => {
-    if (!initDone.current) return;
-    geocode(orders, origin);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, origin]);
+  useEffect(() => { if (mapRef.current) import('leaflet').then(({ default: L }) => draw(mapRef.current, L, orders, lineOrderIds, origin)); }, [orders, lineOrderIds, origin]);
 
-  // ── 3. Geocoding ──
-  async function geocode(orderList: RouteMapOrder[], ori: string) {
-    const L = Lref.current;
-    const map = mapRef.current;
-    if (!L || !map || orderList.length === 0) return;
-
-    // Evitar duplicados
-    const key = orderList.map(o => o.id).join(',') + '|' + ori;
-    if (geocodedKey.current === key) return;
-    geocodedKey.current = key;
-
-    // Limpiar marcadores anteriores
-    markersRef.current.forEach(m => map.removeLayer(m));
-    markersRef.current = [];
-    if (polylineRef.current) {
-      map.removeLayer(polylineRef.current);
-      polylineRef.current = null;
-    }
-
-    setStatus('Ubicando direcciones...');
-
-    const points: { lat: number; lng: number; order: RouteMapOrder; label: string }[] = [];
-
-    // Origen
-    if (ori?.trim()) {
-      try {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ori + ', Bogotá, Colombia')}&format=json&limit=1`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.length > 0) {
-          points.push({
-            lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon),
-            order: { id: 'origin', customerName: 'Salida', deliveryAddress: ori, orderNumber: '' },
-            label: '🏠',
-          });
-        }
-      } catch (e) {
-        console.warn('Origen no ubicado:', e);
-      }
-    }
-
-    // Pedidos (1 request/segundo máximo)
-    for (let i = 0; i < orderList.length; i++) {
-      const o = orderList[i];
-      const addr = (o.deliveryAddress + ', Bogotá, Colombia').replace(/\?/g, '').trim();
-      if (!addr || addr === ', Bogotá, Colombia') continue;
-
-      try {
-        await new Promise(r => setTimeout(r, 300));
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(addr)}&format=json&limit=1`;
-        const res = await fetch(url);
-        const data = await res.json();
-        if (data?.length > 0) {
-          points.push({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), order: o, label: `${i + 1}` });
-        }
-      } catch (e) {
-        console.warn(`Error #${i}:`, e);
-      }
-    }
-
-    // Dibujar
-    if (points.length === 0) {
-      setStatus('No se pudieron ubicar las direcciones');
-      return;
-    }
-
-    const bounds = L.latLngBounds([]);
-    const latlngs: [number, number][] = [];
-
-    for (const p of points) {
-      const isOrigin = p.order.id === 'origin';
-      const icon = L.divIcon({
-        className: '',
-        html: `<div style="background:${isOrigin ? '#3b82f6' : '#16a34a'};color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;border:2px solid #fff">${isOrigin ? '🏠' : p.label}</div>`,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
-      });
-
-      markersRef.current.push(
-        L.marker([p.lat, p.lng], { icon })
-          .addTo(map)
-          .bindPopup(`<b>${isOrigin ? 'Salida' : `#${p.label} ${p.order.customerName}`}</b><br>${p.order.deliveryAddress}`)
-      );
-      bounds.extend([p.lat, p.lng]);
-      latlngs.push([p.lat, p.lng]);
-    }
-
-    if (latlngs.length >= 2) {
-      polylineRef.current = L.polyline(latlngs, { color: '#2563eb', weight: 2.5, opacity: 0.5 }).addTo(map);
-    }
-
-    if (bounds.isValid()) {
-      map.fitBounds(bounds, { padding: [40, 40], maxZoom: 14 });
-    }
-
-    const n = points.length - (ori?.trim() ? 1 : 0);
-    setStatus(`📍 ${n} parada${n !== 1 ? 's' : ''} en mapa`);
+  function draw(map: any, L: any, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
+    layersRef.current.forEach(layer => map.removeLayer(layer)); layersRef.current = [];
+    const bounds = L.latLngBounds([[start.lat, start.lng]]);
+    const routePoints: [number, number][] = [[start.lat, start.lng]];
+    const routeMap = new Map(list.map(o => [o.id, o]));
+    const ordered = routeIds.map(id => routeMap.get(id)).filter((o): o is RouteMapOrder => Boolean(o && o.latitude != null && o.longitude != null));
+    ordered.forEach(o => routePoints.push([o.latitude!, o.longitude!]));
+    routePoints.push([start.lat, start.lng]);
+    const routeLayer = routeIds.length > 0 && ordered.length > 0 ? L.polyline(routePoints, { color: '#2563eb', weight: 3, opacity: 0.72, dashArray: '8 5' }).addTo(map) : null;
+    if (routeLayer) layersRef.current.push(routeLayer);
+    const originLayer = L.marker([start.lat, start.lng]).addTo(map).bindPopup(`<b>Salida y llegada</b><br>${start.address}`); layersRef.current.push(originLayer); bounds.extend([start.lat, start.lng]);
+    list.forEach((o, index) => {
+      if (o.latitude == null || o.longitude == null) return;
+      const color = COLORS[o.coverage] || '#6b7280';
+      const icon = L.divIcon({ className: '', html: `<div style="background:${color};color:white;width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white">${index + 1}</div>`, iconSize: [27, 27], iconAnchor: [13, 13] });
+      const marker = L.marker([o.latitude, o.longitude], { icon }).addTo(map).bindPopup(`<b>${o.customerName}</b><br>${o.deliveryAddress || 'Sin dirección'}<br>Estado: ${o.coverage}<br>Coordenadas: ${o.coordinateSource}`);
+      layersRef.current.push(marker); bounds.extend([o.latitude, o.longitude]);
+    });
+    if (bounds.isValid()) map.fitBounds(bounds, { padding: [35, 35], maxZoom: 14 });
   }
 
-  return (
-    <div className="space-y-2">
-      {status && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-          {loading && <Loader2 className="w-3 h-3 animate-spin" />}
-          {status}
-        </div>
-      )}
-      <div
-        ref={mapContainer}
-        className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100"
-        style={{ height: '420px' }}
-      >
-        {loading && (
-          <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            Cargando mapa...
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  return <div className="space-y-2"><div className="text-xs text-gray-500">{lineOrderIds.length ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).' : 'Sin ruta shadow generada: se muestran todos los pedidos con coordenadas; la línea no representa una ruta optimizada.'}</div><div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} /></div>;
 }
