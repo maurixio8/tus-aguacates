@@ -105,9 +105,9 @@ export default function RutaPage() {
       const params = new URLSearchParams();
       if (dateDesde) params.set('desde', dateDesde);
       if (dateHasta) params.set('hasta', dateHasta);
-      const res = await fetch(`/api/admin/ruta?${params.toString()}`);
-      if (!res.ok) throw new Error('Error al cargar ruta');
-      const json = await res.json();
+      const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store' });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.error || 'Error al cargar ruta');
       // Excluir pedidos pausados
       if (excludedOrders.size > 0 && json.orders) {
         json.orders = json.orders.filter((o: any) => !excludedOrders.has(o.id));
@@ -144,7 +144,7 @@ export default function RutaPage() {
     if (!date) return;
     setShadowLoading(true);
     try {
-      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) });
+      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo generar la ruta sombra');
       setShadowResult(json);
@@ -156,7 +156,7 @@ export default function RutaPage() {
   const saveLocation = async (order: RouteItem, action: 'confirm' | 'whatsapp', candidate?: { latitude: number; longitude: number; label?: string; provider?: string }) => {
     setLocationSaving(true);
     try {
-      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, originalAddress: order.deliveryAddress, city: order.city, normalizedAddress: undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', candidates: order.resolutionCandidates }) });
+      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, originalAddress: order.deliveryAddress, city: order.city, normalizedAddress: undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', candidates: order.resolutionCandidates }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo guardar la ubicación');
       setManualOrder(null);
@@ -174,6 +174,7 @@ export default function RutaPage() {
     try {
       const res = await fetch('/api/admin/ruta', {
         method: 'PATCH',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderIds: Array.from(selectedOrders) }),
       });
@@ -415,32 +416,30 @@ export default function RutaPage() {
         </div>
 
         {/* Filtros: Rango de fechas + Origen */}
-        {data && (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Desde</label>
-              <input
-                type="date"
-                value={dateDesde}
-                onChange={(e) => setDateDesde(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-500 mb-1">Hasta</label>
-              <input
-                type="date"
-                value={dateHasta}
-                onChange={(e) => setDateHasta(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-              />
-            </div>
-            <div className="sm:col-span-2">
-              <label className="block text-xs text-gray-500 mb-1">Origen y llegada fija</label>
-              <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">Corabastos, Bogotá · 4.63205, -74.15534</div>
-            </div>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Desde</label>
+            <input
+              type="date"
+              value={dateDesde}
+              onChange={(e) => setDateDesde(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
           </div>
-        )}
+          <div>
+            <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+            <input
+              type="date"
+              value={dateHasta}
+              onChange={(e) => setDateHasta(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="block text-xs text-gray-500 mb-1">Origen y llegada fija</label>
+            <div className="px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50">Corabastos, Bogotá · 4.63205, -74.15534</div>
+          </div>
+        </div>
 
         {/* Mensaje de éxito */}
         {markSuccess > 0 && (

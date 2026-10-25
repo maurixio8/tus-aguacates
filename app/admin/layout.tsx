@@ -52,30 +52,34 @@ export default function AdminLayout({
       return;
     }
 
-    // Verificar autenticación
-    const checkAuth = () => {
-      const savedAdmin = localStorage.getItem('admin');
-      console.log('🔐 [AdminLayout] Verificando auth, savedAdmin:', savedAdmin ? 'existe' : 'no existe');
+    // La cookie httpOnly es la fuente de verdad. localStorage solo conserva la
+    // identidad visual y no debe mantener abierto el panel con una sesión vencida.
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/admin/me', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+        const data = await response.json().catch(() => null);
 
-      if (savedAdmin) {
-        try {
-          const adminData = JSON.parse(savedAdmin);
-          console.log('✅ [AdminLayout] Admin data parsed:', adminData.email);
-          setAdmin(adminData);
-          setLoading(false);
-        } catch (error) {
-          console.error('❌ [AdminLayout] Error parsing admin data:', error);
+        if (!response.ok || !data?.success || !data.user) {
           localStorage.removeItem('admin');
           window.location.href = '/admin/login';
+          return;
         }
-      } else {
-        console.log('⚠️ [AdminLayout] No admin en localStorage, redirigiendo a login');
+
+        localStorage.setItem('admin', JSON.stringify(data.user));
+        setAdmin(data.user);
+        setLoading(false);
+      } catch (error) {
+        console.error('❌ [AdminLayout] Error verificando sesión del servidor:', error);
+        localStorage.removeItem('admin');
         window.location.href = '/admin/login';
       }
     };
 
-    // Pequeño delay para asegurar que localStorage está listo
-    setTimeout(checkAuth, 50);
+    void checkAuth();
   }, [isLoginPage]);
 
   const handleLogout = async () => {

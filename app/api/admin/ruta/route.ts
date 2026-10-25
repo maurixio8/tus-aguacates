@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
-import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, hasUsableSavedResolution, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
@@ -106,7 +106,7 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
   if (latitude == null || longitude == null) {
     if (saved?.status === 'confirmada' && saved.latitude != null && saved.longitude != null) {
       latitude = Number(saved.latitude); longitude = Number(saved.longitude); coordinateSource = 'pin'; confidence = 'alta'; resolutionStatus = 'confirmada';
-    } else if (saved?.status !== 'rechazada' && saved?.status !== 'sin_coordenadas') {
+    } else if (hasUsableSavedResolution(saved)) {
       resolutionStatus = saved.status;
     } else if (parts.address) {
       resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : await geocode(parts.address, parts.city || 'Bogotá');

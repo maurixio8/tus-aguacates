@@ -74,6 +74,11 @@ export function normalizeStatus(row: any): string {
   return String(row?.status ?? row?.order_status ?? '').trim().toLowerCase();
 }
 
+export function hasUsableSavedResolution(saved: { status?: unknown } | null | undefined): boolean {
+  const status = typeof saved?.status === 'string' ? saved.status : null;
+  return Boolean(status && status !== 'rechazada' && status !== 'sin_coordenadas');
+}
+
 export function nextDeliveryDate(now = new Date()): string {
   const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23', weekday: 'short' }).formatToParts(now);
   const y = Number(parts.find(p => p.type === 'year')?.value);
