@@ -92,6 +92,12 @@ function deliveryDayDelta(weekday: number, hour: number): number {
   return weekday === 6 ? 3 : 2;
 }
 
+function finiteCoordinate(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 export function addressParts(row: any) {
   const data = parseOrderData(row);
   const structured = data?.address_structured || {};
@@ -101,7 +107,7 @@ export function addressParts(row: any) {
   const latitude = structured.latitude ?? safeShipping.latitude ?? row?.latitude ?? row?.lat ?? null;
   const longitude = structured.longitude ?? safeShipping.longitude ?? row?.longitude ?? row?.lng ?? null;
   const city = String(structured.city || safeShipping.city || row?.city || '').trim();
-  return { data, structured, address, latitude: Number.isFinite(Number(latitude)) ? Number(latitude) : null, longitude: Number.isFinite(Number(longitude)) ? Number(longitude) : null, city };
+  return { data, structured, address, latitude: finiteCoordinate(latitude), longitude: finiteCoordinate(longitude), city };
 }
 
 export function orderItems(row: any, data: any) {

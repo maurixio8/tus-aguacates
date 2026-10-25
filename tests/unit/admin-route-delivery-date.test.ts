@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { derivedDeliveryDate, nextDeliveryDate } from '@/lib/admin-route';
+import { derivedDeliveryDate, nextDeliveryDate, addressParts } from '@/lib/admin-route';
 
 describe('fecha canónica de entrega martes/viernes', () => {
   const cases = [
@@ -21,5 +21,10 @@ describe('fecha canónica de entrega martes/viernes', () => {
   it('usa el mismo corte para la fecha por defecto de la ruta', () => {
     expect(nextDeliveryDate(new Date('2026-10-27T10:59:00Z'))).toBe('2026-10-27');
     expect(nextDeliveryDate(new Date('2026-10-27T11:00:00Z'))).toBe('2026-10-30');
+  });
+
+  it('no convierte null en coordenadas 0,0', () => {
+    expect(addressParts({ delivery_address: 'Carrera 14b #161' }).latitude).toBeNull();
+    expect(addressParts({ delivery_address: 'Carrera 14b #161' }).longitude).toBeNull();
   });
 });
