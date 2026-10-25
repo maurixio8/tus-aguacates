@@ -30,7 +30,7 @@ export interface MessageVariables {
 }
 
 export interface BannerConfig {
-  cutoffHour: number; // 10 para 10AM
+  cutoffHour: number; // 6 para 6:00 a. m.
   deliveryDays: number[]; // [2, 5] para martes (2) y viernes (5)
   timezone: string;
 }

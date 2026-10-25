@@ -152,7 +152,7 @@ export function generateOrderSummary(order: Order): string {
   const orderNumber = order.order_number || `INV-${order.id.slice(-8)}`;
 
   // Generate delivery date based on delivery days: TUESDAY (2) and FRIDAY (5) only
-  // RULE: If order is placed on a delivery day BEFORE 10:00 AM Bogotá (UTC-5), deliver SAME DAY
+  // RULE: If order is placed on a delivery day BEFORE 6:00 AM Bogotá (UTC-5), deliver SAME DAY
   //       Otherwise, calculate next delivery day
   //
   // IMPORTANT: Convert from UTC (how Supabase stores timestamps) to Bogotá time explicitly
@@ -178,7 +178,7 @@ export function generateOrderSummary(order: Order): string {
 
     // Delivery days: Tuesday (2) and Friday (5)
     const DELIVERY_DAYS = [2, 5]; // Tuesday = 2, Friday = 5
-    const CUT_OFF_HOUR = 10; // 10:00 AM Bogotá - orders before this can be delivered same day
+    const CUT_OFF_HOUR = 6; // 6:00 AM Bogotá - orders before this can be delivered same day
 
     // Get order date and time in Bogotá (UTC-5)
     const orderDate = toBogotaDate(order.created_at);
@@ -189,7 +189,7 @@ export function generateOrderSummary(order: Order): string {
     const isDeliveryDay = DELIVERY_DAYS.includes(orderDayOfWeek);
     const isBeforeCutOff = orderHour < CUT_OFF_HOUR;
 
-    // If it's a delivery day and before 10 AM Bogotá, deliver TODAY (same day)
+    // If it's a delivery day and before 6 AM Bogotá, deliver TODAY (same day)
     if (isDeliveryDay && isBeforeCutOff) {
       return orderDate.toLocaleDateString('es-ES', {
         weekday: 'long',

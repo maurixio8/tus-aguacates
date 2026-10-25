@@ -9,9 +9,9 @@ export interface DeliverySchedule {
   isUrgent: boolean;
 }
 
-// Configuración para entregas martes y viernes con corte a 10AM
+// Configuración para entregas martes y viernes con corte a las 6:00 a. m.
 const DEFAULT_CONFIG: BannerConfig = {
-  cutoffHour: 10, // 10AM
+  cutoffHour: 6, // 6:00 a. m.
   deliveryDays: [2, 5], // Martes (2), Viernes (5)
   timezone: 'America/Bogota'
 };
@@ -25,7 +25,7 @@ export class DeliveryScheduler {
 
   /**
    * Calcula la siguiente fecha de entrega basado en el día y hora actual
-   * usando el nuevo horario de corte de 10AM
+   * usando el nuevo horario de corte de 6:00 a. m.
    */
   getNextDeliveryDate(): Date {
     const now = new Date();
@@ -39,7 +39,7 @@ export class DeliveryScheduler {
 
     let daysUntilDelivery: number;
 
-    // Lógica actualizada para corte a 10AM
+    // Lógica actualizada para corte a 6:00 a. m.
     switch (dayOfWeek) {
       case 0: // Domingo -> Martes (2 días)
         daysUntilDelivery = 2;
@@ -48,8 +48,8 @@ export class DeliveryScheduler {
         daysUntilDelivery = 1;
         break;
       case 2: // Martes
-        // Si es martes antes de 10AM, entrega hoy
-        // Si es martes después de 10AM, próxima entrega viernes (3 días)
+        // Si es martes antes de 6:00 a. m., entrega hoy
+        // Si es martes después de 6:00 a. m., próxima entrega viernes (3 días)
         daysUntilDelivery = hasPassedCutoff ? 3 : 0;
         break;
       case 3: // Miércoles -> Viernes (2 días)
@@ -59,8 +59,8 @@ export class DeliveryScheduler {
         daysUntilDelivery = 1;
         break;
       case 5: // Viernes
-        // Si es viernes antes de 10AM, entrega hoy
-        // Si es viernes después de 10AM, próxima entrega martes (4 días)
+        // Si es viernes antes de 6:00 a. m., entrega hoy
+        // Si es viernes después de 6:00 a. m., próxima entrega martes (4 días)
         daysUntilDelivery = hasPassedCutoff ? 4 : 0;
         break;
       case 6: // Sábado -> Martes (3 días)
@@ -104,14 +104,14 @@ export class DeliveryScheduler {
     const deliveryDate = this.getNextDeliveryDate();
     const deadline = new Date(deliveryDate);
 
-    // Si la entrega es hoy, el deadline es hoy a las 10AM
+    // Si la entrega es hoy, el deadline es hoy a las 6:00 a. m.
     const now = new Date();
     const isDeliveryToday = deliveryDate.toDateString() === now.toDateString();
 
     if (isDeliveryToday && now.getHours() < this.config.cutoffHour) {
       deadline.setHours(this.config.cutoffHour, 0, 0, 0);
     } else {
-      // Si no, el deadline es el día de entrega anterior a las 10AM
+      // Si no, el deadline es el día de entrega anterior a las 6:00 a. m.
       const deliveryDayOfWeek = deliveryDate.getDay();
       let previousDay = deliveryDayOfWeek - 1;
 

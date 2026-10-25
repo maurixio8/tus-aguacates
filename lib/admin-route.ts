@@ -6,6 +6,7 @@ export const CONFIRMED_ROUTE_STATUSES = new Set([
 ]);
 
 export const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
+export const DELIVERY_CUTOFF_HOUR = 6;
 
 export type RouteResolution = 'pin' | 'geocodificado' | 'verificar_barrio' | 'sin_coordenadas';
 export type RouteCoverage = 'dentro' | 'por_confirmar' | 'chia' | 'fuera';
@@ -47,13 +48,13 @@ export function derivedDeliveryDate(createdAt: string | null | undefined): strin
   if (!createdAt) return null;
   const date = new Date(createdAt);
   if (Number.isNaN(date.getTime())) return null;
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false, weekday: 'short' }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23', weekday: 'short' }).formatToParts(date);
   const y = Number(parts.find(p => p.type === 'year')?.value);
   const m = Number(parts.find(p => p.type === 'month')?.value);
   const d = Number(parts.find(p => p.type === 'day')?.value);
   const hour = Number(parts.find(p => p.type === 'hour')?.value);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  const next = weekday < 2 ? 2 - weekday : weekday === 2 ? (hour < 10 ? 0 : 3) : weekday < 5 ? 5 - weekday : weekday === 5 ? (hour < 10 ? 0 : 4) : 3;
+  const next = deliveryDayDelta(weekday, hour);
   const result = new Date(Date.UTC(y, m - 1, d + next));
   return result.toISOString().slice(0, 10);
 }
@@ -72,14 +73,23 @@ export function normalizeStatus(row: any): string {
 }
 
 export function nextDeliveryDate(now = new Date()): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short' }).formatToParts(now);
+  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Bogota', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23', weekday: 'short' }).formatToParts(now);
   const y = Number(parts.find(p => p.type === 'year')?.value);
   const m = Number(parts.find(p => p.type === 'month')?.value);
   const d = Number(parts.find(p => p.type === 'day')?.value);
+  const hour = Number(parts.find(p => p.type === 'hour')?.value);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
-  const delta = weekday <= 2 ? 2 - weekday : weekday <= 5 ? 5 - weekday : 9 - weekday;
+  const delta = deliveryDayDelta(weekday, hour);
   const result = new Date(Date.UTC(y, m - 1, d + delta));
   return result.toISOString().slice(0, 10);
+}
+
+function deliveryDayDelta(weekday: number, hour: number): number {
+  if (weekday < 2) return 2 - weekday;
+  if (weekday === 2) return hour < DELIVERY_CUTOFF_HOUR ? 0 : 3;
+  if (weekday < 5) return 5 - weekday;
+  if (weekday === 5) return hour < DELIVERY_CUTOFF_HOUR ? 0 : 4;
+  return weekday === 6 ? 3 : 2;
 }
 
 export function addressParts(row: any) {

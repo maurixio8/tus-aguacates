@@ -225,7 +225,7 @@ export default function ListaComprasPage() {
     return `${year}-${month}-${day}`;
   };
 
-  // Calcular fecha del ciclo de entrega (viernes o martes 10AM hacia ahora)
+  // Calcular fecha del ciclo de entrega (viernes o martes 6:00 a. m. hacia ahora)
   const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
     const now = new Date();
     const today = new Date();
@@ -234,7 +234,7 @@ export default function ListaComprasPage() {
 
     let daysBack = currentDay - targetDay;
     if (daysBack < 0) daysBack += 7;
-    if (daysBack === 0 && now.getHours() < 10) {
+    if (daysBack === 0 && now.getHours() < 6) {
       daysBack = 7;
     }
 
@@ -2519,7 +2519,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               setDateTo(formatLocalDate(new Date()));
             }}
             className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300 whitespace-nowrap"
-            title="Pedidos desde el viernes 10AM hasta ahora (para entregar el martes)"
+            title="Pedidos desde el viernes 6:00 a. m. hasta ahora (para entregar el martes)"
           >
             🚚 Entrega Martes
           </button>
@@ -2530,7 +2530,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               setDateTo(formatLocalDate(new Date()));
             }}
             className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300 whitespace-nowrap"
-            title="Pedidos desde el martes 10AM hasta ahora (para entregar el viernes)"
+            title="Pedidos desde el martes 6:00 a. m. hasta ahora (para entregar el viernes)"
           >
             🚚 Entrega Viernes
           </button>

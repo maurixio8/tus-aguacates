@@ -52,9 +52,9 @@ def get_day(row):
     weekday=created.weekday()  # Mon=0 ... Sun=6
     hour=created.hour
     if weekday < 1: delta=1-weekday
-    elif weekday == 1: delta=0 if hour < 10 else 3
+    elif weekday == 1: delta=0 if hour < 6 else 3
     elif weekday < 4: delta=4-weekday
-    elif weekday == 4: delta=0 if hour < 10 else 4
+    elif weekday == 4: delta=0 if hour < 6 else 4
     else: delta=1 if weekday == 5 else 1
     return (created + timedelta(days=delta)).date().isoformat()
 

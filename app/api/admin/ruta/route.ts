@@ -122,7 +122,7 @@ export async function GET(request: NextRequest) {
       porConfirmar: normalized.filter(o => o.coverage === 'por_confirmar').length,
     };
     const zones = normalized.length ? { todos: { name: 'Pedidos del rango', orders: normalized, count: normalized.length } } : {};
-    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 10:00; no es filtro created_at', origin: CORABASTOS });
+    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 6:00 a. m.; no es filtro created_at', origin: CORABASTOS });
   } catch (error) {
     console.error('Error in GET /api/admin/ruta', error);
     return NextResponse.json({ error: 'Error al obtener pedidos de ruta' }, { status: 500 });
