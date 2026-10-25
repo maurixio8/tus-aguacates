@@ -214,8 +214,16 @@ export default function RutaPage() {
   const saveLocation = async (order: RouteItem, action: 'confirm' | 'whatsapp', candidate?: { latitude: number; longitude: number; label?: string; provider?: string; confidence?: string }) => {
     setLocationSaving(true);
     try {
-      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || addressDrafts[order.id] || order.deliveryAddress, city: order.city, normalizedAddress: order.normalizedAddress || undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', providerConfidence: candidate?.confidence, candidates: order.resolutionCandidates }) });
-      const json = await res.json();
+      const payload: any = { action, orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || addressDrafts[order.id] || order.deliveryAddress, city: order.city, normalizedAddress: order.normalizedAddress || undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', providerConfidence: candidate?.confidence, candidates: order.resolutionCandidates };
+      let res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      let json = await res.json();
+      if (res.status === 409 && json.requiresCoverageConfirmation) {
+        const confirmed = window.confirm(json.warning || 'Esta ubicación está fuera de tus zonas de entrega y no entrará a la ruta. ¿Quieres confirmarla de todas formas?');
+        if (!confirmed) return;
+        payload.confirmOutsideCoverage = true;
+        res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        json = await res.json();
+      }
       if (!res.ok) throw new Error(json.error || 'No se pudo guardar la ubicación');
       setManualOrder(null);
       await fetchRoute();

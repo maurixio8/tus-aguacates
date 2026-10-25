@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
+import { evaluateCoverage } from '@/lib/coverage';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { formatNormalizedDeliveryAddress, normalizeDeliveryAddress } from '@/lib/location-resolution';
@@ -200,6 +201,16 @@ export async function POST(request: NextRequest) {
     if (action === 'confirm') {
       const latitude = Number(body.latitude); const longitude = Number(body.longitude);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return NextResponse.json({ error: 'Coordenadas inválidas' }, { status: 400 });
+      const coverage = evaluateCoverage({ rawAddress: correctedAddress, viaType: '', viaNumber: '', complement: '', neighborhood: '', city, deliveryNotes: '', latitude, longitude, pinConfidence: body.providerConfidence || body.confidence || 'media' });
+      if (coverage.decision !== 'dentro' && body.confirmOutsideCoverage !== true) {
+        return NextResponse.json({
+          error: 'Ubicación fuera de cobertura',
+          requiresCoverageConfirmation: true,
+          warning: 'Esta ubicación está fuera de tus zonas de entrega y no entrará a la ruta. ¿Quieres confirmarla de todas formas?',
+          coverage: coverage.decision,
+          coverageReason: coverage.reasons[0] || 'fuera_de_cobertura',
+        }, { status: 409 });
+      }
       Object.assign(base, { latitude, longitude, provider: body.provider || 'manual', confidence: body.providerConfidence || body.confidence || 'media', status: 'confirmada', resolved_at: new Date().toISOString(), rejection_reason: null });
     } else if (action === 'reject') {
       Object.assign(base, { latitude: null, longitude: null, provider: body.provider || 'manual', confidence: 'baja', status: 'rechazada', resolved_at: null, rejection_reason: String(body.reason || 'rechazada_por_admin') });
