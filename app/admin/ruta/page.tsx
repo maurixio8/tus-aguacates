@@ -56,9 +56,13 @@ interface RouteItem {
   coverageZone: string | null;
   city: string;
   resolutionStatus: 'sin_coordenadas' | 'candidata' | 'confirmada' | 'rechazada';
-  resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string }[];
+  resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string; coverage?: string; coverageLabel?: string; recommended?: boolean }[];
   correctedAddress?: string | null;
   normalizedAddress?: string | null;
+  resolutionId?: string | null;
+  resolutionConfirmedBy?: string | null;
+  resolutionResolvedAt?: string | null;
+  resolutionHistory?: Array<{ event: string; status: string; corrected_address?: string | null; latitude?: number | null; longitude?: number | null; confirmed_by?: string | null; resolved_at?: string | null; rejection_reason?: string | null; captured_at: string }>;
 }
 
 interface ZoneData {
@@ -179,10 +183,38 @@ export default function RutaPage() {
     }
   };
 
-  const saveLocation = async (order: RouteItem, action: 'confirm' | 'whatsapp', candidate?: { latitude: number; longitude: number; label?: string; provider?: string }) => {
+  const reopenResolution = async (order: RouteItem) => {
+    if (!order.resolutionId) return;
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reopen', resolutionId: order.resolutionId, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || order.deliveryAddress, city: order.city }) });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo reabrir la resolución');
+      await fetchRoute();
+    } catch (err: any) {
+      setError(err.message || 'Error reabriendo resolución');
+    }
+  };
+
+  const rejectResolution = async (order: RouteItem) => {
+    if (!order.resolutionId) return;
+    const reason = window.prompt('Motivo para rechazar esta resolución:', 'candidato equivocado')?.trim();
+    if (!reason) return;
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'reject', resolutionId: order.resolutionId, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || order.deliveryAddress, city: order.city, reason }) });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'No se pudo rechazar la resolución');
+      await fetchRoute();
+    } catch (err: any) {
+      setError(err.message || 'Error rechazando resolución');
+    }
+  };
+
+  const saveLocation = async (order: RouteItem, action: 'confirm' | 'whatsapp', candidate?: { latitude: number; longitude: number; label?: string; provider?: string; confidence?: string }) => {
     setLocationSaving(true);
     try {
-      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || addressDrafts[order.id] || order.deliveryAddress, city: order.city, normalizedAddress: order.normalizedAddress || undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', candidates: order.resolutionCandidates }) });
+      const res = await fetch('/api/admin/ruta/locations', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action, orderId: order.id, source: order.source, customerPhone: order.customerPhone, originalAddress: order.deliveryAddress, correctedAddress: order.correctedAddress || addressDrafts[order.id] || order.deliveryAddress, city: order.city, normalizedAddress: order.normalizedAddress || undefined, latitude: candidate?.latitude, longitude: candidate?.longitude, provider: candidate?.provider || 'manual', providerConfidence: candidate?.confidence, candidates: order.resolutionCandidates }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo guardar la ubicación');
       setManualOrder(null);
@@ -585,7 +617,8 @@ export default function RutaPage() {
                 <textarea id={`route-address-${order.id}`} value={draftAddress} onChange={event => setAddressDrafts(previous => ({ ...previous, [order.id]: event.target.value }))} rows={2} className="mt-1 min-h-20 w-full rounded-lg border border-gray-300 px-3 py-2 text-base leading-6 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-200" />
                 <button type="button" disabled={correctionLoading === order.id || !draftAddress.trim()} onClick={() => correctAddress(order)} className="mt-2 w-full rounded-lg bg-amber-600 px-3 py-2.5 text-base font-semibold text-white disabled:opacity-50">{correctionLoading === order.id ? 'Buscando candidatos...' : 'Corregir dirección'}</button>
                 {normalizedPreview && <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-900"><b>Versión normalizada:</b> {normalizedPreview}</div>}
-                {order.resolutionCandidates.length > 0 ? <div className="mt-3 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos de ubicación</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className="block w-full rounded border border-gray-200 px-3 py-2 text-left text-sm hover:bg-green-50"><b>Confirmar candidato {index + 1}</b> · {candidate.label} · {candidate.confidence}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">No hay candidato exacto todavía. Si sigue así, usa pin manual o WhatsApp.</div>}
+                {order.resolutionHistory && order.resolutionHistory.length > 0 && <div className="mt-2 rounded-md bg-gray-50 p-2 text-xs text-gray-700"><b>Historial:</b> {order.resolutionHistory.length} intento(s). {order.resolutionHistory.slice(-1)[0]?.event || 'evento registrado'} · {order.resolutionHistory.slice(-1)[0]?.status}</div>}
+                {order.resolutionCandidates.length > 0 ? <div className="mt-3 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos — recomendados dentro de cobertura primero</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className={`block w-full rounded border px-3 py-2 text-left text-sm ${candidate.recommended === false ? 'border-red-200 bg-red-50 text-red-900' : 'border-green-200 bg-green-50 text-green-900'}`}><b>{candidate.recommended === false ? 'Fuera de cobertura — no recomendado' : `Confirmar candidato ${index + 1}`}</b> · {candidate.label} · proveedor: {candidate.confidence} · {candidate.coverageLabel || 'cobertura por confirmar'}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">No hay candidato exacto todavía. Si sigue así, usa pin manual o WhatsApp.</div>}
                 <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button></div>
               </div>;
             })}
@@ -662,6 +695,8 @@ export default function RutaPage() {
                 copyToClipboard={copyToClipboard}
                 copiedIndex={copiedIndex}
                 toColombiaTime={toColombiaTime}
+                onReopenResolution={() => reopenResolution(order)}
+                onRejectResolution={() => rejectResolution(order)}
               />
             ))}
           </div>
@@ -710,6 +745,8 @@ export default function RutaPage() {
                   copyToClipboard={copyToClipboard}
                   copiedIndex={copiedIndex}
                   toColombiaTime={toColombiaTime}
+                  onReopenResolution={() => reopenResolution(order)}
+                  onRejectResolution={() => rejectResolution(order)}
                 />
               ))}
             </div>
@@ -735,6 +772,8 @@ function OrderCard({
   copyToClipboard,
   copiedIndex,
   toColombiaTime,
+  onReopenResolution,
+  onRejectResolution,
 }: {
   order: RouteItem;
   selected: boolean;
@@ -749,6 +788,8 @@ function OrderCard({
   copyToClipboard: (text: string, id: string) => void;
   copiedIndex: string | null;
   toColombiaTime: (s: string) => string;
+  onReopenResolution: () => void;
+  onRejectResolution: () => void;
 }) {
   // Resumen de items para vista compacta
   const itemsSummary = order.items.slice(0, 3).map(i => i.name).join(', ');
@@ -903,6 +944,21 @@ function OrderCard({
               <p className="text-gray-700">{order.itemCount}</p>
             </div>
           </div>
+
+          {order.resolutionStatus === 'confirmada' && order.resolutionId && (
+            <div className="mt-3 rounded-lg border border-green-200 bg-green-50 p-3 text-xs text-green-950">
+              <div className="font-semibold">Resolución confirmada</div>
+              <div className="mt-1">Coordenadas: {order.latitude?.toFixed(6)}, {order.longitude?.toFixed(6)}</div>
+              <div>Confirmó: {order.resolutionConfirmedBy || 'administrador'} · {order.resolutionResolvedAt ? toColombiaTime(order.resolutionResolvedAt) : 'sin fecha'}</div>
+              <div className="mt-2 flex flex-wrap gap-2"><button type="button" onClick={onReopenResolution} className="rounded bg-amber-600 px-2.5 py-1.5 font-medium text-white">Corregir de nuevo</button><button type="button" onClick={onRejectResolution} className="rounded border border-red-600 px-2.5 py-1.5 font-medium text-red-700">Rechazar resolución</button></div>
+            </div>
+          )}
+          {order.resolutionHistory && order.resolutionHistory.length > 0 && (
+            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
+              <div className="font-semibold">Historial de resolución</div>
+              <div className="mt-2 space-y-1">{order.resolutionHistory.slice().reverse().map((entry, index) => <div key={`${entry.captured_at}-${index}`} className="border-l-2 border-gray-300 pl-2"><b>{entry.event}</b> · {entry.status} · {entry.confirmed_by || 'sin confirmador'} · {toColombiaTime(entry.captured_at)}{entry.rejection_reason ? ` · ${entry.rejection_reason}` : ''}</div>)}</div>
+            </div>
+          )}
 
           {/* Lista de items */}
           {order.items.length > 0 && (

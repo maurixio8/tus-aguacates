@@ -38,6 +38,10 @@ export interface AdminRouteOrder {
   resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string }[];
   correctedAddress?: string | null;
   normalizedAddress?: string | null;
+  resolutionId?: string | null;
+  resolutionConfirmedBy?: string | null;
+  resolutionResolvedAt?: string | null;
+  resolutionHistory?: Array<Record<string, any>>;
 }
 
 export function parseOrderData(row: any): any {

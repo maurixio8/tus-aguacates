@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
+import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, hasUsableSavedResolution, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
@@ -86,7 +87,7 @@ async function geocode(address: string, city: string) {
 
 async function fetchResolutions() {
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('delivery_location_resolutions').select('*').limit(2000);
+  const { data, error } = await supabase.from('delivery_location_resolutions').select('*').order('updated_at', { ascending: true }).limit(2000);
   if (error) throw error;
   const resolutions = new Map<string, any>();
   for (const row of data || []) {
@@ -94,10 +95,20 @@ async function fetchResolutions() {
     if (row.original_address) resolutions.set(normalizeDeliveryAddress(row.original_address, 'Bogotá'), row);
     if (row.corrected_address) resolutions.set(normalizeDeliveryAddress(row.corrected_address, 'Bogotá'), row);
   }
-  return resolutions;
+  const { data: history, error: historyError } = await supabase.from('delivery_location_resolution_history').select('*').order('captured_at', { ascending: true }).limit(5000);
+  if (historyError) throw historyError;
+  const historyByOriginal = new Map<string, any[]>();
+  for (const row of history || []) {
+    const key = normalizeDeliveryAddress(row.original_address || '', 'Bogotá');
+    if (!key) continue;
+    const previous = historyByOriginal.get(key) || [];
+    previous.push(row);
+    historyByOriginal.set(key, previous);
+  }
+  return { resolutions, historyByOriginal };
 }
 
-async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolutions: Map<string, any>): Promise<AdminRouteOrder> {
+async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolutions: Map<string, any>, historyByOriginal: Map<string, any[]>): Promise<AdminRouteOrder> {
   const data = parseOrderData(row);
   const parts = addressParts(row);
   const normalizedAddress = normalizeDeliveryAddress(parts.address, parts.city || 'Bogotá');
@@ -115,8 +126,8 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
     } else if (hasUsableSavedResolution(saved)) {
       resolutionStatus = saved.status;
     } else if (parts.address) {
-      resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : await geocode(parts.address, parts.city || 'Bogotá');
-      if (resolutionCandidates.length && resolutionCandidates[0].confidence === 'alta') {
+      resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : classifyLocationCandidates(await geocode(parts.address, parts.city || 'Bogotá'), parts.address, parts.city || 'Bogotá');
+      if (resolutionCandidates.length && resolutionCandidates[0].confidence === 'alta' && resolutionCandidates[0].recommended !== false) {
         latitude = resolutionCandidates[0].latitude; longitude = resolutionCandidates[0].longitude; coordinateSource = 'geocodificado'; confidence = 'alta'; resolutionStatus = 'confirmada';
       } else if (resolutionCandidates.length) {
         resolutionStatus = 'candidata'; confidence = resolutionCandidates[0].confidence === 'alta' ? 'alta' : 'media';
@@ -148,6 +159,10 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
     latitude, longitude, coordinateSource, confidence, coverage, coverageReason, coverageZone, city: parts.city || 'Bogotá', resolutionStatus, resolutionCandidates,
     correctedAddress: saved?.corrected_address || null,
     normalizedAddress: saved?.normalized_address || normalizedAddress,
+    resolutionId: saved?.id || null,
+    resolutionConfirmedBy: saved?.confirmed_by || null,
+    resolutionResolvedAt: saved?.resolved_at || null,
+    resolutionHistory: historyByOriginal.get(normalizeDeliveryAddress(parts.address, 'Bogotá')) || [],
   };
 }
 
@@ -162,10 +177,10 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const desde = searchParams.get('desde') || searchParams.get('dateFrom') || nextDeliveryDate();
     const hasta = searchParams.get('hasta') || searchParams.get('dateTo') || desde;
-    const [orders, guests, resolutions] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders'), fetchResolutions()]);
+    const [orders, guests, resolutionBundle] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders'), fetchResolutions()]);
     const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
     const selected = all.filter(({ row }) => isEligible(row) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
-    const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source, resolutions)));
+    const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source, resolutionBundle.resolutions, resolutionBundle.historyByOriginal)));
     const autoConfirmed = normalized.filter(order => order.resolutionStatus === 'confirmada' && order.coordinateSource === 'geocodificado' && order.latitude != null && order.longitude != null);
     if (autoConfirmed.length) {
       const supabase = createSupabaseClient();

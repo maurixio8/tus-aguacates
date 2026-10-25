@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
+import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { formatNormalizedDeliveryAddress, normalizeDeliveryAddress } from '@/lib/location-resolution';
 import { normalizePhoneForDB } from '@/lib/customerSync';
 
@@ -70,6 +71,42 @@ async function preserveAndUpdateCustomerAddress(supabase: any, body: any, correc
   return { updated: true, customerId: customer.id };
 }
 
+async function getResolution(supabase: any, body: any) {
+  if (body.resolutionId) {
+    const { data, error } = await supabase.from('delivery_location_resolutions').select('*').eq('id', body.resolutionId).maybeSingle();
+    if (error) throw error;
+    if (data) return data;
+  }
+  if (body.originalAddress) {
+    const { data, error } = await supabase.from('delivery_location_resolutions').select('*').eq('original_address', String(body.originalAddress).trim()).order('updated_at', { ascending: false }).limit(1).maybeSingle();
+    if (error) throw error;
+    return data;
+  }
+  return null;
+}
+
+async function snapshotResolution(supabase: any, resolution: any, event: string) {
+  if (!resolution) return;
+  const { error } = await supabase.from('delivery_location_resolution_history').insert({
+    resolution_id: resolution.id,
+    event,
+    original_address: resolution.original_address,
+    corrected_address: resolution.corrected_address,
+    normalized_address: resolution.normalized_address,
+    latitude: resolution.latitude,
+    longitude: resolution.longitude,
+    provider: resolution.provider,
+    confidence: resolution.confidence,
+    status: resolution.status,
+    candidates: resolution.candidates || [],
+    resolved_at: resolution.resolved_at,
+    confirmed_by: resolution.confirmed_by,
+    rejection_reason: resolution.rejection_reason,
+    is_current: false,
+  });
+  if (error) throw error;
+}
+
 export async function GET(request: NextRequest) {
   const auth = await verifyAdminAuth(request);
   if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
@@ -77,7 +114,9 @@ export async function GET(request: NextRequest) {
     const supabase = createSupabaseClient();
     const { data, error } = await supabase.from('delivery_location_resolutions').select('*').order('updated_at', { ascending: false }).limit(2000);
     if (error) throw error;
-    return NextResponse.json({ resolutions: data || [] });
+    const { data: history, error: historyError } = await supabase.from('delivery_location_resolution_history').select('*').order('captured_at', { ascending: false }).limit(5000);
+    if (historyError) throw historyError;
+    return NextResponse.json({ resolutions: data || [], history: history || [] });
   } catch {
     return NextResponse.json({ error: 'No se pudieron cargar las resoluciones' }, { status: 500 });
   }
@@ -95,11 +134,32 @@ export async function POST(request: NextRequest) {
     const normalizedAddress = String(body.normalizedAddress || normalizeDeliveryAddress(correctedAddress, city));
     if (!originalAddress || !correctedAddress || !normalizedAddress) return NextResponse.json({ error: 'Falta la dirección' }, { status: 400 });
 
+    const supabase = createSupabaseClient();
+    const existingResolution = await getResolution(supabase, body);
+
+    if (action === 'reopen' || action === 'reject') {
+      if (!existingResolution) return NextResponse.json({ error: 'No se encontró la resolución' }, { status: 404 });
+      await snapshotResolution(supabase, existingResolution, action === 'reopen' ? 'reopened' : 'rejected');
+      const rejectionReason = String(body.reason || (action === 'reopen' ? 'reabierta_por_admin' : 'rechazada_por_admin'));
+      const { data, error } = await supabase.from('delivery_location_resolutions').update({
+        latitude: null,
+        longitude: null,
+        status: action === 'reopen' ? 'sin_coordenadas' : 'rechazada',
+        resolved_at: null,
+        confirmed_by: null,
+        rejection_reason: rejectionReason,
+        updated_at: new Date().toISOString(),
+      }).eq('id', existingResolution.id).select('*').single();
+      if (error) throw error;
+      return NextResponse.json({ resolution: data, reopened: action === 'reopen' });
+    }
+
     if (action === 'correct') {
-      const candidates = await geocodeDeliveryAddress(correctedAddress, city);
+      const candidates = classifyLocationCandidates(await geocodeDeliveryAddress(correctedAddress, city), correctedAddress, city);
       const first = candidates[0];
-      const supabase = createSupabaseClient();
+      if (existingResolution?.status === 'confirmada') await snapshotResolution(supabase, existingResolution, 'before_correction');
       const { data, error } = await supabase.from('delivery_location_resolutions').upsert({
+        ...(existingResolution?.id ? { id: existingResolution.id } : {}),
         original_address: originalAddress,
         corrected_address: correctedAddress,
         normalized_address: normalizedAddress,
@@ -110,7 +170,7 @@ export async function POST(request: NextRequest) {
         status: candidates.length ? 'candidata' : 'sin_coordenadas',
         candidates,
         resolved_at: null,
-        confirmed_by: auth.user?.email || 'admin',
+        confirmed_by: null,
         rejection_reason: candidates.length ? null : 'verificar_barrio',
         updated_at: new Date().toISOString(),
       }, { onConflict: 'normalized_address' }).select('*').single();
@@ -140,7 +200,7 @@ export async function POST(request: NextRequest) {
     if (action === 'confirm') {
       const latitude = Number(body.latitude); const longitude = Number(body.longitude);
       if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return NextResponse.json({ error: 'Coordenadas inválidas' }, { status: 400 });
-      Object.assign(base, { latitude, longitude, provider: body.provider || 'manual', confidence: 'alta', status: 'confirmada', resolved_at: new Date().toISOString(), rejection_reason: null });
+      Object.assign(base, { latitude, longitude, provider: body.provider || 'manual', confidence: body.providerConfidence || body.confidence || 'media', status: 'confirmada', resolved_at: new Date().toISOString(), rejection_reason: null });
     } else if (action === 'reject') {
       Object.assign(base, { latitude: null, longitude: null, provider: body.provider || 'manual', confidence: 'baja', status: 'rechazada', resolved_at: null, rejection_reason: String(body.reason || 'rechazada_por_admin') });
     } else if (action === 'whatsapp') {
@@ -149,7 +209,9 @@ export async function POST(request: NextRequest) {
       Object.assign(base, { latitude: null, longitude: null, provider: body.provider || 'nominatim', confidence: body.confidence || 'media', status: 'candidata', resolved_at: null, rejection_reason: null });
     } else return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });
 
-    const supabase = createSupabaseClient();
+    if (existingResolution && ['confirmada', 'candidata', 'sin_coordenadas'].includes(existingResolution.status)) {
+      await snapshotResolution(supabase, existingResolution, action === 'confirm' ? 'before_replacement' : 'before_update');
+    }
     const { data, error } = await supabase.from('delivery_location_resolutions').upsert(base, { onConflict: 'normalized_address' }).select('*').single();
     if (error) throw error;
     if (action === 'confirm') {
