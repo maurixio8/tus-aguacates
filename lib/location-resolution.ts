@@ -21,10 +21,16 @@ export function normalizeDeliveryAddress(address: string, city = ''): string {
   value = value.replace(/\b(av|avda|ak)\b/g, ' avenida ');
   value = value.replace(/\b(diag|dgn)\b/g, ' diagonal ');
   value = value.replace(/\b(tv|transv)\b/g, ' transversal ');
-  value = value.replace(/\s*#\s*/g, ' numero ');
+  value = value.replace(/\b(numero|número|no\.?|n\.?)\b/g, ' # ');
+  value = value.replace(/\s*#\s*/g, ' # ');
   value = value.replace(/\s*-\s*/g, '-');
-  value = value.replace(/[^a-z0-9#\-\s]/g, ' ');
-  return value.replace(/\s+/g, ' ').trim();
+  value = value.replace(/[^a-z0-9#\-\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  return reconstructAddressStructure(value);
+}
+
+function reconstructAddressStructure(value: string): string {
+  if (value.includes('#')) return value.replace(/\s+/g, ' ').trim();
+  return value.replace(/\b(carrera|calle|avenida|diagonal|transversal)\s+([0-9]+[a-z]?)\s+([0-9]+[a-z]?)[\s-]+([0-9]+[a-z]?)(?=\s|$)/i, '$1 $2 # $3-$4').replace(/\s+/g, ' ').trim();
 }
 
 export function formatNormalizedDeliveryAddress(address: string, city = ''): string {
@@ -40,12 +46,18 @@ export function formatNormalizedDeliveryAddress(address: string, city = ''): str
     .replace(/\s*,\s*/g, ', ')
     .replace(/\s+/g, ' ')
     .trim();
+  value = reconstructShortDisplayStructure(value);
 
   const cleanCity = String(city || '').replace(/\s+/g, ' ').trim();
   if (cleanCity && !value.toLowerCase().includes(cleanCity.toLowerCase())) {
     value = value ? `${value}, ${cleanCity}` : cleanCity;
   }
   return value;
+}
+
+function reconstructShortDisplayStructure(value: string): string {
+  if (value.includes('#')) return value.replace(/\s+/g, ' ').trim();
+  return value.replace(/\b(Cra|Cll|Av|Tv|Dg)\s+([0-9]+[a-z]?)\s+([0-9]+[a-z]?)[\s-]+([0-9]+[a-z]?)(?=\s|,|$)/i, '$1 $2 # $3-$4').replace(/\s+/g, ' ').trim();
 }
 
 export function resolutionFromRow(row: any): {

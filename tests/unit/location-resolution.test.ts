@@ -9,8 +9,9 @@ describe('corrección visible de direcciones', () => {
     expect(formatNormalizedDeliveryAddress('transversal 23A # 47-40 sur', 'Bogotá')).toBe('Tv 23A # 47-40 sur, Bogotá');
   });
 
-  it('usa una clave estable para buscar sin borrar el texto original', () => {
-    expect(normalizeDeliveryAddress('carrera 26 numero 36', 'Bogotá')).toBe('carrera 26 numero 36 bogota');
-    expect(formatNormalizedDeliveryAddress('carrera 26 numero 36', 'Bogotá')).not.toBe('carrera 26 numero 36 bogota');
+  it('preserva # y - y reconstruye la estructura cuando faltan', () => {
+    expect(normalizeDeliveryAddress('carrera 26 numero 36', 'Bogotá')).toBe('carrera 26 # 36 bogota');
+    expect(normalizeDeliveryAddress('Carrera 14B 161 59', 'Bogotá')).toBe('carrera 14b # 161-59 bogota');
+    expect(formatNormalizedDeliveryAddress('Cra 14B 161 59', 'Bogotá')).toBe('Cra 14B # 161-59, Bogotá');
   });
 });
