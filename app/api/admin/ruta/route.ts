@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
-import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, hasUsableSavedResolution, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
@@ -123,8 +123,9 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
   if (latitude == null || longitude == null) {
     if (saved?.status === 'confirmada' && saved.latitude != null && saved.longitude != null) {
       latitude = Number(saved.latitude); longitude = Number(saved.longitude); coordinateSource = 'pin'; confidence = 'alta'; resolutionStatus = 'confirmada';
-    } else if (hasUsableSavedResolution(saved)) {
-      resolutionStatus = saved.status;
+    } else if (saved?.status === 'rechazada') {
+      resolutionStatus = 'sin_coordenadas';
+      resolutionCandidates = [];
     } else if (parts.address) {
       resolutionCandidates = resolutionCandidates.length ? resolutionCandidates : classifyLocationCandidates(await geocode(parts.address, parts.city || 'Bogotá'), parts.address, parts.city || 'Bogotá');
       if (resolutionCandidates.length && resolutionCandidates[0].confidence === 'alta' && resolutionCandidates[0].recommended !== false) {
