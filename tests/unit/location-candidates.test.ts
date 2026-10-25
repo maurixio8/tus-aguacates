@@ -67,6 +67,14 @@ describe('niveles de candidatos de ubicación y cobertura', () => {
     expect(candidate.recommended).toBe(false);
   });
 
+  it('baja a AMBIGUO un ROOFTOP cuyo número difiere del solicitado', () => {
+    const [candidate] = classifyLocationCandidates([{
+      ...inside, label: 'Cra. 79b #128A-17', confidence: 'media', provider: 'google', locationType: 'ROOFTOP', hasStreetNumber: true, returnedStreetNumber: '128A-17', requestedHouseNumber: '128A-0', streetNumberMatches: false, types: ['street_address'], partialMatch: false, multipleResults: false,
+    }], 'Carrera 79B #128A-0', 'Bogotá');
+    expect(candidate.level).toBe('ambiguo');
+    expect(candidate.recommended).toBe(false);
+  });
+
   it('mantiene una ubicación fuera de polígonos como no recomendada', () => {
     const [candidate] = classifyLocationCandidates([{ ...geo({ locality: 'Localidad Usme' }), ...outside }], 'Carrera 14B # 161-59', 'Bogotá');
     expect(candidate.coverage).toBe('por_confirmar');

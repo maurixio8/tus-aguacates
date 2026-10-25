@@ -20,6 +20,9 @@ export interface GeocodingCandidate {
   partialMatch?: boolean;
   types?: string[];
   hasStreetNumber?: boolean;
+  returnedStreetNumber?: string | null;
+  requestedHouseNumber?: string | null;
+  streetNumberMatches?: boolean;
   multipleResults?: boolean;
   geocodeLevel?: GeocodeLevel;
 }
@@ -68,10 +71,25 @@ function structuredQuery(address: string, city: string) {
   return { street: value, housenumber: '', city: city || 'Bogotá', country: 'Colombia' };
 }
 
+function comparableHouseNumber(value: string | null | undefined) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^0-9a-z-]/g, '')
+    .split('-')
+    .map(part => part.replace(/^0+(?=\d)/, '') || '0')
+    .join('-');
+}
+
+function sameHouseNumber(expected: string, returned: string | null) {
+  const a = comparableHouseNumber(expected);
+  const b = comparableHouseNumber(returned);
+  return Boolean(a && b && a === b);
+}
+
 function hasSingleStrong(candidate: GeocodingCandidate, total: number) {
   if (total !== 1) return false;
   if (candidate.provider === 'google') {
-    return candidate.locationType === 'ROOFTOP' && candidate.hasStreetNumber === true && (candidate.types || []).some(type => type === 'street_address' || type === 'premise') && candidate.partialMatch !== true;
+    return candidate.locationType === 'ROOFTOP' && candidate.hasStreetNumber === true && candidate.streetNumberMatches === true && (candidate.types || []).some(type => type === 'street_address' || type === 'premise') && candidate.partialMatch !== true;
   }
   if (candidate.provider === 'geoapify') return candidate.matchType === 'full_match' && Number(candidate.confidenceBuildingLevel) >= 1;
   return candidate.confidence === 'alta';
@@ -102,7 +120,7 @@ async function googleGeocode(address: string, city: string): Promise<GeocodingCa
         latitude: Number(row.geometry?.location?.lat), longitude: Number(row.geometry?.location?.lng), label: row.formatted_address || text,
         confidence: strong ? 'alta' : locationType === 'GEOMETRIC_CENTER' || locationType === 'APPROXIMATE' ? 'baja' : 'media', provider: 'google',
         matchType: strong ? 'full_match' : locationType || null, locality, resultType: types[0] || null, locationType, partialMatch, types,
-        hasStreetNumber: Boolean(streetNumber), multipleResults: rows.length > 1,
+        hasStreetNumber: Boolean(streetNumber), returnedStreetNumber: streetNumber, requestedHouseNumber: query.housenumber, streetNumberMatches: sameHouseNumber(query.housenumber, streetNumber), multipleResults: rows.length > 1,
       };
     }).filter((candidate: GeocodingCandidate) => Number.isFinite(candidate.latitude) && Number.isFinite(candidate.longitude));
   } catch {
