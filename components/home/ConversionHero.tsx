@@ -255,7 +255,7 @@ export function ConversionHero() {
                         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-500 text-verde-bosque-800 px-4 py-2 rounded-full mb-6 shadow-lg">
                             <Clock className="w-5 h-5" />
                             <span className="font-semibold">
-                                Próxima entrega: {getNextDeliveryDay()} • Ordena antes 10AM
+                                Próxima entrega: {getNextDeliveryDay()} • Ordena antes 6AM
                             </span>
                         </div>
 

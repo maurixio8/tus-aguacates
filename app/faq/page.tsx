@@ -11,7 +11,7 @@ const faqData = [
   },
   {
     question: "¿Cuánto tarda la entrega?",
-    answer: "Los tiempos de entrega son: Bogotá, Chía y Soacha los martes y viernes, de 2:00 p. m. a 8:00 p. m. Los pedidos deben realizarse antes de las 10:00 a. m. del día de entrega."
+    answer: "Los tiempos de entrega son: Bogotá, Chía y Soacha los martes y viernes, de 2:00 p. m. a 8:00 p. m. Los pedidos deben realizarse antes de las 6:00 a. m. del día de entrega."
   },
   {
     question: "¿Los productos son frescos?",

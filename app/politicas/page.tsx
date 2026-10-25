@@ -91,7 +91,7 @@ export default function PoliticasPage() {
                 <h3 className="font-semibold mb-2">2. Tiempos de entrega</h3>
                 <ul className="list-disc list-inside space-y-1 ml-4">
                   <li>Bogotá, Chía y Soacha: martes y viernes, de 2:00 p. m. a 8:00 p. m.</li>
-                  <li>Los pedidos deben realizarse antes de las 10:00 a. m. del día de entrega.</li>
+                  <li>Los pedidos deben realizarse antes de las 6:00 a. m. del día de entrega.</li>
                 </ul>
               </div>
 

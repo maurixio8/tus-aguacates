@@ -82,7 +82,7 @@ export default function ContactoPage() {
                     <p className="text-gray-600 mb-2">Bogotá: Martes y Viernes</p>
                     <p className="text-sm text-gray-500">
                       Entregas entre 2:00 PM y 8:00 PM<br />
-                      Realiza tu pedido antes de las 10:00 AM del día de entrega
+                      Realiza tu pedido antes de las 6:00 AM del día de entrega
                     </p>
                   </div>
                 </div>
@@ -112,7 +112,7 @@ export default function ContactoPage() {
                   </h3>
                   <p className="text-gray-600 text-sm">
                     Realizamos entregas martes y viernes, de 2:00 p. m. a 8:00 p. m. Los pedidos deben realizarse
-                    antes de las 10:00 a. m. del día de entrega.
+                    antes de las 6:00 a. m. del día de entrega.
                   </p>
                 </div>
                 
