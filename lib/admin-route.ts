@@ -34,6 +34,8 @@ export interface AdminRouteOrder {
   coverageReason: string | null;
   coverageZone: string | null;
   city: string;
+  resolutionStatus: 'sin_coordenadas' | 'candidata' | 'confirmada' | 'rechazada';
+  resolutionCandidates: { latitude: number; longitude: number; label: string; confidence: string; provider: string }[];
 }
 
 export function parseOrderData(row: any): any {
