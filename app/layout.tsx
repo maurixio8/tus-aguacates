@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { ClientLayout } from "@/components/layout/ClientLayout";
 import { WebVitals } from "@/components/analytics/WebVitals";
 import { GeoSchemas } from "@/components/seo/GeoSchemas";

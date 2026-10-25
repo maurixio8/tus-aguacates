@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useEffect, useRef } from 'react';
+import * as maplibregl from 'maplibre-gl';
 import zones from '@/config/zonas-entrega.json';
 
 export interface RouteMapOrder {
@@ -15,54 +16,90 @@ export interface RouteMapOrder {
   coverage: string;
 }
 
-interface RouteMapProps { orders: RouteMapOrder[]; lineOrderIds?: string[]; origin: { lat: number; lng: number; address: string }; }
+interface RouteMapProps {
+  orders: RouteMapOrder[];
+  lineOrderIds?: string[];
+  origin: { lat: number; lng: number; address: string };
+}
 
 const COLORS: Record<string, string> = { dentro: '#15803d', por_confirmar: '#d97706', chia: '#7c3aed', fuera: '#b91c1c' };
+const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<any>(null);
-  const layersRef = useRef<any[]>([]);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const routeLayerReady = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!mapContainer.current || mapRef.current) return;
-      const L = (await import('leaflet')).default;
-      if (cancelled) return;
-      delete (L.Icon.Default.prototype as any)._getIconUrl;
-      L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png', iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png', shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png' });
-      const map = L.map(mapContainer.current!, { zoomControl: true, scrollWheelZoom: true });
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM &copy; CARTO', maxZoom: 19, subdomains: 'abcd' }).addTo(map);
-      L.geoJSON(zones as any, { style: (feature: any) => ({ color: feature?.properties?.tipo === 'exclusion' ? '#b91c1c' : '#15803d', fillOpacity: 0.16, weight: 2 }) }).addTo(map);
+    if (!mapContainer.current || mapRef.current) return;
+    maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
+    const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.on('load', () => {
       mapRef.current = map;
-      draw(map, L, orders, lineOrderIds, origin);
-    })();
-    return () => { cancelled = true; if (mapRef.current) { mapRef.current.remove(); mapRef.current = null; } };
+      addZones(map);
+      drawData(map, orders, lineOrderIds, origin);
+    });
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
+    // Initial map owns the first draw; updates are handled by the second effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { if (mapRef.current) import('leaflet').then(({ default: L }) => draw(mapRef.current, L, orders, lineOrderIds, origin)); }, [orders, lineOrderIds, origin]);
+  useEffect(() => {
+    if (mapRef.current?.isStyleLoaded()) drawData(mapRef.current, orders, lineOrderIds, origin);
+  }, [orders, lineOrderIds, origin]);
 
-  function draw(map: any, L: any, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
-    layersRef.current.forEach(layer => map.removeLayer(layer)); layersRef.current = [];
-    const bounds = L.latLngBounds([[start.lat, start.lng]]);
-    const routePoints: [number, number][] = [[start.lat, start.lng]];
-    const routeMap = new Map(list.map(o => [o.id, o]));
-    const ordered = routeIds.map(id => routeMap.get(id)).filter((o): o is RouteMapOrder => Boolean(o && o.latitude != null && o.longitude != null));
-    ordered.forEach(o => routePoints.push([o.latitude!, o.longitude!]));
-    routePoints.push([start.lat, start.lng]);
-    const routeLayer = routeIds.length > 0 && ordered.length > 0 ? L.polyline(routePoints, { color: '#2563eb', weight: 3, opacity: 0.72, dashArray: '8 5' }).addTo(map) : null;
-    if (routeLayer) layersRef.current.push(routeLayer);
-    const originLayer = L.marker([start.lat, start.lng]).addTo(map).bindPopup(`<b>Salida y llegada</b><br>${start.address}`); layersRef.current.push(originLayer); bounds.extend([start.lat, start.lng]);
-    list.forEach((o, index) => {
-      if (o.latitude == null || o.longitude == null) return;
-      const color = COLORS[o.coverage] || '#6b7280';
-      const icon = L.divIcon({ className: '', html: `<div style="background:${color};color:white;width:27px;height:27px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white">${index + 1}</div>`, iconSize: [27, 27], iconAnchor: [13, 13] });
-      const marker = L.marker([o.latitude, o.longitude], { icon }).addTo(map).bindPopup(`<b>${o.customerName}</b><br>${o.deliveryAddress || 'Sin dirección'}<br>Estado: ${o.coverage}<br>Coordenadas: ${o.coordinateSource}`);
-      layersRef.current.push(marker); bounds.extend([o.latitude, o.longitude]);
+  function addZones(map: maplibregl.Map) {
+    if (map.getSource('delivery-zones')) return;
+    map.addSource('delivery-zones', { type: 'geojson', data: zones as any });
+    map.addLayer({ id: 'delivery-zones-fill', type: 'fill', source: 'delivery-zones', paint: { 'fill-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'fill-opacity': 0.16 } });
+    map.addLayer({ id: 'delivery-zones-line', type: 'line', source: 'delivery-zones', paint: { 'line-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'line-width': 2 } });
+  }
+
+  function drawData(map: maplibregl.Map, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
+    markersRef.current.forEach(marker => marker.remove());
+    markersRef.current = [];
+    if (routeLayerReady.current && map.getLayer('shadow-route-line')) map.removeLayer('shadow-route-line');
+    if (routeLayerReady.current && map.getSource('shadow-route')) map.removeSource('shadow-route');
+    routeLayerReady.current = false;
+
+    const bounds = new maplibregl.LngLatBounds([start.lng, start.lat], [start.lng, start.lat]);
+    const routeMap = new Map(list.map(order => [order.id, order]));
+    const ordered = routeIds.map(id => routeMap.get(id)).filter((order): order is RouteMapOrder => Boolean(order && order.latitude != null && order.longitude != null));
+    if (ordered.length) {
+      const coordinates = [[start.lng, start.lat], ...ordered.map(order => [order.longitude!, order.latitude!]), [start.lng, start.lat]];
+      map.addSource('shadow-route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates } } as any });
+      map.addLayer({ id: 'shadow-route-line', type: 'line', source: 'shadow-route', paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-opacity': 0.75, 'line-dasharray': [2, 1] } });
+      routeLayerReady.current = true;
+    }
+
+    const originMarker = document.createElement('div');
+    originMarker.textContent = '🏠';
+    originMarker.style.cssText = 'background:#2563eb;color:white;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid white;box-shadow:0 1px 4px #555;font-size:16px';
+    markersRef.current.push(new maplibregl.Marker({ element: originMarker }).setLngLat([start.lng, start.lat]).setPopup(new maplibregl.Popup().setHTML(`<b>Salida y llegada</b><br>${escapeHtml(start.address)}`)).addTo(map));
+
+    list.forEach((order, index) => {
+      if (order.latitude == null || order.longitude == null) return;
+      const color = COLORS[order.coverage] || '#6b7280';
+      const markerElement = document.createElement('div');
+      markerElement.textContent = String(index + 1);
+      markerElement.style.cssText = `background:${color};color:white;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;border:2px solid white;box-shadow:0 1px 4px #555`;
+      const popup = new maplibregl.Popup().setHTML(`<b>${escapeHtml(order.customerName)}</b><br>${escapeHtml(order.deliveryAddress || 'Sin dirección')}<br>Estado: ${escapeHtml(order.coverage)}<br>Coordenadas: ${escapeHtml(order.coordinateSource)}`);
+      markersRef.current.push(new maplibregl.Marker({ element: markerElement }).setLngLat([order.longitude, order.latitude]).setPopup(popup).addTo(map));
+      bounds.extend([order.longitude, order.latitude]);
     });
-    if (bounds.isValid()) map.fitBounds(bounds, { padding: [35, 35], maxZoom: 14 });
+    map.fitBounds(bounds, { padding: 35, maxZoom: 14, duration: 0 });
   }
 
   return <div className="space-y-2"><div className="text-xs text-gray-500">{lineOrderIds.length ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).' : 'Sin ruta shadow generada: se muestran todos los pedidos con coordenadas; la línea no representa una ruta optimizada.'}</div><div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} /></div>;
+}
+
+function escapeHtml(value: string) {
+  return value.replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character] || character));
 }
