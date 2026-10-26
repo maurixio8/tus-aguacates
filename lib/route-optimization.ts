@@ -19,7 +19,7 @@ export type OptimizedLeg = {
 
 export type OptimizedRoute = {
   date: string;
-  group: 'Norte' | 'Sur';
+  group: 'Norte' | 'Sur' | 'Compacta';
   driver: string;
   stops: OptimizationStop[];
   originalStops: OptimizationStop[];

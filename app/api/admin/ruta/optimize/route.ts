@@ -23,7 +23,7 @@ function chunk<T>(items: T[], size: number) {
   return result;
 }
 
-async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: OptimizationStop[], driver: string, departureTime: string, apiKey: string, callCounter: { value: number }, optimize: boolean): Promise<OptimizedRoute> {
+async function computeRoute(date: string, group: 'Norte' | 'Sur' | 'Compacta', stops: OptimizationStop[], driver: string, departureTime: string, apiKey: string, callCounter: { value: number }, optimize: boolean): Promise<OptimizedRoute> {
   const originalStops = [...stops];
   const departureIsoValue = departureIso(date, departureTime);
   const payload: any = {
@@ -74,19 +74,34 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const dates = Array.isArray(body.dates) ? body.dates.map(String) : [];
     const departureTime = String(body.departureTime || '14:00');
+    const mode: 'compact' | 'split' = body.mode === 'split' ? 'split' : 'compact';
     const drivers = { norte: String(body.drivers?.norte || 'Mauricio'), sur: String(body.drivers?.sur || 'Mauricio') };
     const stops = Array.isArray(body.stops) ? body.stops : [];
     if (!dates.length || !stops.length) return NextResponse.json({ error: 'Faltan fechas o paradas confirmadas' }, { status: 400 });
     const safeStops: OptimizationStop[] = stops.filter((stop: any) => stop && stop.coverage === 'dentro' && !stop.isCancelled && Number.isFinite(Number(stop.latitude)) && Number.isFinite(Number(stop.longitude))).map((stop: any) => ({ id: String(stop.id), orderNumber: stop.orderNumber, customerName: stop.customerName, address: String(stop.deliveryAddress || ''), deliveryDate: String(stop.deliveryDate || ''), latitude: Number(stop.latitude), longitude: Number(stop.longitude), coverage: 'dentro' }));
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'GOOGLE_MAPS_API_KEY no está configurada en el runtime' }, { status: 503 });
-    const cacheKey = JSON.stringify({ dates, departureTime, drivers, stops: safeStops.map(stop => [stop.id, stop.latitude, stop.longitude, stop.deliveryDate]) });
+    const cacheKey = JSON.stringify({ mode, dates, departureTime, drivers, stops: safeStops.map(stop => [stop.id, stop.latitude, stop.longitude, stop.deliveryDate]) });
     const cached = cache.get(cacheKey);
     if (cached) return NextResponse.json({ ...cached, cacheHit: true, routesApiCalls: 0 });
     const callCounter = { value: 0 };
     const routes: OptimizedRoute[] = [];
     for (const date of dates) {
       const dayStops = safeStops.filter(stop => stop.deliveryDate === date);
+      if (mode === 'compact') {
+        const current = await computeRoute(date, 'Compacta', dayStops, 'Mauricio', departureTime, apiKey, callCounter, false);
+        const optimized = await computeRoute(date, 'Compacta', dayStops, 'Mauricio', departureTime, apiKey, callCounter, true);
+        optimized.currentStops = current.stops;
+        optimized.currentLegs = current.legs;
+        optimized.currentDistanceMeters = current.totalDistanceMeters;
+        optimized.currentDurationSeconds = current.totalDurationSeconds;
+        if (optimized.stops.length <= MAX_STOPS) routes.push(optimized);
+        else {
+          const optimizedChunks = chunk(optimized.stops, MAX_STOPS);
+          optimizedChunks.forEach((part, index) => routes.push({ ...optimized, group: 'Compacta', stops: part, originalStops: current.stops.filter(stop => part.some(item => item.id === stop.id)), csv: csvForRoute({ ...optimized, stops: part, group: 'Compacta', driver: 'Mauricio' }), currentDistanceMeters: index === 0 ? current.totalDistanceMeters : undefined, currentDurationSeconds: index === 0 ? current.totalDurationSeconds : undefined }));
+        }
+        continue;
+      }
       const split = splitNorthSouthBalanced(dayStops);
       const northIds = new Set(split.north.map(stop => stop.id));
       const southIds = new Set(split.south.map(stop => stop.id));
@@ -108,7 +123,7 @@ export async function POST(request: NextRequest) {
       }
     }
     const totalStops = routes.reduce((sum, route) => sum + route.stops.length, 0);
-    const result = { dateFrom: dates[0], dateTo: dates[dates.length - 1], dates, departureTime, drivers, routeCount: routes.length, totalStops, suggestedHelper: totalStops > 25, balanceCriterion: 'Minimiza conjuntamente la diferencia relativa de cantidad de paradas y de minutos estimados por distancia geográfica antes de llamar Routes API.', routes, cacheHit: false, routesApiCalls: callCounter.value, durationLabel: formatMinutes(routes.reduce((sum, route) => sum + route.totalDurationSeconds, 0)) };
+    const result = { mode, dateFrom: dates[0], dateTo: dates[dates.length - 1], dates, departureTime, drivers, routeCount: routes.length, totalStops, suggestedHelper: mode === 'split' && totalStops > 25, balanceCriterion: mode === 'compact' ? 'Ruta única compacta: un solo orden continuo optimizado y luego dividido solo en CSV de máximo 10 paradas.' : 'Minimiza conjuntamente la diferencia relativa de cantidad de paradas y de minutos estimados por distancia geográfica antes de llamar Routes API.', routes, cacheHit: false, routesApiCalls: callCounter.value, durationLabel: formatMinutes(routes.reduce((sum, route) => sum + route.totalDurationSeconds, 0)) };
     cache.set(cacheKey, result);
     return NextResponse.json(result);
   } catch (error: any) {
