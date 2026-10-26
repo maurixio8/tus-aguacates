@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 
 export interface RouteMapOrder {
@@ -29,25 +29,36 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const routeLayerReady = useRef(false);
+  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current) return;
-    maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
-    const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
-    map.on('load', () => {
-      mapRef.current = map;
-      drawData(map, orders, lineOrderIds, origin);
-    });
-    return () => {
-      markersRef.current.forEach(marker => marker.remove());
-      markersRef.current = [];
-      map.remove();
-      mapRef.current = null;
-    };
+    if (!mapContainer.current || mapRef.current || mapError) return;
+    try {
+      maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
+      const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.on('error', event => {
+        const message = String((event as any)?.error?.message || 'No se pudo cargar el mapa');
+        if (/WebGL2|GPUInitialization/i.test(message)) setMapError('Este navegador no tiene WebGL2 disponible. La cola y las paradas siguen visibles; abre el mapa en un navegador con aceleración gráfica.');
+      });
+      map.on('load', () => {
+        mapRef.current = map;
+        drawData(map, orders, lineOrderIds, origin);
+      });
+      return () => {
+        markersRef.current.forEach(marker => marker.remove());
+        markersRef.current = [];
+        map.remove();
+        mapRef.current = null;
+      };
+    } catch (error: any) {
+      const message = String(error?.message || error || 'No se pudo cargar el mapa');
+      setMapError(/WebGL2|GPUInitialization/i.test(message) ? 'Este navegador no tiene WebGL2 disponible. La cola y las paradas siguen visibles; abre el mapa en un navegador con aceleración gráfica.' : 'No se pudo cargar el mapa; la cola sigue disponible.');
+      return undefined;
+    }
     // Initial map owns the first draw; updates are handled by the second effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [mapError]);
 
   useEffect(() => {
     if (mapRef.current?.isStyleLoaded()) drawData(mapRef.current, orders, lineOrderIds, origin);
@@ -99,7 +110,7 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
           ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).'
           : `Mapa: ${located} ubicado${located === 1 ? '' : 's'} · ${unresolved.length} pendiente${unresolved.length === 1 ? '' : 's'} de ubicación.`}
       </div>
-      <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />
+      {mapError ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-semibold">Mapa no disponible en este navegador</p><p className="mt-1">{mapError}</p></div> : <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />}
       {unresolved.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
           <p className="font-semibold">Pedidos seleccionados sin parada en el mapa</p>
