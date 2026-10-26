@@ -29,6 +29,10 @@ export type OptimizedRoute = {
   totalDurationSeconds: number;
   estimatedBalanceMinutes: number;
   csv: string;
+  currentStops?: OptimizationStop[];
+  currentLegs?: OptimizedLeg[];
+  currentDistanceMeters?: number;
+  currentDurationSeconds?: number;
 };
 
 export function parseGoogleDuration(value: unknown): number {
@@ -71,6 +75,11 @@ export function splitNorthSouthBalanced(stops: OptimizationStop[]): { north: Opt
     if (score < best.score) best = { splitIndex: index, score };
   }
   return { north: sorted.slice(0, best.splitIndex), south: sorted.slice(best.splitIndex), splitIndex: best.splitIndex, score: best.score };
+}
+
+export function reorderStopsByWaypointIndex<T>(stops: T[], indices: number[]): T[] {
+  const safe = indices.length === stops.length && indices.every(index => index >= 0 && index < stops.length) ? indices : stops.map((_, index) => index);
+  return safe.map(index => stops[index]);
 }
 
 export function csvForRoute(route: { stops: OptimizationStop[]; group: string; driver: string; legs?: OptimizedLeg[] }): string {

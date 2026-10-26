@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/auth-admin';
 import { CORABASTOS } from '@/lib/admin-route';
-import { csvForRoute, formatMinutes, parseGoogleDuration, splitNorthSouthBalanced, type OptimizationStop, type OptimizedLeg, type OptimizedRoute } from '@/lib/route-optimization';
+import { csvForRoute, formatMinutes, parseGoogleDuration, reorderStopsByWaypointIndex, splitNorthSouthBalanced, type OptimizationStop, type OptimizedLeg, type OptimizedRoute } from '@/lib/route-optimization';
 
 export const dynamic = 'force-dynamic';
 const MAX_STOPS = 10;
@@ -23,7 +23,7 @@ function chunk<T>(items: T[], size: number) {
   return result;
 }
 
-async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: OptimizationStop[], driver: string, departureTime: string, apiKey: string, callCounter: { value: number }): Promise<OptimizedRoute> {
+async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: OptimizationStop[], driver: string, departureTime: string, apiKey: string, callCounter: { value: number }, optimize: boolean): Promise<OptimizedRoute> {
   const originalStops = [...stops];
   const departureIsoValue = departureIso(date, departureTime);
   const payload: any = {
@@ -32,7 +32,7 @@ async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: Optimiz
     intermediates: stops.map(stop => ({ location: { latLng: { latitude: stop.latitude, longitude: stop.longitude } }, vehicleStopover: true })),
     travelMode: 'DRIVE',
     routingPreference: 'TRAFFIC_AWARE',
-    optimizeWaypointOrder: stops.length > 1,
+    optimizeWaypointOrder: optimize && stops.length > 1,
     languageCode: 'es',
     units: 'METRIC',
   };
@@ -49,7 +49,7 @@ async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: Optimiz
   const route = body.routes[0];
   const rawIndices: number[] = Array.isArray(route.optimizedIntermediateWaypointIndex) ? route.optimizedIntermediateWaypointIndex : [];
   const indices: number[] = stops.length === 1 ? [0] : rawIndices.length === stops.length && rawIndices.every(index => index >= 0 && index < stops.length) ? rawIndices : stops.map((_, index) => index);
-  const orderedStops = indices.map(index => stops[index]).filter(Boolean);
+  const orderedStops = reorderStopsByWaypointIndex(stops, indices);
   const legs = Array.isArray(route.legs) ? route.legs : [];
   const departure = new Date(departureIso(date, departureTime));
   let cursor = departure;
@@ -88,13 +88,22 @@ export async function POST(request: NextRequest) {
     for (const date of dates) {
       const dayStops = safeStops.filter(stop => stop.deliveryDate === date);
       const split = splitNorthSouthBalanced(dayStops);
+      const northIds = new Set(split.north.map(stop => stop.id));
+      const southIds = new Set(split.south.map(stop => stop.id));
       const groups: Array<{ name: 'Norte' | 'Sur'; stops: OptimizationStop[]; driver: string }> = [
-        { name: 'Norte', stops: split.north, driver: drivers.norte },
-        { name: 'Sur', stops: split.south, driver: drivers.sur },
+        { name: 'Norte', stops: dayStops.filter(stop => northIds.has(stop.id)), driver: drivers.norte },
+        { name: 'Sur', stops: dayStops.filter(stop => southIds.has(stop.id)), driver: drivers.sur },
       ];
       for (const group of groups) {
         for (const part of chunk(group.stops, MAX_STOPS)) {
-          if (part.length) routes.push(await computeRoute(date, group.name, part, group.driver, departureTime, apiKey, callCounter));
+          if (!part.length) continue;
+          const current = await computeRoute(date, group.name, part, group.driver, departureTime, apiKey, callCounter, false);
+          const optimized = await computeRoute(date, group.name, part, group.driver, departureTime, apiKey, callCounter, true);
+          optimized.currentStops = current.stops;
+          optimized.currentLegs = current.legs;
+          optimized.currentDistanceMeters = current.totalDistanceMeters;
+          optimized.currentDurationSeconds = current.totalDurationSeconds;
+          routes.push(optimized);
         }
       }
     }
