@@ -408,7 +408,8 @@ export default function RutaPage() {
     const orderById = new Map<string, RouteItem>((data?.orders || []).map((order: RouteItem) => [order.id, order]));
     const sourceOrders: Array<RouteItem | undefined> = candidates.length ? candidates.map((id: string) => orderById.get(id)) : (data?.routeOrders || data?.orders || []);
     const ordered = sourceOrders.filter((order): order is RouteItem => Boolean(order && !order.isCancelled && order.coverage === 'dentro' && order.latitude != null && order.longitude != null && (selectedOrders.size === 0 || selectedOrders.has(order.id))));
-    return buildGoogleMapsDirectionsUrl(originAddress, ordered.map(order => order.deliveryAddress.replace(/\?/g, '').trim()), originAddress);
+    const originCoordinates = '4.63205,-74.15534';
+    return buildGoogleMapsDirectionsUrl(originCoordinates, ordered.map(order => `${order.latitude},${order.longitude}`), originCoordinates);
   };
 
   const selectAll = () => {
@@ -420,16 +421,15 @@ export default function RutaPage() {
     }
   };
 
-  // Generar URL de Waze
-  const wazeUrl = (address: string) => {
-    const q = encodeURIComponent(address.replace(/\?/g, '').trim());
-    return `https://waze.com/ul?q=${q}&navigate=yes`;
+  const navigationCoordinates = (latitude: number | null, longitude: number | null) => latitude != null && longitude != null ? `${latitude},${longitude}` : null;
+  const wazeUrl = (order: RouteItem) => {
+    const coordinates = navigationCoordinates(order.latitude, order.longitude);
+    return coordinates ? `https://waze.com/ul?ll=${encodeURIComponent(coordinates)}&navigate=yes` : null;
   };
 
-  // Generar URL de Google Maps
-  const gmapsUrl = (address: string) => {
-    const q = encodeURIComponent(address.replace(/\?/g, '').trim());
-    return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
+  const gmapsUrl = (order: RouteItem) => {
+    const coordinates = navigationCoordinates(order.latitude, order.longitude);
+    return coordinates ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coordinates)}&travelmode=driving` : null;
   };
 
   // Copiar al portapapeles
@@ -785,8 +785,8 @@ export default function RutaPage() {
                 onToggleExclude={() => toggleExclude(order.id)}
                 isExcluded={excludedOrders.has(order.id)}
                 onToggleExpand={() => toggleOrder(order.id)}
-                wazeUrl={wazeUrl(order.deliveryAddress)}
-                gmapsUrl={gmapsUrl(order.deliveryAddress)}
+                wazeUrl={wazeUrl(order)}
+                gmapsUrl={gmapsUrl(order)}
                 whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
                 onCancel={() => cancelOrder(order)}
                 copyToClipboard={copyToClipboard}
@@ -836,8 +836,8 @@ export default function RutaPage() {
                   onToggleExclude={() => toggleExclude(order.id)}
                   isExcluded={excludedOrders.has(order.id)}
                   onToggleExpand={() => toggleOrder(order.id)}
-                  wazeUrl={wazeUrl(order.deliveryAddress)}
-                  gmapsUrl={gmapsUrl(order.deliveryAddress)}
+                  wazeUrl={wazeUrl(order)}
+                  gmapsUrl={gmapsUrl(order)}
                   whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
                 onCancel={() => cancelOrder(order)}
                   copyToClipboard={copyToClipboard}
@@ -881,8 +881,8 @@ function OrderCard({
   onToggleExclude: () => void;
   isExcluded: boolean;
   onToggleExpand: () => void;
-  wazeUrl: string;
-  gmapsUrl: string;
+  wazeUrl: string | null;
+  gmapsUrl: string | null;
   whatsappUrl: string | null;
   onCancel: () => void;
   copyToClipboard: (text: string, id: string) => void;
@@ -962,7 +962,7 @@ function OrderCard({
         {/* Botones de acción rápidos */}
         <div className="flex gap-1.5 mt-2 ml-8">
           <a
-            href={wazeUrl}
+            href={wazeUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
@@ -972,7 +972,7 @@ function OrderCard({
             Waze
           </a>
           <a
-            href={gmapsUrl}
+            href={gmapsUrl || '#'}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
@@ -1145,6 +1145,6 @@ function DeliveryOperations({ routes, tab, setTab, shoppingChecked, setShoppingC
     {tab === 'compras' && <div><div className="mb-3 flex items-center justify-between"><div><h2 className="text-lg font-bold text-emerald-950">Lista de compras consolidada</h2><p className="text-xs text-emerald-800">{shopping.length} productos consolidados de {stops.length} paradas.</p></div><span className="text-sm font-semibold text-emerald-900">{shopping.filter((item: any) => shoppingChecked.has(item.key)).length}/{shopping.length} listos</span></div><div className="grid gap-2 sm:grid-cols-2">{shopping.map((item: any) => <label key={item.key} className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 ${shoppingChecked.has(item.key) ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-100'}`}><input type="checkbox" checked={shoppingChecked.has(item.key)} onChange={() => toggle(setShoppingChecked, item.key)} className="h-5 w-5" /><span><b>{item.quantity} × {item.name}</b>{item.review && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-800">REVISAR</span>}{(item.variant || item.weight) && <span className="block text-xs text-gray-600">{[item.variant, item.weight].filter(Boolean).join(' · ')}</span>}</span></label>)}</div></div>}
     {tab === 'empaque' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Empaque por pedido</h2><p className="mb-3 text-xs text-emerald-800">Una canasta Castilla por cliente. Marca cada ítem cuando quede empacado. Las canastas están en orden de entrega.</p><div className="grid gap-3 md:grid-cols-2">{stops.map((stop: any, stopIndex: number) => <article key={stop.id} className="rounded-xl border border-emerald-100 bg-white p-4"><div><b>Entrega {stopIndex + 1} · Canasta Castilla · {stop.customerName || 'Cliente'}</b><div className="text-xs text-gray-600">{stop.address}</div></div><div className="mt-3 space-y-2">{(stop.items || []).map((item: any, itemIndex: number) => { const key = `${stop.id}:item:${itemIndex}`; const combo = item.comboComponents?.length ? ` · Contenido: ${item.comboComponents.map((component: any) => `${component.quantity * Number(item.quantity || 1)} x ${component.name}${component.variant ? ` (${component.variant})` : ''}`).join('; ')}` : ''; return <label key={key} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 ${packedChecked.has(key) ? 'border-emerald-500 bg-emerald-100' : 'border-gray-100 bg-gray-50'}`}><input type="checkbox" checked={packedChecked.has(key)} onChange={() => toggle(setPackedChecked, key)} className="mt-1 h-5 w-5" /><span className="text-sm"><b>{item.quantity || 1} x {item.name}</b>{item.variantName && <span className="block text-xs text-gray-600">Variante: {item.variantName}</span>}{item.weight !== null && item.weight !== undefined && item.weight !== '' && <span className="block text-xs text-gray-600">Peso: {item.weight}{item.unit || 'g'}</span>}{combo && <span className="block text-xs text-indigo-700">Combo{combo}</span>}</span></label>; })}</div><div className="mt-3 text-xs text-gray-500">{(stop.items || []).filter((_: any, itemIndex: number) => packedChecked.has(`${stop.id}:item:${itemIndex}`)).length}/{(stop.items || []).length} ítems empacados</div></article>)}</div></div>}
     {tab === 'carga' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Orden de carga inversa</h2><p className="mb-3 text-xs text-emerald-800">Lo último que se entrega se carga primero. Lo primero que se entrega queda junto a la puerta.</p><div className="space-y-2">{routes.flatMap((route: any) => [...(route.stops || [])].reverse().map((stop: any, index: number) => <label key={`${route.date}-${route.group}-${stop.id}`} className={`flex items-center gap-3 rounded-xl border bg-white p-3 ${loadedChecked.has(stop.id) ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-100'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 font-bold text-white">{index + 1}</span><input type="checkbox" checked={loadedChecked.has(stop.id)} onChange={() => toggle(setLoadedChecked, stop.id)} className="h-5 w-5" /><span><b>Cargar primero #{index + 1} · {stop.customerName || 'Cliente'}</b><span className="block text-xs text-gray-600">{stop.address} · Se entrega en posición {route.stops.length - index}</span></span></label>))}</div></div>}
-    {tab === 'conductor' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Pantalla del conductor</h2><p className="mb-3 text-xs text-emerald-800">Orden de entrega. El detalle es el mismo resumen operativo usado en Pedidos y en el CSV.</p><div className="mb-3 flex items-center justify-between gap-2"><button type="button" disabled={driverIndex === 0} onClick={() => setDriverIndex(index => Math.max(0, index - 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Anterior</button><span className="text-sm font-bold text-emerald-900">{driverIndex + 1} / {stops.length}</span><button type="button" disabled={driverIndex >= stops.length - 1} onClick={() => setDriverIndex(index => Math.min(stops.length - 1, index + 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Siguiente</button></div>{(() => { const stop = stops[driverIndex]; if (!stop) return null; const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(stop.address)}`; const waze = `https://waze.com/ul?q=${encodeURIComponent(stop.address)}&navigate=yes`; const phone = String(stop.customerPhone || '').replace(/\D/g, ''); const delivered = Boolean(stop.status === 'delivered' || stop.status === 'entregado'); return <article className="rounded-2xl border-2 border-emerald-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-bold text-emerald-700">PARADA {driverIndex + 1} · ETA {stop.route.legs?.[stop.routeIndex]?.eta || '--:--'}</div><h3 className="mt-1 text-3xl font-black text-gray-950">{stop.customerName || 'Cliente'}</h3><p className="mt-1 text-lg text-gray-800">{stop.address}</p><p className="mt-2 text-base font-semibold text-gray-700">Teléfono: {stop.customerPhone || 'Por confirmar'}</p></div><div className="rounded-xl bg-amber-100 px-4 py-3 text-right"><div className="text-xs font-semibold text-amber-900">COBRAR</div><div className="text-2xl font-black text-amber-950">${Number(stop.totalAmount || 0).toLocaleString('es-CO')}</div><div className="mt-1 text-xs font-semibold text-amber-900">{stop.paymentStatus || 'Por confirmar'}{stop.paymentMethod ? ` · ${stop.paymentMethod}` : ''}</div></div></div><div className="mt-4 flex flex-wrap gap-2"><a href={phone ? `tel:${phone}` : '#'} className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white">Llamar</a><a href={phone ? `https://wa.me/${phone.startsWith('57') ? phone : `57${phone}`}` : '#'} target="_blank" rel="noreferrer" className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white">WhatsApp</a><a href={mapUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white">Google Maps</a><a href={waze} target="_blank" rel="noreferrer" className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white">Waze</a></div><pre className="mt-4 whitespace-pre-wrap rounded-xl bg-gray-950 p-4 text-sm leading-6 text-white">{summary(stop)}</pre><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={delivered} onClick={async () => { try { await onDelivered(stop); } catch { /* parent reports route error */ } }} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">Entregado</button><button type="button" onClick={() => { const reason = window.prompt('Motivo local de no entrega:', 'Pendiente de registrar'); if (reason) setNotDelivered(previous => new Set(previous).add(stop.id)); }} className={`rounded-lg border px-4 py-3 text-sm font-bold ${notDelivered.has(stop.id) ? 'border-red-700 bg-red-100 text-red-800' : 'border-red-700 text-red-800'}`}>{notDelivered.has(stop.id) ? 'No entregado · anotado localmente' : 'No entregado'}</button></div></article>; })()}</div>}
+    {tab === 'conductor' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Pantalla del conductor</h2><p className="mb-3 text-xs text-emerald-800">Orden de entrega. El detalle es el mismo resumen operativo usado en Pedidos y en el CSV.</p><div className="mb-3 flex items-center justify-between gap-2"><button type="button" disabled={driverIndex === 0} onClick={() => setDriverIndex(index => Math.max(0, index - 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Anterior</button><span className="text-sm font-bold text-emerald-900">{driverIndex + 1} / {stops.length}</span><button type="button" disabled={driverIndex >= stops.length - 1} onClick={() => setDriverIndex(index => Math.min(stops.length - 1, index + 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Siguiente</button></div>{(() => { const stop = stops[driverIndex]; if (!stop) return null; const coordinates = `${stop.latitude},${stop.longitude}`; const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coordinates)}&travelmode=driving`; const waze = `https://waze.com/ul?ll=${encodeURIComponent(coordinates)}&navigate=yes`; const phone = String(stop.customerPhone || '').replace(/\D/g, ''); const delivered = Boolean(stop.status === 'delivered' || stop.status === 'entregado'); return <article className="rounded-2xl border-2 border-emerald-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-bold text-emerald-700">PARADA {driverIndex + 1} · ETA {stop.route.legs?.[stop.routeIndex]?.eta || '--:--'}</div><h3 className="mt-1 text-3xl font-black text-gray-950">{stop.customerName || 'Cliente'}</h3><p className="mt-1 text-lg text-gray-800">{stop.address}</p><p className="mt-2 text-base font-semibold text-gray-700">Teléfono: {stop.customerPhone || 'Por confirmar'}</p></div><div className="rounded-xl bg-amber-100 px-4 py-3 text-right"><div className="text-xs font-semibold text-amber-900">COBRAR</div><div className="text-2xl font-black text-amber-950">${Number(stop.totalAmount || 0).toLocaleString('es-CO')}</div><div className="mt-1 text-xs font-semibold text-amber-900">{stop.paymentStatus || 'Por confirmar'}{stop.paymentMethod ? ` · ${stop.paymentMethod}` : ''}</div></div></div><div className="mt-4 flex flex-wrap gap-2"><a href={phone ? `tel:${phone}` : '#'} className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white">Llamar</a><a href={phone ? `https://wa.me/${phone.startsWith('57') ? phone : `57${phone}`}` : '#'} target="_blank" rel="noreferrer" className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white">WhatsApp</a><a href={mapUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white">Google Maps</a><a href={waze} target="_blank" rel="noreferrer" className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white">Waze</a></div><pre className="mt-4 whitespace-pre-wrap rounded-xl bg-gray-950 p-4 text-sm leading-6 text-white">{summary(stop)}</pre><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={delivered} onClick={async () => { try { await onDelivered(stop); } catch { /* parent reports route error */ } }} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">Entregado</button><button type="button" onClick={() => { const reason = window.prompt('Motivo local de no entrega:', 'Pendiente de registrar'); if (reason) setNotDelivered(previous => new Set(previous).add(stop.id)); }} className={`rounded-lg border px-4 py-3 text-sm font-bold ${notDelivered.has(stop.id) ? 'border-red-700 bg-red-100 text-red-800' : 'border-red-700 text-red-800'}`}>{notDelivered.has(stop.id) ? 'No entregado · anotado localmente' : 'No entregado'}</button></div></article>; })()}</div>}
   </section>;
 }
