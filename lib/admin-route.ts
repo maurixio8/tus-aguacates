@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { comboComponentsFor, type ComboComponent } from '@/lib/combo-definitions';
+
 export const CONFIRMED_ROUTE_STATUSES = new Set([
   'confirmado', 'confirmed', 'pendiente_entrega', 'pending_delivery',
   'pagado', 'paid', 'processing', 'en_ruta', 'pendiente', 'pending',
@@ -62,10 +64,15 @@ export interface AdminRouteOrder {
   deliveryDate: string | null;
   createdAt: string | null;
   totalAmount: number;
-  items: { name: string; quantity: number; price: number }[];
+  items: { name: string; quantity: number; price: number; subtotal?: number; variantName?: string; variant_value?: string; variant_name?: string; weight?: number | string | null; unit?: string | null; comboComponents?: ComboComponent[] | null }[];
   itemCount: number;
   isDelivered: boolean;
   paymentStatus: string;
+  paymentMethod?: string | null;
+  subtotal?: number;
+  shippingFee?: number;
+  discount?: number;
+  couponCode?: string | null;
   notes: string;
   latitude: number | null;
   longitude: number | null;
@@ -173,7 +180,7 @@ export function addressParts(row: any) {
 
 export function orderItems(row: any, data: any) {
   const values = Array.isArray(data?.items) ? data.items : Array.isArray(data?.products) ? data.products : [];
-  return values.map((item: any) => ({ name: item.product_name || item.name || 'Producto', quantity: Number(item.quantity || 1), price: Number(item.price || item.unit_price || 0) }));
+  return values.map((item: any) => { const name = item.product_name || item.productName || item.name || 'Producto'; return { name, quantity: Number(item.quantity || 1), price: Number(item.price || item.unit_price || 0), subtotal: Number(item.subtotal || (item.price || item.unit_price || 0) * (item.quantity || 1)), variantName: item.variantName || item.variant_name || item.variant_value || item.variantType || '', variant_value: item.variant_value, variant_name: item.variant_name, weight: item.weight ?? null, unit: item.unit || null, comboComponents: Array.isArray(item.components) ? item.components : comboComponentsFor(item.product_id || item.productId, name) }; });
 }
 
 export function isChia(city: string, address: string): boolean {

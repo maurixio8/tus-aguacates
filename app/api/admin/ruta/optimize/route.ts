@@ -5,7 +5,7 @@ import { CORABASTOS } from '@/lib/admin-route';
 import { csvForRoute, formatMinutes, parseGoogleDuration, reorderStopsByWaypointIndex, splitNorthSouthBalanced, type OptimizationStop, type OptimizedLeg, type OptimizedRoute } from '@/lib/route-optimization';
 
 export const dynamic = 'force-dynamic';
-const MAX_STOPS = 10;
+const FALLBACK_MAX_STOPS = 10;
 const cache = (globalThis as typeof globalThis & { __routeOptimizationCache?: Map<string, any> }).__routeOptimizationCache ||= new Map();
 
 function departureIso(date: string, time: string) {
@@ -76,12 +76,13 @@ export async function POST(request: NextRequest) {
     const departureTime = String(body.departureTime || '14:00');
     const mode: 'compact' | 'split' = body.mode === 'split' ? 'split' : 'compact';
     const drivers = { norte: String(body.drivers?.norte || 'Mauricio'), sur: String(body.drivers?.sur || 'Mauricio') };
+    const maxStops = body.exportMode === 'compatible' ? FALLBACK_MAX_STOPS : (body.maxStops === 0 || body.maxStops === 'unlimited' ? 0 : Math.max(0, Number(body.maxStops ?? 0)));
     const stops = Array.isArray(body.stops) ? body.stops : [];
     if (!dates.length || !stops.length) return NextResponse.json({ error: 'Faltan fechas o paradas confirmadas' }, { status: 400 });
-    const safeStops: OptimizationStop[] = stops.filter((stop: any) => stop && stop.coverage === 'dentro' && !stop.isCancelled && Number.isFinite(Number(stop.latitude)) && Number.isFinite(Number(stop.longitude))).map((stop: any) => ({ id: String(stop.id), orderNumber: stop.orderNumber, customerName: stop.customerName, address: String(stop.deliveryAddress || ''), deliveryDate: String(stop.deliveryDate || ''), latitude: Number(stop.latitude), longitude: Number(stop.longitude), coverage: 'dentro' }));
+    const safeStops: OptimizationStop[] = stops.filter((stop: any) => stop && stop.coverage === 'dentro' && !stop.isCancelled && Number.isFinite(Number(stop.latitude)) && Number.isFinite(Number(stop.longitude))).map((stop: any) => ({ id: String(stop.id), source: stop.source === 'guest_orders' ? 'guest_orders' : 'orders', orderNumber: stop.orderNumber, customerName: stop.customerName, customerPhone: stop.customerPhone, address: String(stop.deliveryAddress || ''), deliveryDate: String(stop.deliveryDate || ''), items: Array.isArray(stop.items) ? stop.items : [], subtotal: Number(stop.subtotal || 0), totalAmount: Number(stop.totalAmount || 0), status: stop.status, paymentStatus: stop.paymentStatus, paymentMethod: stop.paymentMethod, deliveryNotes: stop.deliveryNotes, notes: stop.notes, shippingFee: Number(stop.shippingFee || 0), discount: Number(stop.discount || 0), couponCode: stop.couponCode, latitude: Number(stop.latitude), longitude: Number(stop.longitude), coverage: 'dentro' }));
     const apiKey = process.env.GOOGLE_MAPS_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'GOOGLE_MAPS_API_KEY no está configurada en el runtime' }, { status: 503 });
-    const cacheKey = JSON.stringify({ mode, dates, departureTime, drivers, stops: safeStops.map(stop => [stop.id, stop.latitude, stop.longitude, stop.deliveryDate]) });
+    const cacheKey = JSON.stringify({ mode, dates, departureTime, drivers, maxStops, stops: safeStops.map(stop => [stop.id, stop.latitude, stop.longitude, stop.deliveryDate, stop.items, stop.notes]) });
     const cached = cache.get(cacheKey);
     if (cached) return NextResponse.json({ ...cached, cacheHit: true, routesApiCalls: 0 });
     const callCounter = { value: 0 };
@@ -95,9 +96,9 @@ export async function POST(request: NextRequest) {
         optimized.currentLegs = current.legs;
         optimized.currentDistanceMeters = current.totalDistanceMeters;
         optimized.currentDurationSeconds = current.totalDurationSeconds;
-        if (optimized.stops.length <= MAX_STOPS) routes.push(optimized);
+        if (!maxStops || optimized.stops.length <= maxStops) routes.push(optimized);
         else {
-          const optimizedChunks = chunk(optimized.stops, MAX_STOPS);
+          const optimizedChunks = chunk(optimized.stops, maxStops);
           optimizedChunks.forEach((part, index) => routes.push({ ...optimized, group: 'Compacta', stops: part, originalStops: current.stops.filter(stop => part.some(item => item.id === stop.id)), csv: csvForRoute({ ...optimized, stops: part, group: 'Compacta', driver: 'Mauricio' }), currentDistanceMeters: index === 0 ? current.totalDistanceMeters : undefined, currentDurationSeconds: index === 0 ? current.totalDurationSeconds : undefined }));
         }
         continue;
@@ -110,7 +111,7 @@ export async function POST(request: NextRequest) {
         { name: 'Sur', stops: dayStops.filter(stop => southIds.has(stop.id)), driver: drivers.sur },
       ];
       for (const group of groups) {
-        for (const part of chunk(group.stops, MAX_STOPS)) {
+        for (const part of (maxStops ? chunk(group.stops, maxStops) : [group.stops])) {
           if (!part.length) continue;
           const current = await computeRoute(date, group.name, part, group.driver, departureTime, apiKey, callCounter, false);
           const optimized = await computeRoute(date, group.name, part, group.driver, departureTime, apiKey, callCounter, true);
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
       }
     }
     const totalStops = routes.reduce((sum, route) => sum + route.stops.length, 0);
-    const result = { mode, dateFrom: dates[0], dateTo: dates[dates.length - 1], dates, departureTime, drivers, routeCount: routes.length, totalStops, suggestedHelper: mode === 'split' && totalStops > 25, balanceCriterion: mode === 'compact' ? 'Ruta única compacta: un solo orden continuo optimizado y luego dividido solo en CSV de máximo 10 paradas.' : 'Minimiza conjuntamente la diferencia relativa de cantidad de paradas y de minutos estimados por distancia geográfica antes de llamar Routes API.', routes, cacheHit: false, routesApiCalls: callCounter.value, durationLabel: formatMinutes(routes.reduce((sum, route) => sum + route.totalDurationSeconds, 0)) };
+    const result = { mode, maxStops, maxStopsLabel: maxStops ? `Máximo ${maxStops} por exportación` : 'Ilimitadas', dateFrom: dates[0], dateTo: dates[dates.length - 1], dates, departureTime, drivers, routeCount: routes.length, totalStops, suggestedHelper: mode === 'split' && totalStops > 25, balanceCriterion: mode === 'compact' ? (maxStops ? `Ruta única compacta: un solo orden continuo y división de exportación en bloques de máximo ${maxStops}.` : 'Ruta única compacta: un solo orden continuo y un CSV ilimitado.') : 'Minimiza conjuntamente la diferencia relativa de cantidad de paradas y de minutos estimados por distancia geográfica antes de llamar Routes API.', routes, cacheHit: false, routesApiCalls: callCounter.value, durationLabel: formatMinutes(routes.reduce((sum, route) => sum + route.totalDurationSeconds, 0)) };
     cache.set(cacheKey, result);
     return NextResponse.json(result);
   } catch (error: any) {

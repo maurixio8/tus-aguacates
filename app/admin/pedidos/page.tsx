@@ -34,7 +34,7 @@ import {
   normalizePaymentStatus,
   type AdminOrderType,
 } from '@/lib/orders/operational';
-import { generateOrderSummary, generateWhatsAppURL } from '@/utils/orderSummaryGenerator';
+import { generateOrderSummary, generateWhatsAppURL, formatOperationalSummary } from '@/utils/orderSummaryGenerator';
 import { extractCustomerDataFromShippingAddress, formatAddressToString } from '@/utils/addressFormatter';
 import EditOrderModal from '@/components/admin/EditOrderModal';
 import { Edit } from 'lucide-react';
@@ -261,9 +261,27 @@ export default function OrdersPage() {
   // Generar resumen del pedido para EMPAQUE (copiar al portapapeles)
   // Formato optimizado para verificación: lista de productos, variantes visibles, estado de pago, fecha entrega
   const getOrderSummaryText = (order: Order, customerName: string, orderItems: any[]): string => {
-    // Resumen operativo para alistamiento: solo dirección, cliente, productos
-    // con variante/peso y total final. No incluir pedido, teléfono, domicilio,
-    // estado de pago ni fecha de entrega.
+    return formatOperationalSummary({
+      id: order.id,
+      order_number: order.order_number,
+      customer_name: customerName,
+      customer_phone: order.customer_phone,
+      delivery_address: getAddressText(order),
+      status: order.status,
+      payment_status: order.payment_status,
+      payment_method: order.payment_method,
+      delivery_date: order.delivery_date,
+      delivery_notes: order.delivery_notes,
+      notes: order.notes,
+      subtotal: order.subtotal,
+      total_amount: order.total_amount ?? order.total,
+      shipping_fee: order.shipping_fee ?? order.shipping_cost,
+      discount: order.discount ?? order.discount_amount,
+      coupon_code: order.coupon_code,
+      items: orderItems,
+    });
+
+    // Legacy formatter retained below for historical reference only.
     const formatSummaryMoney = (amount: number) => new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',

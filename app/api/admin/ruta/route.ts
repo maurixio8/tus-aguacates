@@ -91,8 +91,8 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
   return {
     id: String(row.id), source, orderNumber: String(row.order_number || row.orderNumber || row.id || ''),
     customerName: String(row.customer_name || row.guest_name || row.name || 'Cliente'), customerPhone: String(row.customer_phone || row.guest_phone || row.phone || ''),
-    deliveryAddress: parts.address, deliveryDate: deliveryDateOf(row), createdAt: row.created_at || null, totalAmount: Number(row.total_amount || row.total || 0), items, itemCount: items.length,
-    isDelivered: Boolean(row.delivered_at) || ['delivered', 'entregado'].includes(normalizeStatus(row)), paymentStatus: String(row.payment_status || 'pending'), notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
+    deliveryAddress: parts.address, deliveryDate: deliveryDateOf(row), createdAt: row.created_at || null, totalAmount: Number(row.total_amount || row.total || data.total || 0), items, itemCount: items.length,
+    isDelivered: Boolean(row.delivered_at) || ['delivered', 'entregado'].includes(normalizeStatus(row)), paymentStatus: String(row.payment_status || data.payment_status || 'pending'), paymentMethod: row.payment_method || data.payment_method || null, subtotal: Number(row.subtotal || data.subtotal || 0), shippingFee: Number(row.shipping_fee || row.shipping_cost || data.shipping_fee || data.shipping_cost || data.shippingFee || 0), discount: Number(row.discount || row.discount_amount || data.discount || data.discount_amount || 0), couponCode: row.coupon_code || data.coupon_code || null, notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
     latitude, longitude, coordinateSource, confidence, coverage, coverageReason, coverageZone, city: parts.city || 'Bogotá', resolutionStatus, resolutionCandidates,
     correctedAddress: saved?.corrected_address || null,
     normalizedAddress: saved?.normalized_address || normalizedAddress,
@@ -152,6 +152,18 @@ export async function PATCH(request: NextRequest) {
   try {
     const auth = await verifyAdminAuth(request); if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
     const body = await request.json().catch(() => ({}));
+    if (body.action === 'deliver') {
+      const orderId = String(body.orderId || '').trim();
+      const source = body.source === 'guest_orders' ? 'guest_orders' : body.source === 'orders' ? 'orders' : null;
+      if (!orderId || !source || body.confirmDelivery !== true) return NextResponse.json({ error: 'La entrega requiere pedido, origen y confirmación explícita' }, { status: 400 });
+      const supabase = createSupabaseClient();
+      const now = new Date().toISOString();
+      const table = source === 'guest_orders' ? 'guest_orders' : 'orders';
+      const payload = source === 'guest_orders' ? { status: 'delivered', order_status: 'entregado', updated_at: now } : { delivered_at: now, updated_at: now, order_status: 'entregado', status: 'delivered' };
+      const { data, error } = await supabase.from(table).update(payload).eq('id', orderId).select('id,status,order_status,updated_at').single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, action: 'deliver', source, fields: Object.keys(payload), order: data });
+    }
     if (body.action === 'cancel') {
       if (body.confirmCancellation !== true) return NextResponse.json({ error: 'La cancelación requiere confirmación explícita' }, { status: 400 });
       const orderId = String(body.orderId || '').trim();

@@ -1,12 +1,28 @@
+import type { OperationalSummaryItem } from '@/utils/orderSummaryGenerator';
+import type { ComboComponent } from '@/lib/combo-definitions';
+
 export type OptimizationStop = {
   id: string;
+  source?: 'orders' | 'guest_orders';
   orderNumber?: string;
   customerName?: string;
+  customerPhone?: string;
   address: string;
   deliveryDate: string;
+  items?: (OperationalSummaryItem & { comboComponents?: ComboComponent[] | null })[];
+  subtotal?: number;
+  totalAmount?: number;
+  status?: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  deliveryNotes?: string;
+  notes?: string;
+  shippingFee?: number;
+  discount?: number;
+  couponCode?: string;
+  coverage: string;
   latitude: number;
   longitude: number;
-  coverage: string;
 };
 
 export type OptimizedLeg = {
@@ -82,11 +98,32 @@ export function reorderStopsByWaypointIndex<T>(stops: T[], indices: number[]): T
   return safe.map(index => stops[index]);
 }
 
+import { formatOperationalSummary } from '@/utils/orderSummaryGenerator';
+
 export function csvForRoute(route: { stops: OptimizationStop[]; group: string; driver: string; legs?: OptimizedLeg[] }): string {
   const rows = ['lat,lng,address,note'];
   route.stops.forEach((stop, index) => {
     const leg = route.legs?.[index];
-    const note = `${route.group} | conductor=${route.driver} | parada=${index + 1}${leg ? ` | ETA=${leg.eta}` : ''}`;
+    const summary = formatOperationalSummary({
+      id: stop.id,
+      order_number: stop.orderNumber,
+      customer_name: stop.customerName,
+      customer_phone: stop.customerPhone,
+      delivery_address: stop.address,
+      status: stop.status,
+      payment_status: stop.paymentStatus,
+      payment_method: stop.paymentMethod,
+      delivery_date: stop.deliveryDate,
+      delivery_notes: stop.deliveryNotes,
+      notes: stop.notes,
+      subtotal: stop.subtotal,
+      total_amount: stop.totalAmount,
+      shipping_fee: stop.shippingFee,
+      discount: stop.discount,
+      coupon_code: stop.couponCode,
+      items: stop.items,
+    });
+    const note = `${route.group} | conductor=${route.driver} | parada=${index + 1}${leg ? ` | ETA=${leg.eta}` : ''}\n${summary}`;
     rows.push([stop.latitude, stop.longitude, `"${stop.address.replace(/"/g, '""')}"`, `"${note.replace(/"/g, '""')}"`].join(','));
   });
   return rows.join('\n');

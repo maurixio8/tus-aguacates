@@ -300,6 +300,77 @@ export function generateOrderSummary(order: Order): string {
   return message;
 }
 
+export type OperationalSummaryItem = {
+  name?: string;
+  product_name?: string;
+  productName?: string;
+  quantity?: number;
+  price?: number;
+  unit_price?: number;
+  subtotal?: number;
+  variantName?: string;
+  variant_name?: string;
+  variant_value?: string;
+  weight?: number | string | null;
+  unit?: string | null;
+  comboComponents?: Array<{ name: string; quantity: number; unit?: string; variant?: string }> | null;
+};
+
+export type OperationalSummaryInput = {
+  id?: string;
+  order_number?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  delivery_address?: string;
+  shipping_address?: string | Record<string, unknown>;
+  status?: string;
+  payment_status?: string;
+  payment_method?: string;
+  delivery_date?: string | null;
+  delivery_notes?: string | null;
+  notes?: string | null;
+  subtotal?: number;
+  shipping_fee?: number;
+  shipping_cost?: number;
+  discount?: number;
+  discount_amount?: number;
+  coupon_code?: string | null;
+  total?: number;
+  total_amount?: number;
+  items?: OperationalSummaryItem[];
+};
+
+export function formatOperationalSummary(input: OperationalSummaryInput): string {
+  const money = (value: unknown) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(Number(value || 0));
+  const address = input.delivery_address || formatAddressToString(input.shipping_address as any) || 'Sin dirección';
+  const items = input.items || [];
+  const subtotal = Number(input.subtotal ?? items.reduce((sum, item) => sum + Number(item.subtotal ?? (item.price ?? item.unit_price ?? 0) * (item.quantity ?? 1)), 0));
+  const shipping = Number(input.shipping_fee ?? input.shipping_cost ?? 0);
+  const discount = Number(input.discount ?? input.discount_amount ?? 0);
+  const total = Number(input.total_amount ?? input.total ?? subtotal + shipping - discount);
+  const lines = [
+    `PEDIDO: ${input.order_number || (input.id ? `#${input.id.slice(-8)}` : 'Sin número')}`,
+    `CLIENTE: ${input.customer_name || 'Sin nombre'}`,
+    `TELÉFONO: ${input.customer_phone || 'Sin teléfono'}`,
+    `DIRECCIÓN: ${address}`,
+    `ESTADO: ${input.status || 'Sin estado'}`,
+    `PAGO: ${input.payment_status || 'Sin estado'}${input.payment_method ? ` · Método: ${input.payment_method}` : ''}`,
+    `FECHA DE ENTREGA: ${input.delivery_date || 'Sin fecha'}`,
+    '', 'PRODUCTOS:'
+  ];
+  items.forEach(item => {
+    const name = item.name || item.product_name || item.productName || 'Producto';
+    const details = [item.variantName || item.variant_name || item.variant_value ? `Variante: ${item.variantName || item.variant_name || item.variant_value}` : '', item.weight !== null && item.weight !== undefined && item.weight !== '' ? `Peso: ${item.weight}${item.unit || 'g'}` : ''].filter(Boolean).join(' | ');
+    lines.push(`${item.quantity || 1} x ${name}${details ? ` | ${details}` : ''} | ${money(item.subtotal ?? (item.price ?? item.unit_price ?? 0) * (item.quantity || 1))}`);
+    if (item.comboComponents?.length) lines.push(`  CONTENIDO DEL COMBO: ${item.comboComponents.map(component => `${component.quantity * Number(item.quantity || 1)} x ${component.name}${component.variant ? ` (${component.variant})` : ''}`).join('; ')}`);
+  });
+  lines.push('', `SUBTOTAL PRODUCTOS: ${money(subtotal)}`, `ENVÍO: ${shipping > 0 ? money(shipping) : 'GRATIS'}`);
+  if (discount > 0) lines.push(`DESCUENTO${input.coupon_code ? ` (${input.coupon_code})` : ''}: -${money(discount)}`);
+  lines.push(`TOTAL A PAGAR: ${money(total)}`);
+  if (input.delivery_notes || input.notes) lines.push(`NOTAS: ${input.delivery_notes || input.notes}`);
+  return lines.join('\\n');
+}
+
 // Function to generate WhatsApp URL with encoded message
 export function generateWhatsAppURL(phoneNumber: string, message: string): string {
   // Clean phone number (remove non-digits and add country code if needed)
