@@ -19,12 +19,13 @@ interface RouteMapProps {
   orders: RouteMapOrder[];
   lineOrderIds?: string[];
   origin: { lat: number; lng: number; address: string };
+  dividerLatitude?: number | null;
 }
 
 const COLORS: Record<string, string> = { dentro: '#15803d', por_confirmar: '#d97706', chia: '#7c3aed', fuera: '#b91c1c' };
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
-export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMapProps) {
+export default function RouteMap({ orders, lineOrderIds = [], origin, dividerLatitude = null }: RouteMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -62,7 +63,7 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
 
   useEffect(() => {
     if (mapRef.current?.isStyleLoaded()) drawData(mapRef.current, orders, lineOrderIds, origin);
-  }, [orders, lineOrderIds, origin]);
+  }, [orders, lineOrderIds, origin, dividerLatitude]);
 
 
   function drawData(map: maplibregl.Map, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
@@ -80,6 +81,13 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
       map.addSource('shadow-route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates } } as any });
       map.addLayer({ id: 'shadow-route-line', type: 'line', source: 'shadow-route', paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-opacity': 0.75, 'line-dasharray': [2, 1] } });
       routeLayerReady.current = true;
+    }
+
+    if (map.getLayer('north-south-divider')) map.removeLayer('north-south-divider');
+    if (map.getSource('north-south-divider')) map.removeSource('north-south-divider');
+    if (dividerLatitude != null) {
+      map.addSource('north-south-divider', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[-74.35, dividerLatitude], [-73.9, dividerLatitude]] } } as any });
+      map.addLayer({ id: 'north-south-divider', type: 'line', source: 'north-south-divider', paint: { 'line-color': '#7c3aed', 'line-width': 2, 'line-dasharray': [2, 2] } });
     }
 
     const originMarker = document.createElement('div');
