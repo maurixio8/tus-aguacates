@@ -32,7 +32,7 @@ async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: Optimiz
     intermediates: stops.map(stop => ({ location: { latLng: { latitude: stop.latitude, longitude: stop.longitude } }, vehicleStopover: true })),
     travelMode: 'DRIVE',
     routingPreference: 'TRAFFIC_AWARE',
-    optimizeWaypointOrder: true,
+    optimizeWaypointOrder: stops.length > 1,
     languageCode: 'es',
     units: 'METRIC',
   };
@@ -47,7 +47,8 @@ async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: Optimiz
   const body = await response.json().catch(() => ({}));
   if (!response.ok || !body.routes?.[0]) throw new Error(`Routes API HTTP ${response.status}: ${body.error?.message || 'sin ruta'}`);
   const route = body.routes[0];
-  const indices: number[] = Array.isArray(route.optimizedIntermediateWaypointIndex) ? route.optimizedIntermediateWaypointIndex : stops.map((_, index) => index);
+  const rawIndices: number[] = Array.isArray(route.optimizedIntermediateWaypointIndex) ? route.optimizedIntermediateWaypointIndex : [];
+  const indices: number[] = stops.length === 1 ? [0] : rawIndices.length === stops.length && rawIndices.every(index => index >= 0 && index < stops.length) ? rawIndices : stops.map((_, index) => index);
   const orderedStops = indices.map(index => stops[index]).filter(Boolean);
   const legs = Array.isArray(route.legs) ? route.legs : [];
   const departure = new Date(departureIso(date, departureTime));
