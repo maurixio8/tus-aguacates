@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
 import type { UnifiedProduct } from '@/lib/types';
@@ -52,15 +53,23 @@ export function ProductPurchasePanel({ product }: ProductPurchasePanelProps) {
       )}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <span className="text-sm text-gray-600">{formatPrice(price)} · {product.unit || 'unidad'}</span>
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={unavailable}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 px-6 py-3 font-bold text-verde-bosque-700 shadow-md transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-400"
-        >
-          <ShoppingCart className="h-5 w-5" />
-          {added ? '¡Agregado al carrito!' : unavailable ? 'No disponible' : 'Agregar al carrito'}
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={unavailable}
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-yellow-400 to-yellow-600 px-6 py-3 font-bold text-verde-bosque-700 shadow-md transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:from-gray-300 disabled:to-gray-400"
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {added ? '¡Agregado al carrito!' : unavailable ? 'No disponible' : 'Agregar al carrito'}
+          </button>
+          <Link
+            href="/tienda"
+            className="inline-flex min-h-12 items-center justify-center rounded-xl border-2 border-verde-bosque px-5 py-3 font-bold text-verde-bosque transition hover:bg-verde-bosque hover:text-white"
+          >
+            Ver más productos
+          </Link>
+        </div>
       </div>
     </div>
   );
