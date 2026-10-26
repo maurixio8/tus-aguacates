@@ -113,7 +113,7 @@ export default function RutaPage() {
   const [optimizedError, setOptimizedError] = useState('');
   const [departureTime, setDepartureTime] = useState('14:00');
   const [northDriver, setNorthDriver] = useState('Mauricio');
-  const [southDriver, setSouthDriver] = useState('Mauricio');
+  const [southDriver, setSouthDriver] = useState('Ayudante');
   const [preRouteApproved, setPreRouteApproved] = useState(false);
   const [manualOrder, setManualOrder] = useState<RouteItem | null>(null);
   const [locationSaving, setLocationSaving] = useState(false);
