@@ -32,6 +32,7 @@ import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
+import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 
 interface OrderItem {
   id: string;
@@ -283,6 +284,13 @@ export default function ListaComprasPage() {
     '56ac11a8-afce-4007-8ec4-d597282c4eab': [
       { name: 'Caja de 24 unidades hass mediano', quantity: 2, unit: 'caja', variant: '24 unidades' }
     ],
+    // Trío Frutal Premium: la definición vigente está en la descripción del producto.
+    // Se conserva por ID para que el nombre comercial del pedido no pueda romper el desglose.
+    '15811523-fa29-47fa-9307-f9bff141c5dd': [
+      { name: 'Fresas premium', quantity: 1, unit: 'contenedor', variant: '500 g', productId: 'b5a133b9-f949-4d59-81d9-fea9bd2f6b84', variantId: '8de25486-294e-4c0c-9622-3cf162992857' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paquete', variant: '250 g', productId: 'e325c45f-7f5b-4474-bd22-11e1a9de285a', variantId: '4dc9b4dd-bf55-463d-bef4-8077517ea136' },
+      { name: 'Paquete 4 uni premium hass', quantity: 1, unit: 'paquete', variant: '4 unidades', productId: '0f57db2f-21fa-4387-b0c2-6f76e76804e4', variantId: '475a8bdf-73ee-462d-9dfb-7cb7d17e0e61' }
+    ],
     // Despensa Semanal de 12 Productos. La definición sale del catálogo vivo.
     // La descripción usa “fresas” genérico; la regla operativa vigente del
     // dashboard es Fresa Económica de 500 g, no Fresas Premium.
@@ -303,6 +311,8 @@ export default function ListaComprasPage() {
   };
 
   const COMBO_COMPONENTS: Record<string, ComboComponent[]> = {
+    'trío frutal premium': COMBO_COMPONENTS_BY_PRODUCT_ID['15811523-fa29-47fa-9307-f9bff141c5dd'],
+    'trio frutal premium': COMBO_COMPONENTS_BY_PRODUCT_ID['15811523-fa29-47fa-9307-f9bff141c5dd'],
     'combo ahorro #1': [
       { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
@@ -1523,6 +1533,10 @@ const normalizeVariant = (variant: string | null): string => {
     if (product.total_weight_display) {
       return `${product.total_weight_display} (${physicalTotal} ${pluralUnit})`;
     }
+    const normalizedProduct = normalizeProductName(product.product_name || '', null).toLowerCase();
+    if (normalizedProduct.includes('menta')) {
+      return `${physicalTotal} ${pluralUnit} — PESO NO DEFINIDO (REVISAR)`;
+    }
     return `${physicalTotal} ${pluralUnit}`;
   };
 
@@ -1572,9 +1586,7 @@ const normalizeVariant = (variant: string | null): string => {
           item.productName ||
           'Producto sin nombre';
           
-        const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
-          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
+        const comboComponents = resolveComboComponents(item.product_id, productName, COMBO_COMPONENTS_BY_PRODUCT_ID, COMBO_COMPONENTS);
           
         if (comboComponents) {
           const displayKey = productName;
@@ -1625,9 +1637,7 @@ const normalizeVariant = (variant: string | null): string => {
           'Producto sin nombre';
 
         // Verificar si es un combo y obtener sus componentes
-        const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
-          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
+        const comboComponents = resolveComboComponents(item.product_id, productName, COMBO_COMPONENTS_BY_PRODUCT_ID, COMBO_COMPONENTS);
 
         if (comboComponents) {
           // Es un combo - desglosar en sus componentes
@@ -2293,18 +2303,13 @@ const normalizeVariant = (variant: string | null): string => {
 
   // Verificar si un producto es un combo
   const isCombo = (productName: string): boolean => {
-    return productName.toLowerCase().includes('combo');
+    const normalized = productName.toLowerCase();
+    return normalized.includes('combo') || normalized.includes('trío frutal') || normalized.includes('trio frutal');
   };
 
   // Obtener componentes de un combo
   const getComboComponents = (productName: string) => {
-    const key = productName.toLowerCase();
-    for (const [comboKey, components] of Object.entries(COMBO_COMPONENTS)) {
-      if (key.includes(comboKey) || comboKey.includes(key.replace('combo ', ''))) {
-        return components;
-      }
-    }
-    return null;
+    return resolveComboComponents(null, productName, {}, COMBO_COMPONENTS);
   };
 
   // Copiar al portapapeles con feedback visual
@@ -2334,9 +2339,7 @@ const normalizeVariant = (variant: string | null): string => {
     
     customer.order_items.forEach(item => {
       // Verificar si es un combo
-      const itemNameLower = item.product_name.toLowerCase();
-      const comboComponents = COMBO_COMPONENTS[itemNameLower] ||
-        Object.entries(COMBO_COMPONENTS).find(([key]) => itemNameLower.includes(key))?.[1];
+      const comboComponents = getComboComponents(item.product_name);
 
       if (comboComponents) {
         // Es un combo - desglosar en componentes
