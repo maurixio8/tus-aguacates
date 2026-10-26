@@ -172,6 +172,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 ¡Ahorra {discount}%!
               </div>
             )}
+
+            {/* Primary purchase action: visible immediately after the product image */}
+            <ProductPurchasePanel product={product} />
           </div>
 
           {/* Product Information - Right Column */}
@@ -209,7 +212,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </div>
             )}
 
-            {/* Pricing Section + primary purchase CTA */}
+            {/* Pricing Section */}
             <div className="py-6 border-b border-gray-200">
               <div className="flex items-baseline gap-4">
                 <span className="text-4xl md:text-5xl font-bold text-verde-bosque font-mono">
@@ -221,7 +224,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </span>
                 )}
               </div>
-              <ProductPurchasePanel product={product} />
             </div>
           </div>
         </div>
