@@ -11,6 +11,47 @@ export const DELIVERY_CUTOFF_HOUR = 6;
 export type RouteResolution = 'pin' | 'geocodificado' | 'verificar_barrio' | 'sin_coordenadas';
 export type RouteCoverage = 'dentro' | 'por_confirmar' | 'chia' | 'fuera';
 
+export function normalizeWhatsAppPhone(value: unknown): string | null {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  const local = digits.startsWith('57') && digits.length === 12 ? digits.slice(2) : digits;
+  return /^3\d{9}$/.test(local) ? `57${local}` : null;
+}
+
+export function clientAddressMessage(address: string | null | undefined): string {
+  const clean = String(address || '').replace(/\?/g, '').trim();
+  return clean
+    ? `Hola, soy Mauricio de Tus Aguacates. Para dejarte el pedido sin enredos, ¿me confirmas tu dirección? Tenemos registrada: ${clean}. ¿Es correcta? Si no, pásame la correcta con el nombre del conjunto o edificio, el apartamento y el barrio. ¡Gracias!`
+    : 'Hola, soy Mauricio de Tus Aguacates. Para dejarte el pedido sin enredos, ¿me confirmas tu dirección completa con el nombre del conjunto o edificio, el apartamento y el barrio? ¡Gracias!';
+}
+
+export function buildWhatsAppUrl(phone: unknown, address: string | null | undefined): string | null {
+  const normalized = normalizeWhatsAppPhone(phone);
+  return normalized ? `https://wa.me/${normalized}?text=${encodeURIComponent(clientAddressMessage(address))}` : null;
+}
+
+export function buildGoogleMapsDirectionsUrl(origin: string, stops: string[], destination = origin): string {
+  const params = new URLSearchParams({ api: '1', origin, destination, travelmode: 'driving' });
+  if (stops.length) params.set('waypoints', stops.join('|'));
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+export function deliveryDatesInRange(dateFrom: string, dateTo: string): string[] {
+  const start = new Date(`${dateFrom}T00:00:00Z`);
+  const end = new Date(`${dateTo}T00:00:00Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start > end) return [];
+  const dates: string[] = [];
+  for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+    const weekday = cursor.getUTCDay();
+    if (weekday === 2 || weekday === 5) dates.push(cursor.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+export function isCancelledStatus(row: any): boolean {
+  return ['cancelado', 'cancelled'].includes(String(row?.status ?? '').trim().toLowerCase())
+    || ['cancelado', 'cancelled'].includes(String(row?.order_status ?? '').trim().toLowerCase());
+}
+
 export interface AdminRouteOrder {
   id: string;
   source: 'orders' | 'guest_orders';
@@ -42,6 +83,9 @@ export interface AdminRouteOrder {
   resolutionConfirmedBy?: string | null;
   resolutionResolvedAt?: string | null;
   resolutionHistory?: Array<Record<string, any>>;
+  isCancelled?: boolean;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
 }
 
 export function parseOrderData(row: any): any {
@@ -50,6 +94,10 @@ export function parseOrderData(row: any): any {
     try { return JSON.parse(row.order_data) || {}; } catch { return {}; }
   }
   return row.order_data;
+}
+
+export function cancellationReasonOf(row: any, data = parseOrderData(row)): string | null {
+  return row?.cancellation_reason || row?.notes || data?.cancellation_reason || data?.cancellationReason || null;
 }
 
 export function derivedDeliveryDate(createdAt: string | null | undefined): string | null {

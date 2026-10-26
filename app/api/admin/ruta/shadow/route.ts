@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { nextDeliveryDate } from '@/lib/admin-route';
+import { deliveryDatesInRange, nextDeliveryDate } from '@/lib/admin-route';
 
 const execFileAsync = promisify(execFile);
 const OUT_ROOT = '/opt/data/cache/phase3-shadow-routes';
@@ -16,13 +16,26 @@ export async function POST(request: NextRequest) {
     const auth = await verifyAdminAuth(request);
     if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
     const body = await request.json().catch(() => ({}));
-    const date = String(body.date || nextDeliveryDate());
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: 'Fecha inválida' }, { status: 400 });
-    const { stdout } = await execFileAsync('python3', [SCRIPT, '--date', date], { timeout: 180000, maxBuffer: 1024 * 1024 });
-    return NextResponse.json(JSON.parse(stdout.trim()));
+    const dateFrom = String(body.dateFrom || body.date || nextDeliveryDate());
+    const dateTo = String(body.dateTo || body.date || dateFrom);
+    const dates = body.dateFrom || body.dateTo ? deliveryDatesInRange(dateFrom, dateTo) : [dateFrom];
+    if (!dates.length) return NextResponse.json({ error: 'Rango de fechas inválido o sin días de entrega martes/viernes' }, { status: 400 });
+    const days = [];
+    for (const date of dates) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: 'Fecha inválida' }, { status: 400 });
+      const { stdout } = await execFileAsync('python3', [SCRIPT, '--date', date], { timeout: 180000, maxBuffer: 1024 * 1024 });
+      days.push(JSON.parse(stdout.trim()));
+    }
+    return NextResponse.json({ dateFrom, dateTo, dates, days, counts: days.reduce((sum, day) => ({
+      ...sum,
+      routed: sum.routed + Number(day.counts?.routed || 0),
+      routes: sum.routes + Number(day.counts?.routes || 0),
+      excluded: sum.excluded + Number(day.counts?.fuera || 0) + Number(day.counts?.por_confirmar || 0),
+    }), { routed: 0, routes: 0, excluded: 0 }), routes: days.flatMap(day => (day.routes || []).map((route: any) => ({ ...route, date: day.date }))) });
   } catch (error: any) {
-    console.error('Error generating shadow route', error?.message || error);
-    return NextResponse.json({ error: 'No se pudo generar la ruta sombra' }, { status: 500 });
+    const detail = [error?.message, error?.stderr].filter(Boolean).join(' | ');
+    console.error('Error generating shadow route', detail || error);
+    return NextResponse.json({ error: 'No se pudo generar la ruta sombra', detail: detail || 'error desconocido' }, { status: 500 });
   }
 }
 

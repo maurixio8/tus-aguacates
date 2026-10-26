@@ -31,6 +31,7 @@ import {
 import RouteMap from '@/components/admin/RouteMap';
 import ManualLocationPicker from '@/components/admin/ManualLocationPicker';
 import { formatNormalizedDeliveryAddress } from '@/lib/location-resolution';
+import { buildGoogleMapsDirectionsUrl, buildWhatsAppUrl } from '@/lib/admin-route';
 
 interface RouteItem {
   id: string;
@@ -63,6 +64,9 @@ interface RouteItem {
   resolutionConfirmedBy?: string | null;
   resolutionResolvedAt?: string | null;
   resolutionHistory?: Array<{ event: string; status: string; corrected_address?: string | null; latitude?: number | null; longitude?: number | null; confirmed_by?: string | null; resolved_at?: string | null; rejection_reason?: string | null; captured_at: string }>;
+  isCancelled?: boolean;
+  cancellationReason?: string | null;
+  cancelledAt?: string | null;
 }
 
 interface ZoneData {
@@ -73,10 +77,11 @@ interface ZoneData {
 
 interface RouteData {
   orders: RouteItem[];
+  routeOrders: RouteItem[];
   zones: Record<string, ZoneData>;
   total: number;
   totalAmount: number;
-  counts: { total: number; conPin: number; geocodificados: number; porVerificar: number; fueraCobertura: number; chia: number; dentro: number; porConfirmar: number };
+  counts: { total: number; conPin: number; geocodificados: number; porVerificar: number; fueraCobertura: number; chia: number; dentro: number; porConfirmar: number; ruta?: number; excluidas?: number; cancelados?: number };
   dateFrom: string;
   dateTo: string;
   canonicalDateSource: string;
@@ -117,14 +122,6 @@ export default function RutaPage() {
       const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store' });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error || 'Error al cargar ruta');
-      // Excluir pedidos pausados
-      if (excludedOrders.size > 0 && json.orders) {
-        json.orders = json.orders.filter((o: any) => !excludedOrders.has(o.id));
-        // Recalcular zonas
-        json.zones = recalculateZones(json.orders);
-        json.total = json.orders.length;
-        json.totalAmount = json.orders.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
-      }
       setData(json);
       if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
       if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
@@ -137,7 +134,7 @@ export default function RutaPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateDesde, dateHasta, excludedOrders]);
+  }, [dateDesde, dateHasta]);
 
   useEffect(() => {
     fetchRoute();
@@ -153,7 +150,7 @@ export default function RutaPage() {
     if (!date) return;
     setShadowLoading(true);
     try {
-      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) });
+      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dateFrom: dateDesde || data?.dateFrom, dateTo: dateHasta || data?.dateTo }) });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'No se pudo generar la ruta sombra');
       setShadowResult(json);
@@ -183,6 +180,21 @@ export default function RutaPage() {
     }
   };
 
+  const cancelOrder = async (order: RouteItem) => {
+    if (order.isCancelled) return;
+    const reason = order.coverage === 'chia' ? 'Chía' : order.coverage === 'fuera' ? (order.coverageReason || 'fuera de zonas') : (order.coverageReason || 'fuera de cobertura');
+    const confirmed = window.confirm(`¿Cancelar este pedido? Está fuera de cobertura: ${reason}. El cliente quedará registrado como cancelado por fuera de cobertura.`);
+    if (!confirmed) return;
+    setError('');
+    try {
+      const res = await fetch('/api/admin/ruta', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cancel', orderId: order.id, source: order.source, reason, confirmCancellation: true }) });
+      const json = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(json?.error || 'No se pudo cancelar el pedido');
+      await fetchRoute();
+    } catch (err: any) {
+      setError(err.message || 'Error cancelando pedido');
+    }
+  };
   const reopenResolution = async (order: RouteItem) => {
     if (!order.resolutionId) return;
     setError('');
@@ -302,14 +314,13 @@ export default function RutaPage() {
     });
   };
 
-  // Generar URL de Google Maps multi-parada
+  // Generar URL de Google Maps con todas las paradas en orden.
   const gmapsMultiUrl = () => {
-    const selected = data?.orders.filter(o => selectedOrders.has(o.id) && !excludedOrders.has(o.id)) || [];
-    if (selected.length === 0 && !originAddress) return '#';
-    const base = 'https://www.google.com/maps/dir/';
-    const origin = originAddress ? encodeURIComponent(originAddress) : '';
-    const destinations = selected.map(o => '/' + encodeURIComponent(o.deliveryAddress.replace(/\?/g, '').trim()));
-    return `${base}${origin}${destinations.join('')}`;
+    const candidates = (shadowResult?.routes || []).flatMap((route: any) => route.order_ids || []);
+    const orderById = new Map<string, RouteItem>((data?.orders || []).map((order: RouteItem) => [order.id, order]));
+    const sourceOrders: Array<RouteItem | undefined> = candidates.length ? candidates.map((id: string) => orderById.get(id)) : (data?.routeOrders || data?.orders || []);
+    const ordered = sourceOrders.filter((order): order is RouteItem => Boolean(order && !order.isCancelled && order.coverage === 'dentro' && order.latitude != null && order.longitude != null && (selectedOrders.size === 0 || selectedOrders.has(order.id))));
+    return buildGoogleMapsDirectionsUrl(originAddress, ordered.map(order => order.deliveryAddress.replace(/\?/g, '').trim()), originAddress);
   };
 
   const selectAll = () => {
@@ -352,11 +363,7 @@ export default function RutaPage() {
     }
   };
 
-  // Formatear teléfono para WhatsApp
-  const whatsappUrl = (phone: string) => {
-    const clean = phone.replace(/[^0-9]/g, '');
-    return `https://wa.me/${clean}`;
-  };
+  const whatsappUrl = (phone: string, address?: string) => buildWhatsAppUrl(phone, address);
 
   // Fecha en hora Colombia
   const toColombiaTime = (utcStr: string) => {
@@ -567,21 +574,8 @@ export default function RutaPage() {
           {shadowLoading ? 'Generando...' : 'Generar ruta sombra'}
         </button>
 
-        {/* Botón abrir todo en Waze */}
-        {selectedOrders.size > 0 && (
-          <a
-            href={wazeUrl(filteredOrders.filter(o => selectedOrders.has(o.id)).map(o => o.deliveryAddress).join('&q='))}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
-          >
-            <Navigation className="w-4 h-4" />
-            Abrir en Waze
-          </a>
-        )}
-
         {/* Botón Ruta completa en Google Maps */}
-        {selectedOrders.size > 0 && (
+        {(selectedOrders.size > 0 || (data?.routeOrders?.length || 0) > 0) && (
           <a
             href={gmapsMultiUrl()}
             target="_blank"
@@ -608,7 +602,7 @@ export default function RutaPage() {
       </div>
 
       {data && <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900"><b>Fecha canónica:</b> {data.dateFrom}{data.dateTo !== data.dateFrom ? ` a ${data.dateTo}` : ''}. {data.canonicalDateSource}</div>}
-      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} rutas. <span className="ml-2 inline-flex gap-2"><a className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=route-report.json`} target="_blank">Reporte</a><a className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=preview.html`} target="_blank">Preview</a>{(shadowResult.routes || []).map((r: any) => <a key={r.file} className="underline" href={`/api/admin/ruta/shadow?date=${shadowResult.date}&file=spoke-${(r.name || 'Ruta 1').replace('Ruta ', '')}.csv`} target="_blank">{r.name} CSV</a>)}</span></div>}
+      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} rutas para {shadowResult.dates?.join(', ') || shadowResult.date}. <span className="ml-2 inline-flex flex-wrap gap-2">{(shadowResult.days || []).map((day: any) => <span key={day.date} className="inline-flex gap-2 border-l border-green-300 pl-2"><b>{day.date}</b><a className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=route-report.json`} target="_blank">Reporte</a><a className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=preview.html`} target="_blank">Preview</a>{(day.routes || []).map((r: any) => <a key={r.file} className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=spoke-${(r.name || 'Ruta 1').replace('Ruta ', '')}.csv`} target="_blank">{r.name} CSV</a>)}</span>)}</span></div>}
 
       {data && data.orders.filter(order => order.latitude == null || order.longitude == null).length > 0 && (
         <section className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -627,7 +621,7 @@ export default function RutaPage() {
                 {normalizedPreview && <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-900"><b>Versión normalizada:</b> {normalizedPreview}</div>}
                 {order.resolutionHistory && order.resolutionHistory.length > 0 && <details className="mt-2 rounded-md bg-gray-50 p-2 text-xs text-gray-700"><summary className="cursor-pointer font-semibold">Historial de resolución ({order.resolutionHistory.length})</summary><div className="mt-2 space-y-1">{order.resolutionHistory.slice().reverse().map((entry, index) => <div key={`${entry.captured_at}-${index}`} className="border-l-2 border-gray-300 pl-2"><b>{entry.event}</b> · {entry.status} · {entry.confirmed_by || 'sin confirmador'} · {toColombiaTime(entry.captured_at)}{entry.rejection_reason ? ` · ${entry.rejection_reason}` : ''}</div>)}</div></details>}
                 {order.resolutionCandidates.length > 0 ? <div className="mt-3 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos — niveles y cobertura separados</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className={`block w-full rounded border px-3 py-2 text-left text-sm ${candidate.level === 'fuerte' && candidate.recommended ? 'border-green-200 bg-green-50 text-green-900' : candidate.level === 'calle' ? 'border-gray-200 bg-gray-50 text-gray-700' : 'border-amber-200 bg-amber-50 text-amber-950'}`}><b>{candidate.levelLabel || 'AMBIGUO · requiere revisión'}</b> · candidato {index + 1} · {candidate.label} · proveedor: {candidate.provider} · confianza: {candidate.confidenceBuildingLevel ?? candidate.confidence} · {candidate.coverageLabel || 'cobertura por confirmar'}{candidate.locality ? ` · ${candidate.locality}` : ''}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">No hay candidato exacto todavía. Si sigue así, usa pin manual o WhatsApp.</div>}
-                <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button></div>
+                <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button>{whatsappUrl(order.customerPhone, order.deliveryAddress) ? <a href={whatsappUrl(order.customerPhone, order.deliveryAddress) || '#'} target="_blank" rel="noopener noreferrer" className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Escribir al cliente</a> : <button type="button" disabled className="rounded border border-gray-300 px-3 py-2 text-sm font-medium text-gray-400">Sin teléfono</button>}<button type="button" onClick={() => cancelOrder(order)} className="rounded border border-red-700 px-3 py-2 text-sm font-medium text-red-800">Cancelar pedido</button></div>
               </div>;
             })}
           </div>
@@ -641,10 +635,10 @@ export default function RutaPage() {
         <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
           <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-green-600" />
-            Ruta visual — {selectedOrders.size > 0 ? selectedOrders.size : data.orders.length} paradas
+            Ruta visual — {selectedOrders.size > 0 ? selectedOrders.size : (data.routeOrders || []).length} paradas
           </h3>
           <RouteMap
-            orders={data.orders
+            orders={(data.routeOrders || data.orders.filter((o: RouteItem) => !o.isCancelled && o.coverage === 'dentro' && o.latitude != null && o.longitude != null))
               .filter(o => selectedOrders.size === 0 || selectedOrders.has(o.id))
               .filter(o => !excludedOrders.has(o.id))
               .map(o => ({
@@ -699,7 +693,8 @@ export default function RutaPage() {
                 onToggleExpand={() => toggleOrder(order.id)}
                 wazeUrl={wazeUrl(order.deliveryAddress)}
                 gmapsUrl={gmapsUrl(order.deliveryAddress)}
-                whatsappUrl={whatsappUrl(order.customerPhone)}
+                whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
+                onCancel={() => cancelOrder(order)}
                 copyToClipboard={copyToClipboard}
                 copiedIndex={copiedIndex}
                 toColombiaTime={toColombiaTime}
@@ -749,7 +744,8 @@ export default function RutaPage() {
                   onToggleExpand={() => toggleOrder(order.id)}
                   wazeUrl={wazeUrl(order.deliveryAddress)}
                   gmapsUrl={gmapsUrl(order.deliveryAddress)}
-                  whatsappUrl={whatsappUrl(order.customerPhone)}
+                  whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
+                onCancel={() => cancelOrder(order)}
                   copyToClipboard={copyToClipboard}
                   copiedIndex={copiedIndex}
                   toColombiaTime={toColombiaTime}
@@ -777,6 +773,7 @@ function OrderCard({
   wazeUrl,
   gmapsUrl,
   whatsappUrl,
+  onCancel,
   copyToClipboard,
   copiedIndex,
   toColombiaTime,
@@ -792,7 +789,8 @@ function OrderCard({
   onToggleExpand: () => void;
   wazeUrl: string;
   gmapsUrl: string;
-  whatsappUrl: string;
+  whatsappUrl: string | null;
+  onCancel: () => void;
   copyToClipboard: (text: string, id: string) => void;
   copiedIndex: string | null;
   toColombiaTime: (s: string) => string;
@@ -889,16 +887,25 @@ function OrderCard({
             <MapPin className="w-3 h-3" />
             Maps
           </a>
-          <a
+          {whatsappUrl ? <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
-            title="Enviar WhatsApp"
+            title="Abrir WhatsApp con mensaje preparado"
           >
             <Phone className="w-3 h-3" />
-            WhatsApp
-          </a>
+            Escribir al cliente
+          </a> : <button type="button" disabled className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-50 text-gray-400 rounded" title="No hay teléfono usable"><Phone className="w-3 h-3" />Sin teléfono</button>}
+          {!order.isCancelled && <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onCancel(); }}
+            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
+            title="Cancelar pedido por fuera de cobertura"
+          >
+            <XCircle className="w-3 h-3" />
+            Cancelar pedido
+          </button>}
           <button
             onClick={(e) => {
               e.stopPropagation();

@@ -31,6 +31,11 @@ def fetch(table):
         if len(page)<1000: break
     return rows
 
+def normalize_address(value):
+    value = str(value or '').lower()
+    value = re.sub(r'[^a-z0-9# -]+', ' ', value)
+    return re.sub(r'\s+', ' ', value).strip()
+
 def parse_dt(value):
     if not value: return None
     try:
@@ -110,6 +115,12 @@ def main():
     target=args.date; cutoff=datetime.fromisoformat(f'{target}T{args.cutoff}:00').replace(tzinfo=BOGOTA)
     out=OUT_ROOT/pathlib.Path(target); out.mkdir(parents=True,exist_ok=True)
     geo=json.loads((ROOT/'config/zonas-entrega.geojson').read_text())
+    resolution_rows=fetch('delivery_location_resolutions')
+    resolutions={}
+    for resolution in resolution_rows:
+        if resolution.get('status') != 'confirmada' or resolution.get('latitude') is None or resolution.get('longitude') is None: continue
+        for key in (resolution.get('normalized_address'), resolution.get('original_address'), resolution.get('corrected_address')):
+            if key: resolutions[normalize_address(key)] = resolution
     cache_path=out/'geocode-cache.json'; cache=json.loads(cache_path.read_text()) if cache_path.exists() else {}
     candidates=[]; report={'date':target,'cutoff':cutoff.isoformat(),'source':'Supabase guest_orders + orders','routes':[],'counts':{'orders_total':0,'eligible_confirmed':0,'no_delivery_date':0,'outside_cutoff':0,'no_address':0,'no_pin':0,'geocoded_high':0,'geocoded_low':0,'verde':0,'por_confirmar':0,'fuera':0,'routed':0}}
     for table in ('guest_orders','orders'):
@@ -120,7 +131,10 @@ def main():
             confirmed=parse_dt(row.get('confirmed_at') or row.get('created_at'))
             if confirmed and confirmed>cutoff: report['counts']['outside_cutoff']+=1; continue
             report['counts']['eligible_confirmed']+=1
-            text,lat,lng,pin=get_address(row); item={'source':table,'id':row.get('id'),'address':text,'phone_suffix':re.sub(r'\D','',str(row.get('guest_phone') or ''))[-4:],'status':get_status(row),'resolution':None,'coverage':None,'lat':None,'lng':None}
+            text,lat,lng,pin=get_address(row); saved=resolutions.get(normalize_address(text));
+            if saved:
+                lat,lng=saved.get('latitude'),saved.get('longitude'); pin='pin'
+            item={'source':table,'id':row.get('id'),'address':text,'phone_suffix':re.sub(r'\D','',str(row.get('guest_phone') or row.get('customer_phone') or ''))[-4:],'status':get_status(row),'resolution':None,'coverage':None,'lat':None,'lng':None}
             if not text: item['resolution']='verificar_barrio'; report['counts']['no_address']+=1; candidates.append(item); continue
             if lat is None or lng is None:
                 g=geocode(text,cache)
@@ -146,7 +160,7 @@ def main():
     (out/'orders-classification.json').write_text(json.dumps(candidates,ensure_ascii=False,sort_keys=True,indent=2))
     (out/'route-report.json').write_text(json.dumps(report,ensure_ascii=False,sort_keys=True,indent=2))
     # deterministic preview HTML with a map; it never writes to Supabase or Spoke
-    markers=json.dumps([{'lat':x['lat'],'lng':x['lng'],'address':x['address']} for x in candidates if x['lat'] is not None],ensure_ascii=False)
+    markers=json.dumps([{'lat':x['lat'],'lng':x['lng'],'address':x['address']} for x in routed],ensure_ascii=False)
     geo_json=json.dumps(geo,ensure_ascii=False)
     counts_html=json.dumps(report['counts'],ensure_ascii=False,indent=2)
     preview=f'''<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Fase 3 sombra {target}</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>body{{font-family:system-ui;margin:20px}}#map{{height:560px;max-width:1100px;border:1px solid #ccc}}pre{{background:#f5f5f5;padding:12px}}</style></head><body><h1>Ruta sombra {target}</h1><p>Rutas: {report['counts']['routes']} · Paradas: {report['counts']['routed']} · Salida/llegada: Corabastos</p><pre>{counts_html}</pre><div id="map"></div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script>const markers={markers};const geo={geo_json};const map=L.map('map').setView([{CORABASTOS['lat']},{CORABASTOS['lng']}],11);L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png',{{maxZoom:19,attribution:'© OpenStreetMap contributors'}}).addTo(map);L.geoJSON(geo,{{style:f=>({{color:f.properties.tipo==='exclusion'?'#b91c1c':'#15803d',fillOpacity:.18,weight:2}})}}).addTo(map);L.marker([{CORABASTOS['lat']},{CORABASTOS['lng']}]).addTo(map).bindPopup('Salida/llegada: Corabastos');markers.forEach((x,i)=>L.marker([x.lat,x.lng]).addTo(map).bindPopup((i+1)+'. '+x.address));if(markers.length)map.fitBounds(L.featureGroup(markers.map(x=>L.marker([x.lat,x.lng]))).getBounds().pad(.1));</script></body></html>'''

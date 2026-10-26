@@ -3,7 +3,6 @@
 
 import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
-import zones from '@/config/zonas-entrega.json';
 
 export interface RouteMapOrder {
   id: string;
@@ -38,7 +37,6 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.on('load', () => {
       mapRef.current = map;
-      addZones(map);
       drawData(map, orders, lineOrderIds, origin);
     });
     return () => {
@@ -55,12 +53,6 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
     if (mapRef.current?.isStyleLoaded()) drawData(mapRef.current, orders, lineOrderIds, origin);
   }, [orders, lineOrderIds, origin]);
 
-  function addZones(map: maplibregl.Map) {
-    if (map.getSource('delivery-zones')) return;
-    map.addSource('delivery-zones', { type: 'geojson', data: zones as any });
-    map.addLayer({ id: 'delivery-zones-fill', type: 'fill', source: 'delivery-zones', paint: { 'fill-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'fill-opacity': 0.16 } });
-    map.addLayer({ id: 'delivery-zones-line', type: 'line', source: 'delivery-zones', paint: { 'line-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'line-width': 2 } });
-  }
 
   function drawData(map: maplibregl.Map, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
     markersRef.current.forEach(marker => marker.remove());

@@ -4,7 +4,7 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
-import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, AdminRouteOrder, cancellationReasonOf, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
@@ -100,6 +100,9 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
     resolutionConfirmedBy: saved?.confirmed_by || null,
     resolutionResolvedAt: saved?.resolved_at || null,
     resolutionHistory: historyByOriginal.get(normalizeDeliveryAddress(parts.address, 'Bogotá')) || [],
+    isCancelled: isCancelledStatus(row),
+    cancellationReason: cancellationReasonOf(row, data),
+    cancelledAt: row.cancelled_at || data?.cancelled_at || null,
   };
 }
 
@@ -116,9 +119,11 @@ export async function GET(request: NextRequest) {
     const hasta = searchParams.get('hasta') || searchParams.get('dateTo') || desde;
     const [orders, guests, resolutionBundle] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders'), fetchResolutions()]);
     const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
-    const selected = all.filter(({ row }) => isEligible(row) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
+    const selected = all.filter(({ row }) => (isEligible(row) || isCancelledStatus(row)) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
     const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source, resolutionBundle.resolutions, resolutionBundle.historyByOriginal)));
     normalized.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
+    const routeOrders = normalized.filter(order => !order.isCancelled && order.coverage === 'dentro' && order.latitude != null && order.longitude != null);
+    const excluded = normalized.filter(order => order.isCancelled || order.coverage !== 'dentro' || order.latitude == null || order.longitude == null);
     const counts = {
       total: normalized.length, conPin: normalized.filter(o => o.coordinateSource === 'pin').length,
       geocodificados: normalized.filter(o => o.resolutionStatus === 'candidata').length,
@@ -127,16 +132,54 @@ export async function GET(request: NextRequest) {
       confirmadas: normalized.filter(o => o.resolutionStatus === 'confirmada').length,
       fueraCobertura: normalized.filter(o => o.coverage === 'fuera').length, chia: normalized.filter(o => o.coverage === 'chia').length,
       dentro: normalized.filter(o => o.coverage === 'dentro').length, porConfirmar: normalized.filter(o => o.coverage === 'por_confirmar').length,
+      ruta: routeOrders.length, excluidas: excluded.length, cancelados: normalized.filter(o => o.isCancelled).length,
     };
-    const zones = normalized.length ? { todos: { name: 'Pedidos del rango', orders: normalized, count: normalized.length } } : {};
-    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 6:00 a. m.; no es filtro created_at', origin: CORABASTOS });
+    const zones: Record<string, any> = {};
+    if (routeOrders.length) zones.ruta = { name: 'Paradas de ruta', orders: routeOrders, count: routeOrders.length };
+    const excludedOutside = excluded.filter(o => !o.isCancelled && o.coverage === 'fuera');
+    const excludedChia = excluded.filter(o => !o.isCancelled && o.coverage === 'chia');
+    const excludedConfirm = excluded.filter(o => !o.isCancelled && (o.coverage === 'por_confirmar' || o.latitude == null || o.longitude == null));
+    const cancelled = excluded.filter(o => o.isCancelled);
+    if (excludedOutside.length) zones.fuera = { name: 'Excluidas — fuera de cobertura', orders: excludedOutside, count: excludedOutside.length };
+    if (excludedChia.length) zones.chia = { name: 'Por confirmar — Chía, sin entrega por ahora', orders: excludedChia, count: excludedChia.length };
+    if (excludedConfirm.length) zones.por_confirmar = { name: 'Por confirmar — ubicación pendiente', orders: excludedConfirm, count: excludedConfirm.length };
+    if (cancelled.length) zones.cancelados = { name: 'Cancelados', orders: cancelled, count: cancelled.length };
+    return NextResponse.json({ orders: normalized, zones, routeOrders, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 6:00 a. m.; no es filtro created_at', origin: CORABASTOS });
   } catch (error) { console.error('Error in GET /api/admin/ruta', error); return NextResponse.json({ error: 'Error al obtener pedidos de ruta' }, { status: 500 }); }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
     const auth = await verifyAdminAuth(request); if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
-    const supabase = createSupabaseClient(); const { orderIds } = await request.json();
+    const body = await request.json().catch(() => ({}));
+    if (body.action === 'cancel') {
+      if (body.confirmCancellation !== true) return NextResponse.json({ error: 'La cancelación requiere confirmación explícita' }, { status: 400 });
+      const orderId = String(body.orderId || '').trim();
+      const source = body.source === 'guest_orders' ? 'guest_orders' : body.source === 'orders' ? 'orders' : null;
+      const reason = String(body.reason || '').trim();
+      if (!orderId || !source || !reason) return NextResponse.json({ error: 'Faltan pedido, origen o motivo de cancelación' }, { status: 400 });
+      const supabase = createSupabaseClient();
+      const now = new Date().toISOString();
+      if (source === 'orders') {
+        const { data: current, error: readError } = await supabase.from('orders').select('id,status,order_status,notes').eq('id', orderId).maybeSingle();
+        if (readError) throw readError;
+        if (!current) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+        const notes = [current.notes, `Cancelado por fuera de cobertura — ${reason} (${now})`].filter(Boolean).join('\n');
+        const { data, error } = await supabase.from('orders').update({ status: 'cancelado', order_status: 'cancelado', cancelled_at: now, updated_at: now, notes }).eq('id', orderId).select('id,status,order_status,cancelled_at,notes').single();
+        if (error) throw error;
+        return NextResponse.json({ success: true, source, field: 'status', value: 'cancelado', order: data });
+      }
+      const { data: current, error: readError } = await supabase.from('guest_orders').select('id,status,order_status,order_data').eq('id', orderId).maybeSingle();
+      if (readError) throw readError;
+      if (!current) return NextResponse.json({ error: 'Pedido no encontrado' }, { status: 404 });
+      const orderData = current.order_data && typeof current.order_data === 'object' ? current.order_data : {};
+      const nextOrderData = { ...orderData, cancellation_reason: reason, cancelled_at: now };
+      const { data, error } = await supabase.from('guest_orders').update({ status: 'cancelado', updated_at: now, order_data: nextOrderData }).eq('id', orderId).select('id,status,order_status,order_data,updated_at').single();
+      if (error) throw error;
+      return NextResponse.json({ success: true, source, field: 'status', value: 'cancelado', order: data });
+    }
+    const { orderIds } = body;
+    const supabase = createSupabaseClient();
     if (!Array.isArray(orderIds) || orderIds.length === 0) return NextResponse.json({ error: 'Se requieren orderIds' }, { status: 400 });
     const now = new Date().toISOString();
     const { data, error } = await supabase.from('orders').update({ delivered_at: now, updated_at: now, order_status: 'entregado', status: 'delivered' }).in('id', orderIds).select('id, order_number, customer_name');
