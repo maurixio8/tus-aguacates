@@ -25,20 +25,23 @@ function chunk<T>(items: T[], size: number) {
 
 async function computeRoute(date: string, group: 'Norte' | 'Sur', stops: OptimizationStop[], driver: string, departureTime: string, apiKey: string, callCounter: { value: number }): Promise<OptimizedRoute> {
   const originalStops = [...stops];
+  const departureIsoValue = departureIso(date, departureTime);
+  const payload: any = {
+    origin: { location: { latLng: { latitude: CORABASTOS.lat, longitude: CORABASTOS.lng } } },
+    destination: { location: { latLng: { latitude: CORABASTOS.lat, longitude: CORABASTOS.lng } } },
+    intermediates: stops.map(stop => ({ location: { latLng: { latitude: stop.latitude, longitude: stop.longitude } }, vehicleStopover: true })),
+    travelMode: 'DRIVE',
+    routingPreference: 'TRAFFIC_AWARE',
+    optimizeWaypointOrder: true,
+    languageCode: 'es',
+    units: 'METRIC',
+  };
+  const hasFutureDeparture = new Date(departureIsoValue).getTime() > Date.now();
+  if (hasFutureDeparture) payload.departureTime = departureIsoValue;
   const response = await fetch(`https://routes.googleapis.com/directions/v2:computeRoutes?key=${encodeURIComponent(apiKey)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.legs.distanceMeters,routes.legs.duration,routes.optimizedIntermediateWaypointIndex' },
-    body: JSON.stringify({
-      origin: { location: { latLng: { latitude: CORABASTOS.lat, longitude: CORABASTOS.lng } } },
-      destination: { location: { latLng: { latitude: CORABASTOS.lat, longitude: CORABASTOS.lng } } },
-      intermediates: stops.map(stop => ({ location: { latLng: { latitude: stop.latitude, longitude: stop.longitude } }, vehicleStopover: true })),
-      travelMode: 'DRIVE',
-      routingPreference: 'TRAFFIC_AWARE',
-      departureTime: departureIso(date, departureTime),
-      optimizeWaypointOrder: true,
-      languageCode: 'es',
-      units: 'METRIC',
-    }),
+    body: JSON.stringify(payload),
   });
   callCounter.value += 1;
   const body = await response.json().catch(() => ({}));
