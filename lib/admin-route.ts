@@ -94,6 +94,22 @@ export function createdDateOf(row: any): string | null {
   return year && month && day ? `${year}-${month}-${day}` : null;
 }
 
+export function activeDeliveryCycle(now = new Date()): { deliveryDate: string; startsAt: Date } {
+  const deliveryDate = nextDeliveryDate(now);
+  const delivery = new Date(`${deliveryDate}T00:00:00-05:00`);
+  const weekday = delivery.getUTCDay();
+  const daysBefore = weekday === 2 ? 4 : 3;
+  const startsAt = new Date(delivery.getTime() - daysBefore * 24 * 60 * 60 * 1000 + DELIVERY_CUTOFF_HOUR * 60 * 60 * 1000);
+  return { deliveryDate, startsAt };
+}
+
+export function isInActiveDeliveryCycle(row: any, now = new Date()): boolean {
+  const cycle = activeDeliveryCycle(now);
+  const created = row?.created_at ? new Date(row.created_at) : null;
+  if (!created || Number.isNaN(created.getTime())) return false;
+  return deliveryDateOf(row) === cycle.deliveryDate && created >= cycle.startsAt && created <= now;
+}
+
 export function normalizeStatus(row: any): string {
   return String(row?.status ?? row?.order_status ?? '').trim().toLowerCase();
 }

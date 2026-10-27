@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { derivedDeliveryDate, nextDeliveryDate, addressParts, createdDateOf } from '@/lib/admin-route';
+import { activeDeliveryCycle, createdDateOf, derivedDeliveryDate, isInActiveDeliveryCycle, nextDeliveryDate, addressParts } from '@/lib/admin-route';
 
 describe('fechas del dashboard de pedidos y ruta', () => {
   it('filtra por la fecha visible del pedido en Bogotá, no por la fecha futura de entrega', () => {
@@ -7,6 +7,13 @@ describe('fechas del dashboard de pedidos y ruta', () => {
     expect(createdDateOf({ created_at: '2026-10-23T05:00:00.000Z' })).toBe('2026-10-23');
   });
 
+  it('mantiene solo el ciclo activo de la próxima entrega', () => {
+    const now = new Date('2026-10-27T02:40:00Z');
+    expect(activeDeliveryCycle(now).deliveryDate).toBe('2026-10-27');
+    expect(isInActiveDeliveryCycle({ created_at: '2026-10-23T10:00:00Z', order_data: {} }, now)).toBe(false);
+    expect(isInActiveDeliveryCycle({ created_at: '2026-10-23T12:00:00Z', order_data: {} }, now)).toBe(true);
+    expect(isInActiveDeliveryCycle({ created_at: '2026-10-20T16:56:00Z', order_data: {} }, now)).toBe(false);
+  });
   const cases = [
     ['lunes 26 de octubre', '2026-10-26T15:00:00Z', '2026-10-27'],
     ['martes antes de las 6:00', '2026-10-27T10:59:00Z', '2026-10-27'],

@@ -80,6 +80,9 @@ interface RouteData {
   dateFrom: string;
   dateTo: string;
   canonicalDateSource: string;
+  activeCycle?: boolean;
+  requestedDateFrom?: string | null;
+  requestedDateTo?: string | null;
   origin: { lat: number; lng: number; address: string };
 }
 
@@ -126,8 +129,13 @@ export default function RutaPage() {
         json.totalAmount = json.orders.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
       }
       setData(json);
-      if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
-      if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
+      if (json.activeCycle) {
+        setDateDesde(json.dateFrom);
+        setDateHasta(json.dateTo);
+      } else {
+        if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
+        if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
+      }
       // Expandir todas las zonas por defecto
       if (json.zones) {
         setExpandedZones(new Set(Object.keys(json.zones)));

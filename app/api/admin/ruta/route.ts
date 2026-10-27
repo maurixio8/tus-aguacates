@@ -4,7 +4,7 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
-import { addressParts, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, activeDeliveryCycle, AdminRouteOrder, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isChia, isInActiveDeliveryCycle, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
@@ -112,11 +112,19 @@ export async function GET(request: NextRequest) {
     const auth = await verifyAdminAuth(request);
     if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
     const { searchParams } = new URL(request.url);
-    const desde = searchParams.get('desde') || searchParams.get('dateFrom') || nextDeliveryDate();
-    const hasta = searchParams.get('hasta') || searchParams.get('dateTo') || desde;
+    const requestedDesde = searchParams.get('desde') || searchParams.get('dateFrom') || '';
+    const requestedHasta = searchParams.get('hasta') || searchParams.get('dateTo') || '';
+    const active = searchParams.get('active') !== '0';
+    const cycle = activeDeliveryCycle();
+    const desde = active ? cycle.deliveryDate : (requestedDesde || nextDeliveryDate());
+    const hasta = active ? cycle.deliveryDate : (requestedHasta || desde);
     const [orders, guests, resolutionBundle] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders'), fetchResolutions()]);
     const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
-    const selected = all.filter(({ row }) => isEligible(row) && deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta);
+    const selected = all.filter(({ row }) => isEligible(row) && (
+      active
+        ? isInActiveDeliveryCycle(row)
+        : (deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta)
+    ));
     const normalized = await Promise.all(selected.map(({ row, source }) => normalizeRow(row, source, resolutionBundle.resolutions, resolutionBundle.historyByOriginal)));
     normalized.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id.localeCompare(b.id));
     const counts = {
@@ -129,7 +137,10 @@ export async function GET(request: NextRequest) {
       dentro: normalized.filter(o => o.coverage === 'dentro').length, porConfirmar: normalized.filter(o => o.coverage === 'por_confirmar').length,
     };
     const zones = normalized.length ? { todos: { name: 'Pedidos del rango', orders: normalized, count: normalized.length } } : {};
-    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, canonicalDateSource: 'orders/guest_orders: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota con corte de ciclo martes/viernes a las 6:00 a. m.; no es filtro created_at', origin: CORABASTOS });
+    const canonicalDateSource = active
+      ? `ciclo activo de entrega ${cycle.deliveryDate}: pedidos creados desde ${cycle.startsAt.toISOString()} hasta ahora; excluye pedidos pendientes de ciclos anteriores`
+      : 'rango manual por fecha de entrega: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota';
+    return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, requestedDateFrom: requestedDesde || null, requestedDateTo: requestedHasta || null, activeCycle: active, canonicalDateSource, origin: CORABASTOS });
   } catch (error) { console.error('Error in GET /api/admin/ruta', error); return NextResponse.json({ error: 'Error al obtener pedidos de ruta' }, { status: 500 }); }
 }
 
