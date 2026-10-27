@@ -7,7 +7,7 @@ import {
 } from '@/lib/orders/operational';
 import { normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
 import { extractCustomerDataFromShippingAddress } from '@/utils/addressFormatter';
-import { deliveryDateOf } from '@/lib/admin-route';
+import { createdDateOf } from '@/lib/admin-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -519,13 +519,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Apply delivery-date filters using the canonical delivery date, never created_at.
+    // The Pedidos page displays created_at, so its date filter must use the
+    // same calendar date in Bogotá. Delivery-date filtering belongs to Ruta.
     if (dateFrom || dateTo) {
       allOrders = allOrders.filter(order => {
-        const deliveryDate = deliveryDateOf(order);
-        if (!deliveryDate) return false;
-        if (dateFrom && deliveryDate < dateFrom) return false;
-        if (dateTo && deliveryDate > dateTo) return false;
+        const createdDate = createdDateOf(order);
+        if (!createdDate) return false;
+        if (dateFrom && createdDate < dateFrom) return false;
+        if (dateTo && createdDate > dateTo) return false;
         return true;
       });
     }

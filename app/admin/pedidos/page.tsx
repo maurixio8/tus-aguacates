@@ -1296,7 +1296,7 @@ export default function OrdersPage() {
 
           {/* Fecha Desde */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Desde (Personalizado)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha del pedido — Desde</label>
             <input
               type="date"
               value={dateFrom}
@@ -1311,7 +1311,7 @@ export default function OrdersPage() {
 
           {/* Fecha Hasta */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Hasta (Personalizado)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha del pedido — Hasta</label>
             <input
               type="date"
               value={dateTo}

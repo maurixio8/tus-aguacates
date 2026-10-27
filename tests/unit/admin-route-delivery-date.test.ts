@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { derivedDeliveryDate, nextDeliveryDate, addressParts } from '@/lib/admin-route';
+import { derivedDeliveryDate, nextDeliveryDate, addressParts, createdDateOf } from '@/lib/admin-route';
 
-describe('fecha canónica de entrega martes/viernes', () => {
+describe('fechas del dashboard de pedidos y ruta', () => {
+  it('filtra por la fecha visible del pedido en Bogotá, no por la fecha futura de entrega', () => {
+    expect(createdDateOf({ created_at: '2026-10-20T04:30:00.000Z' })).toBe('2026-10-19');
+    expect(createdDateOf({ created_at: '2026-10-23T05:00:00.000Z' })).toBe('2026-10-23');
+  });
+
   const cases = [
     ['lunes 26 de octubre', '2026-10-26T15:00:00Z', '2026-10-27'],
     ['martes antes de las 6:00', '2026-10-27T10:59:00Z', '2026-10-27'],
