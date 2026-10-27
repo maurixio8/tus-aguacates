@@ -196,9 +196,13 @@ export default function RutaPage() {
       const blob = await response.blob();
       const file = new File([blob], 'ruta-completa.csv', { type: 'text/csv' });
       const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean; share?: (data: { files: File[]; title?: string }) => Promise<void> };
-      if (nav.share && nav.canShare?.({ files: [file] })) {
-        await nav.share({ files: [file], title: 'ruta-completa.csv' });
-        return;
+      if (nav.share) {
+        try {
+          await nav.share({ files: [file], title: 'ruta-completa.csv' });
+          return;
+        } catch (shareError: any) {
+          if (shareError?.name === 'AbortError') return;
+        }
       }
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
