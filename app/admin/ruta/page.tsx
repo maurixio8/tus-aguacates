@@ -187,6 +187,31 @@ export default function RutaPage() {
     } finally { setShadowLoading(false); }
   };
 
+  const downloadCsv = async () => {
+    const date = shadowResult?.date || data?.dateFrom;
+    if (!date) return;
+    try {
+      const response = await fetch(`/api/admin/ruta/shadow?date=${date}&file=ruta-completa.csv&download=1`, { credentials: 'include', cache: 'no-store' });
+      if (!response.ok) throw new Error(await response.text());
+      const blob = await response.blob();
+      const file = new File([blob], 'ruta-completa.csv', { type: 'text/csv' });
+      const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean; share?: (data: { files: File[]; title?: string }) => Promise<void> };
+      if (nav.share && nav.canShare?.({ files: [file] })) {
+        await nav.share({ files: [file], title: 'ruta-completa.csv' });
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'ruta-completa.csv';
+      document.body.appendChild(anchor);
+      anchor.click();
+      window.setTimeout(() => { anchor.remove(); URL.revokeObjectURL(url); }, 30000);
+    } catch (error: any) {
+      setError(`No se pudo descargar el CSV: ${error?.message || 'error de descarga'}`);
+    }
+  };
+
   const correctAddress = async (order: RouteItem) => {
     const correctedAddress = (addressDrafts[order.id] || order.correctedAddress || order.deliveryAddress).trim();
     if (!correctedAddress) return;
@@ -633,7 +658,7 @@ export default function RutaPage() {
       </div>
 
       {data && <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900"><b>Fecha canónica:</b> {data.dateFrom}{data.dateTo !== data.dateFrom ? ` a ${data.dateTo}` : ''}. {data.canonicalDateSource}</div>}
-      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} CSV{shadowResult.counts?.pending_coordinates ? ` · ${shadowResult.counts.pending_coordinates} sin coordenadas` : ''}. <div className="mt-2 inline-flex flex-wrap gap-2">{shadowResult.csvFiles?.length > 0 && <form key="ruta-completa-download" action="/api/admin/ruta/shadow" method="post" target="_blank" className="inline"><input type="hidden" name="date" value={shadowResult.date} /><input type="hidden" name="download" value="1" /><button type="submit" className="underline">Descargar ruta-completa.csv</button></form>}</div>{shadowResult.warning && <span className="mt-2 block text-xs text-green-800">{shadowResult.warning}</span>}</div>}
+      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} CSV{shadowResult.counts?.pending_coordinates ? ` · ${shadowResult.counts.pending_coordinates} sin coordenadas` : ''}. <div className="mt-2 inline-flex flex-wrap gap-2">{shadowResult.csvFiles?.length > 0 && <button type="button" className="underline" onClick={downloadCsv}>Descargar ruta-completa.csv</button>}</div>{shadowResult.warning && <span className="mt-2 block text-xs text-green-800">{shadowResult.warning}</span>}</div>}
 
       {data && data.orders.filter(order => order.latitude == null || order.longitude == null).length > 0 && (
         <section className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
