@@ -95,7 +95,15 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date') || nextDeliveryDate();
   const file = searchParams.get('file') || 'route-report.json';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(route-report\.json|orders-classification\.json|preview\.html|spoke-\d+\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
+  if (file === 'ruta-completa.csv') {
+    try {
+      const generated = await generateShadowFromRouteData(request, date);
+      const csv = generated.csvFiles[0]?.content || 'lat,lng,address,note\n';
+      return new NextResponse(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="ruta-completa.csv"', 'Cache-Control': 'no-store' } });
+    } catch { return NextResponse.json({ error: 'No se pudo generar el CSV' }, { status: 500 }); }
+  }
+  if (!/^(route-report\.json|orders-classification\.json|preview\.html|spoke-\d+\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
   const full = path.join(OUT_ROOT, date, file);
   try {
     const content = await fs.readFile(full);
