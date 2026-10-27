@@ -484,7 +484,7 @@ export default function RutaPage() {
         {/* Filtros: Rango de fechas + Origen */}
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Desde</label>
+            <label className="block text-xs text-gray-500 mb-1">Rango de entrega — Desde</label>
             <input
               type="date"
               value={dateDesde}
@@ -493,7 +493,7 @@ export default function RutaPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+            <label className="block text-xs text-gray-500 mb-1">Rango de entrega — Hasta</label>
             <input
               type="date"
               value={dateHasta}
@@ -856,10 +856,9 @@ function OrderCard({
             </div>
 
             <div className="flex items-center gap-3 mt-1.5">
+              <span className="text-xs font-medium text-indigo-700">Entrega: {order.deliveryDate || 'sin fecha'}</span>
+              <span className="text-xs text-gray-400">Creado: {toColombiaTime(order.createdAt)}</span>
               <span className="text-xs text-gray-400">{order.itemCount} items</span>
-              <span className="text-xs text-gray-400">
-                {toColombiaTime(order.createdAt)}
-              </span>
               {itemsSummary && (
                 <span className="text-xs text-gray-400 truncate">{itemsSummary}{hasMore ? '...' : ''}</span>
               )}
