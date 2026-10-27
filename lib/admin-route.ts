@@ -21,7 +21,7 @@ export interface AdminRouteOrder {
   deliveryDate: string | null;
   createdAt: string | null;
   totalAmount: number;
-  items: { name: string; quantity: number; price: number }[];
+  items: { name: string; quantity: number; price: number; product_name?: string; productName?: string; variantName?: string; variant_value?: string; variant_name?: string; weight?: number | null; unit?: string | null; subtotal?: number }[];
   itemCount: number;
   isDelivered: boolean;
   paymentStatus: string;
@@ -159,7 +159,19 @@ export function addressParts(row: any) {
 
 export function orderItems(row: any, data: any) {
   const values = Array.isArray(data?.items) ? data.items : Array.isArray(data?.products) ? data.products : [];
-  return values.map((item: any) => ({ name: item.product_name || item.name || 'Producto', quantity: Number(item.quantity || 1), price: Number(item.price || item.unit_price || 0) }));
+  return values.map((item: any) => ({
+    name: item.product_name || item.productName || item.name || 'Producto',
+    product_name: item.product_name || item.productName || item.name || 'Producto',
+    productName: item.productName || item.product_name || item.name || 'Producto',
+    quantity: Number(item.quantity || 1),
+    price: Number(item.price || item.unit_price || 0),
+    subtotal: Number(item.subtotal ?? ((item.price || item.unit_price || 0) * (item.quantity || 1))),
+    variantName: item.variantName || item.variant_name || item.variant_value || item.variantType || '',
+    variant_value: item.variant_value || '',
+    variant_name: item.variant_name || '',
+    weight: item.weight ?? null,
+    unit: item.unit ?? null,
+  }));
 }
 
 export function isChia(city: string, address: string): boolean {

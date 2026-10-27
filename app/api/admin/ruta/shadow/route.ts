@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/auth-admin';
 import { nextDeliveryDate } from '@/lib/admin-route';
+import { generateDashboardOrderSummary } from '@/utils/dashboardOrderSummary';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
@@ -15,13 +16,11 @@ function csvEscape(value: unknown): string {
 function buildCsv(orders: any[]): string {
   const lines = ['lat,lng,address,note'];
   for (const order of orders) {
-    const note = [
-      `${order.source || 'order'}:${order.id || ''}`,
-      `pedido=${order.orderNumber || order.id || ''}`,
-      order.notes || 'sin nota',
-      `resolución=${order.coordinateSource || 'sin_coordenadas'}`,
-      `cobertura=${order.coverage || 'por_confirmar'}`,
-    ].join(' | ');
+    const note = generateDashboardOrderSummary(
+      { delivery_address: order.deliveryAddress, total_amount: order.totalAmount },
+      order.customerName,
+      order.items || [],
+    );
     lines.push([
       csvEscape(order.latitude),
       csvEscape(order.longitude),
