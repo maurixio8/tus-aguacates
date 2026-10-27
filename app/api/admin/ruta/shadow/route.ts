@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
     try {
       const generated = await generateShadowFromRouteData(request, date);
       const csv = generated.csvFiles[0]?.content || 'lat,lng,address,note\n';
-      return new NextResponse(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="ruta-completa.csv"', 'Cache-Control': 'no-store' } });
+      return new NextResponse(csv, { headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Content-Disposition': 'inline; filename="ruta-completa.csv"', 'Cache-Control': 'no-store' } });
     } catch { return NextResponse.json({ error: 'No se pudo generar el CSV' }, { status: 500 }); }
   }
   if (!/^(route-report\.json|orders-classification\.json|preview\.html|spoke-\d+\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
