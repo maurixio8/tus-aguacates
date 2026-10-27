@@ -75,13 +75,19 @@ export async function POST(request: NextRequest) {
   try {
     const auth = await verifyAdminAuth(request);
     if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
-    const body = await request.json().catch(() => ({}));
+    const contentType = request.headers.get('content-type') || '';
+    const body = contentType.includes('application/x-www-form-urlencoded')
+      ? Object.fromEntries(new URLSearchParams(await request.text()))
+      : await request.json().catch(() => ({}));
     const date = String(body.date || nextDeliveryDate());
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: 'Fecha inválida' }, { status: 400 });
 
-    // Vercel no puede ejecutar el Python ni escribir en /opt/data. Generamos
-    // un CSV read-only usando la misma ruta normalizada que ve el dashboard.
-    return NextResponse.json(await generateShadowFromRouteData(request, date));
+    const generated = await generateShadowFromRouteData(request, date);
+    if (String(body.download || '') === '1') {
+      const csv = generated.csvFiles[0]?.content || 'lat,lng,address,note\n';
+      return new NextResponse(csv, { headers: { 'Content-Type': 'text/csv; charset=utf-8', 'Content-Disposition': 'attachment; filename="ruta-completa.csv"', 'Cache-Control': 'no-store' } });
+    }
+    return NextResponse.json(generated);
   } catch (error: any) {
     console.error('Error generating shadow route', error?.message || error);
     return NextResponse.json({ error: error?.message || 'No se pudo generar la ruta sombra' }, { status: 500 });
