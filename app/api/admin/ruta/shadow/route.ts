@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyAdminAuth } from '@/lib/auth-admin';
+import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { nextDeliveryDate } from '@/lib/admin-route';
 import { generateDashboardOrderSummary } from '@/utils/dashboardOrderSummary';
 import fs from 'node:fs/promises';
@@ -31,6 +31,16 @@ function buildCsv(orders: any[]): string {
   return `${lines.join('\n')}\n`;
 }
 
+async function createCsvDownloadUrl(csv: string, date: string): Promise<string> {
+  const supabase = createSupabaseClient();
+  const path = `routes/${date}/ruta-completa-${crypto.randomUUID()}.csv`;
+  const upload = await supabase.storage.from('route-csv-temp').upload(path, Buffer.from(csv, 'utf8'), { contentType: 'text/csv', upsert: true });
+  if (upload.error) throw upload.error;
+  const signed = await supabase.storage.from('route-csv-temp').createSignedUrl(path, 600);
+  if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error('No se pudo crear enlace de descarga');
+  return `${signed.data.signedUrl}${signed.data.signedUrl.includes('?') ? '&' : '?'}download=ruta-completa.csv`;
+}
+
 async function generateShadowFromRouteData(request: NextRequest, date: string) {
   const routeUrl = new URL('/api/admin/ruta', request.url);
   routeUrl.searchParams.set('desde', date);
@@ -56,6 +66,9 @@ async function generateShadowFromRouteData(request: NextRequest, date: string) {
     order_ids: routable.map((order: any) => order.id),
   }] : [];
 
+  const csvContent = csvFiles[0]?.content || 'lat,lng,address,note\n';
+  const downloadUrl = routable.length > 0 ? await createCsvDownloadUrl(csvContent, date) : null;
+
   return {
     date,
     source: 'route-operativa-fallback',
@@ -68,6 +81,7 @@ async function generateShadowFromRouteData(request: NextRequest, date: string) {
     },
     routes: csvFiles.map(({ name, stops, order_ids }) => ({ name: name.replace('.csv', ''), stops, order_ids })),
     csvFiles,
+    downloadUrl,
   };
 }
 
