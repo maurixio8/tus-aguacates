@@ -117,6 +117,7 @@ export default function RutaPage() {
       const params = new URLSearchParams();
       if (dateDesde) params.set('desde', dateDesde);
       if (dateHasta) params.set('hasta', dateHasta);
+      params.set('active', '1');
       const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store' });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error || 'Error al cargar ruta');
@@ -168,6 +169,18 @@ export default function RutaPage() {
     } catch (err: any) {
       setError(err.message || 'Error generando ruta sombra');
     } finally { setShadowLoading(false); }
+  };
+
+  const downloadCsv = (file: { name: string; content: string }) => {
+    const blob = new Blob([file.content], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = file.name;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const correctAddress = async (order: RouteItem) => {
@@ -616,7 +629,7 @@ export default function RutaPage() {
       </div>
 
       {data && <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900"><b>Fecha canónica:</b> {data.dateFrom}{data.dateTo !== data.dateFrom ? ` a ${data.dateTo}` : ''}. {data.canonicalDateSource}</div>}
-      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} CSV{shadowResult.counts?.pending_coordinates ? ` · ${shadowResult.counts.pending_coordinates} sin coordenadas` : ''}. <span className="mt-2 inline-flex flex-wrap gap-2">{(shadowResult.csvFiles || []).map((file: any) => <a key={file.name} className="underline" download={file.name} href={`data:text/csv;charset=utf-8,${encodeURIComponent(file.content)}`}>Descargar {file.name}</a>)}</span>{shadowResult.warning && <span className="mt-2 block text-xs text-green-800">{shadowResult.warning}</span>}</div>}
+      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} CSV{shadowResult.counts?.pending_coordinates ? ` · ${shadowResult.counts.pending_coordinates} sin coordenadas` : ''}. <span className="mt-2 inline-flex flex-wrap gap-2">{(shadowResult.csvFiles || []).map((file: any) => <button key={file.name} type="button" className="underline text-left" onClick={() => downloadCsv(file)}>Descargar {file.name}</button>)}</span>{shadowResult.warning && <span className="mt-2 block text-xs text-green-800">{shadowResult.warning}</span>}</div>}
 
       {data && data.orders.filter(order => order.latitude == null || order.longitude == null).length > 0 && (
         <section className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">

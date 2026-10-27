@@ -6,7 +6,6 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 const OUT_ROOT = '/opt/data/cache/phase3-shadow-routes';
-const MAX_STOPS = 10;
 
 function csvEscape(value: unknown): string {
   const text = String(value ?? '');
@@ -37,6 +36,7 @@ async function generateShadowFromRouteData(request: NextRequest, date: string) {
   const routeUrl = new URL('/api/admin/ruta', request.url);
   routeUrl.searchParams.set('desde', date);
   routeUrl.searchParams.set('hasta', date);
+  routeUrl.searchParams.set('active', '1');
   const response = await fetch(routeUrl, {
     headers: { cookie: request.headers.get('cookie') || '' },
     cache: 'no-store',
@@ -50,16 +50,12 @@ async function generateShadowFromRouteData(request: NextRequest, date: string) {
   const pendingCoordinates = (routeData?.orders || []).filter((order: any) =>
     order.latitude == null || order.longitude == null
   );
-  const csvFiles = [];
-  for (let index = 0; index < routable.length; index += MAX_STOPS) {
-    const orders = routable.slice(index, index + MAX_STOPS);
-    csvFiles.push({
-      name: `spoke-${Math.floor(index / MAX_STOPS) + 1}.csv`,
-      stops: orders.length,
-      content: buildCsv(orders),
-      order_ids: orders.map((order: any) => order.id),
-    });
-  }
+  const csvFiles = routable.length > 0 ? [{
+    name: 'ruta-completa.csv',
+    stops: routable.length,
+    content: buildCsv(routable),
+    order_ids: routable.map((order: any) => order.id),
+  }] : [];
 
   return {
     date,
