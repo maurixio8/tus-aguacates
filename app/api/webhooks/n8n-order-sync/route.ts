@@ -65,7 +65,39 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json({ success: true });
+    let purchaseSync = 'skipped';
+    const ctwaPurchaseWebhookUrl = process.env.N8N_CTWA_PURCHASE_WEBHOOK_URL;
+    const customerPhone = payload.customer?.phone || payload.customer_phone || '';
+    if (ctwaPurchaseWebhookUrl && customerPhone) {
+      try {
+        const purchaseResponse = await fetch(ctwaPurchaseWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-forwarded-by': 'tus-aguacates',
+          },
+          body: JSON.stringify({
+            orderId: payload.orderId || payload.order_id || null,
+            customer: {
+              phone: customerPhone,
+              name: payload.customer?.name || null,
+            },
+            payment: payload.payment || null,
+            source: 'web_checkout',
+            timestamp: new Date().toISOString(),
+          }),
+        });
+        purchaseSync = purchaseResponse.ok ? 'sent' : `error_${purchaseResponse.status}`;
+        if (!purchaseResponse.ok) {
+          console.error(`⚠️ Error al notificar compra CTWA: ${purchaseResponse.status} ${purchaseResponse.statusText}`);
+        }
+      } catch (purchaseError) {
+        purchaseSync = 'error_network';
+        console.error('⚠️ Error de red notificando compra CTWA:', purchaseError);
+      }
+    }
+
+    return NextResponse.json({ success: true, purchaseSync });
   } catch (error) {
     console.error('❌ Error en webhook proxy de pedidos:', error);
     return NextResponse.json(
