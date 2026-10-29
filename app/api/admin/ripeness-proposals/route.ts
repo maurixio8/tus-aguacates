@@ -22,16 +22,28 @@ export async function PATCH(request: NextRequest) {
   const auth = await requireAdminRole(request, 'admin');
   if (auth.response) return auth.response;
   const body = await request.json();
-  const proposalId = String(body.id || '');
   const action = body.action;
+  const adminName = auth.user?.name || auth.user?.email || 'admin';
+  const supabase = createSupabaseClient();
+  if (action === 'review-finding') {
+    const status = body.status === 'dismissed' ? 'dismissed' : 'approved';
+    const { data, error } = await supabase.from('whatsapp_audit_findings').update({ review_status: status, updated_at: new Date().toISOString() }).eq('id', String(body.id || '')).select().single();
+    if (error) return NextResponse.json({ error: 'No se pudo actualizar el hallazgo' }, { status: 500 });
+    return NextResponse.json({ success: true, data, reviewed_by: adminName });
+  }
+  if (action === 'review-recovery') {
+    const status = ['resolved','dismissed','approved'].includes(body.status) ? body.status : 'approved';
+    const { data, error } = await supabase.from('whatsapp_recovery_opportunities').update({ status, assigned_to: adminName, resolution: String(body.resolution || ''), updated_at: new Date().toISOString() }).eq('id', String(body.id || '')).select().single();
+    if (error) return NextResponse.json({ error: 'No se pudo actualizar la oportunidad' }, { status: 500 });
+    return NextResponse.json({ success: true, data });
+  }
+  const proposalId = String(body.id || '');
   if (!proposalId || !['approve', 'reject', 'apply-customer'].includes(action)) {
     return NextResponse.json({ error: 'Acción o propuesta inválida' }, { status: 400 });
   }
-  const supabase = createSupabaseClient();
   const { data: proposal, error: proposalError } = await supabase
     .from('ripeness_proposals').select('*').eq('id', proposalId).single();
   if (proposalError || !proposal) return NextResponse.json({ error: 'Propuesta no encontrada' }, { status: 404 });
-  const adminName = auth.user?.name || auth.user?.email || 'admin';
   if (action === 'approve') {
     if (proposal.approval_status !== 'pending') return NextResponse.json({ error: 'La propuesta ya fue procesada' }, { status: 409 });
     const { data, error } = await supabase.from('ripeness_proposals').update({ approval_status: 'approved', approved_by: adminName, approved_at: new Date().toISOString(), updated_at: new Date().toISOString() }).eq('id', proposalId).eq('approval_status','pending').select().single();
