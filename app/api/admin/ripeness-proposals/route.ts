@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     .select('*')
     .eq('approval_status', status)
     .order('created_at', { ascending: false });
-  if (error) return NextResponse.json({ error: 'No se pudieron cargar las propuestas' }, { status: 500 });
+  if (error) return NextResponse.json({ error: 'No se pudieron cargar las propuestas', details: error.message, code: error.code || null }, { status: 500 });
   return NextResponse.json({ success: true, data: data || [] });
 }
 
