@@ -25,8 +25,10 @@ export default function RipenessReviewPage() {
         fetch('/api/admin/ripeness-proposals?status=pending', { credentials: 'include', cache: 'no-store' }).then(r => r.json()),
         fetch(`/api/admin/customers/?page=1&limit=100&search=${encodeURIComponent(search)}`, { credentials: 'include', cache: 'no-store' }).then(r => r.json()),
       ]);
+      if (!p.success) throw new Error(p.error || 'No se pudieron cargar las propuestas de auditoría');
+      if (!c.success) throw new Error(c.error || 'No se pudieron cargar los clientes');
       setProposals(p.data || []); setCustomers(c.data || []);
-    } catch { setMessage('No se pudieron cargar las propuestas'); }
+    } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudieron cargar las propuestas'); }
     finally { setLoading(false); }
   }, [search]);
   useEffect(() => { void load(); }, [load]);
