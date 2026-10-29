@@ -21,12 +21,12 @@ export default function RipenessReviewPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [p, c] = await Promise.all([
-        fetch('/api/admin/ripeness-proposals?status=pending', { credentials: 'include', cache: 'no-store' }).then(r => r.json()),
-        fetch(`/api/admin/customers/?page=1&limit=100&search=${encodeURIComponent(search)}`, { credentials: 'include', cache: 'no-store' }).then(r => r.json()),
-      ]);
-      if (!p.success) throw new Error(p.error || 'No se pudieron cargar las propuestas de auditoría');
-      if (!c.success) throw new Error(c.error || 'No se pudieron cargar los clientes');
+      const proposalResponse = await fetch('/api/admin/ripeness-proposals?status=pending', { credentials: 'include', cache: 'no-store' });
+      const customerResponse = await fetch(`/api/admin/customers/?page=1&limit=100&search=${encodeURIComponent(search)}`, { credentials: 'include', cache: 'no-store' });
+      const p = await proposalResponse.json().catch(() => ({}));
+      const c = await customerResponse.json().catch(() => ({}));
+      if (!proposalResponse.ok || !p.success) throw new Error(p.error || `Propuestas: HTTP ${proposalResponse.status}`);
+      if (!customerResponse.ok || !c.success) throw new Error(c.error || `Clientes: HTTP ${customerResponse.status}`);
       setProposals(p.data || []); setCustomers(c.data || []);
     } catch (e) { setMessage(e instanceof Error ? e.message : 'No se pudieron cargar las propuestas'); }
     finally { setLoading(false); }
