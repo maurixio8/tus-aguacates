@@ -131,6 +131,23 @@ export function deliveryDateOf(row: any): string | null {
   return derivedDeliveryDate(row?.created_at || null);
 }
 
+export function createdDateOf(row: any): string | null {
+  const value = row?.created_at;
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Bogota',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === 'year')?.value;
+  const month = parts.find((part) => part.type === 'month')?.value;
+  const day = parts.find((part) => part.type === 'day')?.value;
+  return year && month && day ? `${year}-${month}-${day}` : null;
+}
+
 export function normalizeStatus(row: any): string {
   return String(row?.status ?? row?.order_status ?? '').trim().toLowerCase();
 }
