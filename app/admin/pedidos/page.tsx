@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -214,6 +214,7 @@ export default function OrdersPage() {
   const [dateTo, setDateTo] = useState('');
   const [quickFilter, setQuickFilter] = useState<string>('');
   const [customerDataFilter, setCustomerDataFilter] = useState<string>('');
+  const ordersRequestRef = useRef<{ id: number; controller: AbortController | null }>({ id: 0, controller: null });
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
     limit: 20,
@@ -739,6 +740,10 @@ export default function OrdersPage() {
   };
 
   const loadOrders = async () => {
+    const requestId = ordersRequestRef.current.id + 1;
+    ordersRequestRef.current.controller?.abort();
+    const controller = new AbortController();
+    ordersRequestRef.current = { id: requestId, controller };
     setLoading(true);
     try {
       const params = new URLSearchParams();
@@ -751,8 +756,14 @@ export default function OrdersPage() {
 
       const response = await fetch(`/api/admin/orders?${params}`, {
         credentials: 'include',
+        signal: controller.signal,
       });
       const data = await response.json();
+
+      // Al cambiar filtros se disparan varias consultas seguidas. Solo la
+      // última puede actualizar la lista; así una respuesta vieja no pisa
+      // accidentalmente el rango que el administrador acaba de seleccionar.
+      if (requestId !== ordersRequestRef.current.id) return;
 
       if (data.success) {
         setOrders(data.orders || []);
@@ -763,9 +774,14 @@ export default function OrdersPage() {
         }));
       }
     } catch (error) {
-      console.error('Error cargando pedidos:', error);
+      if (error instanceof DOMException && error.name === 'AbortError') return;
+      if (requestId === ordersRequestRef.current.id) {
+        console.error('Error cargando pedidos:', error);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === ordersRequestRef.current.id) {
+        setLoading(false);
+      }
     }
   };
 
