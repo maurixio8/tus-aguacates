@@ -7,14 +7,15 @@ export async function GET(request: NextRequest) {
   const auth = await requireAdminRole(request, 'admin');
   if (auth.response) return auth.response;
   const supabase = createSupabaseClient();
-  const status = new URL(request.url).searchParams.get('status') || 'pending';
-  const { data, error } = await supabase
-    .from('ripeness_proposals')
-    .select('*')
-    .eq('approval_status', status)
-    .order('created_at', { ascending: false });
-  if (error) return NextResponse.json({ error: 'No se pudieron cargar las propuestas', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, data: data || [] });
+  const type = new URL(request.url).searchParams.get('type') || 'all';
+  const [findingsResult, recoveryResult, ripenessResult] = await Promise.all([
+    type === 'ripeness' ? Promise.resolve({ data: [], error: null }) : supabase.from('whatsapp_audit_findings').select('*').order('received_at', { ascending: false }).limit(100),
+    type === 'findings' || type === 'all' ? supabase.from('whatsapp_recovery_opportunities').select('*').order('intent_score', { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null }),
+    type === 'findings' || type === 'recovery' ? Promise.resolve({ data: [], error: null }) : supabase.from('ripeness_proposals').select('*').eq('approval_status','pending').order('created_at', { ascending: false }),
+  ]);
+  const error = findingsResult.error || recoveryResult.error || ripenessResult.error;
+  if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
+  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [] });
 }
 
 export async function PATCH(request: NextRequest) {
