@@ -8,14 +8,15 @@ export async function GET(request: NextRequest) {
   if (auth.response) return auth.response;
   const supabase = createSupabaseClient();
   const type = new URL(request.url).searchParams.get('type') || 'all';
-  const [findingsResult, recoveryResult, ripenessResult] = await Promise.all([
+  const [findingsResult, recoveryResult, ripenessResult, handoffsResult] = await Promise.all([
     type === 'ripeness' ? Promise.resolve({ data: [], error: null }) : supabase.from('whatsapp_audit_findings').select('*').order('received_at', { ascending: false }).limit(100),
     type === 'findings' || type === 'all' ? supabase.from('whatsapp_recovery_opportunities').select('*').order('intent_score', { ascending: false }).limit(100) : Promise.resolve({ data: [], error: null }),
     type === 'findings' || type === 'recovery' ? Promise.resolve({ data: [], error: null }) : supabase.from('ripeness_proposals').select('*').eq('approval_status','pending').order('created_at', { ascending: false }),
+    supabase.from('whatsapp_human_handoffs').select('*').eq('status','active').order('updated_at', { ascending: false }),
   ]);
-  const error = findingsResult.error || recoveryResult.error || ripenessResult.error;
+  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [] });
+  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [] });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -25,6 +26,18 @@ export async function PATCH(request: NextRequest) {
   const action = body.action;
   const adminName = auth.user?.name || auth.user?.email || 'admin';
   const supabase = createSupabaseClient();
+  if (action === 'take-handoff' || action === 'resume-handoff') {
+    const identityKey = String(body.identityKey || body.phone || '').trim();
+    if (!identityKey) return NextResponse.json({ error: 'Falta identityKey o teléfono reconciliado' }, { status: 400 });
+    if (action === 'take-handoff') {
+      const { data, error } = await supabase.from('whatsapp_human_handoffs').upsert({ identity_key: identityKey, phone: String(body.phone || identityKey), status: 'active', started_by: adminName, started_at: new Date().toISOString(), last_human_message_at: new Date().toISOString(), ended_at: null, resolution: null, updated_at: new Date().toISOString() }, { onConflict: 'identity_key' }).select().single();
+      if (error) return NextResponse.json({ error: 'No se pudo activar la atención humana', details: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, data });
+    }
+    const { data, error } = await supabase.from('whatsapp_human_handoffs').update({ status: 'closed', ended_at: new Date().toISOString(), resolution: String(body.resolution || 'Atención humana finalizada'), updated_at: new Date().toISOString() }).eq('identity_key', identityKey).eq('status','active').select().single();
+    if (error) return NextResponse.json({ error: 'No se pudo retomar Luz', details: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, data });
+  }
   if (action === 'review-finding') {
     const status = body.status === 'dismissed' ? 'dismissed' : 'approved';
     const { data, error } = await supabase.from('whatsapp_audit_findings').update({ review_status: status, updated_at: new Date().toISOString() }).eq('id', String(body.id || '')).select().single();
