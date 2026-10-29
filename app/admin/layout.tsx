@@ -121,6 +121,7 @@ export default function AdminLayout({
     { name: 'Lista de Compras', href: '/admin/lista-compras', icon: ClipboardList },
     { name: 'Ruta de Hoy', href: '/admin/ruta', icon: Truck },
     { name: 'Clientes', href: '/admin/clientes', icon: Users },
+    { name: 'Auditoría WhatsApp', href: '/admin/auditoria', icon: MessageSquare },
     { name: 'Revisor de Ventas', href: '/admin/ventas/clientes', icon: BarChart3 },
     { name: 'Cupones', href: '/admin/cupones', icon: Ticket },
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
