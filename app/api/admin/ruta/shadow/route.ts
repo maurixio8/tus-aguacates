@@ -144,6 +144,16 @@ export async function GET(request: NextRequest) {
     }
     if (!content) return NextResponse.json({ error: 'Archivo no disponible; genera primero la ruta sombra' }, { status: 404 });
     const type = file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.csv') ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8';
+    if (download && file.endsWith('.csv')) {
+      const storagePath = `routes/${date}/ruta-completa-${crypto.randomUUID()}.csv`;
+      const supabase = createSupabaseClient();
+      const upload = await supabase.storage.from('route-csv-temp').upload(storagePath, Buffer.from(content, 'utf8'), { contentType: 'text/csv', upsert: true });
+      if (upload.error) throw upload.error;
+      const signed = await supabase.storage.from('route-csv-temp').createSignedUrl(storagePath, 600);
+      if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error('No se pudo crear el enlace de descarga');
+      const downloadUrl = `${signed.data.signedUrl}${signed.data.signedUrl.includes('?') ? '&' : '?'}download=ruta-completa.csv`;
+      return NextResponse.redirect(downloadUrl, 302);
+    }
     return new NextResponse(content, {
       headers: {
         'Content-Type': type,
