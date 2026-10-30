@@ -8,7 +8,6 @@ import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
 const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
-const MAX_STOPS = 10;
 type ArtifactStore = Map<string, string>;
 const artifactStore = (globalThis as typeof globalThis & { __routeShadowArtifacts?: ArtifactStore }).__routeShadowArtifacts ||= new Map();
 
@@ -68,12 +67,16 @@ async function generateDay(date: string, resolutions: Map<string, { latitude: nu
   }
   const routed = candidates.filter(item => item.coverage === 'dentro' && item.lat != null && item.lng != null).sort((a, b) => a.lat - b.lat || a.lng - b.lng || a.id.localeCompare(b.id));
   const excluded = candidates.filter(item => !routed.includes(item));
-  const routes: any[] = [];
-  for (let index = 0; index < routed.length; index += MAX_STOPS) {
-    const part = routed.slice(index, index + MAX_STOPS);
-    const number = Math.floor(index / MAX_STOPS) + 1;
-    routes.push({ name: `Ruta ${number}`, file: `spoke-${number}.csv`, stops: part.length, start: CORABASTOS, end: CORABASTOS, order_ids: part.map(item => item.id) });
-    artifactStore.set(`${date}/spoke-${number}.csv`, ['lat,lng,address,note', ...part.map(item => [item.lat, item.lng, csvCell(item.address), csvCell(`${item.source}:${item.id} | cobertura=dentro`)].join(','))].join('\n'));
+  const routes: any[] = routed.length > 0 ? [{
+    name: 'Ruta completa',
+    file: 'ruta-completa.csv',
+    stops: routed.length,
+    start: CORABASTOS,
+    end: CORABASTOS,
+    order_ids: routed.map(item => item.id),
+  }] : [];
+  if (routed.length > 0) {
+    artifactStore.set(`${date}/ruta-completa.csv`, ['lat,lng,address,note', ...routed.map(item => [item.lat, item.lng, csvCell(item.address), csvCell(`${item.source}:${item.id} | cobertura=dentro`)].join(','))].join('\n'));
   }
   const report = { date, source: 'Supabase guest_orders + orders + confirmed resolutions', routes, counts: { orders_total: orders.length + guests.length, eligible_confirmed: candidates.length, routed: routed.length, routes: routes.length, excluded: excluded.length, fuera: excluded.filter(item => item.coverage === 'fuera').length, por_confirmar: excluded.filter(item => item.coverage === 'por_confirmar').length, chia: excluded.filter(item => item.coverage === 'chia').length } };
   artifactStore.set(`${date}/route-report.json`, JSON.stringify(report, null, 2));
@@ -109,7 +112,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const date = searchParams.get('date') || nextDeliveryDate();
   const file = searchParams.get('file') || 'route-report.json';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(route-report\.json|orders-classification\.json|preview\.html|spoke-\d+\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(route-report\.json|orders-classification\.json|preview\.html|ruta-completa\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
   const content = artifactStore.get(`${date}/${file}`);
   if (!content) return NextResponse.json({ error: 'Archivo no disponible; genera primero la ruta sombra' }, { status: 404 });
   const type = file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.csv') ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8';
