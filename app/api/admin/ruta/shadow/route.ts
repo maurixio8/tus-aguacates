@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/auth-admin';
 import { createSupabaseClient } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
-import { addressParts, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, deliveryDatesInRange, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus } from '@/lib/admin-route';
+import { addressParts, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, deliveryDatesInRange, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
+import { formatOperationalSummary } from '@/utils/orderSummaryGenerator';
 
 export const dynamic = 'force-dynamic';
 const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
@@ -56,7 +57,23 @@ async function generateDay(date: string, resolutions: Map<string, { latitude: nu
       const saved = resolutions.get(normalizeDeliveryAddress(parts.address, parts.city || 'Bogotá'));
       const latitude = saved?.latitude ?? parts.latitude;
       const longitude = saved?.longitude ?? parts.longitude;
-      const item: any = { source, id: String(row.id), address: parts.address, city: parts.city || 'Bogotá', coverage: 'por_confirmar', reason: 'sin_coordenadas', resolution: saved ? 'pin' : 'sin_pin', lat: latitude, lng: longitude };
+      const data = parseOrderData(row);
+      const items = orderItems(row, data);
+      const orderNumber = String(row.order_number || row.orderNumber || `INV-${String(row.id).slice(-8)}`);
+      const customerName = String(row.customer_name || row.guest_name || row.name || 'Cliente');
+      const customerPhone = String(row.customer_phone || row.guest_phone || row.phone || '');
+      const totalAmount = Number(row.total_amount || row.total || data.total || 0);
+      const summary = formatOperationalSummary({
+        id: String(row.id), order_number: orderNumber, customer_name: customerName, customer_phone: customerPhone,
+        delivery_address: parts.address, status: row.status, payment_status: row.payment_status || data.payment_status,
+        payment_method: row.payment_method || data.payment_method, delivery_date: deliveryDateOf(row),
+        delivery_notes: row.delivery_notes || data.delivery_notes || data.deliveryNotes, notes: row.notes,
+        subtotal: Number(row.subtotal || data.subtotal || 0), total_amount: totalAmount,
+        shipping_fee: Number(row.shipping_fee || row.shipping_cost || data.shipping_fee || data.shipping_cost || data.shippingFee || 0),
+        discount: Number(row.discount || row.discount_amount || data.discount || data.discount_amount || 0),
+        coupon_code: row.coupon_code || data.coupon_code || null, items,
+      });
+      const item: any = { source, id: String(row.id), address: parts.address, city: parts.city || 'Bogotá', customerName, customerPhone, orderNumber, totalAmount, items, summary, coverage: 'por_confirmar', reason: 'sin_coordenadas', resolution: saved ? 'pin' : 'sin_pin', lat: latitude, lng: longitude };
       if (isChia(parts.city, parts.address)) { item.coverage = 'chia'; item.reason = 'chia_no_entregar_por_ahora'; candidates.push(item); continue; }
       if (latitude == null || longitude == null) { candidates.push(item); continue; }
       const result = evaluateCoverage({ rawAddress: parts.address, viaType: '', viaNumber: '', complement: '', neighborhood: '', city: parts.city || 'Bogotá', deliveryNotes: '', latitude, longitude, pinConfidence: 'pin' });
@@ -76,7 +93,7 @@ async function generateDay(date: string, resolutions: Map<string, { latitude: nu
     order_ids: routed.map(item => item.id),
   }] : [];
   if (routed.length > 0) {
-    artifactStore.set(`${date}/ruta-completa.csv`, ['lat,lng,address,note', ...routed.map(item => [item.lat, item.lng, csvCell(item.address), csvCell(`${item.source}:${item.id} | cobertura=dentro`)].join(','))].join('\n'));
+    artifactStore.set(`${date}/ruta-completa.csv`, ['lat,lng,address,note', ...routed.map(item => [item.lat, item.lng, csvCell(item.address), csvCell(item.summary || `${item.source}:${item.id} | cobertura=dentro`)].join(','))].join('\n'));
   }
   const report = { date, source: 'Supabase guest_orders + orders + confirmed resolutions', routes, counts: { orders_total: orders.length + guests.length, eligible_confirmed: candidates.length, routed: routed.length, routes: routes.length, excluded: excluded.length, fuera: excluded.filter(item => item.coverage === 'fuera').length, por_confirmar: excluded.filter(item => item.coverage === 'por_confirmar').length, chia: excluded.filter(item => item.coverage === 'chia').length } };
   artifactStore.set(`${date}/route-report.json`, JSON.stringify(report, null, 2));
