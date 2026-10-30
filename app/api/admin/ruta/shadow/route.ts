@@ -5,7 +5,7 @@ import { createSupabaseClient } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { addressParts, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, deliveryDatesInRange, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
-import { formatOperationalSummary } from '@/utils/orderSummaryGenerator';
+import { generateDashboardOrderSummary } from '@/utils/dashboardOrderSummary';
 
 export const dynamic = 'force-dynamic';
 const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
@@ -101,16 +101,11 @@ async function generateDay(date: string, resolutions: Map<string, { latitude: nu
       const customerName = String(row.customer_name || row.guest_name || row.name || 'Cliente');
       const customerPhone = String(row.customer_phone || row.guest_phone || row.phone || '');
       const totalAmount = Number(row.total_amount || row.total || data.total || 0);
-      const summary = formatOperationalSummary({
-        id: String(row.id), order_number: orderNumber, customer_name: customerName, customer_phone: customerPhone,
-        delivery_address: parts.address, status: row.status, payment_status: row.payment_status || data.payment_status,
-        payment_method: row.payment_method || data.payment_method, delivery_date: deliveryDateOf(row),
-        delivery_notes: row.delivery_notes || data.delivery_notes || data.deliveryNotes, notes: row.notes,
-        subtotal: Number(row.subtotal || data.subtotal || 0), total_amount: totalAmount,
-        shipping_fee: Number(row.shipping_fee || row.shipping_cost || data.shipping_fee || data.shipping_cost || data.shippingFee || 0),
-        discount: Number(row.discount || row.discount_amount || data.discount || data.discount_amount || 0),
-        coupon_code: row.coupon_code || data.coupon_code || null, items,
-      });
+      const summary = generateDashboardOrderSummary(
+        { delivery_address: parts.address, total_amount: totalAmount },
+        customerName,
+        items,
+      );
       const item: any = { source, id: String(row.id), address: parts.address, city: parts.city || 'Bogotá', customerName, customerPhone, orderNumber, totalAmount, items, summary, coverage: 'por_confirmar', reason: 'sin_coordenadas', resolution: saved ? 'pin' : 'sin_pin', lat: latitude, lng: longitude };
       if (isChia(parts.city, parts.address)) { item.coverage = 'chia'; item.reason = 'chia_no_entregar_por_ahora'; candidates.push(item); continue; }
       if (latitude == null || longitude == null) { candidates.push(item); continue; }
