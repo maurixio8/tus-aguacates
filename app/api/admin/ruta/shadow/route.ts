@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/auth-admin';
 import { createSupabaseClient } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
-import { addressParts, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, deliveryDatesInRange, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, deliveryDatesInRange, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 import { formatOperationalSummary } from '@/utils/orderSummaryGenerator';
 
@@ -15,13 +15,51 @@ const artifactStore = (globalThis as typeof globalThis & { __routeShadowArtifact
 async function fetchAll(table: 'orders' | 'guest_orders') {
   const supabase = createSupabaseClient();
   const rows: any[] = [];
+  const select = table === 'orders' ? '*, order_items (*, products:product_id (name))' : '*';
   for (let from = 0; from < 10000; from += 1000) {
-    const { data, error } = await supabase.from(table).select('*').range(from, from + 999);
+    const { data, error } = await supabase.from(table).select(select).range(from, from + 999);
     if (error) throw error;
     rows.push(...(data || []));
     if (!data || data.length < 1000) break;
   }
   return rows;
+}
+
+function summaryItems(row: any, data: any) {
+  const registeredItems = Array.isArray(row?.order_items) ? row.order_items : [];
+  if (registeredItems.length > 0) {
+    const orderDataItems = Array.isArray(data?.items) ? data.items : [];
+    return registeredItems.map((item: any, index: number) => {
+      const fallback = orderDataItems[index] || orderDataItems.find((candidate: any) => (candidate.product_id || candidate.productId) === item.product_id) || {};
+      const variant = item.variant_name || item.variant_value || fallback.variant_name || fallback.variantName || fallback.variant_value || fallback.variantValue || '';
+      const productName = item.product_name || item.products?.name || item.product_snapshot?.name || fallback.product_name || fallback.productName || 'Producto';
+      return {
+        ...item,
+        product_name: productName,
+        productName: productName,
+        variantName: variant,
+        variant_name: variant,
+        variant_value: variant,
+        weight: item.weight ?? fallback.weight ?? null,
+        unit: item.unit ?? fallback.unit ?? null,
+        product_snapshot: { ...item.product_snapshot, name: productName, variant_name: variant ? 'Presentación' : null, variant_value: variant },
+      };
+    });
+  }
+  return (Array.isArray(data?.items) ? data.items : []).map((item: any) => ({
+    id: item.id || null,
+    product_id: item.productId || item.product_id || null,
+    quantity: item.quantity || 0,
+    unit_price: item.price || item.unit_price || 0,
+    subtotal: item.subtotal || (item.quantity || 0) * (item.price || item.unit_price || 0),
+    product_name: item.productName || item.product_name || item.name || 'Producto',
+    variantName: item.variantName || item.variant_name || item.variant_value || item.variantValue || '',
+    variant_name: item.variantName || item.variant_name || item.variant_value || item.variantValue || '',
+    variant_value: item.variantName || item.variant_name || item.variant_value || item.variantValue || '',
+    weight: item.weight ?? null,
+    unit: item.unit || null,
+    product_snapshot: { name: item.productName || item.product_name || item.name || 'Producto', variant_value: item.variantName || item.variant_name || item.variant_value || item.variantValue || null },
+  }));
 }
 
 async function fetchConfirmedResolutions() {
@@ -58,7 +96,7 @@ async function generateDay(date: string, resolutions: Map<string, { latitude: nu
       const latitude = saved?.latitude ?? parts.latitude;
       const longitude = saved?.longitude ?? parts.longitude;
       const data = parseOrderData(row);
-      const items = orderItems(row, data);
+      const items = summaryItems(row, data);
       const orderNumber = String(row.order_number || row.orderNumber || `INV-${String(row.id).slice(-8)}`);
       const customerName = String(row.customer_name || row.guest_name || row.name || 'Cliente');
       const customerPhone = String(row.customer_phone || row.guest_phone || row.phone || '');
