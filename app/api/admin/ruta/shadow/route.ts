@@ -124,14 +124,35 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await verifyAdminAuth(request);
-  if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
-  const { searchParams } = new URL(request.url);
-  const date = searchParams.get('date') || nextDeliveryDate();
-  const file = searchParams.get('file') || 'route-report.json';
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(route-report\.json|orders-classification\.json|preview\.html|ruta-completa\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
-  const content = artifactStore.get(`${date}/${file}`);
-  if (!content) return NextResponse.json({ error: 'Archivo no disponible; genera primero la ruta sombra' }, { status: 404 });
-  const type = file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.csv') ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8';
-  return new NextResponse(content, { headers: { 'Content-Type': type, 'Content-Disposition': `inline; filename="${file}"` } });
+  try {
+    const auth = await verifyAdminAuth(request);
+    if (!auth.success) return NextResponse.json({ error: auth.error }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const date = searchParams.get('date') || nextDeliveryDate();
+    const file = searchParams.get('file') || 'route-report.json';
+    const download = searchParams.get('download') === '1';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^(route-report\.json|orders-classification\.json|preview\.html|ruta-completa\.csv)$/.test(file)) return NextResponse.json({ error: 'Archivo inválido' }, { status: 400 });
+
+    let content = artifactStore.get(`${date}/${file}`);
+    // Serverless instances do not share the in-memory artifact store. If the
+    // download lands on another instance, regenerate the CSV instead of
+    // leaving the browser waiting on a stale/missing artifact.
+    if (!content && file === 'ruta-completa.csv') {
+      const resolutions = await fetchConfirmedResolutions();
+      await generateDay(date, resolutions);
+      content = artifactStore.get(`${date}/${file}`);
+    }
+    if (!content) return NextResponse.json({ error: 'Archivo no disponible; genera primero la ruta sombra' }, { status: 404 });
+    const type = file.endsWith('.html') ? 'text/html; charset=utf-8' : file.endsWith('.csv') ? 'text/csv; charset=utf-8' : 'application/json; charset=utf-8';
+    return new NextResponse(content, {
+      headers: {
+        'Content-Type': type,
+        'Content-Disposition': `${download && file.endsWith('.csv') ? 'attachment' : 'inline'}; filename="${file}"`,
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error serving shadow artifact', error?.message || error);
+    return NextResponse.json({ error: 'No se pudo descargar el archivo de ruta' }, { status: 500 });
+  }
 }
