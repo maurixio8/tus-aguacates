@@ -10,7 +10,7 @@ create table if not exists public.whatsapp_audit_findings (
 create index if not exists whatsapp_audit_findings_idx on public.whatsapp_audit_findings(severity,review_status,received_at desc);
 create table if not exists public.whatsapp_recovery_opportunities (
  id uuid primary key default gen_random_uuid(), opportunity_key text not null unique,
- customer_masked text not null, contact_phone text, last_seen_at timestamptz, intent_score integer not null, intent_level text not null,
+ customer_masked text not null, contact_phone text, conversation_summary text, last_seen_at timestamptz, intent_score integer not null, intent_level text not null,
  evidence text, order_state text, recommendation text, status text not null default 'pending_human_review' check(status in ('pending_human_review','approved','resolved','dismissed')),
  assigned_to text, resolution text, created_at timestamptz not null default now(), updated_at timestamptz not null default now()
 );
