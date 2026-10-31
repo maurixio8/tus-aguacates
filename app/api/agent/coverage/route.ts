@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     const address = parseAddress(body?.address || body);
     const coverage = evaluateCoverage(address);
     const subtotal = body?.subtotal;
-    const shipping = typeof subtotal === 'number' && Number.isFinite(subtotal) && subtotal >= 0
+    const shipping = coverage.decision === 'dentro' && typeof subtotal === 'number' && Number.isFinite(subtotal) && subtotal >= 0
       ? calculateShippingQuote(subtotal, address.city)
       : null;
 
