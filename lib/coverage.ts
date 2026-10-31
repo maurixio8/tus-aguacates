@@ -32,7 +32,11 @@ function zoneForPoint(point: [number, number]) {
 export function evaluateCoverage(address: StructuredAddress): CoverageShadowResult {
   const distanceKm = address.latitude != null && address.longitude != null ? haversineKm(config.warehouse.latitude, config.warehouse.longitude, address.latitude, address.longitude) : null;
   const travelMinutes = distanceKm == null ? null : Math.round(distanceKm * 3.5 + 15);
+  const normalizedCity = address.city.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const excludedCities = (config.excludedCities || []).map((city: string) => city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+  if (excludedCities.includes(normalizedCity)) return { decision: 'confirmar', reasons: ['ciudad_excluida_por_configuracion'], distanceKm, travelMinutes, zone: null, mode: 'shadow' };
   if (address.latitude == null || address.longitude == null) return { decision: 'confirmar', reasons: ['sin_pin'], distanceKm, travelMinutes, zone: null, mode: 'shadow' };
+  if (distanceKm != null && distanceKm > config.maxDistanceKm) return { decision: 'fuera', reasons: ['fuera_de_distancia'], distanceKm, travelMinutes, zone: null, mode: 'shadow' };
   const { excluded, delivery } = zoneForPoint([address.longitude, address.latitude]);
   if (excluded) return { decision: 'fuera', reasons: ['zona_excluida'], distanceKm, travelMinutes, zone: excluded.properties?.nombre || null, mode: 'shadow' };
   if (delivery) return { decision: 'dentro', reasons: [], distanceKm, travelMinutes, zone: delivery.properties?.nombre || null, mode: 'shadow' };
