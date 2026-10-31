@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export interface AgentAuthResult {
   success: boolean;
-  keyType?: 'customer' | 'ops';
+  keyType?: 'customer' | 'ops' | 'auditor';
   error?: string;
 }
 
@@ -18,13 +18,17 @@ function getAgentOpsKey(): string {
   return cleanEnvValue(process.env.AGENT_OPS_API_KEY);
 }
 
+function getAgentAuditorKey(): string {
+  return cleanEnvValue(process.env.AGENT_AUDITOR_API_KEY);
+}
+
 function extractAgentKey(request: NextRequest): string | null {
   return request.headers.get('x-agent-key');
 }
 
 export function validateAgentKey(
   request: NextRequest,
-  allowBothKeys = true
+  allowedKeyTypes: Array<'customer' | 'ops' | 'auditor'> = ['customer', 'ops', 'auditor']
 ): AgentAuthResult {
   const key = extractAgentKey(request);
 
@@ -38,12 +42,23 @@ export function validateAgentKey(
   const customerKey = getAgentCustomerKey();
   const opsKey = getAgentOpsKey();
 
-  if (key === customerKey) {
+  if (allowedKeyTypes.includes('customer') && key === customerKey) {
     return { success: true, keyType: 'customer' };
   }
 
   if (key === opsKey) {
+    if (!allowedKeyTypes.includes('ops')) {
+      return { success: false, error: 'Agent key scope not allowed' };
+    }
     return { success: true, keyType: 'ops' };
+  }
+
+  const auditorKey = getAgentAuditorKey();
+  if (key === auditorKey) {
+    if (!allowedKeyTypes.includes('auditor')) {
+      return { success: false, error: 'Agent key scope not allowed' };
+    }
+    return { success: true, keyType: 'auditor' };
   }
 
   return {
@@ -66,7 +81,37 @@ export function createUnauthorizedResponse(): NextResponse {
 }
 
 export function requireAgentAuth(request: NextRequest): AgentAuthResult {
-  const result = validateAgentKey(request, true);
+  const result = validateAgentKey(request, ['customer', 'ops', 'auditor']);
+
+  if (!result.success) {
+    return result;
+  }
+
+  return result;
+}
+
+export function requireAgentOpsAuth(request: NextRequest): AgentAuthResult {
+  const result = validateAgentKey(request, ['ops']);
+
+  if (!result.success) {
+    return result;
+  }
+
+  return result;
+}
+
+export function requireAgentOpsOrAuditorAuth(request: NextRequest): AgentAuthResult {
+  const result = validateAgentKey(request, ['ops', 'auditor']);
+
+  if (!result.success) {
+    return result;
+  }
+
+  return result;
+}
+
+export function requireAgentAuditorAuth(request: NextRequest): AgentAuthResult {
+  const result = validateAgentKey(request, ['auditor']);
 
   if (!result.success) {
     return result;
