@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { createUnauthorizedResponse, requireAgentAuth } from '@/lib/agent-auth';
+import { createUnauthorizedResponse, requireAgentOpsOrAuditorAuth } from '@/lib/agent-auth';
 import {
   buildOperationalFlags,
   normalizeOrderStatus,
@@ -396,7 +396,7 @@ function createValidationError(message: string) {
 
 export async function GET(request: NextRequest) {
   try {
-    const authResult = requireAgentAuth(request);
+    const authResult = requireAgentOpsOrAuditorAuth(request);
 
     if (!authResult.success) {
       return createUnauthorizedResponse();

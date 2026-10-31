@@ -71,6 +71,7 @@ Llaves propuestas:
 
 - `AGENT_CUSTOMER_API_KEY`: para agente que conversa con clientes
 - `AGENT_OPS_API_KEY`: para agente interno, copiloto o automatizaciones operativas
+- `AGENT_AUDITOR_API_KEY`: para el Auditor de Contexto, solo lectura y con alcance limitado
 
 Scopes propuestos:
 
@@ -78,6 +79,7 @@ Scopes propuestos:
 | --- | --- | --- |
 | `AGENT_CUSTOMER_API_KEY` | `catalog:read`, `variants:read` | Buscar productos y presentaciones |
 | `AGENT_OPS_API_KEY` | `catalog:read`, `variants:read`, `orders:read` | Operaciones internas y resumen diario |
+| `AGENT_AUDITOR_API_KEY` | `catalog:read`, `variants:read`, `orders:read` | Auditor de Contexto; nunca escritura ni envío |
 
 Reglas:
 
@@ -101,6 +103,7 @@ No se debe exponer:
 - tokens admin
 - datos completos de clientes para un agente conversacional
 - endpoints de escritura en la misma llave del bot de clientes
+- la llave del Auditor no debe reutilizar la llave general de operaciones
 
 ## 7. Contrato general de respuestas
 

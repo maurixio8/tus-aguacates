@@ -14,9 +14,10 @@ export async function GET(request: NextRequest) {
     type === 'findings' || type === 'recovery' ? Promise.resolve({ data: [], error: null }) : supabase.from('ripeness_proposals').select('*').eq('approval_status','pending').order('created_at', { ascending: false }),
     supabase.from('whatsapp_human_handoffs').select('*').eq('status','active').order('updated_at', { ascending: false }),
   ]);
+  const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
   const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [] });
+  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: contextResult.error ? [] : (contextResult.data || []) });
 }
 
 export async function PATCH(request: NextRequest) {
