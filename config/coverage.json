@@ -24,7 +24,7 @@
     "Usaquén",
     "Usme"
   ],
-  "excludedCities": ["Chía"],
+  "excludedCities": ["Chía", "Soacha"],
   "warehouse": {
     "name": "Corabastos Bogotá",
     "latitude": 4.6372,
