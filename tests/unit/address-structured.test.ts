@@ -20,11 +20,11 @@ describe('Fase 2 dirección estructurada', () => {
   it('deja Chía sin polígono en confirmar durante sombra', () => {
     const result = evaluateCoverage({ ...emptyStructuredAddress, city: 'Chía', viaNumber: '10 # 20-30', neighborhood: 'Centro', latitude: 4.86, longitude: -74.05 });
     expect(result.decision).toBe('confirmar');
-    expect(result.reasons).toContain('fuera_de_poligonos_confirmar');
+    expect(result.reasons).toContain('ciudad_excluida_por_configuracion');
   });
   it('marca una zona lejana por distancia', () => {
     const result = evaluateCoverage({ ...emptyStructuredAddress, viaNumber: '10 # 20-30', neighborhood: 'Suba', latitude: 5.5, longitude: -75 });
-    expect(result.decision).toBe('confirmar');
-    expect(result.reasons).toContain('fuera_de_poligonos_confirmar');
+    expect(result.decision).toBe('fuera');
+    expect(result.reasons).toContain('fuera_de_distancia');
   });
 });
