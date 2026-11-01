@@ -40,5 +40,5 @@ export function evaluateCoverage(address: StructuredAddress): CoverageShadowResu
   const { excluded, delivery } = zoneForPoint([address.longitude, address.latitude]);
   if (excluded) return { decision: 'fuera', reasons: ['zona_excluida'], distanceKm, travelMinutes, zone: excluded.properties?.nombre || null, mode: 'shadow' };
   if (delivery) return { decision: 'dentro', reasons: [], distanceKm, travelMinutes, zone: delivery.properties?.nombre || null, mode: 'shadow' };
-  return { decision: 'confirmar', reasons: ['fuera_de_poligonos_confirmar'], distanceKm, travelMinutes, zone: null, mode: 'shadow' };
+  return { decision: 'fuera', reasons: ['fuera_de_poligonos'], distanceKm, travelMinutes, zone: null, mode: 'shadow' };
 }

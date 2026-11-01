@@ -6,6 +6,7 @@ const cases = [
   { name: 'dentro + subtotal bajo', address: { ...emptyStructuredAddress, city: 'Bogotá', latitude: 4.65, longitude: -74.1 }, subtotal: 10000, expectedDecision: 'dentro', expectedCost: 7400 },
   { name: 'dentro + subtotal >= 68.900', address: { ...emptyStructuredAddress, city: 'Bogotá', latitude: 4.65, longitude: -74.1 }, subtotal: 68900, expectedDecision: 'dentro', expectedCost: 0 },
   { name: 'fuera por distancia', address: { ...emptyStructuredAddress, city: 'Bogotá', latitude: 5.5, longitude: -75 }, subtotal: 10000, expectedDecision: 'fuera', expectedCost: null },
+  { name: 'fuera por pin fuera de polígono', address: { ...emptyStructuredAddress, city: 'Bogotá', latitude: 4.605, longitude: -74.056 }, subtotal: 10000, expectedDecision: 'fuera', expectedCost: null },
   { name: 'sin pin / no marcado', address: { ...emptyStructuredAddress, city: 'Bogotá', latitude: null, longitude: null }, subtotal: 10000, expectedDecision: 'confirmar', expectedCost: null },
   { name: 'Chía', address: { ...emptyStructuredAddress, city: 'Chía', latitude: 4.86, longitude: -74.05 }, subtotal: 10000, expectedDecision: 'fuera', expectedCost: null },
   { name: 'Soacha', address: { ...emptyStructuredAddress, city: 'Soacha', latitude: 4.58, longitude: -74.22 }, subtotal: 10000, expectedDecision: 'fuera', expectedCost: null },
