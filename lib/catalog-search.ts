@@ -72,6 +72,15 @@ export function getSearchForms(value: string): string[] {
   // when the source term is already normalized.
   if (normalized === 'limon') forms.add('limón');
 
+  // Conversational box aliases use "caja 24", while the catalog name uses
+  // "caja de 24 unidades". Keep the original form and add the canonical
+  // phrase so the server-side ilike query resolves the real product.
+  const boxAlias = normalized.match(/^caja\s+(\d+)$/);
+  if (boxAlias) {
+    forms.add(`caja de ${boxAlias[1]}`);
+    forms.add(`${boxAlias[1]} unidades`);
+  }
+
   return Array.from(forms)
     .map(escapePostgrest)
     .filter(Boolean)
