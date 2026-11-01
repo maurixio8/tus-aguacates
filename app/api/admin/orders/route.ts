@@ -984,6 +984,10 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const { status, items, total, customerData } = body;
+    const requestedDeliveryDate = body.delivery_date ?? customerData?.delivery_date;
+    if (requestedDeliveryDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(requestedDeliveryDate))) {
+      return NextResponse.json({ error: 'Fecha de entrega inválida' }, { status: 400, headers: corsHeaders });
+    }
 
     const supabase = createSupabaseClient();
 
@@ -1008,6 +1012,7 @@ export async function PATCH(request: NextRequest) {
 
     // If updating customer data
     let customerDataUpdated = false;
+    let deliveryDateUpdated = false;
 
     if (customerData) {
       console.log('📝 API: Updating customer data for order:', orderId, customerData);
@@ -1138,6 +1143,18 @@ export async function PATCH(request: NextRequest) {
 
     if (customerData) {
       customerDataUpdated = true;
+    }
+
+    if (requestedDeliveryDate !== undefined) {
+      const tableName = isGuestOrder ? 'guest_orders' : 'orders';
+      const { error: deliveryDateError } = await supabase
+        .from(tableName)
+        .update({ delivery_date: String(requestedDeliveryDate), updated_at: new Date().toISOString() })
+        .eq('id', orderId);
+      if (deliveryDateError) {
+        return NextResponse.json({ error: 'Error al actualizar la fecha de entrega', details: deliveryDateError.message }, { status: 500, headers: corsHeaders });
+      }
+      deliveryDateUpdated = true;
     }
 
     // If updating items
@@ -1358,10 +1375,10 @@ export async function PATCH(request: NextRequest) {
       }, { headers: corsHeaders });
     }
 
-    if (customerDataUpdated) {
+    if (customerDataUpdated || deliveryDateUpdated) {
       return NextResponse.json({
         success: true,
-        message: 'Datos del pedido actualizados exitosamente'
+        message: deliveryDateUpdated ? 'Fecha de entrega actualizada exitosamente' : 'Datos del pedido actualizados exitosamente'
       }, { headers: corsHeaders });
     }
 
