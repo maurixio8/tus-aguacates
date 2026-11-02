@@ -104,6 +104,38 @@ export async function PATCH(request: NextRequest) {
   const action = body.action;
   const adminName = auth.user?.name || auth.user?.email || 'admin';
   const supabase = createSupabaseClient();
+  if (action === 'context-reply-whatsapp-handoff') {
+    const conversationKey = String(body.conversationKey || '').trim();
+    const replyAction = ['send', 'edit_send'].includes(String(body.replyAction)) ? String(body.replyAction) : '';
+    const originalText = String(body.originalText || '');
+    const finalText = String(body.finalText || '');
+    if (!conversationKey || !replyAction) return NextResponse.json({ error: 'Falta conversación o acción de respuesta' }, { status: 400 });
+    if (!finalText.trim()) return NextResponse.json({ error: 'La respuesta final no puede estar vacía' }, { status: 400 });
+    const phoneLocal = conversationKey.startsWith('phone:') ? normalizePhone(conversationKey.slice(6)) : '';
+    if (phoneLocal.length !== 10 || !phoneLocal.startsWith('3')) return NextResponse.json({ error: 'Esta conversación no tiene un teléfono utilizable para abrir WhatsApp' }, { status: 400 });
+    const waUrl = `https://wa.me/57${phoneLocal}?text=${encodeURIComponent(finalText)}`;
+    const details = {
+      element: conversationKey,
+      action: replyAction === 'edit_send' ? 'editar_y_abrir_whatsapp' : 'abrir_whatsapp_respuesta_sugerida',
+      actor: adminName,
+      scope: 'conversation',
+      mode: 'real_handoff',
+      experimental: true,
+      original_text: originalText,
+      final_text: finalText,
+      result: 'wa_link_ready',
+      wa_url: waUrl,
+      sending_enabled: false,
+      ycloud_called: false,
+      conversation_registration: 'not_written_until_human_sends_in_whatsapp',
+      automation_pause: 'not_applied_until_human_send',
+    };
+    const { data: decision, error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'whatsapp_context_reply_handoff', entity_type: 'whatsapp_context_action', entity_id: null, details }).select('*').single();
+    if (error) return NextResponse.json({ error: 'No se pudo registrar la entrega a WhatsApp', details: error.message }, { status: 500 });
+    const { data: readback, error: readbackError } = await supabase.from('admin_activity_log').select('*').eq('id', decision.id).single();
+    if (readbackError || !readback) return NextResponse.json({ error: 'La entrega a WhatsApp no pudo leerse de vuelta' }, { status: 500 });
+    return NextResponse.json({ success: true, mode: 'real_handoff', sending_enabled: false, waUrl, decision: readback });
+  }
   if (action === 'context-reply-simulation') {
     const conversationKey = String(body.conversationKey || '').trim();
     const replyAction = ['send', 'edit_send', 'discard'].includes(String(body.replyAction)) ? String(body.replyAction) : '';
