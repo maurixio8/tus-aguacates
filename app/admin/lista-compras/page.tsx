@@ -1180,6 +1180,10 @@ const normalizeVariant = (variant: string | null): string => {
     // Normalizar espacios múltiples
     normalized = normalized.replace(/\s+/g, ' ').trim();
 
+    // Presentaciones equivalentes como "bandeja" y "2 bandejas" se consolidan.
+    // El multiplicador físico se conserva por separado al calcular cantidades.
+    normalized = normalized.replace(/^\d+\s+(bandejas?|paquetes?|atados?|bolsas?|frascos?|cajas?|unidades?)$/, '$1');
+
     return normalized;
   };
 
@@ -2410,6 +2414,10 @@ const normalizeVariant = (variant: string | null): string => {
       v: p.variant_name || null,
       q: getPurchaseQuantityText(p),
       t: p.total_quantity,
+      f: p.total_physical_units,
+      u: p.physical_unit_name || null,
+      w: p.smallest_weight_grams || null,
+      s: p.total_in_smallest_units || null,
       p: p.unit_price,
       c: p.customer_breakdown.map(c => ({
         n: c.customer_name,
@@ -2430,7 +2438,7 @@ const normalizeVariant = (variant: string | null): string => {
       .replace(/\//g, '_')
       .replace(/=+$/, '');
 
-    const url = `/api/admin/lista-compras/export?format=${encodeURIComponent(format)}&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}&data=${encodeURIComponent(base64)}`;
+    const url = `/api/admin/lista-compras/export?format=${encodeURIComponent(format)}&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}${routeDate ? `&routeDate=${encodeURIComponent(routeDate)}` : ''}&data=${encodeURIComponent(base64)}`;
     window.location.href = url;
   };
 

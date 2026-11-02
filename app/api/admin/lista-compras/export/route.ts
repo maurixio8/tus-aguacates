@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,18 @@ interface ExportItem {
   unitPrice: number;
   customerName: string;
   customerAddress: string;
+}
+
+interface ExportProduct {
+  product_name: string;
+  variant_name?: string | null;
+  purchase_text?: string | null;
+  total_quantity: number;
+  total_physical_units?: number;
+  physical_unit_name?: string | null;
+  smallest_weight_grams?: number;
+  total_in_smallest_units?: number;
+  customer_breakdown?: any[];
 }
 
 function extractOrderItems(order: any): ExportItem[] {
@@ -110,92 +123,120 @@ function formatCOP(value: number): string {
   }).format(value);
 }
 
-/**
- * Texto de cantidad a comprar:
- * - Usa purchase_text (presentación completa calculada en la página: gramos, kilos, bandejas, etc.)
- * - Fallback: texto simplificado con total_quantity y variante
- */
-function getQuantityLabel(p: any): string {
-  if (p.purchase_text) return String(p.purchase_text);
-  if (p.total_physical_units && p.physical_unit_name) {
-    const plural = p.total_physical_units === 1 ? p.physical_unit_name : `${p.physical_unit_name}s`;
-    return `${p.total_physical_units} ${plural}`;
-  }
-  return `${p.total_quantity} ${p.variant_name || 'unidad'}`;
+function normalizeText(value: unknown): string {
+  return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
-function buildCSV(products: any[]): string {
+function weightFromVariant(variant: string | null | undefined): number | null {
+  const text = normalizeText(variant);
+  if (!text) return null;
+  if (/^(kilo|kilos|kg)$/.test(text)) return 1000;
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(kg|kilos?|g|gr|grs|gramos?|lb|libras?)/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (/kg|kilo/.test(match[2])) return value * 1000;
+  if (/lb|libra/.test(match[2])) return value * 500;
+  return value;
+}
+
+function formatWeight(grams: number): string {
+  return grams >= 1000 && grams % 1000 === 0 ? `${grams / 1000} kg` : `${grams} g`;
+}
+
+function presentationFromVariant(variant: string | null | undefined, productName: string): { unit: string | null; multiplier: number } {
+  const text = normalizeText(variant);
+  const product = normalizeText(productName);
+  if (product.includes('caja de') && product.includes('unidad')) return { unit: 'caja', multiplier: 1 };
+  const kinds = ['bandeja', 'paquete', 'atado', 'bolsa', 'frasco', 'caja', 'unidad'];
+  for (const kind of kinds) {
+    if (text.includes(kind)) {
+      const count = Number(text.match(new RegExp(`^(\\d+)\\s*${kind}`))?.[1] || 1);
+      return { unit: kind, multiplier: count };
+    }
+  }
+  return { unit: null, multiplier: 1 };
+}
+
+function canonicalVariantKey(productName: string, variant: string | null | undefined): string {
+  const weight = weightFromVariant(variant);
+  if (weight) return `weight:${weight}`;
+  const presentation = presentationFromVariant(variant, productName);
+  if (presentation.unit) return `unit:${presentation.unit}`;
+  return normalizeText(variant) || 'sin-variante';
+}
+
+function mergeExportProducts(products: ExportProduct[]): ExportProduct[] {
+  const merged = new Map<string, ExportProduct>();
+  for (const product of products) {
+    const key = `${normalizeText(product.product_name)}|${canonicalVariantKey(product.product_name, product.variant_name)}`;
+    const physicalUnits = product.total_physical_units ??
+      (Number(product.total_quantity || 0) * presentationFromVariant(product.variant_name, product.product_name).multiplier);
+    const current = merged.get(key);
+    if (!current) {
+      merged.set(key, { ...product, total_physical_units: physicalUnits });
+      continue;
+    }
+    current.total_quantity += Number(product.total_quantity || 0);
+    current.total_physical_units = (current.total_physical_units || 0) + physicalUnits;
+    current.customer_breakdown = [...(current.customer_breakdown || []), ...(product.customer_breakdown || [])];
+  }
+  return Array.from(merged.values());
+}
+
+function getQuantityLabel(p: ExportProduct): string {
+  const weight = weightFromVariant(p.variant_name) || p.smallest_weight_grams || null;
+  const presentation = presentationFromVariant(p.variant_name, p.product_name);
+  const physicalTotal = Number(p.total_physical_units ?? p.total_quantity ?? 0);
+  const unit = presentation.unit || (p.physical_unit_name ? normalizeText(p.physical_unit_name) : null);
+  const multiplier = presentation.multiplier || 1;
+  const count = p.total_physical_units !== undefined
+    ? physicalTotal
+    : Number(p.total_quantity || 0) * multiplier;
+
+  if (weight && unit) {
+    const plural = count === 1 ? unit : `${unit}s`;
+    return `${count} ${plural} de ${formatWeight(weight)}`;
+  }
+  if (weight) {
+    return count === 1 && weight === 1000 ? '1 kg' : `${count} x ${formatWeight(weight)}`;
+  }
+  if (unit) {
+    const plural = count === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+    return `${count} ${plural}`;
+  }
+  return `${count} unidades`;
+}
+
+function getProductLabel(p: ExportProduct): string {
+  const variant = p.variant_name ? String(p.variant_name).trim() : '';
+  return variant ? `${p.product_name} (${variant})` : p.product_name;
+}
+
+function buildCSV(products: ExportProduct[]): string {
   const BOM = '\uFEFF';
-  const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
-  const rows: string[][] = [];
-
-  products.forEach(p => {
-    const customerNames = p.customer_breakdown.map((c: any) => c.customer_name).join('; ');
-    const addresses = p.customer_breakdown.map((c: any) => c.customer_address || 'N/A').join('; ');
-    const totalCost = p.unit_price * p.total_quantity;
-
-    rows.push([
-      p.product_name,
-      getQuantityLabel(p),
-      p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
-      totalCost > 0 ? formatCOP(totalCost) : '-',
-      customerNames,
-      addresses,
-    ]);
-
-    p.customer_breakdown.forEach((c: any) => {
-      rows.push(['', '', '', '', c.customer_name, c.customer_address || '-']);
-    });
-  });
-
+  const headers = ['Producto', 'Cantidad a comprar'];
+  const rows = products.map(p => [getProductLabel(p), getQuantityLabel(p)]);
   return BOM + [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
 }
 
-function buildXLS(products: any[]): string {
-  const headers = ['Producto', 'Cantidad a comprar', 'Precio Unitario', 'Costo Total', 'Clientes', 'Direcciones'];
+function buildXLS(products: ExportProduct[]): string {
+  const headers = ['Producto', 'Cantidad a comprar'];
   let rowsXml = `<Row ss:StyleID="Header">`;
-  headers.forEach(h => {
-    rowsXml += `<Cell><Data ss:Type="String">${h}</Data></Cell>`;
-  });
+  headers.forEach(h => { rowsXml += `<Cell><Data ss:Type="String">${h}</Data></Cell>`; });
   rowsXml += '</Row>';
-
   products.forEach(p => {
-    const customerNames = p.customer_breakdown.map((c: any) => c.customer_name).join('; ');
-    const addresses = p.customer_breakdown.map((c: any) => c.customer_address || 'N/A').join('; ');
-    const totalCost = p.unit_price * p.total_quantity;
-    const cells = [
-      p.product_name,
-      getQuantityLabel(p),
-      p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
-      totalCost > 0 ? formatCOP(totalCost) : '-',
-      customerNames,
-      addresses,
-    ];
     rowsXml += '<Row>';
-    cells.forEach(cell => {
+    [getProductLabel(p), getQuantityLabel(p)].forEach(cell => {
       const escaped = String(cell).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
       rowsXml += `<Cell><Data ss:Type="String">${escaped}</Data></Cell>`;
     });
     rowsXml += '</Row>';
   });
-
   return `<?xml version="1.0" encoding="UTF-8"?>
 <?mso-application progid="Excel.Sheet"?>
-<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
- xmlns:o="urn:schemas-microsoft-com:office:office"
- xmlns:x="urn:schemas-microsoft-com:office:excel">
- <Styles>
-  <Style ss:ID="Header">
-   <Font ss:Bold="1" ss:Size="11"/>
-   <Interior ss:Color="#D4EDDA" ss:Pattern="Solid"/>
-  </Style>
- </Styles>
- <Worksheet ss:Name="Lista de Compras">
-  <Table>
-${rowsXml}
-  </Table>
- </Worksheet>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel">
+ <Styles><Style ss:ID="Header"><Font ss:Bold="1" ss:Size="11"/><Interior ss:Color="#D4EDDA" ss:Pattern="Solid"/></Style></Styles>
+ <Worksheet ss:Name="Lista de Compras"><Table>${rowsXml}</Table></Worksheet>
 </Workbook>`;
 }
 
@@ -213,23 +254,11 @@ function escapeHtml(value: any): string {
  * letras ajustadas a las columnas, organización clara.
  */
 function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateToStr: string, combos?: any[]): string {
-  const totalUnits = products.reduce((s, p) => s + p.total_quantity, 0);
-  const totalValue = products.reduce((s, p) => s + p.unit_price * p.total_quantity, 0);
-
   const rows = products
-    .map(p => {
-      const totalCost = p.unit_price * p.total_quantity;
-      const customers = p.customer_breakdown
-        .map((c: any) => `${escapeHtml(c.customer_name)}${c.customer_address ? ` <span class="addr">· ${escapeHtml(c.customer_address)}</span>` : ''}`)
-        .join('<br>');
-      return `<tr>
-        <td class="prod">${escapeHtml(p.product_name)}${p.variant_name ? `<span class="variant"> · ${escapeHtml(p.variant_name)}</span>` : ''}</td>
+    .map(p => `<tr>
+        <td class="prod">${escapeHtml(getProductLabel(p))}</td>
         <td class="qty">${escapeHtml(getQuantityLabel(p))}</td>
-        <td class="num">${p.unit_price > 0 ? formatCOP(p.unit_price) : '-'}</td>
-        <td class="num">${totalCost > 0 ? formatCOP(totalCost) : '-'}</td>
-        <td class="cust">${customers}</td>
-      </tr>`;
-    })
+      </tr>`)
     .join('\n');
 
   // En la exportación HTML no mostramos los combos originales:
@@ -273,11 +302,8 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
   }
   tbody td { padding:5px 8px; border-bottom:1px solid #e5e9e5; vertical-align:top; font-size:11px; }
   tbody tr:nth-child(even) td { background:#f8faf8; }
-  td.prod { font-weight:600; white-space:nowrap; }
-  td.prod .variant { font-weight:400; color:#6b7280; font-size:10px; }
-  td.qty { text-align:center; font-weight:700; color:#07180f; white-space:nowrap; }
-  td.num { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
-  td.cust { color:#374151; line-height:1.3; font-size:10px; }
+  td.prod { font-weight:600; }
+  td.qty { text-align:left; font-weight:700; color:#07180f; white-space:nowrap; }
   td.cust .addr { color:#9ca3af; }
   .foot {
     display:flex; justify-content:space-between; gap:8px; flex-wrap:wrap;
@@ -312,11 +338,8 @@ function buildHTML(products: any[], dateStr: string, dateFromStr: string, dateTo
     <table>
       <thead>
         <tr>
-          <th>Producto</th>
-          <th style="text-align:center">Cant. a comprar</th>
-          <th style="text-align:right">P. Unit</th>
-          <th style="text-align:right">Total</th>
-          <th>Clientes</th>
+          <th>Producto + variante</th>
+          <th>Cantidad a comprar</th>
         </tr>
       </thead>
       <tbody>
@@ -325,8 +348,6 @@ ${rows}
     </table>
     <div class="foot">
       <span>Productos: <b>${products.length}</b></span>
-      <span>Unidades: <b>${totalUnits}</b></span>
-      <span class="total">Valor estimado: ${formatCOP(totalValue)}</span>
     </div>
   </div>
   <div class="actions">
@@ -353,19 +374,11 @@ function buildPDF(products: any[], dateStr: string, dateFromStr: string, dateToS
     doc.text(`Pedidos del: ${dateFromStr} al ${dateToStr}`, 14, 26);
   }
 
-  const bodyRows = products.map(p => {
-    const totalCost = p.unit_price * p.total_quantity;
-    return [
-      p.product_name,
-      getQuantityLabel(p),
-      p.unit_price > 0 ? formatCOP(p.unit_price) : '-',
-      totalCost > 0 ? formatCOP(totalCost) : '-',
-    ];
-  });
+  const bodyRows = products.map(p => [getProductLabel(p), getQuantityLabel(p)]);
 
   autoTable(doc, {
     startY: 32,
-    head: [['Producto', 'Cantidad a comprar', 'Precio Unit.', 'Costo Total']],
+    head: [['Producto + variante', 'Cantidad a comprar']],
     body: bodyRows,
     theme: 'grid',
     headStyles: { fillColor: [22, 101, 52], fontSize: 9 },
@@ -373,19 +386,9 @@ function buildPDF(products: any[], dateStr: string, dateFromStr: string, dateToS
     styles: { cellPadding: 1.5 },
     columnStyles: {
       0: { cellWidth: 130 },
-      1: { cellWidth: 55 },
-      2: { cellWidth: 30 },
-      3: { cellWidth: 30 },
+      1: { cellWidth: 75 },
     },
   });
-
-  const finalY = (doc as any).lastAutoTable?.finalY || 40;
-  doc.setFontSize(10);
-  doc.setTextColor(22, 101, 52);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Total de productos: ${products.length}`, 14, finalY + 8);
-  const totalUnits = products.reduce((s, p) => s + p.total_quantity, 0);
-  doc.text(`Total de unidades: ${totalUnits}`, 14, finalY + 13);
 
   return Buffer.from(doc.output('arraybuffer'));
 }
@@ -404,6 +407,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
 
     let dateFrom = '';
     let dateTo = '';
+    let routeDate = '';
     let format = 'pdf';
     let products: any[] = [];
     let combos: any[] = [];
@@ -412,6 +416,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       const formData = await request.formData();
       dateFrom = String(formData.get('dateFrom') || '');
       dateTo = String(formData.get('dateTo') || '');
+      routeDate = String(formData.get('routeDate') || '');
       format = String(formData.get('format') || 'pdf').toLowerCase();
       const productsRaw = formData.get('products');
       if (productsRaw) {
@@ -433,6 +438,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       const url = new URL(request.url);
       dateFrom = url.searchParams.get('dateFrom') || '';
       dateTo = url.searchParams.get('dateTo') || '';
+      routeDate = url.searchParams.get('routeDate') || '';
       format = (url.searchParams.get('format') || 'pdf').toLowerCase();
       // Datos procesados compactos (base64url) enviados por la página
       const dataParam = url.searchParams.get('data');
@@ -449,6 +455,10 @@ async function handleExport(request: NextRequest, isPost: boolean) {
               variant_name: p.v || p.variant_name || null,
               purchase_text: p.q || p.purchase_text || null,
               total_quantity: p.t ?? p.total_quantity ?? 0,
+              total_physical_units: p.f ?? p.total_physical_units,
+              physical_unit_name: p.u ?? p.physical_unit_name ?? null,
+              smallest_weight_grams: p.w ?? p.smallest_weight_grams,
+              total_in_smallest_units: p.s ?? p.total_in_smallest_units,
               unit_price: p.p ?? p.unit_price ?? 0,
               customer_breakdown: (p.c || p.customer_breakdown || []).map((c: any) => ({
                 customer_name: c.n || c.customer_name || 'Cliente',
@@ -481,17 +491,15 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       const fromDate = new Date(`${dateFrom}T00:00:00-05:00`).toISOString();
       const toDate = new Date(`${dateTo}T23:59:59-05:00`).toISOString();
 
+      const ordersQuery = supabase.from('orders').select('*');
+      const guestsQuery = supabase.from('guest_orders').select('*');
+      if (!routeDate) {
+        ordersQuery.gte('created_at', fromDate).lte('created_at', toDate);
+        guestsQuery.gte('created_at', fromDate).lte('created_at', toDate);
+      }
       const [ordersResult, guestsResult] = await Promise.all([
-        supabase
-          .from('orders')
-          .select('*')
-          .gte('created_at', fromDate)
-          .lte('created_at', toDate),
-        supabase
-          .from('guest_orders')
-          .select('*')
-          .gte('created_at', fromDate)
-          .lte('created_at', toDate),
+        ordersQuery,
+        guestsQuery,
       ]);
 
       if (ordersResult.error) {
@@ -504,8 +512,8 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       }
 
       const allOrders = [...(ordersResult.data || []), ...(guestsResult.data || [])].filter(
-        (o: any) => !['cancelled', 'cancelado'].includes(o.status || o.order_status || '')
-      );
+        (o: any) => isRouteEligible(o) || (!routeDate && !['cancelled', 'cancelado'].includes(o.status || o.order_status || ''))
+      ).filter((o: any) => !routeDate || (isRouteEligible(o) && deliveryDateOf(o) === routeDate));
 
       const items: ExportItem[] = [];
       allOrders.forEach(o => {
@@ -518,6 +526,8 @@ async function handleExport(request: NextRequest, isPost: boolean) {
 
       products = groupProducts(items);
     }
+
+    products = mergeExportProducts(products as ExportProduct[]);
 
     if (products.length === 0) {
       return NextResponse.json({ error: 'No hay productos en el rango seleccionado' }, { status: 400 });
