@@ -56,7 +56,7 @@ export function formatPurchaseQuantity(input: PurchaseQuantityInput): string {
   const weight = extractPurchaseWeight(variant) || input.smallestWeightGrams || null;
   const presentation = presentationFromPurchaseVariant(variant, input.productName);
   const physicalTotal = Number(input.totalPhysicalUnits ?? input.totalQuantity ?? 0);
-  const unit = presentation.unit || (input.physicalUnitName ? normalizePurchaseText(input.physicalUnitName) : null);
+  const unit = presentation.unit || (weight ? null : input.physicalUnitName ? normalizePurchaseText(input.physicalUnitName) : null);
   const count = input.totalPhysicalUnits !== undefined
     ? physicalTotal
     : Number(input.totalQuantity || 0) * (presentation.multiplier || 1);

@@ -6,6 +6,7 @@ describe('purchase-list quantity formatting', () => {
     expect(formatPurchaseQuantity({ productName: 'Ciruela nacional', variantName: '500 g', totalQuantity: 1 })).toBe('1 x 500 g');
     expect(formatPurchaseQuantity({ productName: 'Mango Comun', variantName: '500 g', totalQuantity: 1 })).toBe('1 x 500 g');
     expect(formatPurchaseQuantity({ productName: 'Banano criollo', variantName: '1 Kilo', totalQuantity: 1 })).toBe('1 kg');
+    expect(formatPurchaseQuantity({ productName: 'Banano criollo', variantName: '1 Kilo', totalQuantity: 1, physicalUnitName: 'kilo' })).toBe('1 kg');
     expect(formatPurchaseQuantity({ productName: 'Papaya', variantName: '2 kg', totalQuantity: 1 })).toBe('1 x 2 kg');
   });
 
