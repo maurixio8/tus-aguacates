@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
+import { normalizeOrderStatus } from '@/lib/orders/operational';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,10 +80,12 @@ export async function GET(request: NextRequest) {
       .slice(0, 5);
 
     // ==================== PEDIDOS PENDIENTES ====================
-    const { count: pendingCount, error: pendingError } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('order_status', 'pendiente');
+    const [{ data: pendingOrderStatuses }, { data: pendingGuestStatuses }] = await Promise.all([
+      supabase.from('orders').select('status, order_status'),
+      supabase.from('guest_orders').select('status, order_status'),
+    ]);
+    const pendingCount = [...(pendingOrderStatuses || []), ...(pendingGuestStatuses || [])]
+      .filter(order => normalizeOrderStatus(order.status || order.order_status) === 'pending').length;
 
     // ==================== ENTREGAS PENDIENTES (próximas) ====================
     const { data: pendingOrders, error: pendingOrdersError } = await supabase
