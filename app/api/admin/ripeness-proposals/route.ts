@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     .eq('context_model', 'shadow-reader-v2')
     .order('risk_level', { ascending: false })
     .order('last_seen_at', { ascending: false })
-    .limit(100);
+    .limit(1000);
   const [ordersResult, guestOrdersResult] = await Promise.all([
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
