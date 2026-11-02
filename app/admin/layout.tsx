@@ -22,7 +22,8 @@ import {
   Building2,
   ClipboardList,
   Truck,
-  ShieldCheck
+  ShieldCheck,
+  BellRing
 } from 'lucide-react';
 
 interface AdminUser {
@@ -127,6 +128,7 @@ export default function AdminLayout({
     { name: 'Slides', href: '/admin/promociones', icon: ImageIcon },
     { name: 'Banner Mensajes', href: '/admin/banner-mensajes', icon: MessageSquare },
     { name: 'Crear Pedido', href: '/admin/crear-pedido', icon: PlusCircle },
+    { name: 'Avisos de entrega', href: '/admin/avisos-entrega', icon: BellRing },
     { name: 'Reportes', href: '/admin/reportes', icon: BarChart3 },
   ];
 
