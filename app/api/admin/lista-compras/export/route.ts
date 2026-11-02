@@ -401,6 +401,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
     let format = 'pdf';
     let products: any[] = [];
     let productsProvided = false;
+    let prepareOnly = false;
     let combos: any[] = [];
 
     if (isPost) {
@@ -408,6 +409,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       dateFrom = String(formData.get('dateFrom') || '');
       dateTo = String(formData.get('dateTo') || '');
       routeDate = String(formData.get('routeDate') || '');
+      prepareOnly = String(formData.get('prepare') || '') === '1';
       format = String(formData.get('format') || 'pdf').toLowerCase();
       const productsRaw = formData.get('products');
       if (productsRaw) {
@@ -523,6 +525,17 @@ async function handleExport(request: NextRequest, isPost: boolean) {
 
     if (products.length === 0) {
       return NextResponse.json({ error: 'No hay productos en el rango seleccionado' }, { status: 400 });
+    }
+
+    if (prepareOnly) {
+      const query = new URLSearchParams({
+        format,
+        dateFrom,
+        dateTo,
+        ...(routeDate ? { routeDate } : {}),
+        download: '1',
+      });
+      return NextResponse.json({ downloadUrl: `/api/admin/lista-compras/export?${query.toString()}` });
     }
 
     const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
