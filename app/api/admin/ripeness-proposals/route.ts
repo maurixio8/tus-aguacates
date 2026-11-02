@@ -32,20 +32,58 @@ export async function GET(request: NextRequest) {
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
   ]);
-  const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
-    id: order.id,
-    order_number: order.order_number,
-    status: order.status || order.order_status || 'pending',
-    delivery_date: order.delivery_date || null,
-    phone: extractOrderPhone(order),
-    email: String(order.customer_email || '').trim().toLowerCase(),
-  }));
-  const attachRelatedOrders = (row: any) => {
-    const phone = normalizePhone(row.contact_phone);
-    const email = String(row.contact_email || '').trim().toLowerCase();
-    const matches = relatedOrders.filter(order => (phone && order.phone === phone) || (email && order.email === email));
-    return { ...row, related_orders: matches.slice(0, 10).map(({ phone: _phone, email: _email, ...safe }) => safe) };
-  };
+const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
+  id: order.id,
+  order_number: order.order_number,
+  status: order.status || order.order_status || 'pending',
+  delivery_date: order.delivery_date || null,
+  directPhone: normalizePhone(order.customer_phone || order.guest_phone),
+  fallbackPhone: extractOrderPhone(order),
+  email: String(order.customer_email || order.guest_email || '').trim().toLowerCase(),
+  created_at: order.created_at,
+}));
+
+const ORDER_WINDOW_MS = 60 * 24 * 60 * 60 * 1000;
+const extractExplicitOrderRefs = (row: any): string[] => {
+  const text = [row.incoming_text, row.luz_response, row.evidence, row.conversation_summary, row.order_state].filter(Boolean).join(' ');
+  const refs = new Set<string>();
+  for (const match of text.matchAll(/(?:INV-[A-Z0-9-]+|TA-\d{8}-[A-Z0-9.]+|[0-9a-f]{8}-[0-9a-f-]{27})/gi)) refs.add(match[0].toLowerCase());
+  return [...refs];
+};
+const extractTextPhones = (row: any): string[] => {
+  const text = [row.incoming_text, row.luz_response, row.evidence, row.conversation_summary, row.order_state].filter(Boolean).join(' ');
+  return [...new Set((text.match(/(?:\+?57)?3\d{9}/g) || []).map(normalizePhone))];
+};
+const attachRelatedOrders = (row: any) => {
+  const conversationPhone = normalizePhone(row.contact_phone);
+  const email = String(row.contact_email || '').trim().toLowerCase();
+  const explicitRefs = extractExplicitOrderRefs(row);
+  const textPhones = extractTextPhones(row).filter(phone => !conversationPhone || phone !== conversationPhone);
+  const eventDate = new Date(row.received_at || row.last_seen_at || row.created_at || 0).getTime();
+  const candidates: Array<any> = relatedOrders.flatMap((order: any) => {
+    const orderId = String(order.id || '').toLowerCase();
+    const orderNumber = String(order.order_number || '').toLowerCase();
+    const exactRef = explicitRefs.find(ref => ref === orderId || ref === orderNumber);
+    if (exactRef) return [{ ...order, match_strength: 'firm' as const, match_method: exactRef === orderId ? 'id de pedido exacto' : 'número de pedido exacto', match_reason: 'Identificador explícito en la conversación' }];
+    const orderDate = new Date(order.created_at || 0).getTime();
+    const inWindow = !eventDate || !orderDate || Math.abs(eventDate - orderDate) <= ORDER_WINDOW_MS;
+    const directPhone = Boolean(conversationPhone && order.directPhone === conversationPhone && inWindow);
+    const declaredPhone = Boolean(textPhones.length && textPhones.includes(order.directPhone || order.fallbackPhone || '') && inWindow);
+    const historicalPhone = Boolean(conversationPhone && order.fallbackPhone === conversationPhone && order.directPhone !== conversationPhone && inWindow);
+    const emailMatch = Boolean(email && order.email === email && inWindow);
+    if (directPhone) return [{ ...order, match_strength: 'candidate' as const, match_method: 'teléfono directo candidato', match_reason: 'Teléfono coincide; falta confirmar unicidad temporal' }];
+    if (declaredPhone) return [{ ...order, match_strength: 'candidate' as const, match_method: 'teléfono declarado en el texto', match_reason: 'El teléfono aparece dentro de la conversación, no como identidad del remitente' }];
+    if (historicalPhone) return [{ ...order, match_strength: 'candidate' as const, match_method: 'teléfono en dirección o dato histórico', match_reason: 'El teléfono no está en el campo directo del pedido' }];
+    if (emailMatch) return [{ ...order, match_strength: 'candidate' as const, match_method: 'correo candidato', match_reason: 'El correo no es llave firme del contrato' }];
+    return [];
+  });
+  const directFirmCandidates = candidates.filter(order => order.match_method === 'teléfono directo candidato');
+  const directPhoneIsUnique = directFirmCandidates.length === 1;
+  const safeMatches = candidates.map(order => directPhoneIsUnique && order.match_method === 'teléfono directo candidato'
+    ? { ...order, match_strength: 'firm' as const, match_method: 'teléfono exacto normalizado', match_reason: 'Único pedido candidato dentro de la ventana temporal de 60 días' }
+    : order);
+  return { ...row, related_orders: safeMatches.slice(0, 10).map(({ directPhone: _directPhone, fallbackPhone: _fallbackPhone, email: _email, created_at: _createdAt, ...safe }) => safe) };
+};
   const enrichedFindings = (findingsResult.data || []).map(attachRelatedOrders);
   const enrichedRecovery = (recoveryResult.data || []).map(attachRelatedOrders);
   const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
