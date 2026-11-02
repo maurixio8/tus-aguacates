@@ -3,6 +3,7 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
+import { formatPurchaseQuantity } from '@/lib/purchase-list-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -184,27 +185,16 @@ function mergeExportProducts(products: ExportProduct[]): ExportProduct[] {
 }
 
 function getQuantityLabel(p: ExportProduct): string {
-  const weight = weightFromVariant(p.variant_name) || p.smallest_weight_grams || null;
-  const presentation = presentationFromVariant(p.variant_name, p.product_name);
-  const physicalTotal = Number(p.total_physical_units ?? p.total_quantity ?? 0);
-  const unit = presentation.unit || (p.physical_unit_name ? normalizeText(p.physical_unit_name) : null);
-  const multiplier = presentation.multiplier || 1;
-  const count = p.total_physical_units !== undefined
-    ? physicalTotal
-    : Number(p.total_quantity || 0) * multiplier;
-
-  if (weight && unit) {
-    const plural = count === 1 ? unit : `${unit}s`;
-    return `${count} ${plural} de ${formatWeight(weight)}`;
-  }
-  if (weight) {
-    return count === 1 && weight === 1000 ? '1 kg' : `${count} x ${formatWeight(weight)}`;
-  }
-  if (unit) {
-    const plural = count === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
-    return `${count} ${plural}`;
-  }
-  return `${count} unidades`;
+  return formatPurchaseQuantity({
+    productName: p.product_name,
+    variantName: p.variant_name,
+    totalQuantity: p.total_quantity,
+    totalPhysicalUnits: p.total_physical_units,
+    physicalUnitName: p.physical_unit_name,
+    smallestWeightGrams: p.smallest_weight_grams,
+    totalInSmallestUnits: p.total_in_smallest_units,
+    totalWeightDisplay: null,
+  });
 }
 
 function getProductLabel(p: ExportProduct): string {

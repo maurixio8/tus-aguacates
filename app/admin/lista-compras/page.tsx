@@ -34,6 +34,7 @@ import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
 import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 import { nextDeliveryDate } from '@/lib/admin-route';
+import { formatPurchaseQuantity } from '@/lib/purchase-list-format';
 
 interface OrderItem {
   id: string;
@@ -1516,46 +1517,16 @@ const normalizeVariant = (variant: string | null): string => {
     return undefined;
   };
 
-  const getPurchaseQuantityText = (product: ProductGrouped): string => {
-    const physicalTotal = product.total_physical_units ?? product.total_quantity;
-    const variantText = (product.variant_name || '').trim();
-    const normalizedVariant = variantText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    const variantWeight = extractWeightFromVariant(variantText);
-    const presentationMatch = normalizedVariant.match(/^(\d+\s*)?(bandejas?|paquetes?|atados?|bolsas?|frascos?|cajas?|unidades?)$/);
-    if (variantWeight !== undefined) {
-      const presentation = presentationMatch?.[2]?.replace(/s$/, '') || null;
-      if (presentation) {
-        const unit = presentationMatch?.[2]?.startsWith('unidad') ? 'unidad' : presentation;
-        const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
-        return `${physicalTotal} ${plural} de ${formatWeight(variantWeight)}`;
-      }
-      return physicalTotal === 1 && variantWeight === 1000
-        ? '1 kg'
-        : `${physicalTotal} x ${formatWeight(variantWeight)}`;
-    }
-    if (presentationMatch) {
-      const unit = presentationMatch[2].replace(/s$/, '');
-      const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
-      return `${physicalTotal} ${plural}`;
-    }
-
-    const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
-    const pluralUnit = physicalTotal === 1 ? physicalUnit : ({
-      caja: 'cajas', paquete: 'paquetes', contenedor: 'contenedores', bandeja: 'bandejas',
-      malla: 'mallas', kilo: 'kilos', libra: 'libras', unidad: 'unidades'
-    } as Record<string, string>)[physicalUnit] || `${physicalUnit}s`;
-    const volumeMl = extractVolumeFromVariant(product.variant_name || null);
-    if (volumeMl) {
-      return `${physicalTotal} ${pluralUnit} de ${volumeMl} ml`;
-    }
-    if (product.smallest_weight_grams && product.total_in_smallest_units) {
-      return `${product.total_in_smallest_units} ${pluralUnit} de ${formatWeight(product.smallest_weight_grams)}`;
-    }
-    if (product.total_weight_display) {
-      return `${product.total_weight_display} (${physicalTotal} ${pluralUnit})`;
-    }
-    return `${physicalTotal} ${pluralUnit}`;
-  };
+  const getPurchaseQuantityText = (product: ProductGrouped): string => formatPurchaseQuantity({
+    productName: product.product_name,
+    variantName: product.variant_name,
+    totalQuantity: product.total_quantity,
+    totalPhysicalUnits: product.total_physical_units,
+    physicalUnitName: product.physical_unit_name,
+    smallestWeightGrams: product.smallest_weight_grams,
+    totalInSmallestUnits: product.total_in_smallest_units,
+    totalWeightDisplay: product.total_weight_display,
+  });
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
