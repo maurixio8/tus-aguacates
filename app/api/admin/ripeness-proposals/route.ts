@@ -27,7 +27,13 @@ export async function GET(request: NextRequest) {
     type === 'findings' || type === 'recovery' ? Promise.resolve({ data: [], error: null }) : supabase.from('ripeness_proposals').select('*').eq('approval_status','pending').order('created_at', { ascending: false }),
     supabase.from('whatsapp_human_handoffs').select('*').eq('status','active').order('updated_at', { ascending: false }),
   ]);
-  const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
+  const contextResult = await supabase
+    .from('whatsapp_audit_context')
+    .select('*')
+    .eq('context_model', 'shadow-reader-v2')
+    .order('risk_level', { ascending: false })
+    .order('last_seen_at', { ascending: false })
+    .limit(100);
   const [ordersResult, guestOrdersResult] = await Promise.all([
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
