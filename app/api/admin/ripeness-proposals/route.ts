@@ -34,6 +34,13 @@ export async function GET(request: NextRequest) {
     .order('risk_level', { ascending: false })
     .order('last_seen_at', { ascending: false })
     .limit(1000);
+  const contextHandoffResult = await supabase
+    .from('admin_activity_log')
+    .select('details,created_at')
+    .eq('entity_type', 'whatsapp_context_action')
+    .eq('action', 'whatsapp_context_reply_handoff')
+    .order('created_at', { ascending: false })
+    .limit(1000);
   const [ordersResult, guestOrdersResult] = await Promise.all([
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
@@ -92,9 +99,17 @@ const attachRelatedOrders = (row: any) => {
 };
   const enrichedFindings = (findingsResult.data || []).map(attachRelatedOrders);
   const enrichedRecovery = (recoveryResult.data || []).map(attachRelatedOrders);
-  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
+  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error || contextHandoffResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: contextResult.error ? [] : (contextResult.data || []) });
+  const decidedByConversation = new Map<string, { decided_at: string }>();
+  for (const row of contextHandoffResult.data || []) {
+    const key = String((row.details as any)?.element || '');
+    if (key && !decidedByConversation.has(key)) decidedByConversation.set(key, { decided_at: row.created_at });
+  }
+  const allContexts = contextResult.error ? [] : (contextResult.data || []);
+  const decidedContexts = allContexts.filter(context => decidedByConversation.has(context.conversation_key)).map(context => ({ conversation_key: context.conversation_key, customer_masked: context.customer_masked, decided_at: decidedByConversation.get(context.conversation_key)?.decided_at }));
+  const pendingContexts = allContexts.filter(context => !decidedByConversation.has(context.conversation_key));
+  return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: pendingContexts, decided_contexts: decidedContexts });
 }
 
 export async function PATCH(request: NextRequest) {
