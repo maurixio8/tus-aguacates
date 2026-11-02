@@ -34,7 +34,7 @@ import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
 import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 import { nextDeliveryDate } from '@/lib/admin-route';
-import { formatPurchaseQuantity } from '@/lib/purchase-list-format';
+import { formatPurchaseQuantity, canonicalPurchaseVariantKey } from '@/lib/purchase-list-format';
 
 interface OrderItem {
   id: string;
@@ -1840,7 +1840,7 @@ const normalizeVariant = (variant: string | null): string => {
             variantResolution.catalogDisplayName || productName,
             null
           );
-          const normalizedVariantKey = normalizeVariant(variantDisplay);
+          const normalizedVariantKey = canonicalPurchaseVariantKey(canonicalGroupingName, variantDisplay);
           const groupingKey = `canonical:${canonicalGroupingName}|${normalizedVariantKey || 'sin-variante'}`;
           const normalizedName = variantResolution.normalizedName;
 
