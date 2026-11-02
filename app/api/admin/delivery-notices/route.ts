@@ -51,6 +51,17 @@ function noContact(row: Record<string, unknown>, context: Record<string, unknown
   return /no (recibir|enviar|contactar)|no me escrib|no mensajes|no whatsapp/.test(haystack);
 }
 
+function maskPhone(phone: string | null): string {
+  if (!phone) return 'sin teléfono';
+  return `${phone.slice(0, 4)}••••${phone.slice(-2)}`;
+}
+
+function maskName(value: string): string {
+  const parts = value.split(/\s+/).filter(Boolean);
+  if (parts.length < 2) return `${value.slice(0, 2)}•••`;
+  return `${parts[0]} ${parts[1][0]}•••`;
+}
+
 function freeText(pinMissing: boolean): string {
   return `Hola. Tu pedido está programado para mañana entre las 2 y las 8 p. m. Por favor confirma que estarás disponible para recibirlo. ${pinMissing ? 'Si falta el pin de ubicación, responde con tu ubicación. ' : ''}Si deseas pagar por anticipado, indícalo; los comprobantes por foto los revisará una persona.`;
 }
@@ -87,8 +98,8 @@ function buildBatch(rows: Array<{ source: 'orders' | 'guest_orders'; row: Record
       source: item.source,
       order_id: row.id,
       order_number: row.order_number || row.id,
-      customer_name: customerName(row),
-      phone,
+      customer_name: maskName(customerName(row)),
+      phone: maskPhone(phone),
       address: deliveryAddress(row),
       delivery_date: targetDate,
       delivery_window: '2:00 p. m. – 8:00 p. m.',
