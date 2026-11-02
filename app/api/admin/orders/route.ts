@@ -8,6 +8,7 @@ import {
 import { normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
 import { extractCustomerDataFromShippingAddress } from '@/utils/addressFormatter';
 import { createdDateOf } from '@/lib/admin-route';
+import { matchesAdminOrderSearch } from '@/lib/admin-order-search';
 
 export const dynamic = 'force-dynamic';
 
@@ -184,6 +185,7 @@ export async function GET(request: NextRequest) {
     const paymentStatus = searchParams.get('payment_status') || '';
     const dateFrom = searchParams.get('dateFrom') || '';
     const dateTo = searchParams.get('dateTo') || '';
+    const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
@@ -517,6 +519,10 @@ export async function GET(request: NextRequest) {
       allOrders = allOrders.filter(
         order => order.payment_status === normalizePaymentStatus(paymentStatus)
       );
+    }
+
+    if (search) {
+      allOrders = allOrders.filter(order => matchesAdminOrderSearch(order, search));
     }
 
     // La pantalla Pedidos muestra la fecha de creación del pedido en Bogotá.

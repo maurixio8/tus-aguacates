@@ -3,6 +3,14 @@
 import { useEffect, useState } from 'react';
 import { TrendingUp, ShoppingBag, Clock, Package, DollarSign, Users, ChefHat } from 'lucide-react';
 
+interface OperationalQueue {
+  pending: number;
+  nextRoute: number;
+  withoutPin: number;
+  ambiguous: number;
+  outsideCoverage: number;
+}
+
 interface Metrics {
   today: {
     orders: number;
@@ -25,12 +33,30 @@ interface Metrics {
 
 export default function AdminDashboardPage() {
   const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [queue, setQueue] = useState<OperationalQueue>({ pending: 0, nextRoute: 0, withoutPin: 0, ambiguous: 0, outsideCoverage: 0 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     loadMetrics();
+    loadOperationalQueue();
   }, []);
+
+  const loadOperationalQueue = async () => {
+    try {
+      const response = await fetch('/api/admin/orders?status=pending&page=1&limit=100', { credentials: 'include', cache: 'no-store' });
+      const payload = await response.json();
+      if (!response.ok || !payload.success) return;
+      const orders: Array<{ delivery_date?: string | null; deliveryDate?: string | null; order_data?: { pin_confidence?: string | null; coverage_shadow?: { decision?: string | null } | null } | null }> = payload.orders || [];
+      const nextRoute = orders.filter(order => Boolean(order.delivery_date || order.deliveryDate)).length;
+      const withoutPin = orders.filter(order => !order.order_data?.pin_confidence || order.order_data.pin_confidence === 'sin_pin').length;
+      const ambiguous = orders.filter(order => order.order_data?.coverage_shadow?.decision === 'confirmar').length;
+      const outsideCoverage = orders.filter(order => order.order_data?.coverage_shadow?.decision === 'fuera' || order.order_data?.coverage_shadow?.decision === 'outside').length;
+      setQueue({ pending: orders.length, nextRoute, withoutPin, ambiguous, outsideCoverage });
+    } catch (error) {
+      console.error('Error cargando cola operativa:', error);
+    }
+  };
 
   const loadMetrics = async () => {
     try {
@@ -151,6 +177,31 @@ export default function AdminDashboardPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Cola operativa */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Cola operativa</h2>
+            <p className="text-sm text-gray-500">Lo que requiere revisión antes de vender o despachar</p>
+          </div>
+          <a href="/admin/pedidos?status=pending" className="text-sm font-medium text-green-700 hover:text-green-800">Abrir pendientes</a>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            ['Pendientes', queue.pending, 'text-yellow-700', 'bg-yellow-50'],
+            ['Programados', queue.nextRoute, 'text-blue-700', 'bg-blue-50'],
+            ['Sin pin', queue.withoutPin, 'text-orange-700', 'bg-orange-50'],
+            ['Por confirmar', queue.ambiguous, 'text-purple-700', 'bg-purple-50'],
+            ['Fuera de cobertura', queue.outsideCoverage, 'text-red-700', 'bg-red-50'],
+          ].map(([label, value, text, bg]) => (
+            <div key={label as string} className={`rounded-lg border border-gray-100 p-3 ${bg}`}>
+              <p className={`text-xs font-medium ${text}`}>{label}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Grid de contenido */}

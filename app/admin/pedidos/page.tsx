@@ -215,6 +215,7 @@ export default function OrdersPage() {
   const [dateTo, setDateTo] = useState('');
   const [quickFilter, setQuickFilter] = useState<string>('');
   const [customerDataFilter, setCustomerDataFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const ordersRequestRef = useRef<{ id: number; controller: AbortController | null }>({ id: 0, controller: null });
   const [pagination, setPagination] = useState<Pagination>({
     page: 1,
@@ -684,7 +685,7 @@ export default function OrdersPage() {
 
   useEffect(() => {
     loadOrders();
-  }, [status, paymentStatusFilter, dateFrom, dateTo, pagination.page]);
+  }, [status, paymentStatusFilter, dateFrom, dateTo, searchQuery, pagination.page]);
 
   useEffect(() => {
     loadOrderStats();
@@ -740,6 +741,7 @@ export default function OrdersPage() {
       if (paymentStatusFilter) params.set('payment_status', paymentStatusFilter);
       if (dateFrom) params.set('dateFrom', dateFrom);
       if (dateTo) params.set('dateTo', dateTo);
+      if (searchQuery.trim()) params.set('search', searchQuery.trim());
 
       const response = await fetch(`/api/admin/orders?${params}`, {
         credentials: 'include',
@@ -1254,7 +1256,21 @@ export default function OrdersPage() {
         </div>
 
         {/* Filtros Tradicionales */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+          {/* Búsqueda global */}
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Buscar pedido o cliente</label>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setPagination(prev => ({ ...prev, page: 1 }));
+              }}
+              placeholder="Nombre, teléfono, correo, dirección o número"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+            />
+          </div>
           {/* Estado */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>

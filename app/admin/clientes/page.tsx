@@ -85,6 +85,7 @@ interface CustomerStats {
   fromCustomers: number;
   fromProfiles: number;
   fromGuestOrders: number;
+  duplicateGroups: number;
 }
 
 export default function CustomersPage() {
@@ -124,8 +125,8 @@ export default function CustomersPage() {
     bronze: 0,
     fromCustomers: 0,
     fromProfiles: 0,
-    fromGuestOrders: 0
-  });
+    fromGuestOrders: 0,
+    duplicateGroups: 0  });
 
   // Ref para scroll a la tabla
   const tableRef = useRef<HTMLDivElement>(null);
@@ -324,7 +325,8 @@ export default function CustomersPage() {
           bronze,
           fromCustomers,
           fromProfiles,
-          fromGuestOrders
+          fromGuestOrders,
+          duplicateGroups: Array.isArray(data.duplicateGroups) ? data.duplicateGroups.length : 0
         });
       }
     } catch (error) {
@@ -853,6 +855,9 @@ export default function CustomersPage() {
           </span>
           <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full">
             Pedidos Invitados: {stats.fromGuestOrders}
+          </span>
+          <span className="px-2 py-0.5 bg-red-100 text-red-700 rounded-full">
+            Grupos duplicados: {stats.duplicateGroups}
           </span>
         </div>
       </div>
