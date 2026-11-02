@@ -104,6 +104,34 @@ export async function PATCH(request: NextRequest) {
   const action = body.action;
   const adminName = auth.user?.name || auth.user?.email || 'admin';
   const supabase = createSupabaseClient();
+  if (action === 'context-reply-simulation') {
+    const conversationKey = String(body.conversationKey || '').trim();
+    const replyAction = ['send', 'edit_send', 'discard'].includes(String(body.replyAction)) ? String(body.replyAction) : '';
+    const originalText = String(body.originalText || '');
+    const finalText = String(body.finalText || '');
+    if (!conversationKey || !replyAction) return NextResponse.json({ error: 'Falta conversación o acción de respuesta' }, { status: 400 });
+    if (replyAction !== 'discard' && !finalText.trim()) return NextResponse.json({ error: 'La respuesta final no puede estar vacía' }, { status: 400 });
+    const details = {
+      element: conversationKey,
+      action: replyAction === 'discard' ? 'descartar_respuesta_sugerida' : replyAction === 'edit_send' ? 'editar_y_enviar_respuesta_sugerida' : 'enviar_respuesta_sugerida',
+      actor: adminName,
+      scope: 'conversation',
+      mode: 'simulation',
+      experimental: true,
+      original_text: originalText,
+      final_text: finalText,
+      result: replyAction === 'discard' ? 'discarded_in_simulation' : 'would_send_in_simulation',
+      sending_enabled: false,
+      ycloud_called: false,
+      conversation_registration: 'simulation_only_no_buffer_mutation',
+      automation_pause: 'not_applied_in_simulation',
+    };
+    const { data: decision, error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'whatsapp_context_reply_simulation', entity_type: 'whatsapp_context_action', entity_id: null, details }).select('*').single();
+    if (error) return NextResponse.json({ error: 'No se pudo registrar la acción simulada', details: error.message }, { status: 500 });
+    const { data: readback, error: readbackError } = await supabase.from('admin_activity_log').select('*').eq('id', decision.id).single();
+    if (readbackError || !readback) return NextResponse.json({ error: 'La acción no pudo leerse de vuelta' }, { status: 500 });
+    return NextResponse.json({ success: true, simulation: true, decision: readback });
+  }
   if (action === 'take-handoff' || action === 'resume-handoff') {
     const identityKey = String(body.identityKey || body.phone || '').trim();
     if (!identityKey) return NextResponse.json({ error: 'Falta identityKey o teléfono reconciliado' }, { status: 400 });

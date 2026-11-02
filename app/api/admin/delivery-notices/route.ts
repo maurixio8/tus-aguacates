@@ -87,7 +87,6 @@ function nextDayBogota(): string {
 
 function buildBatch(rows: Array<{ source: 'orders' | 'guest_orders'; row: Record<string, any> }>, contexts: Record<string, Record<string, any>>, handoffs: Set<string>, targetDate: string) {
   const records: any[] = [];
-  let guestOrderNumber = 1;
   for (const item of rows) {
     const row = item.row;
     if (deliveryDateOf(row) !== targetDate) continue;
@@ -107,7 +106,7 @@ function buildBatch(rows: Array<{ source: 'orders' | 'guest_orders'; row: Record
     records.push({
       source: item.source,
       order_id: row.id,
-      order_number: row.order_number || (item.source === 'guest_orders' ? `Pedido invitado #${guestOrderNumber++}` : 'Pedido sin número'),
+      order_number: row.order_number || (item.source === 'guest_orders' ? `INV-${String(row.id).slice(-8).toUpperCase()}` : 'Pedido sin número'),
       customer_name: maskName(customerName(row)),
       phone: maskPhone(phone),
       address: deliveryAddress(row),
