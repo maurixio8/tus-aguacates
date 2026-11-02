@@ -73,5 +73,5 @@ export function formatPurchaseQuantity(input: PurchaseQuantityInput): string {
     return `${count} ${plural}`;
   }
   if (input.totalWeightDisplay) return `${input.totalWeightDisplay} (${physicalTotal} unidades)`;
-  return `${count} unidades`;
+  return `${count} ${count === 1 ? 'unidad' : 'unidades'}`;
 }

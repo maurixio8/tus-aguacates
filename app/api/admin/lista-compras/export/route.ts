@@ -400,6 +400,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
     let routeDate = '';
     let format = 'pdf';
     let products: any[] = [];
+    let productsProvided = false;
     let combos: any[] = [];
 
     if (isPost) {
@@ -412,6 +413,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       if (productsRaw) {
         try {
           products = JSON.parse(String(productsRaw));
+          productsProvided = Array.isArray(products) && products.length > 0;
         } catch (e) {
           return NextResponse.json({ error: 'Datos de productos inválidos' }, { status: 400 });
         }
@@ -517,7 +519,7 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       products = groupProducts(items);
     }
 
-    products = mergeExportProducts(products as ExportProduct[]);
+    products = productsProvided ? products as ExportProduct[] : mergeExportProducts(products as ExportProduct[]);
 
     if (products.length === 0) {
       return NextResponse.json({ error: 'No hay productos en el rango seleccionado' }, { status: 400 });

@@ -2410,6 +2410,15 @@ const normalizeVariant = (variant: string | null): string => {
       dateFrom,
       dateTo,
       routeDate: routeDate || '',
+      products: JSON.stringify(groupedProducts.map(product => ({
+        product_name: product.product_name,
+        variant_name: product.variant_name || null,
+        total_quantity: product.total_quantity,
+        total_physical_units: product.total_physical_units,
+        physical_unit_name: product.physical_unit_name || null,
+        smallest_weight_grams: product.smallest_weight_grams || null,
+        total_in_smallest_units: product.total_in_smallest_units || null,
+      }))),
     };
     Object.entries(fields).forEach(([name, value]) => {
       const input = document.createElement('input');
