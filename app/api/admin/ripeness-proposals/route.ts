@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 
+const normalizePhone = (value: unknown): string => {
+  const digits = String(value || '').replace(/\D/g, '');
+  return digits.startsWith('57') ? digits.slice(-10) : digits.slice(-10);
+};
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -15,9 +20,29 @@ export async function GET(request: NextRequest) {
     supabase.from('whatsapp_human_handoffs').select('*').eq('status','active').order('updated_at', { ascending: false }),
   ]);
   const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
+  const [ordersResult, guestOrdersResult] = await Promise.all([
+    supabase.from('orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,delivery_date,created_at').limit(5000),
+    supabase.from('guest_orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,delivery_date,created_at').limit(5000),
+  ]);
+  const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
+    id: order.id,
+    order_number: order.order_number,
+    status: order.status || order.order_status || 'pending',
+    delivery_date: order.delivery_date || null,
+    phone: normalizePhone(order.customer_phone),
+    email: String(order.customer_email || '').trim().toLowerCase(),
+  }));
+  const attachRelatedOrders = (row: any) => {
+    const phone = normalizePhone(row.contact_phone);
+    const email = String(row.contact_email || '').trim().toLowerCase();
+    const matches = relatedOrders.filter(order => (phone && order.phone === phone) || (email && order.email === email));
+    return { ...row, related_orders: matches.slice(0, 10).map(({ phone: _phone, email: _email, ...safe }) => safe) };
+  };
+  const enrichedFindings = (findingsResult.data || []).map(attachRelatedOrders);
+  const enrichedRecovery = (recoveryResult.data || []).map(attachRelatedOrders);
   const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: contextResult.error ? [] : (contextResult.data || []) });
+  return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: contextResult.error ? [] : (contextResult.data || []) });
 }
 
 export async function PATCH(request: NextRequest) {
