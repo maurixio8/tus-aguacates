@@ -1,80 +1,30 @@
 /**
- * API Route: Bold Webhook Handler
+ * Canonical Bold webhook receiver.
  *
- * Recibe notificaciones de Bold sobre el estado de las transacciones.
- * Configurar en: Panel Bold → Integraciones → Webhooks
- * URL: https://tus-aguacates.vercel.app/api/webhooks/bold
+ * Official URL:
+ * https://www.tusaguacates.com/api/webhooks/bold
+ *
+ * Bold is the only upstream for this route. n8n is intentionally not called
+ * from here; payment state and the event ledger live in Supabase.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createHmac, timingSafeEqual } from 'crypto';
 
-/**
- * Verify webhook signature from Bold
- * Bold signs webhooks using HMAC-SHA256
- */
-function verifyWebhookSignature(payload: string, signature?: string): boolean {
-    const signingSecret = process.env.BOLD_SIGNING_SECRET;
-
-    if (!signingSecret) {
-        console.warn('[Bold Webhook] ⚠️ BOLD_SIGNING_SECRET not configured - skipping signature verification');
-        return false;
-    }
-
-    if (!signature) {
-        console.warn('[Bold Webhook] ⚠️ No signature header found');
-        return false;
-    }
-
-    try {
-        const hmac = createHmac('sha256', signingSecret);
-        hmac.update(payload);
-        const expectedSignature = hmac.digest('hex');
-
-        if (signature.length !== expectedSignature.length) {
-            return false;
-        }
-
-        const isValid = timingSafeEqual(
-            Buffer.from(signature),
-            Buffer.from(expectedSignature)
-        );
-
-        if (!isValid) {
-            console.error('[Bold Webhook] ❌ Invalid signature', {
-                received: signature.substring(0, 20) + '...',
-                expected: expectedSignature.substring(0, 20) + '...'
-            });
-        }
-
-        return isValid;
-    } catch (error) {
-        console.error('[Bold Webhook] ❌ Error verifying signature:', error);
-        return false;
-    }
-}
-
-// Cliente de Supabase con service role para operaciones del servidor
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 interface BoldWebhookPayload {
-    event_type: 'payment.approved' | 'payment.rejected' | 'void.approved' | 'void.rejected';
-    event_id: string;
-    timestamp: string;
-    payment: {
-        transaction_id: string;
-        payment_link_id?: string;
-        order_id: string;
-        amount_in_cents: number;
-        payment_method: string;
-        status: string;
-        card_last_four?: string;
-        card_brand?: string;
-        transaction_date: string;
+    event_type?: string;
+    event_id?: string;
+    timestamp?: string;
+    payment?: {
+        transaction_id?: string;
+        order_id?: string;
+        payment_method?: string;
+        transaction_date?: string;
     };
     customer?: {
         email?: string;
@@ -83,208 +33,280 @@ interface BoldWebhookPayload {
     };
 }
 
-export async function POST(request: NextRequest) {
+type EventStatus = 'received' | 'processed' | 'duplicate' | 'rejected_signature' | 'invalid_payload' | 'order_not_found' | 'update_error';
+
+function verifyWebhookSignature(payload: string, signature?: string): boolean {
+    const signingSecret = process.env.BOLD_SIGNING_SECRET;
+    if (!signingSecret || !signature) return false;
+
     try {
-        // Get raw body for signature verification
-        const rawBody = await request.text();
-        const payload: BoldWebhookPayload = JSON.parse(rawBody);
-
-        // Get signature from header (Bold uses x-signature or similar)
-        const signature = request.headers.get('x-signature') || request.headers.get('x-bold-signature') || request.headers.get('bold-signature');
-
-        // Verify webhook signature
-        if (!verifyWebhookSignature(rawBody, signature ?? undefined)) {
-            console.error('[Bold Webhook] ❌ Signature verification failed');
-            return NextResponse.json(
-                { error: 'Invalid signature' },
-                { status: 401 }
-            );
-        }
-
-        console.log('[Bold Webhook] ✅ Signature verified');
-        console.log('[Bold Webhook] Received event:', payload.event_type, payload.event_id);
-        console.log('[Bold Webhook] Order ID:', payload.payment.order_id);
-
-        const { event_type, payment } = payload;
-        const orderId = payment.order_id;
-
-        // Determinar el nuevo estado según el evento
-        let newStatus: string;
-        let paymentStatus: string;
-        let paidAt: string | null = null;
-
-        switch (event_type) {
-            case 'payment.approved':
-                newStatus = 'pagado';
-                paymentStatus = 'pagado';
-                paidAt = new Date().toISOString();
-                console.log('[Bold Webhook] Payment APPROVED for order:', orderId);
-                break;
-
-            case 'payment.rejected':
-                newStatus = 'pago_fallido';
-                paymentStatus = 'fallido';
-                console.log('[Bold Webhook] Payment REJECTED for order:', orderId);
-                break;
-
-            case 'void.approved':
-                newStatus = 'reembolsado';
-                paymentStatus = 'reembolsado';
-                console.log('[Bold Webhook] Void APPROVED for order:', orderId);
-                break;
-
-            case 'void.rejected':
-                // No cambiar el estado si la anulación fue rechazada
-                console.log('[Bold Webhook] Void REJECTED for order:', orderId);
-                return NextResponse.json({ received: true, message: 'Void rejected, no action taken' });
-
-            default:
-                console.log('[Bold Webhook] Unknown event type:', event_type);
-                return NextResponse.json({ received: true, message: 'Unknown event type' });
-        }
-
-        // Actualizar el pedido en guest_orders
-        const { error: guestError } = await supabase
-            .from('guest_orders')
-            .update({
-                status: newStatus,
-                payment_status: paymentStatus,
-                payment_method: 'bold',
-                paid_at: paidAt,
-                bold_transaction_id: payment.transaction_id,
-                bold_payment_method: payment.payment_method,
-                updated_at: new Date().toISOString(),
-            })
-            .eq('id', orderId);
-
-        if (guestError) {
-            console.error('[Bold Webhook] Error updating guest_orders:', guestError);
-
-            // Intentar buscar en orders (pedidos de usuarios autenticados)
-            const { error: orderError } = await supabase
-                .from('orders')
-                .update({
-                    status: newStatus,
-                    payment_status: paymentStatus,
-                    payment_method: 'bold',
-                    paid_at: paidAt,
-                    bold_transaction_id: payment.transaction_id,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq('id', orderId);
-
-            if (orderError) {
-                console.error('[Bold Webhook] Error updating orders:', orderError);
-                // Aún respondemos 200 para que Bold no reintente
-            }
-        }
-
-        console.log('[Bold Webhook] Successfully processed event for order:', orderId);
-
-        // =====================================================
-        // 🚀 NOTIFICAR A N8N PARA WHATSAPP
-        // =====================================================
-        // Enviamos la notificación a n8n solo si el pago fue aprobado
-        if (event_type === 'payment.approved') {
-            const n8nWebhookUrl = process.env.N8N_PAGO_BOLD_WEBHOOK_URL;
-            
-            if (n8nWebhookUrl) {
-                try {
-                    // FIX 2026-05-07: Obtener el pedido COMPLETO de Supabase ANTES de enviar a n8n
-                    // Antes solo se enviaban payment + customer, causando resúmenes vacíos
-                    const { data: fullOrder, error: orderFetchError } = await supabase
-                        .from('guest_orders')
-                        .select('*')
-                        .eq('id', orderId)
-                        .single();
-                    
-                    let orderDataForN8N: any = {
-                        event_type: payload.event_type,
-                        event_id: payload.event_id,
-                        timestamp: payload.timestamp,
-                        payment: {
-                            transaction_id: payment.transaction_id,
-                            order_id: orderId,
-                            amount_in_cents: payment.amount_in_cents,
-                            amount: payment.amount_in_cents / 100,
-                            payment_method: payment.payment_method,
-                            status: payment.status,
-                            card_last_four: payment.card_last_four,
-                            card_brand: payment.card_brand,
-                        },
-                        customer: payload.customer
-                    };
-                    
-                    // Si encontramos el pedido completo, agregar todos los datos para el resumen
-                    if (fullOrder && !orderFetchError) {
-                        orderDataForN8N = {
-                            ...orderDataForN8N,
-                            // Datos completos del pedido para generar resumen
-                            order_number: fullOrder.order_number || fullOrder.id,
-                            customer_name: fullOrder.guest_name || payload.customer?.name || '',
-                            customer_phone: fullOrder.guest_phone || payload.customer?.phone || '',
-                            customer_email: fullOrder.guest_email || payload.customer?.email || '',
-                            shipping_address: fullOrder.shipping_address,
-                            delivery_address: fullOrder.delivery_address,
-                            delivery_date: fullOrder.delivery_date,
-                            delivery_notes: fullOrder.delivery_notes,
-                            order_data: fullOrder.order_data,
-                            items: fullOrder.order_data?.items || [],
-                            subtotal: fullOrder.subtotal,
-                            total: fullOrder.total_amount || fullOrder.total,
-                            shipping_cost: fullOrder.shipping_cost,
-                            discount: fullOrder.discount,
-                            status: newStatus,
-                            payment_status: paymentStatus,
-                        };
-                        console.log('[Bold Webhook] 📦 Datos completos del pedido obtenidos para n8n:', {
-                            orderId,
-                            hasItems: (fullOrder.order_data?.items?.length || 0) > 0,
-                            itemsCount: fullOrder.order_data?.items?.length || 0,
-                            customerName: orderDataForN8N.customer_name,
-                        });
-                    } else {
-                        console.error('[Bold Webhook] ⚠️ No se pudo obtener el pedido completo de Supabase:', orderFetchError);
-                    }
-                    
-                    await fetch(n8nWebhookUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(orderDataForN8N)
-                    });
-                    console.log('[Bold Webhook] ✅ Notificación enviada a n8n con datos completos del pedido');
-                } catch (n8nError) {
-                    console.error('[Bold Webhook] ⚠️ Error enviando a n8n:', n8nError);
-                }
-            } else {
-                console.warn('[Bold Webhook] ⚠️ N8N_PAGO_BOLD_WEBHOOK_URL no configurada - saltando notificación');
-            }
-        }
-
-        return NextResponse.json({
-            received: true,
-            event_id: payload.event_id,
-            order_id: orderId,
-            status: newStatus,
-        });
-
-    } catch (error) {
-        console.error('[Bold Webhook] Error processing webhook:', error);
-
-        // Respondemos 200 para evitar reintentos innecesarios
-        // Los errores se loguean para debugging
-        return NextResponse.json({
-            received: true,
-            error: 'Internal processing error',
-        });
+        const expected = createHmac('sha256', signingSecret).update(payload).digest('hex');
+        if (signature.length !== expected.length) return false;
+        return timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+    } catch {
+        return false;
     }
 }
 
-// Bold puede hacer una petición GET para verificar el endpoint
-export async function GET(request: NextRequest) {
+function asTimestamp(value?: string): string | null {
+    if (!value) return null;
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+}
+
+function errorText(error: unknown): string {
+    if (!error) return '';
+    if (typeof error === 'string') return error;
+    if (typeof error === 'object' && error !== null && 'message' in error) {
+        return String((error as { message?: unknown }).message || error);
+    }
+    return String(error);
+}
+
+async function writeAuditEvent(input: {
+    eventId: string | null;
+    transactionId: string | null;
+    eventType: string;
+    orderId: string | null;
+    timestamp: string | null;
+    signatureValid: boolean;
+    status: EventStatus;
+    payload: unknown;
+    errorMessage?: string | null;
+}) {
+    return supabase.from('bold_payment_events').insert({
+        event_id: input.eventId,
+        transaction_id: input.transactionId,
+        event_type: input.eventType,
+        order_id: input.orderId,
+        event_timestamp: input.timestamp,
+        signature_valid: input.signatureValid,
+        processing_status: input.status,
+        payload: input.payload,
+        error_message: input.errorMessage || null,
+    }).select('id').single();
+}
+
+async function findExistingEvent(eventId: string | null, transactionId: string | null) {
+    if (eventId) {
+        const result = await supabase
+            .from('bold_payment_events')
+            .select('id, processing_status, order_id')
+            .eq('event_id', eventId)
+            .limit(1)
+            .maybeSingle();
+        if (result.data || result.error) return result;
+    }
+
+    if (transactionId) {
+        return supabase
+            .from('bold_payment_events')
+            .select('id, processing_status, order_id')
+            .eq('transaction_id', transactionId)
+            .limit(1)
+            .maybeSingle();
+    }
+
+    return { data: null, error: null };
+}
+
+async function updateAuditEvent(id: string, patch: Record<string, unknown>) {
+    const result = await supabase
+        .from('bold_payment_events')
+        .update({ ...patch, processed_at: new Date().toISOString() })
+        .eq('id', id);
+    if (result.error) console.error('[Bold Webhook] Failed to update audit row:', result.error);
+}
+
+export async function POST(request: NextRequest) {
+    const rawBody = await request.text();
+    let payload: BoldWebhookPayload;
+
+    try {
+        payload = JSON.parse(rawBody) as BoldWebhookPayload;
+    } catch {
+        await writeAuditEvent({
+            eventId: null,
+            transactionId: null,
+            eventType: 'invalid_payload',
+            orderId: null,
+            timestamp: null,
+            signatureValid: false,
+            status: 'invalid_payload',
+            payload: { raw_body: rawBody.slice(0, 10000) },
+            errorMessage: 'Invalid JSON payload',
+        });
+        return NextResponse.json({ received: false, error: 'Invalid JSON payload' }, { status: 400 });
+    }
+
+    const eventId = payload.event_id ? String(payload.event_id) : null;
+    const transactionId = payload.payment?.transaction_id ? String(payload.payment.transaction_id) : null;
+    const orderId = payload.payment?.order_id ? String(payload.payment.order_id) : null;
+    const eventType = payload.event_type ? String(payload.event_type) : 'unknown';
+    const eventTimestamp = asTimestamp(payload.timestamp || payload.payment?.transaction_date);
+    const signature = request.headers.get('x-signature')
+        || request.headers.get('x-bold-signature')
+        || request.headers.get('bold-signature')
+        || undefined;
+    const signatureValid = verifyWebhookSignature(rawBody, signature);
+
+    if (!signatureValid) {
+        await writeAuditEvent({
+            eventId,
+            transactionId,
+            eventType,
+            orderId,
+            timestamp: eventTimestamp,
+            signatureValid: false,
+            status: 'rejected_signature',
+            payload,
+            errorMessage: 'Invalid or missing Bold signature',
+        });
+        return NextResponse.json({ received: false, error: 'Invalid signature' }, { status: 401 });
+    }
+
+    if (!eventId && !transactionId) {
+        await writeAuditEvent({
+            eventId: null,
+            transactionId: null,
+            eventType,
+            orderId,
+            timestamp: eventTimestamp,
+            signatureValid: true,
+            status: 'invalid_payload',
+            payload,
+            errorMessage: 'Bold event_id or payment.transaction_id is required for idempotency',
+        });
+        return NextResponse.json({ received: false, error: 'Missing event_id or transaction_id' }, { status: 400 });
+    }
+
+    const existing = await findExistingEvent(eventId, transactionId);
+    if (existing.error) {
+        console.error('[Bold Webhook] Idempotency lookup failed:', existing.error);
+        return NextResponse.json({ received: false, error: 'Idempotency lookup failed' }, { status: 503 });
+    }
+    if (existing.data) {
+        return NextResponse.json({
+            received: true,
+            duplicate: true,
+            event_id: eventId,
+            transaction_id: transactionId,
+            existing_event_id: existing.data.id,
+            processing_status: existing.data.processing_status,
+        });
+    }
+
+    const inserted = await writeAuditEvent({
+        eventId,
+        transactionId,
+        eventType,
+        orderId,
+        timestamp: eventTimestamp,
+        signatureValid: true,
+        status: 'received',
+        payload,
+    });
+
+    if (inserted.error || !inserted.data) {
+        const raced = await findExistingEvent(eventId, transactionId);
+        if (!raced.error && raced.data) {
+            return NextResponse.json({
+                received: true,
+                duplicate: true,
+                event_id: eventId,
+                transaction_id: transactionId,
+                existing_event_id: raced.data.id,
+                processing_status: raced.data.processing_status,
+            });
+        }
+        console.error('[Bold Webhook] Could not persist audit event:', inserted.error);
+        return NextResponse.json({ received: false, error: 'Could not persist event' }, { status: 503 });
+    }
+
+    const auditId = inserted.data.id;
+    const paymentStatus = eventType === 'payment.approved'
+        ? 'pagado'
+        : eventType === 'payment.rejected'
+            ? 'fallido'
+            : eventType === 'void.approved'
+                ? 'reembolsado'
+                : null;
+
+    if (!paymentStatus || !orderId) {
+        await updateAuditEvent(auditId, {
+            processing_status: 'processed',
+            error_message: !paymentStatus ? `Ignored event type: ${eventType}` : 'Missing payment.order_id',
+        });
+        return NextResponse.json({ received: true, event_id: eventId, ignored: true });
+    }
+
+    const now = new Date().toISOString();
+    const paidAt = eventType === 'payment.approved' ? now : null;
+    const commonUpdate = {
+        payment_status: paymentStatus,
+        payment_method: 'bold',
+        paid_at: paidAt,
+        bold_transaction_id: transactionId,
+        bold_payment_method: payload.payment?.payment_method || null,
+        updated_at: now,
+    };
+
+    // These updates are deliberately independent. A zero-row guest update must
+    // not prevent the registered-order update, and vice versa.
+    const guestResult = await supabase
+        .from('guest_orders')
+        .update({ status: paymentStatus === 'pagado' ? 'pagado' : paymentStatus, ...commonUpdate })
+        .eq('id', orderId)
+        .select('id');
+
+    const ordersResult = await supabase
+        .from('orders')
+        .update({ status: paymentStatus === 'pagado' ? 'pagado' : paymentStatus, ...commonUpdate })
+        .eq('id', orderId)
+        .select('id');
+
+    const guestRows = guestResult.error ? 0 : (guestResult.data?.length || 0);
+    const orderRows = ordersResult.error ? 0 : (ordersResult.data?.length || 0);
+    const matchedTables = [
+        ...(guestRows > 0 ? ['guest_orders'] : []),
+        ...(orderRows > 0 ? ['orders'] : []),
+    ];
+    const errors = [
+        guestResult.error ? `guest_orders: ${errorText(guestResult.error)}` : '',
+        ordersResult.error ? `orders: ${errorText(ordersResult.error)}` : '',
+    ].filter(Boolean);
+
+    let processingStatus: EventStatus = 'processed';
+    if (matchedTables.length === 0) processingStatus = 'order_not_found';
+    else if (errors.length > 0) processingStatus = 'update_error';
+
+    await updateAuditEvent(auditId, {
+        processing_status: processingStatus,
+        guest_rows_updated: guestRows,
+        order_rows_updated: orderRows,
+        matched_tables: matchedTables,
+        error_message: errors.length ? errors.join(' | ') : null,
+    });
+
+    return NextResponse.json({
+        received: true,
+        event_id: eventId,
+        transaction_id: transactionId,
+        order_id: orderId,
+        payment_status: paymentStatus,
+        guest_orders_updated: guestRows,
+        orders_updated: orderRows,
+        matched_tables: matchedTables,
+        processing_status: processingStatus,
+    });
+}
+
+export async function GET() {
     return NextResponse.json({
         status: 'ok',
         service: 'Bold Webhook Handler',
+        receiver: 'vercel-canonical',
+        url: 'https://www.tusaguacates.com/api/webhooks/bold',
         timestamp: new Date().toISOString(),
     });
 }
