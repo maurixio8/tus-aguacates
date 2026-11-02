@@ -10,6 +10,15 @@ const TEMPLATE_LANGUAGE = 'es_CO';
 const TEMPLATE_STATUS = 'PENDING';
 const EXPERIMENTAL = true;
 
+function templatePreview(): string {
+  return 'Tu pedido está programado para mañana entre las 2:00 y las 8:00 p. m. Confirma que estarás disponible. Si falta el pin de ubicación, responde con tu ubicación. Puedes pedir pago anticipado; los comprobantes por foto los revisará una persona.';
+}
+
+function batchDateLabel(targetDate: string): string {
+  const date = new Date(`${targetDate}T12:00:00-05:00`);
+  return new Intl.DateTimeFormat('es-CO', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'America/Bogota' }).format(date);
+}
+
 function parseOrderData(row: Record<string, unknown>): Record<string, any> {
   const value = row.order_data;
   if (!value) return {};
@@ -97,7 +106,7 @@ function buildBatch(rows: Array<{ source: 'orders' | 'guest_orders'; row: Record
     records.push({
       source: item.source,
       order_id: row.id,
-      order_number: row.order_number || row.id,
+      order_number: row.order_number || 'Pedido invitado',
       customer_name: maskName(customerName(row)),
       phone: maskPhone(phone),
       address: deliveryAddress(row),
@@ -108,7 +117,7 @@ function buildBatch(rows: Array<{ source: 'orders' | 'guest_orders'; row: Record
       template_name: channel === 'template' ? TEMPLATE_NAME : null,
       template_language: channel === 'template' ? TEMPLATE_LANGUAGE : null,
       template_status: channel === 'template' ? TEMPLATE_STATUS : null,
-      draft_text: channel === 'text_free' ? freeText(pinMissing) : null,
+      draft_text: channel === 'text_free' ? freeText(pinMissing) : templatePreview(),
       status: exclusions.length ? 'excluded' : 'pending_approval',
       excluded_reasons: exclusions,
       approval_required: true,
@@ -143,6 +152,7 @@ async function loadBatch(supabase: ReturnType<typeof createSupabaseClient>, targ
   return {
     schema_version: 'delivery-notice-batch-v1',
     target_delivery_date: targetDate,
+    target_delivery_label: batchDateLabel(targetDate),
     delivery_window: '2:00 p. m. – 8:00 p. m.',
     mode: 'simulation_only',
     sending_enabled: false,
@@ -154,6 +164,10 @@ async function loadBatch(supabase: ReturnType<typeof createSupabaseClient>, targ
       text_free: records.filter((row: any) => row.status !== 'excluded' && row.channel === 'text_free').length,
       template: records.filter((row: any) => row.status !== 'excluded' && row.channel === 'template').length,
       excluded: records.filter((row: any) => row.status === 'excluded').length,
+      waiting_template: records.filter((row: any) => row.status !== 'excluded' && row.channel === 'template' && row.template_status !== 'APPROVED').length,
+      failed: 0,
+      sent: 0,
+      pins_missing: records.filter((row: any) => row.pin_missing).length,
     },
   };
 }
@@ -165,7 +179,7 @@ export async function GET(request: NextRequest) {
   const targetDate = new URL(request.url).searchParams.get('date') || nextDayBogota();
   try {
     const batch = await loadBatch(supabase, targetDate);
-    const { data: allDecisions } = await supabase.from('admin_activity_log').select('id,action,entity_type,entity_id,details,created_at').eq('entity_type', 'delivery_notice_batch').order('created_at', { ascending: false }).limit(100);
+    const { data: allDecisions } = await supabase.from('admin_activity_log').select('id,action,entity_type,entity_id,details,created_at').in('entity_type', ['delivery_notice_batch', 'delivery_notice_action_layer']).order('created_at', { ascending: false }).limit(100);
     const decisions = (allDecisions || []).filter((decision: any) => decision.details?.batch_date === targetDate).slice(0, 20);
     return NextResponse.json({ success: true, batch, decisions });  } catch (error) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'No se pudo preparar el lote' }, { status: 500 });
@@ -177,10 +191,27 @@ export async function POST(request: NextRequest) {
   if (auth.response) return auth.response;
   const body = await request.json().catch(() => ({}));
   const targetDate = String(body.date || nextDayBogota());
+  const action = String(body.action || 'approve_batch_simulation');
   const scope = body.scope === 'selected' ? 'selected' : 'all';
   const selectedIds = Array.isArray(body.orderIds) ? body.orderIds.map(String) : [];
   const supabase = createSupabaseClient();
   try {
+    if (action === 'request_real_mode') {
+      const details = {
+        batch_date: targetDate,
+        requested_mode: 'real',
+        active_mode: 'simulation',
+        experimental: true,
+        activation: 'not_activated',
+        explicit_confirmation: true,
+        executor: 'delivery-notice-action-layer-v1',
+      };
+      const { data: decision, error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'delivery_notice_mode_graduation_requested', entity_type: 'delivery_notice_action_layer', entity_id: null, details }).select('*').single();
+      if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+      const { data: readback, error: readbackError } = await supabase.from('admin_activity_log').select('*').eq('id', decision.id).single();
+      if (readbackError || !readback) return NextResponse.json({ success: false, error: 'La solicitud no pudo leerse de vuelta' }, { status: 500 });
+      return NextResponse.json({ success: true, mode: 'simulation', activated: false, decision: readback });
+    }
     const batch = await loadBatch(supabase, targetDate);
     const selected = batch.records.filter(row => scope === 'all' || selectedIds.includes(String(row.order_id)));
     const outcomes = selected.map(row => {
