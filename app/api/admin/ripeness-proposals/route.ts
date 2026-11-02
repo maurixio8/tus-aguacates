@@ -29,8 +29,8 @@ export async function GET(request: NextRequest) {
   ]);
   const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
   const [ordersResult, guestOrdersResult] = await Promise.all([
-    supabase.from('orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,shipping_address,order_data,delivery_date,created_at').limit(5000),
-    supabase.from('guest_orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,shipping_address,order_data,delivery_date,created_at').limit(5000),
+    supabase.from('orders').select('*').limit(5000),
+    supabase.from('guest_orders').select('*').limit(5000),
   ]);
   const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
     id: order.id,
