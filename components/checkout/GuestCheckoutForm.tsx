@@ -103,6 +103,21 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     const storeMethod = methodMap[method] || 'cash';
     setPaymentMethod(storeMethod);
     setFormData(prev => ({ ...prev, paymentMethod: method }));
+    if (orderId) {
+      const now = new Date().toISOString();
+      void supabase
+        .from('guest_orders')
+        .update({
+          payment_method: method,
+          payment_status: 'pendiente',
+        })
+        .eq('id', orderId);
+      void recordCheckoutEvent(orderId, {
+        state: 'payment_method_selected',
+        payment_method: method,
+        payment_method_selected_at: now,
+      });
+    }
     setStep('info'); // After selecting payment, go to info form
   };
 
@@ -131,6 +146,35 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     if (error?.code === '42501') return 'No tienes permisos para crear pedidos. Por favor contacta soporte.';
     if (error?.code === '23505') return 'El número de pedido ya existe. Por favor intenta de nuevo.';
     return 'Error al procesar el pedido. Por favor intenta de nuevo más tarde.';
+  };
+
+  // Telemetría de checkout persistida dentro de order_data.checkout.
+  // Permite distinguir datos incompletos, método seleccionado y pago intentado
+  // sin depender únicamente del estado final del pedido.
+  const recordCheckoutEvent = async (checkoutOrderId: string, patch: Record<string, unknown>) => {
+    if (!checkoutOrderId) return;
+    try {
+      const { data: current, error: readError } = await supabase
+        .from('guest_orders')
+        .select('order_data')
+        .eq('id', checkoutOrderId)
+        .single();
+      if (readError || !current) return;
+      const existing = typeof current.order_data === 'string'
+        ? JSON.parse(current.order_data || '{}')
+        : (current.order_data || {});
+      await supabase
+        .from('guest_orders')
+        .update({
+          order_data: {
+            ...existing,
+            checkout: { ...(existing.checkout || {}), ...patch },
+          },
+        })
+        .eq('id', checkoutOrderId);
+    } catch (telemetryError) {
+      console.warn('No se pudo registrar evento de checkout', telemetryError);
+    }
   };
 
   // Normalizar teléfono a formato 57XXXXXXXXXX para sync con n8n
@@ -293,6 +337,17 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         total: totals.total,
         appliedCoupon: useCartStore.getState().appliedCoupon,
         shippingInfo: useCartStore.getState().shipping,
+        checkout: {
+          state: 'payment_method_pending',
+          checkout_started_at: new Date().toISOString(),
+          payment_step_viewed_at: null,
+          payment_method_selected_at: null,
+          payment_attempted_at: null,
+          payment_failed_at: null,
+          payment_completed_at: null,
+          payment_error_code: null,
+          payment_method: null,
+        },
         address_structured: addressStructured,
         delivery_notes: addressStructured.deliveryNotes,
         pin_confidence: addressStructured.pinConfidence,
@@ -333,6 +388,10 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
       // Guardar order ID y mostrar selección de método de pago
       setOrderId(guestOrder.id);
       setShowPaymentModal(true);
+      void recordCheckoutEvent(guestOrder.id, {
+        state: 'payment_method_pending',
+        payment_step_viewed_at: new Date().toISOString(),
+      });
 
     } catch (err: any) {
       console.error('Error al crear pedido:', err);
@@ -344,6 +403,11 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
 
   const handlePaymentSuccess = async () => {
     setStep('processing');
+    void recordCheckoutEvent(orderId, {
+      state: 'payment_attempted',
+      payment_attempted_at: new Date().toISOString(),
+      payment_method: formData.paymentMethod,
+    });
 
     try {
       // 2. Crear mensaje de WhatsApp pre-formateado
@@ -442,6 +506,11 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
           whatsapp_sent: true
         })
         .eq('id', orderId);
+      await recordCheckoutEvent(orderId, {
+        state: formData.paymentMethod === 'efectivo' ? 'cash_on_delivery_confirmed' : 'payment_completed',
+        payment_completed_at: new Date().toISOString(),
+        payment_method: formData.paymentMethod,
+      });
 
       // --- INTEGRACIÓN N8N (Invitado): Enviar pedido ---
       try {
@@ -521,14 +590,20 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
 
   const handlePaymentError = (errorMsg: string) => {
     setError(errorMsg);
-    // Actualizar estado del pedido a "pago fallido"
-    supabase
+    const now = new Date().toISOString();
+    // Actualizar estado del pedido a "pago fallido" y conservar la causa.
+    void supabase
       .from('guest_orders')
       .update({
         status: 'pago_fallido',
         payment_status: 'fallido'
       })
       .eq('id', orderId);
+    void recordCheckoutEvent(orderId, {
+      state: 'payment_failed',
+      payment_failed_at: now,
+      payment_error_code: errorMsg,
+    });
   };
 
   const handleConfirmOrder = async () => {
