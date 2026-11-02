@@ -183,7 +183,7 @@ export default function DeliveryNoticesPage() {
     {message && <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950">{message}</div>}
 
     {loading ? <div className="rounded-xl border bg-white p-8 text-center text-gray-500">Cargando lote…</div> : batch && <>
-      <section className="rounded-xl border bg-white p-5"><p className="text-sm font-semibold text-green-700">Lote de avisos</p><h2 className="text-xl font-bold capitalize text-gray-900">Avisos para {batch.target_delivery_label}</h2><p className="mt-1 text-sm text-gray-600">Franja de entrega: {batch.delivery_window}</p><p className="mt-1 text-sm text-gray-600">Plantilla de utilidad: {humanTemplateStatus(batch.template.status)}</p></section>
+      <section className="rounded-xl border bg-white p-5"><p className="text-sm font-semibold text-green-700">Lote de avisos</p><h2 className="text-xl font-bold text-gray-900">Avisos para {batch.target_delivery_label}</h2><p className="mt-1 text-sm text-gray-600">Franja de entrega: {batch.delivery_window}</p><p className="mt-1 text-sm text-gray-600">Plantilla de utilidad: {humanTemplateStatus(batch.template.status)}</p></section>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-8">
         {([
@@ -191,7 +191,7 @@ export default function DeliveryNoticesPage() {
           ['Texto libre', batch.counts.text_free, 'text-blue-800'],
           ['Plantilla', batch.counts.template, 'text-purple-800'],
           ['En espera de plantilla', batch.counts.waiting_template, 'text-purple-800'],
-          ['Fuera del lote', batch.counts.excluded, 'text-gray-700'],
+          ['Excluidos', batch.counts.excluded, 'text-gray-700'],
           ['Fallidos', batch.counts.failed, 'text-red-800'],
           ['Enviados', batch.counts.sent, 'text-green-800'],
           ['Pines faltantes', batch.counts.pins_missing, 'text-amber-800'],
