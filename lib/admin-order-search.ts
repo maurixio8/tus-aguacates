@@ -5,6 +5,8 @@ export type SearchableAdminOrder = {
   customer_email?: string | null;
   customer_phone?: string | null;
   delivery_address?: string | null;
+  delivery_notes?: string | null;
+  order_data?: unknown;
 };
 
 export function normalizeAdminOrderSearch(value: unknown): string {
@@ -26,6 +28,8 @@ export function matchesAdminOrderSearch(order: SearchableAdminOrder, query: stri
     order.customer_email,
     order.customer_phone,
     order.delivery_address,
+    order.delivery_notes,
+    order.order_data,
   ].map(normalizeAdminOrderSearch).join(' ');
   const compactQuery = normalizedQuery.replace(/\D/g, '');
   if (compactQuery.length >= 7 && compactQuery === normalizedQuery.replace(/\D/g, '')) {
