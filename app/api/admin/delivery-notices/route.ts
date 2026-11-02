@@ -154,9 +154,9 @@ export async function GET(request: NextRequest) {
   const targetDate = new URL(request.url).searchParams.get('date') || nextDayBogota();
   try {
     const batch = await loadBatch(supabase, targetDate);
-    const { data: decisions } = await supabase.from('admin_activity_log').select('id,action,entity_type,entity_id,details,created_at').eq('entity_type', 'delivery_notice_batch').eq('entity_id', targetDate).order('created_at', { ascending: false }).limit(20);
-    return NextResponse.json({ success: true, batch, decisions: decisions || [] });
-  } catch (error) {
+    const { data: allDecisions } = await supabase.from('admin_activity_log').select('id,action,entity_type,entity_id,details,created_at').eq('entity_type', 'delivery_notice_batch').order('created_at', { ascending: false }).limit(100);
+    const decisions = (allDecisions || []).filter((decision: any) => decision.details?.batch_date === targetDate).slice(0, 20);
+    return NextResponse.json({ success: true, batch, decisions });  } catch (error) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : 'No se pudo preparar el lote' }, { status: 500 });
   }
 }
@@ -179,6 +179,7 @@ export async function POST(request: NextRequest) {
     });
     const details = {
       mode: 'simulation',
+      batch_date: targetDate,
       experimental: EXPERIMENTAL,
       scope,
       selected_order_ids: selected.map(row => row.order_id),
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
       executor: 'delivery-notice-action-layer-v1',
       conversation_registration: 'simulation_only_no_buffer_mutation',
     };
-    const { data: decision, error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'delivery_notice_batch_approval_simulation', entity_type: 'delivery_notice_batch', entity_id: targetDate, details }).select('*').single();
+    const { data: decision, error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'delivery_notice_batch_approval_simulation', entity_type: 'delivery_notice_batch', entity_id: null, details }).select('*').single();
     if (error) return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     const { data: readback, error: readbackError } = await supabase.from('admin_activity_log').select('*').eq('id', decision.id).single();
     if (readbackError || !readback) return NextResponse.json({ success: false, error: 'La decisión no pudo leerse de vuelta' }, { status: 500 });
