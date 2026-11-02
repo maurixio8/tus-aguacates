@@ -2396,41 +2396,53 @@ const normalizeVariant = (variant: string | null): string => {
     submitExport('html');
   };
 
-  // Envía solo la selección de ruta/rango; el servidor construye el consolidado.
-  // Así no se expone ni se limita en la URL ningún payload con clientes, direcciones o precios.
-  const submitExport = (format: string) => {
-    const form = document.createElement('form');
-    form.method = 'POST';
-    form.action = '/api/admin/lista-compras/export';
-    form.target = '_blank';
-    form.style.display = 'none';
+  // Envía la selección por POST y descarga la respuesta como archivo local.
+  // Evita tanto el límite de URL como el fallo de descargas de formularios POST en Android.
+  const submitExport = async (format: string) => {
+    const form = new FormData();
+    form.set('format', format);
+    form.set('dateFrom', dateFrom);
+    form.set('dateTo', dateTo);
+    form.set('routeDate', routeDate || '');
+    form.set('products', JSON.stringify(groupedProducts.map(product => ({
+      product_name: product.product_name,
+      variant_name: product.variant_name || null,
+      total_quantity: product.total_quantity,
+      total_physical_units: product.total_physical_units,
+      physical_unit_name: product.physical_unit_name || null,
+      smallest_weight_grams: product.smallest_weight_grams || null,
+      total_in_smallest_units: product.total_in_smallest_units || null,
+    }))));
 
-    const fields: Record<string, string> = {
-      format,
-      dateFrom,
-      dateTo,
-      routeDate: routeDate || '',
-      products: JSON.stringify(groupedProducts.map(product => ({
-        product_name: product.product_name,
-        variant_name: product.variant_name || null,
-        total_quantity: product.total_quantity,
-        total_physical_units: product.total_physical_units,
-        physical_unit_name: product.physical_unit_name || null,
-        smallest_weight_grams: product.smallest_weight_grams || null,
-        total_in_smallest_units: product.total_in_smallest_units || null,
-      }))),
-    };
-    Object.entries(fields).forEach(([name, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = name;
-      input.value = value;
-      form.appendChild(input);
-    });
-
-    document.body.appendChild(form);
-    form.submit();
-    window.setTimeout(() => form.remove(), 1000);
+    try {
+      const response = await fetch('/api/admin/lista-compras/export', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        const message = await response.text().catch(() => '');
+        throw new Error(message || `HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get('content-disposition') || '';
+      const filenameMatch = disposition.match(/filename="?([^";]+)"?/i);
+      const filename = filenameMatch?.[1] || `lista-compras-${format}.${format === 'xls' ? 'xls' : format}`;
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+      anchor.download = filename;
+      anchor.rel = 'noopener';
+      document.body.appendChild(anchor);
+      anchor.click();
+      window.setTimeout(() => {
+        anchor.remove();
+        URL.revokeObjectURL(objectUrl);
+      }, 30000);
+    } catch (error) {
+      console.error('Error descargando exportación:', error);
+      window.alert('No se pudo descargar la lista. Intenta de nuevo.');
+    }
   };
 
   const handleCopyAll = async () => {
