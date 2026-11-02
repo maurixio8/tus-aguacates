@@ -1518,6 +1518,27 @@ const normalizeVariant = (variant: string | null): string => {
 
   const getPurchaseQuantityText = (product: ProductGrouped): string => {
     const physicalTotal = product.total_physical_units ?? product.total_quantity;
+    const variantText = (product.variant_name || '').trim();
+    const normalizedVariant = variantText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const variantWeight = extractWeightFromVariant(variantText);
+    const presentationMatch = normalizedVariant.match(/^(\d+\s*)?(bandejas?|paquetes?|atados?|bolsas?|frascos?|cajas?|unidades?)$/);
+    if (variantWeight !== undefined) {
+      const presentation = presentationMatch?.[2]?.replace(/s$/, '') || null;
+      if (presentation) {
+        const unit = presentationMatch?.[2]?.startsWith('unidad') ? 'unidad' : presentation;
+        const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+        return `${physicalTotal} ${plural} de ${formatWeight(variantWeight)}`;
+      }
+      return physicalTotal === 1 && variantWeight === 1000
+        ? '1 kg'
+        : `${physicalTotal} x ${formatWeight(variantWeight)}`;
+    }
+    if (presentationMatch) {
+      const unit = presentationMatch[2].replace(/s$/, '');
+      const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+      return `${physicalTotal} ${plural}`;
+    }
+
     const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
     const pluralUnit = physicalTotal === 1 ? physicalUnit : ({
       caja: 'cajas', paquete: 'paquetes', contenedor: 'contenedores', bandeja: 'bandejas',
