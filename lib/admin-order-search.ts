@@ -10,7 +10,8 @@ export type SearchableAdminOrder = {
 };
 
 export function normalizeAdminOrderSearch(value: unknown): string {
-  return String(value ?? '')
+  const source = value && typeof value === 'object' ? JSON.stringify(value) : String(value ?? '');
+  return source
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
