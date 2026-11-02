@@ -4,7 +4,7 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
-import { addressParts, AdminRouteOrder, cancellationReasonOf, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isCancelledStatus, isChia, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, activeDeliveryCycle, AdminRouteOrder, cancellationReasonOf, CONFIRMED_ROUTE_STATUSES, deliveryDateOf, isCancelledStatus, isChia, isInActiveDeliveryCycle, isRouteEligible, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
 
 export const dynamic = 'force-dynamic';
@@ -107,7 +107,7 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
 }
 
 function isEligible(row: any) {
-  return CONFIRMED_ROUTE_STATUSES.has(normalizeStatus(row)) && !row.delivered_at;
+  return isRouteEligible(row);
 }
 
 export async function GET(request: NextRequest) {

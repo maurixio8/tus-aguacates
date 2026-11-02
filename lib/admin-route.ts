@@ -149,7 +149,30 @@ export function createdDateOf(row: any): string | null {
 }
 
 export function normalizeStatus(row: any): string {
-  return String(row?.status ?? row?.order_status ?? '').trim().toLowerCase();
+  return String(row?.route_status ?? row?.status ?? row?.order_status ?? '').trim().toLowerCase();
+}
+
+/** Operational test orders must never enter a route or shopping consolidation. */
+export function isOperationalTestOrder(row: any): boolean {
+  const data = parseOrderData(row);
+  const customer = data?.customer || {};
+  const haystack = [
+    row?.customer_name,
+    row?.guest_name,
+    row?.name,
+    row?.customer_email,
+    row?.guest_email,
+    row?.email,
+    customer?.name,
+    customer?.full_name,
+    customer?.email,
+  ].filter(Boolean).join(' ').toLowerCase();
+  return ['cliente prueba', 'pedido de prueba', 'test', 'automatizado', 'automatizada']
+    .some(marker => haystack.includes(marker));
+}
+
+export function isRouteEligible(row: any): boolean {
+  return CONFIRMED_ROUTE_STATUSES.has(normalizeStatus(row)) && !row?.delivered_at && !isOperationalTestOrder(row);
 }
 
 export function hasUsableSavedResolution(saved: { status?: unknown } | null | undefined): boolean {

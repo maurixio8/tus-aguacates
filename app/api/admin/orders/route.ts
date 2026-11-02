@@ -7,7 +7,7 @@ import {
 } from '@/lib/orders/operational';
 import { normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
 import { extractCustomerDataFromShippingAddress } from '@/utils/addressFormatter';
-import { createdDateOf } from '@/lib/admin-route';
+import { createdDateOf, deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
 import { matchesAdminOrderSearch } from '@/lib/admin-order-search';
 
 export const dynamic = 'force-dynamic';
@@ -186,6 +186,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom') || '';
     const dateTo = searchParams.get('dateTo') || '';
     const search = searchParams.get('search') || '';
+    const routeDate = searchParams.get('routeDate') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
 
@@ -361,6 +362,8 @@ export async function GET(request: NextRequest) {
 
           return {
             ...order,
+            route_status: order.status,
+            route_order_status: order.order_status,
             order_items: orderItemsWithVariants,
             status: normalizeOrderStatus(order.status),
             payment_status: normalizePaymentStatus(order.payment_status),
@@ -442,6 +445,11 @@ export async function GET(request: NextRequest) {
           order_number: `INV-${order.id.toString().slice(-8)}`, // Formato INV-XXXXXXXX
           user_id: null,
           status: normalizeOrderStatus(order.status),
+          route_status: order.status,
+          route_order_status: order.order_status || null,
+          order_status: order.order_status || null,
+          delivered_at: order.delivered_at || null,
+          delivery_date: order.delivery_date || null,
           subtotal: order.order_data?.subtotal || 0,
           total: order.total_amount,
           total_amount: order.total_amount,
@@ -508,6 +516,11 @@ export async function GET(request: NextRequest) {
         }
       }
     });
+
+    // Route workspace: use the same delivery-date/status contract as /admin/ruta.
+    if (routeDate) {
+      allOrders = allOrders.filter(order => isRouteEligible(order) && deliveryDateOf(order) === routeDate);
+    }
 
     // Apply status filter a todos los pedidos
     if (status && status !== 'all') {

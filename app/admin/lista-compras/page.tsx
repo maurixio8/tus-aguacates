@@ -32,6 +32,8 @@ import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
+import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
+import { nextDeliveryDate } from '@/lib/admin-route';
 
 interface OrderItem {
   id: string;
@@ -209,6 +211,7 @@ export default function ListaComprasPage() {
   };
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [routeDate, setRouteDate] = useState('');
   const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
@@ -224,25 +227,6 @@ export default function ListaComprasPage() {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-
-  // Calcular fecha del ciclo de entrega (viernes o martes 6:00 a. m. hacia ahora)
-  const getDeliveryCycleDate = (deliveryDay: 'friday' | 'tuesday') => {
-    const now = new Date();
-    const today = new Date();
-    const targetDay = deliveryDay === 'friday' ? 5 : 2;
-    const currentDay = today.getDay();
-
-    let daysBack = currentDay - targetDay;
-    if (daysBack < 0) daysBack += 7;
-    if (daysBack === 0 && now.getHours() < 6) {
-      daysBack = 7;
-    }
-
-    const deliveryDate = new Date(today);
-    deliveryDate.setDate(today.getDate() - daysBack);
-    return formatLocalDate(deliveryDate);
-  };
-
 
 
   // Cargar productos comprados desde localStorage
@@ -587,21 +571,18 @@ export default function ListaComprasPage() {
 
   // La lógica de emojis se centraliza en utils/productEmojis.ts
 
-  // Inicializar con últimos 7 días por defecto
+  // Abrir siempre en la próxima ruta operativa, no en los últimos 7 días.
   useEffect(() => {
-    // Si ya tenemos fechas en URL o estado, no sobreescribir
-    if (dateFrom && dateTo) return;
-
-    const today = new Date();
-    const sevenDaysAgo = new Date(today);
-    sevenDaysAgo.setDate(today.getDate() - 6);
-
-    setDateTo(formatLocalDate(today));
-    setDateFrom(formatLocalDate(sevenDaysAgo));
+    if (dateFrom && dateTo && routeDate) return;
+    const nextRoute = nextDeliveryDate();
+    setRouteDate(nextRoute);
+    setDateFrom(nextRoute);
+    setDateTo(nextRoute);
   }, []);
 
   // Presets de fecha
   const applyDatePreset = (days: number | 'today' | 'tomorrow' | 'this_week' | 'next_week') => {
+    setRouteDate('');
     const today = new Date();
     let start = new Date(today);
     let end = new Date(today);
@@ -623,6 +604,22 @@ export default function ListaComprasPage() {
 
     setDateFrom(formatLocalDate(start));
     setDateTo(formatLocalDate(end));
+  };
+
+  const getNextRouteDate = (targetDay: 2 | 5) => {
+    const date = new Date();
+    const currentDay = date.getDay();
+    let delta = (targetDay - currentDay + 7) % 7;
+    if (delta === 0 && date.getHours() >= 6) delta = 7;
+    date.setDate(date.getDate() + delta);
+    return formatLocalDate(date);
+  };
+
+  const selectRoute = (targetDay: 2 | 5) => {
+    const selectedDate = getNextRouteDate(targetDay);
+    setRouteDate(selectedDate);
+    setDateFrom(selectedDate);
+    setDateTo(selectedDate);
   };
 
   // Detectar posibles clientes duplicados en los pedidos SELECCIONADOS
@@ -681,8 +678,12 @@ export default function ListaComprasPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams();
-      params.set('dateFrom', dateFrom);
-      params.set('dateTo', dateTo);
+      if (routeDate) {
+        params.set('routeDate', routeDate);
+      } else {
+        params.set('dateFrom', dateFrom);
+        params.set('dateTo', dateTo);
+      }
       params.set('limit', '100');
 
       const response = await fetch(`/api/admin/orders?${params}`, {
@@ -696,9 +697,14 @@ export default function ListaComprasPage() {
           (order: Order) => order.status !== 'cancelled'
         );
         setOrders(validOrders);
-        // Resetear selección cuando cambian los pedidos
-        setSelectedOrders(new Set());
-        setSelectAll(false);
+        // Una ruta seleccionada es la unidad operativa: consolidar todos sus pedidos.
+        if (routeDate) {
+          setSelectedOrders(new Set(validOrders.map((order: Order) => order.id)));
+          setSelectAll(validOrders.length > 0);
+        } else {
+          setSelectedOrders(new Set());
+          setSelectAll(false);
+        }
       }
     } catch (error) {
       console.error('Error cargando pedidos:', error);
@@ -735,7 +741,7 @@ export default function ListaComprasPage() {
         setInitialLoadDone(true);
       }
     }
-  }, [dateFrom, dateTo]);
+  }, [dateFrom, dateTo, routeDate]);
 
   useEffect(() => {
     loadCatalogProducts();
@@ -2159,14 +2165,10 @@ const normalizeVariant = (variant: string | null): string => {
 
   // Obtener etiqueta de entrega basada en la fecha
   const getDeliveryLabel = () => {
-    if (!dateFrom) return '';
+    const selectedDate = routeDate || dateFrom;
+    if (!selectedDate) return '';
     try {
-      const date = new Date(dateFrom);
-      // Ajustar por zona horaria si es necesario, o usar la fecha tal cual
-      // En este caso asumimos que el input trae la fecha local
-      // Si es martes (2) o miércoles (3) -> Viernes
-      // Si es viernes (5) o domingo (0) -> Martes (de la otra semana o cercano)
-      // Simplemente mostraremos el día de la semana de la fecha seleccionada
+      const date = new Date(`${selectedDate}T12:00:00`);
       const dayName = format(date, 'EEEE', { locale: es });
       return `Entregas ${dayName.charAt(0).toUpperCase() + dayName.slice(1)}`;
     } catch (e) {
@@ -2511,26 +2513,19 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
         <div className="flex gap-2 items-center overflow-x-auto pb-2 md:pb-0 w-full md:w-auto text-sm">
           <span className="font-medium text-gray-700 dark:text-gray-200 whitespace-nowrap mr-2">Rangos rápidos:</span>
           <button onClick={() => applyDatePreset('today')} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Hoy</button>
-          <button onClick={() => applyDatePreset('tomorrow')} className="px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg transition-colors whitespace-nowrap">Mañana</button>
 
           <button
-            onClick={() => {
-              setDateFrom(getDeliveryCycleDate('friday'));
-              setDateTo(formatLocalDate(new Date()));
-            }}
+            onClick={() => selectRoute(2)}
             className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors border border-blue-300 whitespace-nowrap"
-            title="Pedidos desde el viernes 6:00 a. m. hasta ahora (para entregar el martes)"
+            title="Pedidos de la ruta del próximo martes"
           >
             🚚 Entrega Martes
           </button>
 
           <button
-            onClick={() => {
-              setDateFrom(getDeliveryCycleDate('tuesday'));
-              setDateTo(formatLocalDate(new Date()));
-            }}
+            onClick={() => selectRoute(5)}
             className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors border border-purple-300 whitespace-nowrap"
-            title="Pedidos desde el martes 6:00 a. m. hasta ahora (para entregar el viernes)"
+            title="Pedidos de la ruta del próximo viernes"
           >
             🚚 Entrega Viernes
           </button>
@@ -2546,7 +2541,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               type="date"
               className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-full pt-4 pb-1 px-2 cursor-pointer dark:[color-scheme:dark]"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => { setRouteDate(''); setDateFrom(e.target.value); }}
             />
           </div>
           <div className="relative group flex-1">
@@ -2555,7 +2550,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
               type="date"
               className="bg-transparent border-none outline-none text-sm font-medium text-gray-700 dark:text-gray-200 focus:ring-0 w-full pt-4 pb-1 px-2 cursor-pointer dark:[color-scheme:dark]"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => { setRouteDate(''); setDateTo(e.target.value); }}
             />
           </div>
         </div>
