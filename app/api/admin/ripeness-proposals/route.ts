@@ -6,6 +6,14 @@ const normalizePhone = (value: unknown): string => {
   return digits.startsWith('57') ? digits.slice(-10) : digits.slice(-10);
 };
 
+const extractOrderPhone = (order: { customer_phone?: unknown; shipping_address?: unknown; order_data?: unknown }): string => {
+  const direct = normalizePhone(order.customer_phone);
+  if (direct.length >= 10) return direct;
+  const raw = JSON.stringify({ shipping_address: order.shipping_address, order_data: order.order_data });
+  const candidates = raw.match(/(?:57)?3\d{9}/g) || [];
+  return normalizePhone(candidates[0] || '');
+};
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -21,15 +29,15 @@ export async function GET(request: NextRequest) {
   ]);
   const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
   const [ordersResult, guestOrdersResult] = await Promise.all([
-    supabase.from('orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,delivery_date,created_at').limit(5000),
-    supabase.from('guest_orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,delivery_date,created_at').limit(5000),
+    supabase.from('orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,shipping_address,order_data,delivery_date,created_at').limit(5000),
+    supabase.from('guest_orders').select('id,order_number,status,order_status,customer_phone,customer_email,customer_name,shipping_address,order_data,delivery_date,created_at').limit(5000),
   ]);
   const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
     id: order.id,
     order_number: order.order_number,
     status: order.status || order.order_status || 'pending',
     delivery_date: order.delivery_date || null,
-    phone: normalizePhone(order.customer_phone),
+    phone: extractOrderPhone(order),
     email: String(order.customer_email || '').trim().toLowerCase(),
   }));
   const attachRelatedOrders = (row: any) => {
