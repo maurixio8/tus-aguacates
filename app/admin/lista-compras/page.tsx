@@ -2396,42 +2396,32 @@ const normalizeVariant = (variant: string | null): string => {
     submitExport('html');
   };
 
-  // Envía los productos agrupados (con presentación completa) al endpoint de exportación
-  // vía GET con datos compactos en la URL → descarga HTTP real, compatible con Arc Android
-  // (form.submit() POST no dispara descargas en Arc Android; window.location.href sí)
+  // Envía solo la selección de ruta/rango; el servidor construye el consolidado.
+  // Así no se expone ni se limita en la URL ningún payload con clientes, direcciones o precios.
   const submitExport = (format: string) => {
-    // Payload compacto (claves cortas para que quepa en la URL)
-    const payloadProducts = groupedProducts.map(p => ({
-      n: p.product_name,
-      v: p.variant_name || null,
-      q: getPurchaseQuantityText(p),
-      t: p.total_quantity,
-      f: p.total_physical_units,
-      u: p.physical_unit_name || null,
-      w: p.smallest_weight_grams || null,
-      s: p.total_in_smallest_units || null,
-      p: p.unit_price,
-      c: p.customer_breakdown.map(c => ({
-        n: c.customer_name,
-        a: c.customer_address || '',
-      })),
-    }));
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/api/admin/lista-compras/export';
+    form.target = '_blank';
+    form.style.display = 'none';
 
-    const payloadCombos = (orderedCombos || []).map(c => ({
-      n: c.name,
-      q: c.quantity,
-      d: c.description || '',
-    }));
+    const fields: Record<string, string> = {
+      format,
+      dateFrom,
+      dateTo,
+      routeDate: routeDate || '',
+    };
+    Object.entries(fields).forEach(([name, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = name;
+      input.value = value;
+      form.appendChild(input);
+    });
 
-    const data = JSON.stringify({ products: payloadProducts, combos: payloadCombos });
-    // base64url compacto (sin +/= para URL segura)
-    const base64 = btoa(unescape(encodeURIComponent(data)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-
-    const url = `/api/admin/lista-compras/export?format=${encodeURIComponent(format)}&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}${routeDate ? `&routeDate=${encodeURIComponent(routeDate)}` : ''}&data=${encodeURIComponent(base64)}`;
-    window.location.href = url;
+    document.body.appendChild(form);
+    form.submit();
+    window.setTimeout(() => form.remove(), 1000);
   };
 
   const handleCopyAll = async () => {
