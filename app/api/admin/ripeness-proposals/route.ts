@@ -17,7 +17,82 @@ export async function GET(request: NextRequest) {
   const contextResult = await supabase.from('whatsapp_audit_context').select('*').order('risk_level', { ascending: false }).order('last_seen_at', { ascending: false }).limit(100);
   const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
-  return NextResponse.json({ success: true, findings: findingsResult.data || [], recovery: recoveryResult.data || [], ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: contextResult.error ? [] : (contextResult.data || []) });
+  const findings = findingsResult.data || [];
+  const recovery = recoveryResult.data || [];
+  const contexts = contextResult.error ? [] : (contextResult.data || []);
+  const validPhone = (value: unknown) => /^57\\d{10}$/.test(String(value || '').replace(/\\D/g, ''));
+  const phoneFromConversationKey = (value: unknown) => {
+    const match = String(value || '').match(/^phone:(57\\d{10})$/);
+    return match && validPhone(match[1]) ? match[1] : null;
+  };
+  const priorityCases = [
+    ...findings.filter((row: any) => row.severity === 'rojo' && validPhone(row.contact_phone)).map((row: any) => ({
+      key: `finding:${row.id}`,
+      source: 'hallazgo crítico',
+      source_id: row.id,
+      customer_masked: row.customer_masked,
+      contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
+      phone_source: row.phone_source || 'whatsapp_audit_findings.contact_phone',
+      phone_confidence: row.phone_confidence || 'alta',
+      last_seen_at: row.received_at,
+      priority: 'alta',
+      priority_reason: 'Respuesta de Luz marcada como crítica por el auditor.',
+      summary: row.incoming_text || 'Hallazgo crítico sin mensaje de entrada.',
+      incoming_text: row.incoming_text || '',
+      luz_response: row.luz_response || '',
+      evidence: (row.flags || []).join(' · '),
+      next_action: (row.recommendations || []).join(' · ') || 'Abrir el chat y revisar manualmente.',
+      order_state: '',
+      intent_level: '',
+      intent_score: 100,
+    })),
+    ...recovery.filter((row: any) => ['alta', 'high'].includes(String(row.intent_level || '').toLowerCase()) && validPhone(row.contact_phone)).map((row: any) => ({
+      key: `recovery:${row.id}`,
+      source: 'oportunidad de recuperación',
+      source_id: row.id,
+      customer_masked: row.customer_masked,
+      contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
+      phone_source: row.phone_source || 'whatsapp_recovery_opportunities.contact_phone',
+      phone_confidence: row.phone_confidence || 'alta',
+      conversation_key: row.conversation_key || '',
+      last_seen_at: row.last_seen_at,
+      priority: 'alta',
+      priority_reason: 'Cliente con intención alta y conversación que requiere intervención humana.',
+      summary: row.conversation_summary || 'Quiere comprar, pero la conversación no quedó resuelta.',
+      incoming_text: '',
+      luz_response: '',
+      evidence: row.evidence || '',
+      next_action: row.recommendation || 'Abrir el chat, revisar el pedido y ayudar a cerrar.',
+      order_state: row.order_state || row.order_status || '',
+      intent_level: row.intent_level || '',
+      intent_score: Number(row.intent_score || 0),
+      order_id: row.order_id || '',
+      order_status: row.order_status || '',
+      payment_state: row.payment_state || '',
+    })),
+    ...contexts.filter((row: any) => row.risk_level === 'high' && phoneFromConversationKey(row.conversation_key)).map((row: any) => ({
+      key: `context:${row.id || row.conversation_key}`,
+      source: 'contexto crítico de conversación',
+      source_id: row.id || row.conversation_key,
+      customer_masked: row.customer_masked,
+      contact_phone: phoneFromConversationKey(row.conversation_key) || undefined,
+      phone_source: 'whatsapp_audit_context.conversation_key',
+      phone_confidence: 'alta',
+      conversation_key: row.conversation_key,
+      last_seen_at: row.last_seen_at,
+      priority: 'alta',
+      priority_reason: 'El auditor marcó la conversación con riesgo alto.',
+      summary: row.summary || 'Conversación de riesgo alto sin resumen.',
+      incoming_text: row.customer_goal || '',
+      luz_response: row.suggested_reply || '',
+      evidence: row.evidence || row.friction || '',
+      next_action: row.action_plan || 'Abrir el chat y revisar manualmente antes de responder.',
+      order_state: row.current_state || '',
+      intent_level: row.intent || '',
+      intent_score: 100,
+    })),
+  ].sort((a, b) => Number(new Date(b.last_seen_at || 0)) - Number(new Date(a.last_seen_at || 0)));
+  return NextResponse.json({ success: true, findings, recovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts, priorityCases });
 }
 
 export async function PATCH(request: NextRequest) {
