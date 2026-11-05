@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
     ...findings.filter((row: any) => row.severity === 'rojo' && validPhone(row.contact_phone)).map((row: any) => ({
       key: `finding:${row.id}`,
       source: 'hallazgo crítico',
+      source_kind: 'finding',
       source_id: row.id,
       customer_masked: row.customer_masked,
       contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
     ...recovery.filter((row: any) => ['alta', 'high'].includes(String(row.intent_level || '').toLowerCase()) && validPhone(row.contact_phone)).map((row: any) => ({
       key: `recovery:${row.id}`,
       source: 'oportunidad de recuperación',
+      source_kind: 'recovery',
       source_id: row.id,
       customer_masked: row.customer_masked,
       contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
     ...contexts.filter((row: any) => row.risk_level === 'high' && phoneFromConversationKey(row.conversation_key)).map((row: any) => ({
       key: `context:${row.id || row.conversation_key}`,
       source: 'contexto crítico de conversación',
+      source_kind: 'context',
       source_id: row.id || row.conversation_key,
       customer_masked: row.customer_masked,
       contact_phone: phoneFromConversationKey(row.conversation_key) || undefined,
@@ -113,6 +116,42 @@ export async function PATCH(request: NextRequest) {
     const { data, error } = await supabase.from('whatsapp_human_handoffs').update({ status: 'closed', ended_at: new Date().toISOString(), resolution: String(body.resolution || 'Atención humana finalizada'), updated_at: new Date().toISOString() }).eq('identity_key', identityKey).eq('status','active').select().single();
     if (error) return NextResponse.json({ error: 'No se pudo retomar Luz', details: error.message }, { status: 500 });
     return NextResponse.json({ success: true, data });
+  }
+  if (action === 'pause-priority' || action === 'resume-priority') {
+    const phone = String(body.phone || '').replace(/\\D/g, '');
+    if (!/^57\\d{10}$/.test(phone)) return NextResponse.json({ error: 'Teléfono reconciliado inválido' }, { status: 400 });
+    const webhookUrl = process.env.N8N_DB_TOOL_WEBHOOK_URL || 'https://n8n.tusaguacates.com/webhook/db-tool-executor';
+    const webhookSecret = process.env.N8N_DB_TOOL_WEBHOOK_SECRET;
+    if (!webhookSecret) return NextResponse.json({ error: 'Falta configurar la conexión segura con el ejecutor local' }, { status: 503 });
+    const operation = action === 'pause-priority' ? 'pause_luz' : 'reactivar_luz';
+    const params = action === 'pause-priority'
+      ? { reason: 'Atención humana iniciada desde Prioridad Alta' }
+      : { resolution: 'Atendido por Mauricio desde Prioridad Alta' };
+    let dbResult: any;
+    try {
+      const response = await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-TA-Admin-Secret': webhookSecret }, body: JSON.stringify({ operation, from: phone, params }), cache: 'no-store' });
+      const text = await response.text();
+      dbResult = text ? JSON.parse(text) : null;
+      if (!response.ok || !dbResult?.success) return NextResponse.json({ error: 'El ejecutor local no confirmó el cambio', details: dbResult?.error || `HTTP ${response.status}` }, { status: 502 });
+    } catch (error) {
+      return NextResponse.json({ error: 'No se pudo contactar el ejecutor local', details: error instanceof Error ? error.message : 'error desconocido' }, { status: 502 });
+    }
+    if (action === 'pause-priority') {
+      const { data, error } = await supabase.from('whatsapp_human_handoffs').upsert({ identity_key: phone, phone, status: 'active', started_by: adminName, started_at: new Date().toISOString(), last_human_message_at: new Date().toISOString(), ended_at: null, reason: 'EN_REVISION_HUMANA / Prioridad Alta', resolution: null, updated_at: new Date().toISOString() }, { onConflict: 'identity_key' }).select().single();
+      if (error) return NextResponse.json({ error: 'PostgreSQL local cambió, pero no se pudo registrar el handoff', details: error.message, dbResult }, { status: 500 });
+      return NextResponse.json({ success: true, action, dbResult, handoff: data });
+    }
+    const { data: handoff, error: handoffError } = await supabase.from('whatsapp_human_handoffs').update({ status: 'closed', ended_at: new Date().toISOString(), resolution: 'Atendido por Mauricio desde Prioridad Alta', updated_at: new Date().toISOString() }).eq('identity_key', phone).eq('status', 'active').select().maybeSingle();
+    if (handoffError) return NextResponse.json({ error: 'PostgreSQL local cambió, pero no se pudo cerrar el handoff', details: handoffError.message, dbResult }, { status: 500 });
+    if (body.sourceKind === 'finding') {
+      const { error } = await supabase.from('whatsapp_audit_findings').update({ review_status: 'approved', updated_at: new Date().toISOString() }).eq('id', String(body.sourceId || ''));
+      if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar el hallazgo como atendido', details: error.message, dbResult }, { status: 500 });
+    } else if (body.sourceKind === 'recovery') {
+      const { error } = await supabase.from('whatsapp_recovery_opportunities').update({ status: 'resolved', assigned_to: adminName, resolution: 'Atendido por Mauricio desde Prioridad Alta', updated_at: new Date().toISOString() }).eq('id', String(body.sourceId || ''));
+      if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar la oportunidad como resuelta', details: error.message, dbResult }, { status: 500 });
+    }
+    const { data: readback } = await supabase.from('whatsapp_human_handoffs').select('*').eq('identity_key', phone).maybeSingle();
+    return NextResponse.json({ success: true, action, dbResult, handoff: readback || handoff });
   }
   if (action === 'review-finding') {
     const status = body.status === 'dismissed' ? 'dismissed' : 'approved';
