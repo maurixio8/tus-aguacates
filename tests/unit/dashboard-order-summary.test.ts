@@ -1,18 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import { generateDashboardOrderSummary } from '@/utils/dashboardOrderSummary';
 
-describe('dashboard order summary', () => {
-  it('includes address, customer, products, variant, weight and total', () => {
+describe('resumen del botón Copiar resumen', () => {
+  it('genera una confirmación de entrega para el día siguiente', () => {
     const summary = generateDashboardOrderSummary(
-      { delivery_address: 'Calle 11c #73-82', total_amount: 28900 },
-      'Mauricio',
-      [{ product_name: 'Menta', quantity: 1, price: 4500, variantName: 'Paquete', weight: 50, unit: 'g' }],
+      {
+        delivery_address: 'CRA 87bis # 89-30 piso 2 Barrio la Serena',
+        delivery_date: '2026-11-06T12:00:00.000Z',
+        shipping_address: { city: 'Bogotá' },
+        total_amount: 27000,
+      },
+      'Betty Corredor',
+      [{ product_name: 'Caja de 24 unidades hass', quantity: 1, subtotal: 19600 }],
     );
-    expect(summary).toContain('DIRECCIÓN: Calle 11c #73-82');
-    expect(summary).toContain('CLIENTE: Mauricio');
-    expect(summary).toContain('Menta');
-    expect(summary).toContain('Variante: Paquete');
-    expect(summary).toContain('Peso: 50g');
-    expect(summary).toContain('28.900');
+
+    expect(summary).toContain('Hola, Betty Corredor 😊');
+    expect(summary).toContain('entrega mañana, viernes 6 de noviembre de 2026');
+    expect(summary).toContain('Productos:');
+    expect(summary).toContain('Caja de 24 unidades hass');
+    expect(summary).toContain('Total a pagar: $27.000');
+    expect(summary).toContain('Dirección de entrega:');
+    expect(summary).toContain('CRA 87bis # 89-30 piso 2 Barrio la Serena');
+    expect(summary).toContain('Bogotá');
+    expect(summary).toContain('confirmando si todo está correcto');
+    expect(summary).not.toContain('TELÉFONO:');
+    expect(summary).not.toContain('ESTADO:');
   });
 });
