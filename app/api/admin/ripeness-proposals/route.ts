@@ -41,9 +41,17 @@ export async function GET(request: NextRequest) {
     .in('action', ['whatsapp_context_reply_handoff', 'priority_context_resolved'])
     .order('created_at', { ascending: false })
     .limit(1000);
-  const [ordersResult, guestOrdersResult] = await Promise.all([
+  const deliveryContactedResult = await supabase
+    .from('admin_activity_log')
+    .select('details,created_at')
+    .eq('entity_type', 'delivery_confirmation')
+    .eq('action', 'delivery_confirmation_contacted')
+    .order('created_at', { ascending: false })
+    .limit(2000);
+  const [ordersResult, guestOrdersResult, orderItemsResult] = await Promise.all([
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
+    supabase.from('order_items').select('*').limit(10000),
   ]);
 const relatedOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map(order => ({
   id: order.id,
@@ -99,7 +107,7 @@ const attachRelatedOrders = (row: any) => {
 };
   const enrichedFindings = (findingsResult.data || []).map(attachRelatedOrders);
   const enrichedRecovery = (recoveryResult.data || []).map(attachRelatedOrders);
-  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error || contextHandoffResult.error;
+  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error || contextHandoffResult.error || deliveryContactedResult.error || ordersResult.error || guestOrdersResult.error || orderItemsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
   const decidedByConversation = new Map<string, { decided_at: string }>();
   for (const row of contextHandoffResult.data || []) {
@@ -134,12 +142,36 @@ const attachRelatedOrders = (row: any) => {
   const daysFromTuesday = (tomorrowDay - 2 + 7) % 7;
   const fridayWindowStart = new Date(tomorrowUtc.getTime() - daysFromTuesday * 86400000 + 11 * 3600000);
   const nowIso = new Date().toISOString();
+  const contactedMap = new Map<string,string>();
+  for (const row of deliveryContactedResult.data || []) {
+    const details = (row.details || {}) as Record<string, unknown>;
+    const key = `${String(details.source || '')}:${String(details.order_id || '')}`;
+    if (key !== ':' && !contactedMap.has(key)) contactedMap.set(key, row.created_at);
+  }
+  const itemsByOrder = new Map<string, any[]>();
+  for (const item of orderItemsResult.data || []) {
+    const orderId = String(item.order_id || '');
+    if (!orderId) continue;
+    const list = itemsByOrder.get(orderId) || [];
+    list.push(item);
+    itemsByOrder.set(orderId, list);
+  }
+  const normalizeDeliveryItems = (order: any, guest: boolean) => {
+    const rawItems = guest ? (order.order_data?.items || order.items || []) : (itemsByOrder.get(String(order.id)) || order.order_items || []);
+    return rawItems.map((item: any) => ({
+      name: item.product_name || item.productName || item.name || item.product_snapshot?.name || item.products?.name || 'Producto',
+      quantity: Number(item.quantity || 1),
+      variant: item.variantName || item.variant_name || item.variant_value || item.product_snapshot?.variant_name || item.product_snapshot?.variant_value || '',
+      weight: item.weight ?? item.product_snapshot?.weight ?? '',
+      unit: item.unit || item.product_snapshot?.unit || '',
+    }));
+  };
   const tomorrowOrders = [...(ordersResult.data || []), ...(guestOrdersResult.data || [])].map((order: any) => {
     const guest = Object.prototype.hasOwnProperty.call(order, 'guest_phone');
     const address = guest ? order.guest_address : (typeof order.shipping_address === 'object' ? [order.shipping_address?.street_address, order.shipping_address?.additional_info, order.shipping_address?.city].filter(Boolean).join(', ') : String(order.shipping_address || order.delivery_address || ''));
     const createdAt = order.created_at || null;
     const scheduledByFridayRule = Boolean(isFridayDelivery && createdAt && new Date(createdAt) >= fridayWindowStart && new Date(createdAt) <= new Date(nowIso));
-    return { source: guest ? 'guest_orders' : 'orders', id: order.id, order_number: order.order_number || order.id, customer_name: guest ? order.guest_name : (order.customer_name || order.shipping_address?.full_name || order.customer_email || 'Cliente'), phone: toFullPhone(guest ? order.guest_phone : order.customer_phone), address, total: Number(order.total_amount ?? order.total ?? 0), status: order.status || order.order_status || '', order_status: order.order_status || '', payment_status: order.payment_status || '', delivery_date: order.delivery_date || null, created_at: createdAt, scheduled_by: scheduledByFridayRule ? 'Ventas desde martes 6:00 a. m. para entrega viernes' : 'Fecha de entrega registrada' };
+    return { source: guest ? 'guest_orders' : 'orders', id: order.id, order_number: order.order_number || order.id, customer_name: guest ? order.guest_name : (order.customer_name || order.shipping_address?.full_name || order.customer_email || 'Cliente'), phone: toFullPhone(guest ? order.guest_phone : order.customer_phone), address, total: Number(order.total_amount ?? order.total ?? 0), status: order.status || order.order_status || '', order_status: order.order_status || '', payment_status: order.payment_status || '', delivery_date: order.delivery_date || null, created_at: createdAt, scheduled_by: scheduledByFridayRule ? 'Ventas desde martes 6:00 a. m. para entrega viernes' : 'Fecha de entrega registrada', items: normalizeDeliveryItems(order, guest), contactedAt: contactedMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`) || null };
   }).filter((order: any) => {
     const active = !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.status).toLowerCase()) && !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.order_status).toLowerCase());
     return Boolean(order.phone && active && (order.delivery_date === tomorrowDate || (isFridayDelivery && order.scheduled_by.includes('martes 6:00'))));
@@ -154,6 +186,21 @@ export async function PATCH(request: NextRequest) {
   const action = body.action;
   const adminName = auth.user?.name || auth.user?.email || 'admin';
   const supabase = createSupabaseClient();
+  if (action === 'mark-delivery-contacted') {
+    const source = String(body.source || '');
+    const orderId = String(body.orderId || '');
+    if (!['orders', 'guest_orders'].includes(source) || !orderId) return NextResponse.json({ error: 'Falta identificar el pedido' }, { status: 400 });
+    const contactedAt = new Date().toISOString();
+    const { data, error } = await supabase.from('admin_activity_log').insert({
+      admin_id: auth.user?.id,
+      action: 'delivery_confirmation_contacted',
+      entity_type: 'delivery_confirmation',
+      entity_id: null,
+      details: { source, order_id: orderId, phone: String(body.phone || ''), delivery_date: String(body.deliveryDate || ''), actor: adminName, result: 'marked_contacted', contacted_at: contactedAt },
+    }).select('id,details,created_at').single();
+    if (error) return NextResponse.json({ error: 'No se pudo registrar el contacto', details: error.message }, { status: 500 });
+    return NextResponse.json({ success: true, contactedAt: data?.created_at || contactedAt, record: data });
+  }
   if (action === 'resolve-priority') {
     const sourceKind = String(body.sourceKind || '');
     const sourceId = String(body.sourceId || '');
