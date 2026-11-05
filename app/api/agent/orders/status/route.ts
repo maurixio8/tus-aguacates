@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const supabase = getSupabase();
     const [ordersResult, guestResult] = await Promise.all([
       supabase.from('orders').select('id,order_number,status,order_status,payment_status,total_amount,customer_phone,created_at,updated_at').order('created_at', { ascending: false }).limit(100),
-      supabase.from('guest_orders').select('id,status,order_status,payment_status,total_amount,guest_phone,created_at,updated_at').order('created_at', { ascending: false }).limit(100),
+      supabase.from('guest_orders').select('id,order_number,status,order_status,payment_status,total_amount,guest_phone,created_at,updated_at').order('created_at', { ascending: false }).limit(100),
     ]);
     if (ordersResult.error) throw ordersResult.error;
     if (guestResult.error) throw guestResult.error;
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
       .map(row => ({ ...row, order_type: 'registered' as const, phone: undefined }));
     const guest = (guestResult.data || [])
       .filter(row => normalizePhone(row.guest_phone).slice(-10) === phone.slice(-10))
-      .map(row => ({ ...row, order_number: null, order_type: 'guest' as const, phone: undefined }));
+      .map(row => ({ ...row, order_type: 'guest' as const, phone: undefined }));
     const all = [...regular, ...guest].sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
     const active = all.find(row => isActive(row.status) || isActive(row.order_status));
     const selected = active || all[0] || null;

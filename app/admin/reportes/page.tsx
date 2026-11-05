@@ -36,15 +36,6 @@ interface DailySales {
   orders: number;
 }
 
-interface ReportOrder {
-  total_amount?: number;
-  total?: number;
-  status?: string;
-  created_at: string;
-  order_items?: Array<{ product_name?: string; productName?: string; product_snapshot?: { name?: string }; quantity?: number; subtotal?: number; unit_price?: number; price?: number }>;
-  order_data?: { items?: Array<{ productName?: string; product_name?: string; quantity?: number; price?: number }> } | string;
-}
-
 export default function ReportsPage() {
   const [dateFrom, setDateFrom] = useState(() => {
     const date = new Date();
@@ -65,60 +56,28 @@ export default function ReportsPage() {
   const loadReports = async () => {
     setLoading(true);
     try {
-      const allOrders: ReportOrder[] = [];
-      let page = 1;
-      let totalPages = 1;
-      do {
-        const params = new URLSearchParams({ page: String(page), limit: '100', dateFrom, dateTo });
-        const response = await fetch(`/api/admin/orders?${params}`, { credentials: 'include', cache: 'no-store' });
-        const payload = await response.json();
-        if (!response.ok || !payload.success) throw new Error(payload.error || 'No se pudieron cargar los pedidos');
-        allOrders.push(...(payload.orders || []));
-        totalPages = payload.pagination?.totalPages || 1;
-        page += 1;
-      } while (page <= totalPages);
+      const filters = `dateFrom=${dateFrom}&dateTo=${dateTo}`;
 
-      const statusCounts = allOrders.reduce<Record<string, number>>((counts, order) => {
-        const status = order.status || 'pending';
-        counts[status] = (counts[status] || 0) + 1;
-        return counts;
-      }, {});
-      const revenueOf = (order: ReportOrder) => Number(order.total_amount ?? order.total ?? 0);
-      const totalRevenue = allOrders.reduce((sum, order) => sum + revenueOf(order), 0);
-      const byDay = new Map<string, { revenue: number; orders: number }>();
-      const products = new Map<string, { quantity: number; revenue: number }>();
-      for (const order of allOrders) {
-        const day = new Date(order.created_at).toLocaleDateString('en-CA', { timeZone: 'America/Bogota' });
-        const currentDay = byDay.get(day) || { revenue: 0, orders: 0 };
-        currentDay.revenue += revenueOf(order);
-        currentDay.orders += 1;
-        byDay.set(day, currentDay);
-        let items = order.order_items || [];
-        if (!items.length) {
-          let raw = order.order_data;
-          if (typeof raw === 'string') { try { raw = JSON.parse(raw); } catch { raw = undefined; } }
-          if (raw && typeof raw === 'object' && Array.isArray(raw.items)) items = raw.items;
-        }
-        for (const item of items) {
-          const name = String(item.product_name || item.productName || item.product_snapshot?.name || 'Producto').trim();
-          const quantity = Number(item.quantity || 0);
-          const revenue = Number(item.subtotal || (item.price || item.unit_price || 0) * quantity);
-          const current = products.get(name) || { quantity: 0, revenue: 0 };
-          current.quantity += quantity;
-          current.revenue += revenue;
-          products.set(name, current);
-        }
-      }
-      setSalesSummary({ totalOrders: allOrders.length, totalRevenue, averageOrderValue: allOrders.length ? totalRevenue / allOrders.length : 0, ordersByStatus: statusCounts });
-      setDailySales(Array.from(byDay.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([date, values]) => ({ date, ...values })));
-      setTopProducts(Array.from(products.entries()).sort(([, a], [, b]) => b.revenue - a.revenue).slice(0, 10).map(([name, values]) => ({ name, ...values })));
-      setSalesByCategory(totalRevenue ? [{ category: 'Ventas de pedidos', revenue: totalRevenue, orders: allOrders.length }] : []);
+      const [summaryRes, productsRes, categoryRes, dailyRes] = await Promise.all([
+        fetch(`/api/admin/reports/?type=sales_summary&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=top_products&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=sales_by_category&${filters}`, { credentials: 'include' }),
+        fetch(`/api/admin/reports/?type=daily_sales&${filters}`, { credentials: 'include' }),
+      ]);
+
+      const [summary, products, categories, daily] = await Promise.all([
+        summaryRes.json(),
+        productsRes.json(),
+        categoryRes.json(),
+        dailyRes.json(),
+      ]);
+
+      if (summary.success) setSalesSummary(summary.report);
+      if (products.success) setTopProducts(products.report?.products || []);
+      if (categories.success) setSalesByCategory(categories.report?.categories || []);
+      if (daily.success) setDailySales(daily.report?.daily || []);
     } catch (error) {
       console.error('Error cargando reportes:', error);
-      setSalesSummary(null);
-      setTopProducts([]);
-      setSalesByCategory([]);
-      setDailySales([]);
     } finally {
       setLoading(false);
     }
@@ -235,7 +194,7 @@ export default function ReportsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Entregados</p>
                 <p className="text-2xl font-bold text-gray-900 mt-1">
-                  {salesSummary.ordersByStatus?.delivered || 0}
+                  {salesSummary.ordersByStatus?.entregado || 0}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">

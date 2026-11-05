@@ -3,7 +3,6 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
-import { formatPurchaseQuantity } from '@/lib/purchase-list-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -185,16 +184,27 @@ function mergeExportProducts(products: ExportProduct[]): ExportProduct[] {
 }
 
 function getQuantityLabel(p: ExportProduct): string {
-  return formatPurchaseQuantity({
-    productName: p.product_name,
-    variantName: p.variant_name,
-    totalQuantity: p.total_quantity,
-    totalPhysicalUnits: p.total_physical_units,
-    physicalUnitName: p.physical_unit_name,
-    smallestWeightGrams: p.smallest_weight_grams,
-    totalInSmallestUnits: p.total_in_smallest_units,
-    totalWeightDisplay: null,
-  });
+  const weight = weightFromVariant(p.variant_name) || p.smallest_weight_grams || null;
+  const presentation = presentationFromVariant(p.variant_name, p.product_name);
+  const physicalTotal = Number(p.total_physical_units ?? p.total_quantity ?? 0);
+  const unit = presentation.unit || (p.physical_unit_name ? normalizeText(p.physical_unit_name) : null);
+  const multiplier = presentation.multiplier || 1;
+  const count = p.total_physical_units !== undefined
+    ? physicalTotal
+    : Number(p.total_quantity || 0) * multiplier;
+
+  if (weight && unit) {
+    const plural = count === 1 ? unit : `${unit}s`;
+    return `${count} ${plural} de ${formatWeight(weight)}`;
+  }
+  if (weight) {
+    return count === 1 && weight === 1000 ? '1 kg' : `${count} x ${formatWeight(weight)}`;
+  }
+  if (unit) {
+    const plural = count === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+    return `${count} ${plural}`;
+  }
+  return `${count} unidades`;
 }
 
 function getProductLabel(p: ExportProduct): string {
@@ -400,8 +410,6 @@ async function handleExport(request: NextRequest, isPost: boolean) {
     let routeDate = '';
     let format = 'pdf';
     let products: any[] = [];
-    let productsProvided = false;
-    let prepareOnly = false;
     let combos: any[] = [];
 
     if (isPost) {
@@ -409,13 +417,11 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       dateFrom = String(formData.get('dateFrom') || '');
       dateTo = String(formData.get('dateTo') || '');
       routeDate = String(formData.get('routeDate') || '');
-      prepareOnly = String(formData.get('prepare') || '') === '1';
       format = String(formData.get('format') || 'pdf').toLowerCase();
       const productsRaw = formData.get('products');
       if (productsRaw) {
         try {
           products = JSON.parse(String(productsRaw));
-          productsProvided = Array.isArray(products) && products.length > 0;
         } catch (e) {
           return NextResponse.json({ error: 'Datos de productos inválidos' }, { status: 400 });
         }
@@ -521,21 +527,10 @@ async function handleExport(request: NextRequest, isPost: boolean) {
       products = groupProducts(items);
     }
 
-    products = productsProvided ? products as ExportProduct[] : mergeExportProducts(products as ExportProduct[]);
+    products = mergeExportProducts(products as ExportProduct[]);
 
     if (products.length === 0) {
       return NextResponse.json({ error: 'No hay productos en el rango seleccionado' }, { status: 400 });
-    }
-
-    if (prepareOnly) {
-      const query = new URLSearchParams({
-        format,
-        dateFrom,
-        dateTo,
-        ...(routeDate ? { routeDate } : {}),
-        download: '1',
-      });
-      return NextResponse.json({ downloadUrl: `/api/admin/lista-compras/export?${query.toString()}` });
     }
 
     const dateStr = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });

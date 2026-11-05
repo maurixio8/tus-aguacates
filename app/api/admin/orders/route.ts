@@ -8,7 +8,6 @@ import {
 import { normalizePhoneForDB, upsertCustomerMasterRecord } from '@/lib/customerSync';
 import { extractCustomerDataFromShippingAddress } from '@/utils/addressFormatter';
 import { createdDateOf, deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
-import { matchesAdminOrderSearch } from '@/lib/admin-order-search';
 
 export const dynamic = 'force-dynamic';
 
@@ -185,7 +184,6 @@ export async function GET(request: NextRequest) {
     const paymentStatus = searchParams.get('payment_status') || '';
     const dateFrom = searchParams.get('dateFrom') || '';
     const dateTo = searchParams.get('dateTo') || '';
-    const search = searchParams.get('search') || '';
     const routeDate = searchParams.get('routeDate') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '50');
@@ -534,12 +532,8 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    if (search) {
-      allOrders = allOrders.filter(order => matchesAdminOrderSearch(order, search));
-    }
-
-    // La pantalla Pedidos muestra la fecha de creación del pedido en Bogotá.
-    // La fecha de entrega/ciclo pertenece exclusivamente a Ruta.
+    // The Pedidos page displays created_at, so its date filter must use the
+    // same calendar date in Bogotá. Delivery-date filtering belongs to Ruta.
     if (dateFrom || dateTo) {
       allOrders = allOrders.filter(order => {
         const createdDate = createdDateOf(order);
@@ -1003,10 +997,6 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     const { status, items, total, customerData } = body;
-    const requestedDeliveryDate = body.delivery_date ?? customerData?.delivery_date;
-    if (requestedDeliveryDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(String(requestedDeliveryDate))) {
-      return NextResponse.json({ error: 'Fecha de entrega inválida' }, { status: 400, headers: corsHeaders });
-    }
 
     const supabase = createSupabaseClient();
 
@@ -1031,7 +1021,6 @@ export async function PATCH(request: NextRequest) {
 
     // If updating customer data
     let customerDataUpdated = false;
-    let deliveryDateUpdated = false;
 
     if (customerData) {
       console.log('📝 API: Updating customer data for order:', orderId, customerData);
@@ -1162,18 +1151,6 @@ export async function PATCH(request: NextRequest) {
 
     if (customerData) {
       customerDataUpdated = true;
-    }
-
-    if (requestedDeliveryDate !== undefined) {
-      const tableName = isGuestOrder ? 'guest_orders' : 'orders';
-      const { error: deliveryDateError } = await supabase
-        .from(tableName)
-        .update({ delivery_date: String(requestedDeliveryDate), updated_at: new Date().toISOString() })
-        .eq('id', orderId);
-      if (deliveryDateError) {
-        return NextResponse.json({ error: 'Error al actualizar la fecha de entrega', details: deliveryDateError.message }, { status: 500, headers: corsHeaders });
-      }
-      deliveryDateUpdated = true;
     }
 
     // If updating items
@@ -1394,10 +1371,10 @@ export async function PATCH(request: NextRequest) {
       }, { headers: corsHeaders });
     }
 
-    if (customerDataUpdated || deliveryDateUpdated) {
+    if (customerDataUpdated) {
       return NextResponse.json({
         success: true,
-        message: deliveryDateUpdated ? 'Fecha de entrega actualizada exitosamente' : 'Datos del pedido actualizados exitosamente'
+        message: 'Datos del pedido actualizados exitosamente'
       }, { headers: corsHeaders });
     }
 

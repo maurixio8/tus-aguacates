@@ -1,8 +1,9 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
+import zones from '@/config/zonas-entrega.json';
 
 export interface RouteMapOrder {
   id: string;
@@ -19,52 +20,47 @@ interface RouteMapProps {
   orders: RouteMapOrder[];
   lineOrderIds?: string[];
   origin: { lat: number; lng: number; address: string };
-  dividerLatitude?: number | null;
 }
 
 const COLORS: Record<string, string> = { dentro: '#15803d', por_confirmar: '#d97706', chia: '#7c3aed', fuera: '#b91c1c' };
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
-export default function RouteMap({ orders, lineOrderIds = [], origin, dividerLatitude = null }: RouteMapProps) {
+export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const routeLayerReady = useRef(false);
-  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!mapContainer.current || mapRef.current || mapError) return;
-    try {
-      maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
-      const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
-      map.addControl(new maplibregl.NavigationControl(), 'top-right');
-      map.on('error', event => {
-        const message = String((event as any)?.error?.message || 'No se pudo cargar el mapa');
-        if (/WebGL2|GPUInitialization/i.test(message)) setMapError('Este navegador no tiene WebGL2 disponible. La cola y las paradas siguen visibles; abre el mapa en un navegador con aceleración gráfica.');
-      });
-      map.on('load', () => {
-        mapRef.current = map;
-        drawData(map, orders, lineOrderIds, origin);
-      });
-      return () => {
-        markersRef.current.forEach(marker => marker.remove());
-        markersRef.current = [];
-        map.remove();
-        mapRef.current = null;
-      };
-    } catch (error: any) {
-      const message = String(error?.message || error || 'No se pudo cargar el mapa');
-      setMapError(/WebGL2|GPUInitialization/i.test(message) ? 'Este navegador no tiene WebGL2 disponible. La cola y las paradas siguen visibles; abre el mapa en un navegador con aceleración gráfica.' : 'No se pudo cargar el mapa; la cola sigue disponible.');
-      return undefined;
-    }
+    if (!mapContainer.current || mapRef.current) return;
+    maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
+    const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
+    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map.on('load', () => {
+      mapRef.current = map;
+      addZones(map);
+      drawData(map, orders, lineOrderIds, origin);
+    });
+    return () => {
+      markersRef.current.forEach(marker => marker.remove());
+      markersRef.current = [];
+      map.remove();
+      mapRef.current = null;
+    };
     // Initial map owns the first draw; updates are handled by the second effect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapError]);
+  }, []);
 
   useEffect(() => {
     if (mapRef.current?.isStyleLoaded()) drawData(mapRef.current, orders, lineOrderIds, origin);
-  }, [orders, lineOrderIds, origin, dividerLatitude]);
+  }, [orders, lineOrderIds, origin]);
 
+  function addZones(map: maplibregl.Map) {
+    if (map.getSource('delivery-zones')) return;
+    map.addSource('delivery-zones', { type: 'geojson', data: zones as any });
+    map.addLayer({ id: 'delivery-zones-fill', type: 'fill', source: 'delivery-zones', paint: { 'fill-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'fill-opacity': 0.16 } });
+    map.addLayer({ id: 'delivery-zones-line', type: 'line', source: 'delivery-zones', paint: { 'line-color': ['case', ['==', ['get', 'tipo'], 'exclusion'], '#b91c1c', '#15803d'], 'line-width': 2 } });
+  }
 
   function drawData(map: maplibregl.Map, list: RouteMapOrder[], routeIds: string[], start: { lat: number; lng: number; address: string }) {
     markersRef.current.forEach(marker => marker.remove());
@@ -81,13 +77,6 @@ export default function RouteMap({ orders, lineOrderIds = [], origin, dividerLat
       map.addSource('shadow-route', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates } } as any });
       map.addLayer({ id: 'shadow-route-line', type: 'line', source: 'shadow-route', paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-opacity': 0.75, 'line-dasharray': [2, 1] } });
       routeLayerReady.current = true;
-    }
-
-    if (map.getLayer('north-south-divider')) map.removeLayer('north-south-divider');
-    if (map.getSource('north-south-divider')) map.removeSource('north-south-divider');
-    if (dividerLatitude != null) {
-      map.addSource('north-south-divider', { type: 'geojson', data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: [[-74.35, dividerLatitude], [-73.9, dividerLatitude]] } } as any });
-      map.addLayer({ id: 'north-south-divider', type: 'line', source: 'north-south-divider', paint: { 'line-color': '#7c3aed', 'line-width': 2, 'line-dasharray': [2, 2] } });
     }
 
     const originMarker = document.createElement('div');
@@ -118,7 +107,7 @@ export default function RouteMap({ orders, lineOrderIds = [], origin, dividerLat
           ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).'
           : `Mapa: ${located} ubicado${located === 1 ? '' : 's'} · ${unresolved.length} pendiente${unresolved.length === 1 ? '' : 's'} de ubicación.`}
       </div>
-      {mapError ? <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="font-semibold">Mapa no disponible en este navegador</p><p className="mt-1">{mapError}</p></div> : <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />}
+      <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />
       {unresolved.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
           <p className="font-semibold">Pedidos seleccionados sin parada en el mapa</p>

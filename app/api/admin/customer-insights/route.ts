@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
-import { normalizeOrderStatus } from '@/lib/orders/operational';
 
 export const dynamic = 'force-dynamic';
 
 const BOGOTA_OFFSET_MS = 5 * 60 * 60 * 1000;
+const CLOSED = new Set(['cancelled', 'cancelado', 'canceled']);
+const DELIVERED = new Set(['delivered', 'entregado', 'completed', 'completado']);
 
 function normalizePhone(value: unknown): string {
   const digits = String(value || '').replace(/\D/g, '');
@@ -52,8 +53,7 @@ export async function GET(request: NextRequest) {
     if (guestsResult.error) throw guestsResult.error;
 
     const orders = [...(ordersResult.data || []), ...(guestsResult.data || [])]
-      .map(order => ({ ...order, canonicalStatus: normalizeOrderStatus(order.order_status || order.status) }))
-      .filter(order => order.canonicalStatus !== 'cancelled');
+      .filter(order => !CLOSED.has(String(order.status || order.order_status || '').toLowerCase()));
 
     const now = Date.now();
     const grouped = new Map<string, any>();
@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
       };
 
       existing.orders += 1;
-      const state = order.canonicalStatus;
-      const isDelivered = state === 'delivered';
+      const state = String(order.order_status || order.status || '').toLowerCase();
+      const isDelivered = DELIVERED.has(state);
       if (isDelivered) existing.delivered += 1; else existing.pending += 1;
       existing.totalSpent += money(order.total ?? order.total_amount);
 
@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
       return { ...customer, products: undefined, topProducts, daysSince, segment, segmentLabel };
     });
 
-    const delivered = orders.filter(o => o.canonicalStatus === 'delivered').length;
+    const delivered = orders.filter(o => DELIVERED.has(String(o.order_status || o.status || '').toLowerCase())).length;
     const pending = orders.length - delivered;
     return NextResponse.json({
       success: true,

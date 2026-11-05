@@ -590,18 +590,6 @@ export async function GET(request: NextRequest) {
 
     console.log(`📊 Total clientes encontrados: ${total} (mostrando página ${page}, ${paginatedCustomers.length} items)`);
 
-    const duplicateGroups = ['phone', 'email'].flatMap(kind => {
-      const groups = new Map<string, number>();
-      for (const customer of allCustomers) {
-        const raw = kind === 'phone' ? customer.phone : customer.email;
-        const key = kind === 'phone' ? normalizePhone(String(raw || '')) : normalizeText(String(raw || ''));
-        if (key && key !== '57' && key !== 'sin telefono' && key !== 'sin teléfono') groups.set(key, (groups.get(key) || 0) + 1);
-      }
-      return Array.from(groups.entries())
-        .filter(([, count]) => count > 1)
-        .map(([key, count]) => ({ kind, keyMasked: kind === 'phone' ? `…${key.slice(-4)}` : `${key.slice(0, 3)}…`, count }));
-    });
-
     return NextResponse.json({
       success: true,
       data: paginatedCustomers,
@@ -615,8 +603,7 @@ export async function GET(request: NextRequest) {
         customers: allCustomers.filter(c => c.source === 'customers').length,
         profiles: allCustomers.filter(c => c.source === 'profiles').length,
         guests: allCustomers.filter(c => c.source === 'guest_orders').length
-      },
-      duplicateGroups
+      }
     });
 
   } catch (error) {

@@ -34,7 +34,6 @@ import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import { SUPPLIERS } from '@/lib/suppliers-config';
 import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 import { nextDeliveryDate } from '@/lib/admin-route';
-import { formatPurchaseQuantity, canonicalPurchaseVariantKey } from '@/lib/purchase-list-format';
 
 interface OrderItem {
   id: string;
@@ -268,6 +267,13 @@ export default function ListaComprasPage() {
     '56ac11a8-afce-4007-8ec4-d597282c4eab': [
       { name: 'Caja de 24 unidades hass mediano', quantity: 2, unit: 'caja', variant: '24 unidades' }
     ],
+    // Trío Frutal Premium: la definición vigente está en la descripción del producto.
+    // Se conserva por ID para que el nombre comercial del pedido no pueda romper el desglose.
+    '15811523-fa29-47fa-9307-f9bff141c5dd': [
+      { name: 'Fresas premium', quantity: 1, unit: 'contenedor', variant: '500 g', productId: 'b5a133b9-f949-4d59-81d9-fea9bd2f6b84', variantId: '8de25486-294e-4c0c-9622-3cf162992857' },
+      { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paquete', variant: '250 g', productId: 'e325c45f-7f5b-4474-bd22-11e1a9de285a', variantId: '4dc9b4dd-bf55-463d-bef4-8077517ea136' },
+      { name: 'Paquete 4 uni premium hass', quantity: 1, unit: 'paquete', variant: '4 unidades', productId: '0f57db2f-21fa-4387-b0c2-6f76e76804e4', variantId: '475a8bdf-73ee-462d-9dfb-7cb7d17e0e61' }
+    ],
     // Despensa Semanal de 12 Productos. La definición sale del catálogo vivo.
     // La descripción usa “fresas” genérico; la regla operativa vigente del
     // dashboard es Fresa Económica de 500 g, no Fresas Premium.
@@ -288,6 +294,8 @@ export default function ListaComprasPage() {
   };
 
   const COMBO_COMPONENTS: Record<string, ComboComponent[]> = {
+    'trío frutal premium': COMBO_COMPONENTS_BY_PRODUCT_ID['15811523-fa29-47fa-9307-f9bff141c5dd'],
+    'trio frutal premium': COMBO_COMPONENTS_BY_PRODUCT_ID['15811523-fa29-47fa-9307-f9bff141c5dd'],
     'combo ahorro #1': [
       { name: 'Caja de 24 unidades hass mediano', quantity: 1, unit: 'caja', variant: '24 unidades' },
       { name: 'Arándanos Orgánicos', quantity: 1, unit: 'paq', variant: 'X250grs' }
@@ -1517,16 +1525,50 @@ const normalizeVariant = (variant: string | null): string => {
     return undefined;
   };
 
-  const getPurchaseQuantityText = (product: ProductGrouped): string => formatPurchaseQuantity({
-    productName: product.product_name,
-    variantName: product.variant_name,
-    totalQuantity: product.total_quantity,
-    totalPhysicalUnits: product.total_physical_units,
-    physicalUnitName: product.physical_unit_name,
-    smallestWeightGrams: product.smallest_weight_grams,
-    totalInSmallestUnits: product.total_in_smallest_units,
-    totalWeightDisplay: product.total_weight_display,
-  });
+  const getPurchaseQuantityText = (product: ProductGrouped): string => {
+    const physicalTotal = product.total_physical_units ?? product.total_quantity;
+    const variantText = (product.variant_name || '').trim();
+    const normalizedVariant = variantText.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const variantWeight = extractWeightFromVariant(variantText);
+    const presentationMatch = normalizedVariant.match(/^(\d+\s*)?(bandejas?|paquetes?|atados?|bolsas?|frascos?|cajas?|unidades?)$/);
+    if (variantWeight !== undefined) {
+      const presentation = presentationMatch?.[2]?.replace(/s$/, '') || null;
+      if (presentation) {
+        const unit = presentationMatch?.[2]?.startsWith('unidad') ? 'unidad' : presentation;
+        const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+        return `${physicalTotal} ${plural} de ${formatWeight(variantWeight)}`;
+      }
+      return physicalTotal === 1 && variantWeight === 1000
+        ? '1 kg'
+        : `${physicalTotal} x ${formatWeight(variantWeight)}`;
+    }
+    if (presentationMatch) {
+      const unit = presentationMatch[2].replace(/s$/, '');
+      const plural = physicalTotal === 1 ? unit : unit === 'unidad' ? 'unidades' : `${unit}s`;
+      return `${physicalTotal} ${plural}`;
+    }
+
+    const physicalUnit = (product.physical_unit_name || 'unidad').toLowerCase();
+    const pluralUnit = physicalTotal === 1 ? physicalUnit : ({
+      caja: 'cajas', paquete: 'paquetes', contenedor: 'contenedores', bandeja: 'bandejas',
+      malla: 'mallas', kilo: 'kilos', libra: 'libras', unidad: 'unidades'
+    } as Record<string, string>)[physicalUnit] || `${physicalUnit}s`;
+    const volumeMl = extractVolumeFromVariant(product.variant_name || null);
+    if (volumeMl) {
+      return `${physicalTotal} ${pluralUnit} de ${volumeMl} ml`;
+    }
+    if (product.smallest_weight_grams && product.total_in_smallest_units) {
+      return `${product.total_in_smallest_units} ${pluralUnit} de ${formatWeight(product.smallest_weight_grams)}`;
+    }
+    if (product.total_weight_display) {
+      return `${product.total_weight_display} (${physicalTotal} ${pluralUnit})`;
+    }
+    const normalizedProduct = normalizeProductName(product.product_name || '', null).toLowerCase();
+    if (normalizedProduct.includes('menta')) {
+      return `${physicalTotal} ${pluralUnit} — PESO NO DEFINIDO (REVISAR)`;
+    }
+    return `${physicalTotal} ${pluralUnit}`;
+  };
 
   // Pre-procesar pedidos para obtener el resumen de cada uno
   const orderSummaries = useMemo(() => {
@@ -1574,9 +1616,7 @@ const normalizeVariant = (variant: string | null): string => {
           item.productName ||
           'Producto sin nombre';
           
-        const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
-          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
+        const comboComponents = resolveComboComponents(item.product_id, productName, COMBO_COMPONENTS_BY_PRODUCT_ID, COMBO_COMPONENTS);
           
         if (comboComponents) {
           const displayKey = productName;
@@ -1627,9 +1667,7 @@ const normalizeVariant = (variant: string | null): string => {
           'Producto sin nombre';
 
         // Verificar si es un combo y obtener sus componentes
-        const comboKey = productName.toLowerCase();
-        const comboComponents = COMBO_COMPONENTS_BY_PRODUCT_ID[item.product_id] || COMBO_COMPONENTS[comboKey] ||
-          Object.entries(COMBO_COMPONENTS).find(([key]) => comboKey.includes(key))?.[1];
+        const comboComponents = resolveComboComponents(item.product_id, productName, COMBO_COMPONENTS_BY_PRODUCT_ID, COMBO_COMPONENTS);
 
         if (comboComponents) {
           // Es un combo - desglosar en sus componentes
@@ -1840,7 +1878,7 @@ const normalizeVariant = (variant: string | null): string => {
             variantResolution.catalogDisplayName || productName,
             null
           );
-          const normalizedVariantKey = canonicalPurchaseVariantKey(canonicalGroupingName, variantDisplay);
+          const normalizedVariantKey = normalizeVariant(variantDisplay);
           const groupingKey = `canonical:${canonicalGroupingName}|${normalizedVariantKey || 'sin-variante'}`;
           const normalizedName = variantResolution.normalizedName;
 
@@ -2291,18 +2329,13 @@ const normalizeVariant = (variant: string | null): string => {
 
   // Verificar si un producto es un combo
   const isCombo = (productName: string): boolean => {
-    return productName.toLowerCase().includes('combo');
+    const normalized = productName.toLowerCase();
+    return normalized.includes('combo') || normalized.includes('trío frutal') || normalized.includes('trio frutal');
   };
 
   // Obtener componentes de un combo
   const getComboComponents = (productName: string) => {
-    const key = productName.toLowerCase();
-    for (const [comboKey, components] of Object.entries(COMBO_COMPONENTS)) {
-      if (key.includes(comboKey) || comboKey.includes(key.replace('combo ', ''))) {
-        return components;
-      }
-    }
-    return null;
+    return resolveComboComponents(null, productName, {}, COMBO_COMPONENTS);
   };
 
   // Copiar al portapapeles con feedback visual
@@ -2332,9 +2365,7 @@ const normalizeVariant = (variant: string | null): string => {
     
     customer.order_items.forEach(item => {
       // Verificar si es un combo
-      const itemNameLower = item.product_name.toLowerCase();
-      const comboComponents = COMBO_COMPONENTS[itemNameLower] ||
-        Object.entries(COMBO_COMPONENTS).find(([key]) => itemNameLower.includes(key))?.[1];
+      const comboComponents = getComboComponents(item.product_name);
 
       if (comboComponents) {
         // Es un combo - desglosar en componentes
@@ -2396,31 +2427,42 @@ const normalizeVariant = (variant: string | null): string => {
     submitExport('html');
   };
 
-  // Pide una URL corta al servidor y deja que el navegador descargue el archivo por GET.
-  // Evita tanto el límite de URL como el fallo de descarga de blobs/formularios en Android.
-  const submitExport = async (format: string) => {
-    const form = new FormData();
-    form.set('format', format);
-    form.set('dateFrom', dateFrom);
-    form.set('dateTo', dateTo);
-    form.set('routeDate', routeDate || '');
-    form.set('prepare', '1');
+  // Envía los productos agrupados (con presentación completa) al endpoint de exportación
+  // vía GET con datos compactos en la URL → descarga HTTP real, compatible con Arc Android
+  // (form.submit() POST no dispara descargas en Arc Android; window.location.href sí)
+  const submitExport = (format: string) => {
+    // Payload compacto (claves cortas para que quepa en la URL)
+    const payloadProducts = groupedProducts.map(p => ({
+      n: p.product_name,
+      v: p.variant_name || null,
+      q: getPurchaseQuantityText(p),
+      t: p.total_quantity,
+      f: p.total_physical_units,
+      u: p.physical_unit_name || null,
+      w: p.smallest_weight_grams || null,
+      s: p.total_in_smallest_units || null,
+      p: p.unit_price,
+      c: p.customer_breakdown.map(c => ({
+        n: c.customer_name,
+        a: c.customer_address || '',
+      })),
+    }));
 
-    try {
-      const response = await fetch('/api/admin/lista-compras/export', {
-        method: 'POST',
-        body: form,
-        credentials: 'include',
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.downloadUrl) {
-        throw new Error(payload?.error || `HTTP ${response.status}`);
-      }
-      window.location.href = payload.downloadUrl;
-    } catch (error) {
-      console.error('Error preparando exportación:', error);
-      window.alert('No se pudo descargar la lista. Intenta de nuevo.');
-    }
+    const payloadCombos = (orderedCombos || []).map(c => ({
+      n: c.name,
+      q: c.quantity,
+      d: c.description || '',
+    }));
+
+    const data = JSON.stringify({ products: payloadProducts, combos: payloadCombos });
+    // base64url compacto (sin +/= para URL segura)
+    const base64 = btoa(unescape(encodeURIComponent(data)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+
+    const url = `/api/admin/lista-compras/export?format=${encodeURIComponent(format)}&dateFrom=${encodeURIComponent(dateFrom)}&dateTo=${encodeURIComponent(dateTo)}${routeDate ? `&routeDate=${encodeURIComponent(routeDate)}` : ''}&data=${encodeURIComponent(base64)}`;
+    window.location.href = url;
   };
 
   const handleCopyAll = async () => {

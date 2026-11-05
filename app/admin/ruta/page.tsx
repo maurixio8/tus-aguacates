@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Truck,
@@ -31,8 +31,6 @@ import {
 import RouteMap from '@/components/admin/RouteMap';
 import ManualLocationPicker from '@/components/admin/ManualLocationPicker';
 import { formatNormalizedDeliveryAddress } from '@/lib/location-resolution';
-import { buildGoogleMapsDirectionsUrl, buildWhatsAppUrl } from '@/lib/admin-route';
-import { formatOperationalSummary } from '@/utils/orderSummaryGenerator';
 
 interface RouteItem {
   id: string;
@@ -41,16 +39,11 @@ interface RouteItem {
   customerPhone: string;
   deliveryAddress: string;
   totalAmount: number;
-  items: { name: string; quantity: number; price: number; subtotal?: number; variantName?: string; variant_value?: string; variant_name?: string; weight?: number | string | null; unit?: string | null }[];
+  items: { name: string; quantity: number; price: number }[];
   itemCount: number;
   createdAt: string;
   isDelivered: boolean;
   paymentStatus: string;
-  paymentMethod?: string | null;
-  subtotal?: number;
-  shippingFee?: number;
-  discount?: number;
-  couponCode?: string | null;
   notes: string;
   source: 'orders' | 'guest_orders';
   deliveryDate: string | null;
@@ -70,9 +63,6 @@ interface RouteItem {
   resolutionConfirmedBy?: string | null;
   resolutionResolvedAt?: string | null;
   resolutionHistory?: Array<{ event: string; status: string; corrected_address?: string | null; latitude?: number | null; longitude?: number | null; confirmed_by?: string | null; resolved_at?: string | null; rejection_reason?: string | null; captured_at: string }>;
-  isCancelled?: boolean;
-  cancellationReason?: string | null;
-  cancelledAt?: string | null;
 }
 
 interface ZoneData {
@@ -83,14 +73,16 @@ interface ZoneData {
 
 interface RouteData {
   orders: RouteItem[];
-  routeOrders: RouteItem[];
   zones: Record<string, ZoneData>;
   total: number;
   totalAmount: number;
-  counts: { total: number; conPin: number; geocodificados: number; porVerificar: number; fueraCobertura: number; chia: number; dentro: number; porConfirmar: number; ruta?: number; excluidas?: number; cancelados?: number };
+  counts: { total: number; conPin: number; geocodificados: number; porVerificar: number; fueraCobertura: number; chia: number; dentro: number; porConfirmar: number };
   dateFrom: string;
   dateTo: string;
   canonicalDateSource: string;
+  activeCycle?: boolean;
+  requestedDateFrom?: string | null;
+  requestedDateTo?: string | null;
   origin: { lat: number; lng: number; address: string };
 }
 
@@ -113,23 +105,10 @@ export default function RutaPage() {
   const [showMap, setShowMap] = useState(true);
   const [shadowResult, setShadowResult] = useState<any>(null);
   const [shadowLoading, setShadowLoading] = useState(false);
-  const [optimizedResult, setOptimizedResult] = useState<any>(null);
-  const [routeMode, setRouteMode] = useState<'compact' | 'split'>('compact');
-  const [optimizedLoading, setOptimizedLoading] = useState(false);
-  const [optimizedError, setOptimizedError] = useState('');
-  const [departureTime, setDepartureTime] = useState('14:00');
-  const [northDriver, setNorthDriver] = useState('Mauricio');
-  const [southDriver, setSouthDriver] = useState('Ayudante');
-  const [preRouteApproved, setPreRouteApproved] = useState(false);
   const [manualOrder, setManualOrder] = useState<RouteItem | null>(null);
   const [locationSaving, setLocationSaving] = useState(false);
   const [addressDrafts, setAddressDrafts] = useState<Record<string, string>>({});
   const [correctionLoading, setCorrectionLoading] = useState<string | null>(null);
-  const [operationsTab, setOperationsTab] = useState<'compras' | 'empaque' | 'carga' | 'conductor'>('compras');
-  const [shoppingChecked, setShoppingChecked] = useState<Set<string>>(new Set());
-  const [packedChecked, setPackedChecked] = useState<Set<string>>(new Set());
-  const [loadedChecked, setLoadedChecked] = useState<Set<string>>(new Set());
-  const checklistLoaded = useRef<string | null>(null);
 
   const fetchRoute = useCallback(async () => {
     setLoading(true);
@@ -138,12 +117,26 @@ export default function RutaPage() {
       const params = new URLSearchParams();
       if (dateDesde) params.set('desde', dateDesde);
       if (dateHasta) params.set('hasta', dateHasta);
+      params.set('active', '1');
       const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store' });
       const json = await res.json().catch(() => null);
       if (!res.ok) throw new Error(json?.error || 'Error al cargar ruta');
+      // Excluir pedidos pausados
+      if (excludedOrders.size > 0 && json.orders) {
+        json.orders = json.orders.filter((o: any) => !excludedOrders.has(o.id));
+        // Recalcular zonas
+        json.zones = recalculateZones(json.orders);
+        json.total = json.orders.length;
+        json.totalAmount = json.orders.reduce((s: number, o: any) => s + (o.totalAmount || 0), 0);
+      }
       setData(json);
-      if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
-      if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
+      if (json.activeCycle) {
+        setDateDesde(json.dateFrom);
+        setDateHasta(json.dateTo);
+      } else {
+        if (!dateDesde && json.dateFrom) setDateDesde(json.dateFrom);
+        if (!dateHasta && json.dateTo) setDateHasta(json.dateTo);
+      }
       // Expandir todas las zonas por defecto
       if (json.zones) {
         setExpandedZones(new Set(Object.keys(json.zones)));
@@ -153,7 +146,7 @@ export default function RutaPage() {
     } finally {
       setLoading(false);
     }
-  }, [dateDesde, dateHasta]);
+  }, [dateDesde, dateHasta, excludedOrders]);
 
   useEffect(() => {
     fetchRoute();
@@ -164,34 +157,29 @@ export default function RutaPage() {
     return () => window.clearInterval(timer);
   }, [fetchRoute]);
 
-  useEffect(() => {
-    const key = `phase5-checklists:${dateDesde || data?.dateFrom || 'sin-fecha'}:${dateHasta || data?.dateTo || 'sin-fecha'}`;
-    try {
-      const saved = JSON.parse(window.localStorage.getItem(key) || '{}');
-      setShoppingChecked(new Set(saved.shopping || []));
-      setPackedChecked(new Set(saved.packed || []));
-      setLoadedChecked(new Set(saved.loaded || []));
-      checklistLoaded.current = key;
-    } catch { /* estado local corrupto: se reinicia sin tocar servidor */ }
-  }, [dateDesde, dateHasta, data?.dateFrom, data?.dateTo]);
-
-  useEffect(() => {
-    const key = `phase5-checklists:${dateDesde || data?.dateFrom || 'sin-fecha'}:${dateHasta || data?.dateTo || 'sin-fecha'}`;
-    if (checklistLoaded.current !== key) return;
-    window.localStorage.setItem(key, JSON.stringify({ shopping: [...shoppingChecked], packed: [...packedChecked], loaded: [...loadedChecked] }));
-  }, [shoppingChecked, packedChecked, loadedChecked, dateDesde, dateHasta, data?.dateFrom, data?.dateTo]);
-
-  useEffect(() => {
-    if (data?.routeOrders) setRouteMode(data.routeOrders.length > 25 ? 'split' : 'compact');
-  }, [data?.routeOrders?.length]);
+  const normalizeShadowResult = (json: any) => {
+    const files = Array.isArray(json?.csvFiles) ? json.csvFiles : [];
+    const contents = files.map((file: any) => String(file.content || '')).filter(Boolean);
+    if (contents.length > 0) {
+      const bodies = contents.map((content: string) => content.split(/\r?\n/).slice(1).filter(Boolean).join('\n')).filter(Boolean);
+      json.csvFiles = [{
+        name: 'ruta-completa.csv',
+        stops: json.counts?.routed || 0,
+        content: `${contents[0].split(/\r?\n/)[0]}\n${bodies.join('\n')}\n`,
+        order_ids: files.flatMap((file: any) => file.order_ids || []),
+      }];
+      json.counts = { ...json.counts, routes: 1 };
+    }
+    return json;
+  };
 
   const generateShadow = async () => {
     const date = dateDesde || data?.dateFrom;
     if (!date) return;
     setShadowLoading(true);
     try {
-      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dateFrom: dateDesde || data?.dateFrom, dateTo: dateHasta || data?.dateTo }) });
-      const json = await res.json();
+      const res = await fetch('/api/admin/ruta/shadow', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date }) });
+      const json = normalizeShadowResult(await res.json());
       if (!res.ok) throw new Error(json.error || 'No se pudo generar la ruta sombra');
       setShadowResult(json);
     } catch (err: any) {
@@ -199,52 +187,33 @@ export default function RutaPage() {
     } finally { setShadowLoading(false); }
   };
 
-  const calculateOptimizedRoute = async (requestedMode: 'compact' | 'split' = routeMode) => {
-    if (!data?.routeOrders?.length) return;
-    setRouteMode(requestedMode);
-    setOptimizedLoading(true);
-    setOptimizedError('');
-    setPreRouteApproved(false);
-    const dates: string[] = [];
-    const start = new Date(`${dateDesde || data.dateFrom}T00:00:00Z`);
-    const end = new Date(`${dateHasta || data.dateTo}T00:00:00Z`);
-    for (const cursor = new Date(start); cursor <= end; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
-      if ([2, 5].includes(cursor.getUTCDay())) dates.push(cursor.toISOString().slice(0, 10));
-    }
-    const stops = data.routeOrders.filter(order => !order.isCancelled && order.coverage === 'dentro' && order.latitude != null && order.longitude != null).map(order => ({
-      id: order.id, orderNumber: order.orderNumber, source: order.source, customerName: order.customerName, customerPhone: order.customerPhone, deliveryAddress: order.deliveryAddress,
-      deliveryDate: order.deliveryDate || dateDesde || data.dateFrom, latitude: order.latitude, longitude: order.longitude, coverage: order.coverage, items: order.items, subtotal: order.subtotal, totalAmount: order.totalAmount, status: order.isDelivered ? 'delivered' : 'pending', paymentStatus: order.paymentStatus, paymentMethod: order.paymentMethod, deliveryNotes: order.notes, notes: order.notes, shippingFee: order.shippingFee, discount: order.discount, couponCode: order.couponCode,
-    }));
-    const cacheKey = `admin-route-optimization:v4:${JSON.stringify({ mode: requestedMode, dates, departureTime, northDriver, southDriver, maxStops: 0, stops: stops.map(stop => [stop.id, stop.latitude, stop.longitude, stop.deliveryDate, stop.items, stop.notes]) })}`;
+  const downloadCsv = async () => {
+    const date = shadowResult?.date || data?.dateFrom;
+    if (!date) return;
     try {
-      const cached = window.localStorage.getItem(cacheKey);
-      if (cached) { setOptimizedResult({ ...JSON.parse(cached), cacheHit: true, routesApiCalls: 0 }); return; }
-      const res = await fetch('/api/admin/ruta/optimize', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: requestedMode, dates, departureTime, exportMode: 'unlimited', maxStops: 0, drivers: { norte: northDriver, sur: southDriver }, stops }) });
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'No se pudo calcular la ruta optimizada');
-      window.localStorage.setItem(cacheKey, JSON.stringify(json));
-      setOptimizedResult(json);
-    } catch (err: any) {
-      setOptimizedError(err.message || 'Error calculando la ruta optimizada');
-    } finally { setOptimizedLoading(false); }
-  };
-
-  const approvePreRoute = () => {
-    if (!optimizedResult) return;
-    const approved = { ...optimizedResult, approvedAt: new Date().toISOString() };
-    window.localStorage.setItem(`admin-route-approved:${optimizedResult.dateFrom}:${optimizedResult.dateTo}`, JSON.stringify(approved));
-    setOptimizedResult(approved);
-    setPreRouteApproved(true);
-  };
-
-  const markDriverDelivered = async (stop: any) => {
-    const confirmed = window.confirm(`¿Marcar como entregado el pedido de ${stop.customerName || 'este cliente'}?`);
-    if (!confirmed) return false;
-    const res = await fetch('/api/admin/ruta', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'deliver', orderId: stop.id, source: stop.source, confirmDelivery: true }) });
-    const json = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(json?.error || 'No se pudo marcar entregado');
-    await fetchRoute();
-    return true;
+      const response = await fetch(`/api/admin/ruta/shadow?date=${date}&file=ruta-completa.csv&download=1`, { credentials: 'include', cache: 'no-store' });
+      if (!response.ok) throw new Error(await response.text());
+      const blob = await response.blob();
+      const file = new File([blob], 'ruta-completa.csv', { type: 'text/csv' });
+      const nav = navigator as Navigator & { canShare?: (data: { files: File[] }) => boolean; share?: (data: { files: File[]; title?: string }) => Promise<void> };
+      if (nav.share) {
+        try {
+          await nav.share({ files: [file], title: 'ruta-completa.csv' });
+          return;
+        } catch (shareError: any) {
+          if (shareError?.name === 'AbortError') return;
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = 'ruta-completa.csv';
+      document.body.appendChild(anchor);
+      anchor.click();
+      window.setTimeout(() => { anchor.remove(); URL.revokeObjectURL(url); }, 30000);
+    } catch (error: any) {
+      setError(`No se pudo descargar el CSV: ${error?.message || 'error de descarga'}`);
+    }
   };
 
   const correctAddress = async (order: RouteItem) => {
@@ -268,21 +237,6 @@ export default function RutaPage() {
     }
   };
 
-  const cancelOrder = async (order: RouteItem) => {
-    if (order.isCancelled) return;
-    const reason = order.coverage === 'chia' ? 'Chía' : order.coverage === 'fuera' ? (order.coverageReason || 'fuera de zonas') : (order.coverageReason || 'fuera de cobertura');
-    const confirmed = window.confirm(`¿Cancelar este pedido? Está fuera de cobertura: ${reason}. El cliente quedará registrado como cancelado por fuera de cobertura.`);
-    if (!confirmed) return;
-    setError('');
-    try {
-      const res = await fetch('/api/admin/ruta', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cancel', orderId: order.id, source: order.source, reason, confirmCancellation: true }) });
-      const json = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(json?.error || 'No se pudo cancelar el pedido');
-      await fetchRoute();
-    } catch (err: any) {
-      setError(err.message || 'Error cancelando pedido');
-    }
-  };
   const reopenResolution = async (order: RouteItem) => {
     if (!order.resolutionId) return;
     setError('');
@@ -402,14 +356,14 @@ export default function RutaPage() {
     });
   };
 
-  // Generar URL de Google Maps con todas las paradas en orden.
+  // Generar URL de Google Maps multi-parada
   const gmapsMultiUrl = () => {
-    const candidates = (shadowResult?.routes || []).flatMap((route: any) => route.order_ids || []);
-    const orderById = new Map<string, RouteItem>((data?.orders || []).map((order: RouteItem) => [order.id, order]));
-    const sourceOrders: Array<RouteItem | undefined> = candidates.length ? candidates.map((id: string) => orderById.get(id)) : (data?.routeOrders || data?.orders || []);
-    const ordered = sourceOrders.filter((order): order is RouteItem => Boolean(order && !order.isCancelled && order.coverage === 'dentro' && order.latitude != null && order.longitude != null && (selectedOrders.size === 0 || selectedOrders.has(order.id))));
-    const originCoordinates = '4.63205,-74.15534';
-    return buildGoogleMapsDirectionsUrl(originCoordinates, ordered.map(order => `${order.latitude},${order.longitude}`), originCoordinates);
+    const selected = data?.orders.filter(o => selectedOrders.has(o.id) && !excludedOrders.has(o.id)) || [];
+    if (selected.length === 0 && !originAddress) return '#';
+    const base = 'https://www.google.com/maps/dir/';
+    const origin = originAddress ? encodeURIComponent(originAddress) : '';
+    const destinations = selected.map(o => '/' + encodeURIComponent(o.deliveryAddress.replace(/\?/g, '').trim()));
+    return `${base}${origin}${destinations.join('')}`;
   };
 
   const selectAll = () => {
@@ -421,15 +375,16 @@ export default function RutaPage() {
     }
   };
 
-  const navigationCoordinates = (latitude: number | null, longitude: number | null) => latitude != null && longitude != null ? `${latitude},${longitude}` : null;
-  const wazeUrl = (order: RouteItem) => {
-    const coordinates = navigationCoordinates(order.latitude, order.longitude);
-    return coordinates ? `https://waze.com/ul?ll=${encodeURIComponent(coordinates)}&navigate=yes` : null;
+  // Generar URL de Waze
+  const wazeUrl = (address: string) => {
+    const q = encodeURIComponent(address.replace(/\?/g, '').trim());
+    return `https://waze.com/ul?q=${q}&navigate=yes`;
   };
 
-  const gmapsUrl = (order: RouteItem) => {
-    const coordinates = navigationCoordinates(order.latitude, order.longitude);
-    return coordinates ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coordinates)}&travelmode=driving` : null;
+  // Generar URL de Google Maps
+  const gmapsUrl = (address: string) => {
+    const q = encodeURIComponent(address.replace(/\?/g, '').trim());
+    return `https://www.google.com/maps/dir/?api=1&destination=${q}`;
   };
 
   // Copiar al portapapeles
@@ -451,7 +406,11 @@ export default function RutaPage() {
     }
   };
 
-  const whatsappUrl = (phone: string, address?: string) => buildWhatsAppUrl(phone, address);
+  // Formatear teléfono para WhatsApp
+  const whatsappUrl = (phone: string) => {
+    const clean = phone.replace(/[^0-9]/g, '');
+    return `https://wa.me/${clean}`;
+  };
 
   // Fecha en hora Colombia
   const toColombiaTime = (utcStr: string) => {
@@ -579,7 +538,7 @@ export default function RutaPage() {
         {/* Filtros: Rango de fechas + Origen */}
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Desde</label>
+            <label className="block text-xs text-gray-500 mb-1">Rango de entrega — Desde</label>
             <input
               type="date"
               value={dateDesde}
@@ -588,7 +547,7 @@ export default function RutaPage() {
             />
           </div>
           <div>
-            <label className="block text-xs text-gray-500 mb-1">Hasta</label>
+            <label className="block text-xs text-gray-500 mb-1">Rango de entrega — Hasta</label>
             <input
               type="date"
               value={dateHasta}
@@ -661,12 +620,22 @@ export default function RutaPage() {
         <button onClick={generateShadow} disabled={shadowLoading} className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50">
           {shadowLoading ? 'Generando...' : 'Generar ruta sombra'}
         </button>
-        <button onClick={() => calculateOptimizedRoute()} disabled={optimizedLoading || !data?.routeOrders?.length} className="px-3 py-1.5 text-sm bg-purple-700 text-white rounded-lg hover:bg-purple-800 disabled:opacity-50">
-          {optimizedLoading ? 'Calculando...' : 'Calcular ruta optimizada'}
-        </button>
+
+        {/* Botón abrir todo en Waze */}
+        {selectedOrders.size > 0 && (
+          <a
+            href={wazeUrl(filteredOrders.filter(o => selectedOrders.has(o.id)).map(o => o.deliveryAddress).join('&q='))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1"
+          >
+            <Navigation className="w-4 h-4" />
+            Abrir en Waze
+          </a>
+        )}
 
         {/* Botón Ruta completa en Google Maps */}
-        {(selectedOrders.size > 0 || (data?.routeOrders?.length || 0) > 0) && (
+        {selectedOrders.size > 0 && (
           <a
             href={gmapsMultiUrl()}
             target="_blank"
@@ -693,9 +662,7 @@ export default function RutaPage() {
       </div>
 
       {data && <div className="mb-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-900"><b>Fecha canónica:</b> {data.dateFrom}{data.dateTo !== data.dateFrom ? ` a ${data.dateTo}` : ''}. {data.canonicalDateSource}</div>}
-      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} rutas para {shadowResult.dates?.join(', ') || shadowResult.date}. <span className="ml-2 inline-flex flex-wrap gap-2">{(shadowResult.days || []).map((day: any) => <span key={day.date} className="inline-flex gap-2 border-l border-green-300 pl-2"><b>{day.date}</b><a className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=route-report.json`} target="_blank">Reporte</a><a className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=preview.html`} target="_blank">Preview</a>{(day.routes || []).map((r: any) => <a key={r.file || r.name} className="underline" href={`/api/admin/ruta/shadow?date=${day.date}&file=${encodeURIComponent(r.file || 'ruta-completa.csv')}&download=1`} target="_blank">Descargar {r.name}.csv</a>)}</span>)}</span></div>}
-      {optimizedError && <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{optimizedError}</div>}
-      {data && <section className="mb-4 rounded-xl border border-purple-200 bg-purple-50 p-4"><div className="mb-3 flex flex-wrap items-center gap-2"><span className="text-sm font-semibold text-purple-950">Modo de pre-ruta:</span><button type="button" onClick={() => calculateOptimizedRoute('compact')} className={`rounded px-3 py-1.5 text-xs font-semibold ${routeMode === 'compact' ? 'bg-purple-700 text-white' : 'border border-purple-200 bg-white text-purple-900'}`}>Ruta única (compacta, solo yo)</button><button type="button" onClick={() => calculateOptimizedRoute('split')} className={`rounded px-3 py-1.5 text-xs font-semibold ${routeMode === 'split' ? 'bg-purple-700 text-white' : 'border border-purple-200 bg-white text-purple-900'}`}>Dividida Norte/Sur (con ayudante)</button></div><div className="flex flex-wrap items-end gap-3"><div><label className="block text-xs font-semibold text-purple-950">Salida</label><input type="time" value={departureTime} onChange={event => { setDepartureTime(event.target.value); setOptimizedResult(null); }} className="mt-1 rounded border border-purple-200 bg-white px-2 py-1.5 text-sm" /></div><div><label className="block text-xs font-semibold text-purple-950">Conductor Norte</label><input value={northDriver} onChange={event => { setNorthDriver(event.target.value); setOptimizedResult(null); }} className="mt-1 rounded border border-purple-200 bg-white px-2 py-1.5 text-sm" /></div><div><label className="block text-xs font-semibold text-purple-950">Conductor Sur</label><input value={southDriver} onChange={event => { setSouthDriver(event.target.value); setOptimizedResult(null); }} className="mt-1 rounded border border-purple-200 bg-white px-2 py-1.5 text-sm" /></div><button type="button" onClick={() => calculateOptimizedRoute()} disabled={optimizedLoading || !data.routeOrders?.length} className="rounded bg-purple-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">{optimizedLoading ? 'Calculando...' : 'Calcular ruta optimizada'}</button></div><p className="mt-2 text-xs text-purple-900">Fase 4 en sombra: propone el orden, no despacha ni envía a Spoke. La salida por defecto es 14:00.</p>{optimizedResult && <div className="mt-3 rounded-lg border border-purple-200 bg-white p-3 text-sm"><div className="flex flex-wrap items-center justify-between gap-2"><div><b>Pre-ruta propuesta:</b> {optimizedResult.totalStops} paradas · {optimizedResult.routeCount} rutas · tiempo total {optimizedResult.durationLabel} · llamadas Routes API: {optimizedResult.routesApiCalls}{optimizedResult.cacheHit ? ' (caché)' : ''}</div>{optimizedResult.suggestedHelper && <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-semibold text-amber-900">Sugerir ayudante: más de 25 pedidos</span>}</div><div className="mt-2 text-xs text-gray-700">Criterio: {optimizedResult.balanceCriterion}</div><div className="mt-3 grid gap-3 md:grid-cols-2">{optimizedResult.routes.map((route: any, index: number) => <div key={`${route.date}-${route.group}-${index}`} className="rounded border border-gray-200 p-3"><div className="flex items-center justify-between gap-2"><b>{route.date} · {route.group}</b><span className="text-xs text-gray-600">{route.driver}</span></div><div className="mt-1 text-xs text-gray-600">{route.stops.length} paradas · <b>Actual:</b> {((route.currentDistanceMeters || 0) / 1000).toFixed(1)} km / {Math.round((route.currentDurationSeconds || 0) / 60)} min · <b>Optimizada:</b> {(route.totalDistanceMeters / 1000).toFixed(1)} km / {Math.round(route.totalDurationSeconds / 60)} min</div><div className="mt-2 space-y-1 text-xs">{route.stops.map((stop: any, stopIndex: number) => <div key={stop.id}><b>{stopIndex + 1}. {route.legs?.[stopIndex]?.eta || '--:--'}</b> · {stop.address}</div>)}</div><div className="mt-2 text-[11px] text-gray-500">Orden llegada: {route.originalStops.map((stop: any) => stop.id.slice(-6)).join(' → ')}<br />Orden optimizado: {route.stops.map((stop: any) => stop.id.slice(-6)).join(' → ')}</div>{preRouteApproved && <a download={`spoke-${route.date}-${route.group}.csv`} href={`data:text/csv;charset=utf-8,${encodeURIComponent(route.csv)}`} className="mt-2 inline-block rounded border border-gray-300 px-2 py-1 text-xs text-gray-700">Descargar CSV</a>}</div>)}</div><div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={approvePreRoute} disabled={preRouteApproved} className="rounded bg-green-700 px-3 py-2 text-sm font-semibold text-white disabled:opacity-60">{preRouteApproved ? 'Pre-ruta aprobada' : 'Aprobar pre-ruta'}</button>{preRouteApproved && <span className="self-center text-xs font-semibold text-green-800">Aprobada localmente; los CSV se importan manualmente.</span>}</div></div>}</section>}{optimizedResult?.routes?.length ? <DeliveryOperations routes={optimizedResult.routes} tab={operationsTab} setTab={setOperationsTab} shoppingChecked={shoppingChecked} setShoppingChecked={setShoppingChecked} packedChecked={packedChecked} setPackedChecked={setPackedChecked} loadedChecked={loadedChecked} setLoadedChecked={setLoadedChecked} onDelivered={markDriverDelivered} /> : null}
+      {shadowResult && <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm"><b>Ruta sombra:</b> {shadowResult.counts?.routed || 0} paradas en {shadowResult.counts?.routes || 0} CSV{shadowResult.counts?.pending_coordinates ? ` · ${shadowResult.counts.pending_coordinates} sin coordenadas` : ''}. <div className="mt-2 inline-flex flex-wrap gap-2">{shadowResult.csvFiles?.length > 0 && <a href={shadowResult.downloadUrl} target="_blank" rel="noopener noreferrer" className="underline">Descargar ruta-completa.csv</a>}</div>{shadowResult.warning && <span className="mt-2 block text-xs text-green-800">{shadowResult.warning}</span>}</div>}
 
       {data && data.orders.filter(order => order.latitude == null || order.longitude == null).length > 0 && (
         <section className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -714,7 +681,7 @@ export default function RutaPage() {
                 {normalizedPreview && <div className="mt-2 rounded-md bg-green-50 p-2 text-xs text-green-900"><b>Versión normalizada:</b> {normalizedPreview}</div>}
                 {order.resolutionHistory && order.resolutionHistory.length > 0 && <details className="mt-2 rounded-md bg-gray-50 p-2 text-xs text-gray-700"><summary className="cursor-pointer font-semibold">Historial de resolución ({order.resolutionHistory.length})</summary><div className="mt-2 space-y-1">{order.resolutionHistory.slice().reverse().map((entry, index) => <div key={`${entry.captured_at}-${index}`} className="border-l-2 border-gray-300 pl-2"><b>{entry.event}</b> · {entry.status} · {entry.confirmed_by || 'sin confirmador'} · {toColombiaTime(entry.captured_at)}{entry.rejection_reason ? ` · ${entry.rejection_reason}` : ''}</div>)}</div></details>}
                 {order.resolutionCandidates.length > 0 ? <div className="mt-3 space-y-1"><div className="text-xs font-semibold text-gray-700">Candidatos — niveles y cobertura separados</div>{order.resolutionCandidates.slice(0, 5).map((candidate, index) => <button key={`${candidate.latitude}-${candidate.longitude}-${index}`} type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'confirm', candidate)} className={`block w-full rounded border px-3 py-2 text-left text-sm ${candidate.level === 'fuerte' && candidate.recommended ? 'border-green-200 bg-green-50 text-green-900' : candidate.level === 'calle' ? 'border-gray-200 bg-gray-50 text-gray-700' : 'border-amber-200 bg-amber-50 text-amber-950'}`}><b>{candidate.levelLabel || 'AMBIGUO · requiere revisión'}</b> · candidato {index + 1} · {candidate.label} · proveedor: {candidate.provider} · confianza: {candidate.confidenceBuildingLevel ?? candidate.confidence} · {candidate.coverageLabel || 'cobertura por confirmar'}{candidate.locality ? ` · ${candidate.locality}` : ''}</button>)}</div> : <div className="mt-2 text-xs text-amber-800">No hay candidato exacto todavía. Si sigue así, usa pin manual o WhatsApp.</div>}
-                <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button>{whatsappUrl(order.customerPhone, order.deliveryAddress) ? <a href={whatsappUrl(order.customerPhone, order.deliveryAddress) || '#'} target="_blank" rel="noopener noreferrer" className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Escribir al cliente</a> : <button type="button" disabled className="rounded border border-gray-300 px-3 py-2 text-sm font-medium text-gray-400">Sin teléfono</button>}<button type="button" onClick={() => cancelOrder(order)} className="rounded border border-red-700 px-3 py-2 text-sm font-medium text-red-800">Cancelar pedido</button></div>
+                <div className="mt-3 flex flex-wrap gap-2"><button type="button" onClick={() => setManualOrder(order)} className="rounded bg-green-700 px-3 py-2 text-sm font-medium text-white">Poner pin manual</button><button type="button" disabled={locationSaving} onClick={() => saveLocation(order, 'whatsapp')} className="rounded border border-green-700 px-3 py-2 text-sm font-medium text-green-800">Marcar para WhatsApp</button></div>
               </div>;
             })}
           </div>
@@ -728,10 +695,10 @@ export default function RutaPage() {
         <div className="mb-6 p-4 bg-white rounded-xl border border-gray-200">
           <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
             <MapPin className="w-4 h-4 text-green-600" />
-            Ruta visual — {selectedOrders.size > 0 ? selectedOrders.size : (data.routeOrders || []).length} paradas
+            Ruta visual — {selectedOrders.size > 0 ? selectedOrders.size : data.orders.length} paradas
           </h3>
           <RouteMap
-            orders={(data.routeOrders || data.orders.filter((o: RouteItem) => !o.isCancelled && o.coverage === 'dentro' && o.latitude != null && o.longitude != null))
+            orders={data.orders
               .filter(o => selectedOrders.size === 0 || selectedOrders.has(o.id))
               .filter(o => !excludedOrders.has(o.id))
               .map(o => ({
@@ -744,8 +711,7 @@ export default function RutaPage() {
                 coordinateSource: o.coordinateSource,
                 coverage: o.coverage,
               }))}
-            lineOrderIds={optimizedResult?.routes?.flatMap((r: any) => r.stops?.map((stop: any) => stop.id) || []) || shadowResult?.routes?.flatMap((r: any) => r.order_ids || []) || []}
-            dividerLatitude={optimizedResult ? (() => { const north = optimizedResult.routes.filter((r: any) => r.group === 'Norte').flatMap((r: any) => r.stops || []); const south = optimizedResult.routes.filter((r: any) => r.group === 'Sur').flatMap((r: any) => r.stops || []); return north.length && south.length ? (Math.max(...north.map((s: any) => s.latitude)) + Math.min(...south.map((s: any) => s.latitude))) / 2 : null; })() : null}
+            lineOrderIds={shadowResult?.routes?.flatMap((r: any) => r.order_ids || []) || []}
             origin={data.origin}
           />
         </div>
@@ -785,10 +751,9 @@ export default function RutaPage() {
                 onToggleExclude={() => toggleExclude(order.id)}
                 isExcluded={excludedOrders.has(order.id)}
                 onToggleExpand={() => toggleOrder(order.id)}
-                wazeUrl={wazeUrl(order)}
-                gmapsUrl={gmapsUrl(order)}
-                whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
-                onCancel={() => cancelOrder(order)}
+                wazeUrl={wazeUrl(order.deliveryAddress)}
+                gmapsUrl={gmapsUrl(order.deliveryAddress)}
+                whatsappUrl={whatsappUrl(order.customerPhone)}
                 copyToClipboard={copyToClipboard}
                 copiedIndex={copiedIndex}
                 toColombiaTime={toColombiaTime}
@@ -836,10 +801,9 @@ export default function RutaPage() {
                   onToggleExclude={() => toggleExclude(order.id)}
                   isExcluded={excludedOrders.has(order.id)}
                   onToggleExpand={() => toggleOrder(order.id)}
-                  wazeUrl={wazeUrl(order)}
-                  gmapsUrl={gmapsUrl(order)}
-                  whatsappUrl={whatsappUrl(order.customerPhone, order.deliveryAddress)}
-                onCancel={() => cancelOrder(order)}
+                  wazeUrl={wazeUrl(order.deliveryAddress)}
+                  gmapsUrl={gmapsUrl(order.deliveryAddress)}
+                  whatsappUrl={whatsappUrl(order.customerPhone)}
                   copyToClipboard={copyToClipboard}
                   copiedIndex={copiedIndex}
                   toColombiaTime={toColombiaTime}
@@ -867,7 +831,6 @@ function OrderCard({
   wazeUrl,
   gmapsUrl,
   whatsappUrl,
-  onCancel,
   copyToClipboard,
   copiedIndex,
   toColombiaTime,
@@ -881,10 +844,9 @@ function OrderCard({
   onToggleExclude: () => void;
   isExcluded: boolean;
   onToggleExpand: () => void;
-  wazeUrl: string | null;
-  gmapsUrl: string | null;
-  whatsappUrl: string | null;
-  onCancel: () => void;
+  wazeUrl: string;
+  gmapsUrl: string;
+  whatsappUrl: string;
   copyToClipboard: (text: string, id: string) => void;
   copiedIndex: string | null;
   toColombiaTime: (s: string) => string;
@@ -948,10 +910,9 @@ function OrderCard({
             </div>
 
             <div className="flex items-center gap-3 mt-1.5">
+              <span className="text-xs font-medium text-indigo-700">Entrega: {order.deliveryDate || 'sin fecha'}</span>
+              <span className="text-xs text-gray-400">Creado: {toColombiaTime(order.createdAt)}</span>
               <span className="text-xs text-gray-400">{order.itemCount} items</span>
-              <span className="text-xs text-gray-400">
-                {toColombiaTime(order.createdAt)}
-              </span>
               {itemsSummary && (
                 <span className="text-xs text-gray-400 truncate">{itemsSummary}{hasMore ? '...' : ''}</span>
               )}
@@ -962,7 +923,7 @@ function OrderCard({
         {/* Botones de acción rápidos */}
         <div className="flex gap-1.5 mt-2 ml-8">
           <a
-            href={wazeUrl || '#'}
+            href={wazeUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100 transition-colors"
@@ -972,7 +933,7 @@ function OrderCard({
             Waze
           </a>
           <a
-            href={gmapsUrl || '#'}
+            href={gmapsUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
@@ -981,25 +942,16 @@ function OrderCard({
             <MapPin className="w-3 h-3" />
             Maps
           </a>
-          {whatsappUrl ? <a
+          <a
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1 px-2 py-1 text-xs bg-green-50 text-green-700 rounded hover:bg-green-100 transition-colors"
-            title="Abrir WhatsApp con mensaje preparado"
+            title="Enviar WhatsApp"
           >
             <Phone className="w-3 h-3" />
-            Escribir al cliente
-          </a> : <button type="button" disabled className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-50 text-gray-400 rounded" title="No hay teléfono usable"><Phone className="w-3 h-3" />Sin teléfono</button>}
-          {!order.isCancelled && <button
-            type="button"
-            onClick={(e) => { e.stopPropagation(); onCancel(); }}
-            className="flex items-center gap-1 px-2 py-1 text-xs bg-red-50 text-red-700 rounded hover:bg-red-100 transition-colors"
-            title="Cancelar pedido por fuera de cobertura"
-          >
-            <XCircle className="w-3 h-3" />
-            Cancelar pedido
-          </button>}
+            WhatsApp
+          </a>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -1117,34 +1069,4 @@ function OrderCard({
       )}
     </div>
   );
-}
-
-function DeliveryOperations({ routes, tab, setTab, shoppingChecked, setShoppingChecked, packedChecked, setPackedChecked, loadedChecked, setLoadedChecked, onDelivered }: any) {
-  const stops = routes.flatMap((route: any) => (route.stops || []).map((stop: any, index: number) => ({ ...stop, route, routeIndex: index })));
-  const [driverIndex, setDriverIndex] = useState(0);
-  const [notDelivered, setNotDelivered] = useState<Set<string>>(new Set());
-  const shopping = Array.from(stops.reduce((map: Map<string, any>, stop: any) => {
-    (stop.items || []).forEach((item: any) => {
-      const components = item.comboComponents?.length ? item.comboComponents.map((component: any) => ({ ...component, quantity: Number(component.quantity || 1) * Number(item.quantity || 1) })) : [item];
-      components.forEach((sourceItem: any) => {
-      const variant = sourceItem.variantName || sourceItem.variant_name || sourceItem.variant_value || sourceItem.variant || '';
-      const weight = sourceItem.weight !== null && sourceItem.weight !== undefined && sourceItem.weight !== '' ? `${sourceItem.weight}${sourceItem.unit || 'g'}` : '';
-      const key = `${sourceItem.name}|${variant}|${weight}`;
-      const current = map.get(key) || { key, name: sourceItem.name, variant, weight, quantity: 0, review: !item.comboComponents?.length && /combo/i.test(sourceItem.name) };
-      current.quantity += Number(sourceItem.quantity || 1);
-      map.set(key, current);
-      });
-    });
-    return map;
-  }, new Map()).values());
-  const toggle = (setter: any, key: string) => setter((previous: Set<string>) => { const next = new Set(previous); next.has(key) ? next.delete(key) : next.add(key); return next; });
-  const tabs = [['compras', '1. Lista de compras'], ['empaque', '2. Empaque · canastas Castilla'], ['carga', '3. Carga inversa'], ['conductor', '4. Pantalla del conductor']];
-  const summary = (stop: any) => formatOperationalSummary({ id: stop.id, order_number: stop.orderNumber, customer_name: stop.customerName, customer_phone: stop.customerPhone, delivery_address: stop.address, status: stop.status, payment_status: stop.paymentStatus, payment_method: stop.paymentMethod, delivery_date: stop.deliveryDate, delivery_notes: stop.deliveryNotes, notes: stop.notes, subtotal: stop.subtotal, total_amount: stop.totalAmount, shipping_fee: stop.shippingFee, discount: stop.discount, coupon_code: stop.couponCode, items: stop.items });
-  return <section className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4" data-testid="delivery-operations">
-    <div className="mb-3 flex flex-wrap gap-2">{tabs.map(([key, label]) => <button key={key} type="button" onClick={() => setTab(key)} className={`rounded-lg px-3 py-2 text-sm font-semibold ${tab === key ? 'bg-emerald-700 text-white' : 'bg-white text-emerald-900 border border-emerald-200'}`}>{label}</button>)}</div>
-    {tab === 'compras' && <div><div className="mb-3 flex items-center justify-between"><div><h2 className="text-lg font-bold text-emerald-950">Lista de compras consolidada</h2><p className="text-xs text-emerald-800">{shopping.length} productos consolidados de {stops.length} paradas.</p></div><span className="text-sm font-semibold text-emerald-900">{shopping.filter((item: any) => shoppingChecked.has(item.key)).length}/{shopping.length} listos</span></div><div className="grid gap-2 sm:grid-cols-2">{shopping.map((item: any) => <label key={item.key} className={`flex cursor-pointer items-center gap-3 rounded-xl border bg-white p-3 ${shoppingChecked.has(item.key) ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-100'}`}><input type="checkbox" checked={shoppingChecked.has(item.key)} onChange={() => toggle(setShoppingChecked, item.key)} className="h-5 w-5" /><span><b>{item.quantity} × {item.name}</b>{item.review && <span className="ml-2 rounded bg-red-100 px-1.5 py-0.5 text-xs font-bold text-red-800">REVISAR</span>}{(item.variant || item.weight) && <span className="block text-xs text-gray-600">{[item.variant, item.weight].filter(Boolean).join(' · ')}</span>}</span></label>)}</div></div>}
-    {tab === 'empaque' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Empaque por pedido</h2><p className="mb-3 text-xs text-emerald-800">Una canasta Castilla por cliente. Marca cada ítem cuando quede empacado. Las canastas están en orden de entrega.</p><div className="grid gap-3 md:grid-cols-2">{stops.map((stop: any, stopIndex: number) => <article key={stop.id} className="rounded-xl border border-emerald-100 bg-white p-4"><div><b>Entrega {stopIndex + 1} · Canasta Castilla · {stop.customerName || 'Cliente'}</b><div className="text-xs text-gray-600">{stop.address}</div></div><div className="mt-3 space-y-2">{(stop.items || []).map((item: any, itemIndex: number) => { const key = `${stop.id}:item:${itemIndex}`; const combo = item.comboComponents?.length ? ` · Contenido: ${item.comboComponents.map((component: any) => `${component.quantity * Number(item.quantity || 1)} x ${component.name}${component.variant ? ` (${component.variant})` : ''}`).join('; ')}` : ''; return <label key={key} className={`flex cursor-pointer items-start gap-2 rounded-lg border p-2 ${packedChecked.has(key) ? 'border-emerald-500 bg-emerald-100' : 'border-gray-100 bg-gray-50'}`}><input type="checkbox" checked={packedChecked.has(key)} onChange={() => toggle(setPackedChecked, key)} className="mt-1 h-5 w-5" /><span className="text-sm"><b>{item.quantity || 1} x {item.name}</b>{item.variantName && <span className="block text-xs text-gray-600">Variante: {item.variantName}</span>}{item.weight !== null && item.weight !== undefined && item.weight !== '' && <span className="block text-xs text-gray-600">Peso: {item.weight}{item.unit || 'g'}</span>}{combo && <span className="block text-xs text-indigo-700">Combo{combo}</span>}</span></label>; })}</div><div className="mt-3 text-xs text-gray-500">{(stop.items || []).filter((_: any, itemIndex: number) => packedChecked.has(`${stop.id}:item:${itemIndex}`)).length}/{(stop.items || []).length} ítems empacados</div></article>)}</div></div>}
-    {tab === 'carga' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Orden de carga inversa</h2><p className="mb-3 text-xs text-emerald-800">Lo último que se entrega se carga primero. Lo primero que se entrega queda junto a la puerta.</p><div className="space-y-2">{routes.flatMap((route: any) => [...(route.stops || [])].reverse().map((stop: any, index: number) => <label key={`${route.date}-${route.group}-${stop.id}`} className={`flex items-center gap-3 rounded-xl border bg-white p-3 ${loadedChecked.has(stop.id) ? 'border-emerald-500 bg-emerald-100' : 'border-emerald-100'}`}><span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 font-bold text-white">{index + 1}</span><input type="checkbox" checked={loadedChecked.has(stop.id)} onChange={() => toggle(setLoadedChecked, stop.id)} className="h-5 w-5" /><span><b>Cargar primero #{index + 1} · {stop.customerName || 'Cliente'}</b><span className="block text-xs text-gray-600">{stop.address} · Se entrega en posición {route.stops.length - index}</span></span></label>))}</div></div>}
-    {tab === 'conductor' && <div><h2 className="mb-1 text-lg font-bold text-emerald-950">Pantalla del conductor</h2><p className="mb-3 text-xs text-emerald-800">Orden de entrega. El detalle es el mismo resumen operativo usado en Pedidos y en el CSV.</p><div className="mb-3 flex items-center justify-between gap-2"><button type="button" disabled={driverIndex === 0} onClick={() => setDriverIndex(index => Math.max(0, index - 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Anterior</button><span className="text-sm font-bold text-emerald-900">{driverIndex + 1} / {stops.length}</span><button type="button" disabled={driverIndex >= stops.length - 1} onClick={() => setDriverIndex(index => Math.min(stops.length - 1, index + 1))} className="rounded-lg border bg-white px-3 py-2 text-sm disabled:opacity-40">Siguiente</button></div>{(() => { const stop = stops[driverIndex]; if (!stop) return null; const coordinates = `${stop.latitude},${stop.longitude}`; const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(coordinates)}&travelmode=driving`; const waze = `https://waze.com/ul?ll=${encodeURIComponent(coordinates)}&navigate=yes`; const phone = String(stop.customerPhone || '').replace(/\D/g, ''); const delivered = Boolean(stop.status === 'delivered' || stop.status === 'entregado'); return <article className="rounded-2xl border-2 border-emerald-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-sm font-bold text-emerald-700">PARADA {driverIndex + 1} · ETA {stop.route.legs?.[stop.routeIndex]?.eta || '--:--'}</div><h3 className="mt-1 text-3xl font-black text-gray-950">{stop.customerName || 'Cliente'}</h3><p className="mt-1 text-lg text-gray-800">{stop.address}</p><p className="mt-2 text-base font-semibold text-gray-700">Teléfono: {stop.customerPhone || 'Por confirmar'}</p></div><div className="rounded-xl bg-amber-100 px-4 py-3 text-right"><div className="text-xs font-semibold text-amber-900">COBRAR</div><div className="text-2xl font-black text-amber-950">${Number(stop.totalAmount || 0).toLocaleString('es-CO')}</div><div className="mt-1 text-xs font-semibold text-amber-900">{stop.paymentStatus || 'Por confirmar'}{stop.paymentMethod ? ` · ${stop.paymentMethod}` : ''}</div></div></div><div className="mt-4 flex flex-wrap gap-2"><a href={phone ? `tel:${phone}` : '#'} className="rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white">Llamar</a><a href={phone ? `https://wa.me/${phone.startsWith('57') ? phone : `57${phone}`}` : '#'} target="_blank" rel="noreferrer" className="rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white">WhatsApp</a><a href={mapUrl} target="_blank" rel="noreferrer" className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white">Google Maps</a><a href={waze} target="_blank" rel="noreferrer" className="rounded-lg bg-cyan-700 px-3 py-2 text-sm font-semibold text-white">Waze</a></div><pre className="mt-4 whitespace-pre-wrap rounded-xl bg-gray-950 p-4 text-sm leading-6 text-white">{summary(stop)}</pre><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={delivered} onClick={async () => { try { await onDelivered(stop); } catch { /* parent reports route error */ } }} className="rounded-lg bg-emerald-700 px-4 py-3 text-sm font-bold text-white disabled:opacity-50">Entregado</button><button type="button" onClick={() => { const reason = window.prompt('Motivo local de no entrega:', 'Pendiente de registrar'); if (reason) setNotDelivered(previous => new Set(previous).add(stop.id)); }} className={`rounded-lg border px-4 py-3 text-sm font-bold ${notDelivered.has(stop.id) ? 'border-red-700 bg-red-100 text-red-800' : 'border-red-700 text-red-800'}`}>{notDelivered.has(stop.id) ? 'No entregado · anotado localmente' : 'No entregado'}</button></div></article>; })()}</div>}
-  </section>;
 }
