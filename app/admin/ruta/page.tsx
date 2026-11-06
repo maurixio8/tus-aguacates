@@ -701,7 +701,7 @@ export default function RutaPage() {
         </section>
       )}
 
-      {manualOrder && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl bg-white p-4"><div className="mb-3 flex items-start justify-between gap-3"><div><h2 className="font-semibold text-gray-900">Poner pin manual</h2><p className="text-xs text-gray-600">{manualOrder.customerName} · {manualOrder.deliveryAddress || 'Sin dirección'}</p></div><button type="button" onClick={() => setManualOrder(null)} className="text-gray-500">Cerrar</button></div><ManualLocationPicker onConfirm={(latitude, longitude) => saveLocation(manualOrder, 'confirm', { latitude, longitude, provider: 'manual' })} /></div></div>}
+      {manualOrder && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"><div className="max-h-[90vh] w-full max-w-2xl overflow-auto rounded-xl bg-white p-4"><div className="mb-3 flex items-start justify-between gap-3"><div><h2 className="font-semibold text-gray-900">Poner pin manual</h2><p className="text-xs text-gray-600">{manualOrder.customerName} · {manualOrder.deliveryAddress || 'Sin dirección'}</p></div><button type="button" onClick={() => setManualOrder(null)} className="text-gray-500">Cerrar</button></div><ManualLocationPicker initialAddress={manualOrder.deliveryAddress || ''} onConfirm={(latitude, longitude) => saveLocation(manualOrder, 'confirm', { latitude, longitude, provider: 'manual' })} /></div></div>}
 
       {/* MAPA DE RUTA */}
       {showMap && data && (
