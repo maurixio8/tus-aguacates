@@ -48,6 +48,13 @@ export async function GET(request: NextRequest) {
     .in('action', ['delivery_confirmation_state', 'delivery_confirmation_contacted'])
     .order('created_at', { ascending: false })
     .limit(3000);
+  const priorityActionResult = await supabase
+    .from('admin_activity_log')
+    .select('details,created_at,action')
+    .eq('entity_type', 'whatsapp_priority_action')
+    .in('action', ['priority_attended', 'priority_reopened'])
+    .order('created_at', { ascending: false })
+    .limit(1000);
   const [ordersResult, guestOrdersResult, orderItemsResult] = await Promise.all([
     supabase.from('orders').select('*').limit(5000),
     supabase.from('guest_orders').select('*').limit(5000),
@@ -107,7 +114,7 @@ const attachRelatedOrders = (row: any) => {
 };
   const enrichedFindings = (findingsResult.data || []).map(attachRelatedOrders);
   const enrichedRecovery = (recoveryResult.data || []).map(attachRelatedOrders);
-  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error || contextHandoffResult.error || deliveryStateResult.error || ordersResult.error || guestOrdersResult.error || orderItemsResult.error;
+  const error = findingsResult.error || recoveryResult.error || ripenessResult.error || handoffsResult.error || contextHandoffResult.error || deliveryStateResult.error || priorityActionResult.error || ordersResult.error || guestOrdersResult.error || orderItemsResult.error;
   if (error) return NextResponse.json({ error: 'No se pudo cargar la auditoría', details: error.message, code: error.code || null }, { status: 500 });
   const decidedByConversation = new Map<string, { decided_at: string }>();
   for (const row of contextHandoffResult.data || []) {
@@ -118,20 +125,71 @@ const attachRelatedOrders = (row: any) => {
   const excludedOutOfCoverage = (context: any) => { const text = [context.current_state,context.summary,context.friction,context.evidence].join(' ').toLowerCase(); return text.includes('fuera de cobertura') || text.includes('cobertura fuera') || text.includes('fuera de zona') || text.includes('ciudad excluida'); };
   const visibleContexts = allContexts.filter(context => !excludedOutOfCoverage(context));
   const decidedContexts = visibleContexts.filter(context => decidedByConversation.has(context.conversation_key)).map(context => ({ conversation_key: context.conversation_key, customer_masked: context.customer_masked, decided_at: decidedByConversation.get(context.conversation_key)?.decided_at }));
-  const pendingContexts = visibleContexts.filter(context => !decidedByConversation.has(context.conversation_key));
-  const validPriorityPhone = (value: unknown) => /^57\d{10}$/.test(String(value || '').replace(/\D/g, ''));
-  const phoneFromPriorityContext = (value: unknown) => {
-    const match = String(value || '').match(/^phone:(57\d{10})$/);
-    return match && validPriorityPhone(match[1]) ? match[1] : null;
+  const latestPriorityActions = new Map<string, any>();
+  for (const row of priorityActionResult.data || []) {
+    const details = (row.details || {}) as Record<string, unknown>;
+    const key = String(details.canonical_identity || details.case_key || '');
+    if (key && !latestPriorityActions.has(key)) latestPriorityActions.set(key, { action: row.action, created_at: row.created_at, details });
+  }
+  const latestActionForContext = (context: any) => { const phone = String(context.conversation_key || '').match(/^phone:(57\d{10})$/)?.[1] || ''; return latestPriorityActions.get(`phone:${phone}`) || latestPriorityActions.get(`conversation:${context.conversation_key}`); };
+  const pendingContexts = visibleContexts.filter(context => {
+    if (!decidedByConversation.has(context.conversation_key)) return true;
+    return latestActionForContext(context)?.action === 'priority_attended' || latestActionForContext(context)?.action === 'priority_reopened';
+  });
+  const toPriorityPhone = (value: unknown): string | null => {
+    const digits = String(value || '').replace(/\D/g, '');
+    if (/^57\d{10}$/.test(digits)) return digits;
+    if (/^3\d{9}$/.test(digits)) return `57${digits}`;
+    return null;
   };
+  const phoneFromPriorityContext = (value: unknown) => String(value || '').match(/^phone:(57\d{10})$/)?.[1] || null;
+  const phoneFromOpportunityKey = (value: unknown) => String(value || '').match(/(?:^|:)phone:(57\d{10})(?::|$)/)?.[1] || null;
+  const phoneByMaskedCustomer = new Map<string, string>();
+  for (const context of allContexts) {
+    const phone = phoneFromPriorityContext(context.conversation_key);
+    if (phone && context.customer_masked) phoneByMaskedCustomer.set(String(context.customer_masked), phone);
+  }
+  const resolvePriorityPhone = (row: any): string | null => toPriorityPhone(row.contact_phone)
+    || phoneFromPriorityContext(row.conversation_key)
+    || phoneFromOpportunityKey(row.opportunity_key)
+    || phoneByMaskedCustomer.get(String(row.customer_masked || ''))
+    || null;
   const hasDeliveredOrder = (row: any) => (row.related_orders || []).some((order: any) => ['delivered','entregado','completed','completado'].includes(String(order.status || '').toLowerCase()));
   const deliveredPriorityPhones = new Set(relatedOrders.filter((order: any) => ['delivered','entregado','completed','completado'].includes(String(order.status || '').toLowerCase())).flatMap((order: any) => [order.directPhone, order.fallbackPhone]).filter(Boolean).map((value: any) => { const digits = String(value).replace(/\D/g, ''); return digits.length === 10 ? `57${digits}` : digits; }));
   const isOutOfCoverage = (row: any) => { const text = [row.current_state,row.summary,row.evidence,row.priority_reason,row.next_action].join(' ').toLowerCase(); return text.includes('fuera de cobertura') || text.includes('cobertura fuera') || text.includes('fuera de zona') || text.includes('ciudad excluida'); };
-  const priorityCases = [
-    ...enrichedFindings.filter((row: any) => !hasDeliveredOrder(row) && row.severity === 'rojo' && validPriorityPhone(row.contact_phone)).map((row: any) => ({ key:`finding:${row.id}`, source:'hallazgo crítico', source_kind:'finding', source_id:row.id, customer_masked:row.customer_masked, contact_phone:String(row.contact_phone).replace(/\D/g,''), phone_source:'whatsapp_audit_findings.contact_phone', phone_confidence:'alta', last_seen_at:row.received_at, priority:'alta', priority_reason:'Respuesta de Luz marcada como crítica por el auditor.', summary:row.incoming_text || 'Hallazgo crítico sin mensaje de entrada.', incoming_text:row.incoming_text || '', luz_response:row.luz_response || '', evidence:(row.flags || []).join(' · '), next_action:(row.recommendations || []).join(' · ') || 'Abrir el chat y revisar manualmente.', order_state:'', intent_level:'', intent_score:100 })),
-    ...enrichedRecovery.filter((row: any) => !hasDeliveredOrder(row) && ['alta','high'].includes(String(row.intent_level || '').toLowerCase()) && validPriorityPhone(row.contact_phone)).map((row: any) => ({ key:`recovery:${row.id}`, source:'oportunidad de recuperación', source_kind:'recovery', source_id:row.id, customer_masked:row.customer_masked, contact_phone:String(row.contact_phone).replace(/\D/g,''), phone_source:'whatsapp_recovery_opportunities.contact_phone', phone_confidence:'alta', last_seen_at:row.last_seen_at, priority:'alta', priority_reason:'Cliente con intención alta y conversación que requiere intervención humana.', summary:row.conversation_summary || 'Quiere comprar, pero la conversación no quedó resuelta.', incoming_text:'', luz_response:'', evidence:row.evidence || '', next_action:row.recommendation || 'Abrir el chat, revisar el pedido y ayudar a cerrar.', order_state:row.order_state || '', intent_level:row.intent_level || '', intent_score:Number(row.intent_score || 0), payment_state:row.payment_state || '' })),
-    ...pendingContexts.filter((row: any) => row.risk_level === 'high' && phoneFromPriorityContext(row.conversation_key) && !deliveredPriorityPhones.has(phoneFromPriorityContext(row.conversation_key) || '')).map((row: any) => ({ key:`context:${row.id || row.conversation_key}`, source:'contexto crítico de conversación', source_kind:'context', source_id:row.id || row.conversation_key, conversation_key:row.conversation_key, customer_masked:row.customer_masked, contact_phone:phoneFromPriorityContext(row.conversation_key), phone_source:'whatsapp_audit_context.conversation_key', phone_confidence:'alta', last_seen_at:row.last_seen_at, priority:'alta', priority_reason:'El auditor marcó la conversación con riesgo alto.', summary:row.summary || 'Conversación de riesgo alto sin resumen.', incoming_text:row.customer_goal || '', luz_response:row.suggested_reply || '', evidence:row.evidence || row.friction || '', next_action:row.action_plan || 'Abrir el chat y revisar manualmente antes de responder.', order_state:row.current_state || '', intent_level:row.intent || '', intent_score:100 }))
-  ].filter((row: any) => !isOutOfCoverage(row)).sort((a,b)=>Number(new Date(b.last_seen_at || 0))-Number(new Date(a.last_seen_at || 0)));
+  const rawPriorityCases = [
+    ...enrichedFindings.filter((row: any) => !hasDeliveredOrder(row) && row.severity === 'rojo').map((row: any) => ({ key:`finding:${row.id}`, source:'hallazgo crítico', source_kind:'finding', source_id:row.id, customer_masked:row.customer_masked, contact_phone:resolvePriorityPhone(row) || undefined, phone_source:resolvePriorityPhone(row) ? (row.contact_phone ? 'whatsapp_audit_findings.contact_phone' : 'reconciliación por contexto/mensaje') : 'Sin teléfono (Meta)', phone_confidence:resolvePriorityPhone(row) ? 'alta' : 'no capturado', last_seen_at:row.received_at, priority:'alta', priority_rank:3, priority_reason:'Respuesta de Luz marcada como crítica por el auditor.', summary:row.incoming_text || 'Hallazgo crítico sin mensaje de entrada.', incoming_text:row.incoming_text || '', luz_response:row.luz_response || '', evidence:(row.flags || []).join(' · '), next_action:(row.recommendations || []).join(' · ') || 'Abrir el chat y revisar manualmente.', order_state:'', intent_level:'', intent_score:100, conversation_key:row.conversation_key || '', source_refs:[{ source_kind:'finding', source_id:row.id }] })),
+    ...enrichedRecovery.filter((row: any) => !hasDeliveredOrder(row) && !['resolved','dismissed'].includes(String(row.status || '').toLowerCase()) && ['alta','high'].includes(String(row.intent_level || '').toLowerCase())).map((row: any) => ({ key:`recovery:${row.id}`, source:'oportunidad de recuperación', source_kind:'recovery', source_id:row.id, customer_masked:row.customer_masked, contact_phone:resolvePriorityPhone(row) || undefined, phone_source:resolvePriorityPhone(row) ? (row.contact_phone ? 'whatsapp_recovery_opportunities.contact_phone' : 'reconciliación por contexto/mensaje') : 'Sin teléfono (Meta)', phone_confidence:resolvePriorityPhone(row) ? 'alta' : 'no capturado', conversation_key:row.conversation_key || '', last_seen_at:row.last_seen_at, priority:'alta', priority_rank:1, priority_reason:'Cliente con intención alta y conversación que requiere intervención humana.', summary:row.conversation_summary || 'Quiere comprar, pero la conversación no quedó resuelta.', incoming_text:'', luz_response:'', evidence:row.evidence || '', next_action:row.recommendation || 'Abrir el chat, revisar el pedido y ayudar a cerrar.', order_state:row.order_state || '', intent_level:row.intent_level || '', intent_score:Number(row.intent_score || 0), payment_state:row.payment_state || '', source_refs:[{ source_kind:'recovery', source_id:row.id }] })),
+    ...pendingContexts.filter((row: any) => row.risk_level === 'high' && !deliveredPriorityPhones.has(phoneFromPriorityContext(row.conversation_key) || '')).map((row: any) => ({ key:`context:${row.id || row.conversation_key}`, source:'contexto crítico de conversación', source_kind:'context', source_id:row.id || row.conversation_key, conversation_key:row.conversation_key, customer_masked:row.customer_masked, contact_phone:resolvePriorityPhone(row) || undefined, phone_source:resolvePriorityPhone(row) ? 'whatsapp_audit_context.conversation_key' : 'Sin teléfono (Meta)', phone_confidence:resolvePriorityPhone(row) ? 'alta' : 'no capturado', last_seen_at:row.last_seen_at, priority:'alta', priority_rank:2, priority_reason:'El auditor marcó la conversación con riesgo alto.', summary:row.summary || 'Conversación de riesgo alto sin resumen.', incoming_text:row.customer_goal || '', luz_response:row.suggested_reply || '', evidence:row.evidence || row.friction || '', next_action:row.action_plan || 'Abrir el chat y revisar manualmente antes de responder.', order_state:row.current_state || '', intent_level:row.intent || '', intent_score:100, source_refs:[{ source_kind:'context', source_id:row.id || row.conversation_key }] }))
+  ].filter((row: any) => !isOutOfCoverage(row));
+  const canonicalKey = (row: any) => row.contact_phone ? `phone:${row.contact_phone}` : `conversation:${row.conversation_key || row.source_id}`;
+  const dedupedPriority = new Map<string, any>();
+  for (const row of rawPriorityCases) {
+    const key = canonicalKey(row);
+    const existing = dedupedPriority.get(key);
+    if (!existing) { dedupedPriority.set(key, { ...row, key:`priority:${key}`, canonical_identity:key, identity_label:row.contact_phone ? row.customer_masked : 'Sin teléfono (Meta)', source_refs:[...row.source_refs] }); continue; }
+    const mergeText = (a: string, b: string) => [...new Set([a,b].filter(Boolean))].join(' · ');
+    existing.source = mergeText(existing.source, row.source);
+    existing.summary = existing.summary === row.summary ? existing.summary : `${existing.summary}\n\nTambién: ${row.summary}`;
+    existing.incoming_text = mergeText(existing.incoming_text, row.incoming_text);
+    existing.luz_response = mergeText(existing.luz_response, row.luz_response);
+    existing.evidence = mergeText(existing.evidence, row.evidence);
+    existing.next_action = mergeText(existing.next_action, row.next_action);
+    existing.priority_reason = mergeText(existing.priority_reason, row.priority_reason);
+    existing.last_seen_at = new Date(existing.last_seen_at || 0) >= new Date(row.last_seen_at || 0) ? existing.last_seen_at : row.last_seen_at;
+    existing.source_refs.push(...row.source_refs);
+    if (row.priority_rank > existing.priority_rank) { existing.priority_rank = row.priority_rank; existing.source_kind = row.source_kind; existing.source_id = row.source_id; }
+  }
+  const priorityCases = [...dedupedPriority.values()].sort((a,b)=>b.priority_rank-a.priority_rank || Number(new Date(b.last_seen_at || 0))-Number(new Date(a.last_seen_at || 0)));
+  const cotDay = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Bogota', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date());
+  const attendedToday = priorityCases.filter((row: any) => {
+    const action = latestPriorityActions.get(row.canonical_identity);
+    return action?.action === 'priority_attended' && new Intl.DateTimeFormat('en-CA', { timeZone:'America/Bogota', year:'numeric', month:'2-digit', day:'2-digit' }).format(new Date(action.created_at)) === cotDay;
+  }).map((row: any) => {
+    const action = latestPriorityActions.get(row.canonical_identity);
+    return { ...row, attended_at: action.created_at, attended_by: action.details?.admin_name || action.details?.actor || 'Administrador' };
+  });
+  const activePriorityCases = priorityCases.filter((row: any) => latestPriorityActions.get(row.canonical_identity)?.action !== 'priority_attended');
   const toFullPhone = (value: unknown) => { const local = normalizePhone(value); return local ? `57${local}` : ''; };
   const dateParts = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Bogota', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
   const todayUtc = Date.UTC(Number(dateParts.find(x=>x.type==='year')?.value), Number(dateParts.find(x=>x.type==='month')?.value)-1, Number(dateParts.find(x=>x.type==='day')?.value));
@@ -177,7 +235,7 @@ const attachRelatedOrders = (row: any) => {
     const active = !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.status).toLowerCase()) && !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.order_status).toLowerCase());
     return Boolean(order.phone && active && (order.delivery_date === tomorrowDate || (isFridayDelivery && order.scheduled_by.includes('martes 6:00'))));
   });
-  return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: pendingContexts, decided_contexts: decidedContexts, priorityCases, tomorrowDate, tomorrowOrders });
+  return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: pendingContexts, decided_contexts: decidedContexts, priorityCases: activePriorityCases, attendedToday, tomorrowDate, tomorrowOrders });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -224,6 +282,18 @@ export async function PATCH(request: NextRequest) {
     } else return NextResponse.json({ error:'Origen de prioridad inválido' }, { status:400 });
     return NextResponse.json({ success:true, action, resolved_without_contact:true });
   }
+  if (action === 'reopen-priority') {
+    const canonicalIdentity = String(body.canonicalIdentity || body.phone || body.conversationKey || '').trim();
+    const sourceRefs = Array.isArray(body.sourceRefs) ? body.sourceRefs : [];
+    for (const ref of sourceRefs) {
+      if (ref?.source_kind === 'finding') await supabase.from('whatsapp_audit_findings').update({ review_status:'pending', updated_at:new Date().toISOString() }).eq('id', String(ref.source_id || ''));
+      if (ref?.source_kind === 'recovery') await supabase.from('whatsapp_recovery_opportunities').update({ status:'pending_human_review', assigned_to:'', resolution:'', updated_at:new Date().toISOString() }).eq('id', String(ref.source_id || ''));
+    }
+    const { data, error } = await supabase.from('admin_activity_log').insert({ admin_id:auth.user?.id, action:'priority_reopened', entity_type:'whatsapp_priority_action', entity_id:null, details:{ canonical_identity:canonicalIdentity, case_key:String(body.caseKey || ''), source_refs:sourceRefs, phone:String(body.phone || ''), conversation_key:String(body.conversationKey || ''), admin_name:adminName, result:'reopened_for_human_followup' } }).select('id,details,created_at').single();
+    if (error) return NextResponse.json({ error:'No se pudo registrar la reapertura', details:error.message }, { status:500 });
+    return NextResponse.json({ success:true, action, reopened:true, record:data });
+  }
+
   if (action === 'pause-priority' || action === 'resume-priority') {
     const phone = String(body.phone || '').replace(/\D/g, '');
     if (!/^57\d{10}$/.test(phone)) return NextResponse.json({ error: 'Teléfono reconciliado inválido' }, { status: 400 });
@@ -245,19 +315,24 @@ export async function PATCH(request: NextRequest) {
     }
     const { data: handoff, error: handoffError } = await supabase.from('whatsapp_human_handoffs').update({ status:'closed', ended_at:new Date().toISOString(), resolution:'Atendido por Mauricio desde Prioridad Alta', updated_at:new Date().toISOString() }).eq('identity_key',phone).eq('status','active').select().maybeSingle();
     if (handoffError) return NextResponse.json({ error:'PostgreSQL local cambió, pero no se pudo cerrar el handoff', details:handoffError.message, dbResult }, { status:500 });
-    if (body.sourceKind === 'finding') {
-      const { error } = await supabase.from('whatsapp_audit_findings').update({ review_status:'approved', updated_at:new Date().toISOString() }).eq('id',String(body.sourceId || ''));
-      if (error) return NextResponse.json({ error:'Se reactivó Luz, pero no se pudo marcar el hallazgo como atendido', details:error.message, dbResult }, { status:500 });
-    } else if (body.sourceKind === 'recovery') {
-      const { error } = await supabase.from('whatsapp_recovery_opportunities').update({ status:'resolved', assigned_to:adminName, resolution:'Atendido por Mauricio desde Prioridad Alta', updated_at:new Date().toISOString() }).eq('id',String(body.sourceId || ''));
-      if (error) return NextResponse.json({ error:'Se reactivó Luz, pero no se pudo marcar la oportunidad como resuelta', details:error.message, dbResult }, { status:500 });
+    const sourceRefs = Array.isArray(body.sourceRefs) && body.sourceRefs.length > 0 ? body.sourceRefs : [{ source_kind: body.sourceKind, source_id: body.sourceId }];
+    for (const ref of sourceRefs) {
+      if (ref?.source_kind === 'finding') {
+        const { error } = await supabase.from('whatsapp_audit_findings').update({ review_status:'approved', updated_at:new Date().toISOString() }).eq('id',String(ref.source_id || ''));
+        if (error) return NextResponse.json({ error:'Se reactivó Luz, pero no se pudo marcar un hallazgo como atendido', details:error.message, dbResult }, { status:500 });
+      } else if (ref?.source_kind === 'recovery') {
+        const { error } = await supabase.from('whatsapp_recovery_opportunities').update({ status:'resolved', assigned_to:adminName, resolution:'Atendido por Mauricio desde Prioridad Alta', updated_at:new Date().toISOString() }).eq('id',String(ref.source_id || ''));
+        if (error) return NextResponse.json({ error:'Se reactivó Luz, pero no se pudo marcar una oportunidad como atendida', details:error.message, dbResult }, { status:500 });
+      } else if (ref?.source_kind === 'context') {
+        const { error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'priority_context_resolved', entity_type: 'whatsapp_context_action', entity_id: null, details: { element: String(body.conversationKey || ref.source_id || ''), phone, actor: adminName, result: 'resolved_and_luz_reactivated', scope: 'conversation', mode: 'priority_high' } });
+        if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar el contexto como atendido', details: error.message, dbResult }, { status: 500 });
+      }
     }
-    if (body.sourceKind === 'context') {
-      const { error } = await supabase.from('admin_activity_log').insert({ admin_id: auth.user?.id, action: 'priority_context_resolved', entity_type: 'whatsapp_context_action', entity_id: null, details: { element: String(body.conversationKey || body.sourceId || ''), phone, actor: adminName, result: 'resolved_and_luz_reactivated', scope: 'conversation', mode: 'priority_high' } });
-      if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar la tarjeta como resuelta', details: error.message, dbResult }, { status: 500 });
-    }
+    const canonicalIdentity = String(body.canonicalIdentity || phone || body.conversationKey || '').trim();
+    const { error: actionLogError } = await supabase.from('admin_activity_log').insert({ admin_id:auth.user?.id, action:'priority_attended', entity_type:'whatsapp_priority_action', entity_id:null, details:{ canonical_identity:canonicalIdentity, case_key:String(body.caseKey || ''), source_refs:sourceRefs, phone, conversation_key:String(body.conversationKey || ''), admin_name:adminName, result:'attended_and_luz_reactivated' } });
+    if (actionLogError) return NextResponse.json({ error:'Se atendió el caso, pero no se pudo guardar el historial de atención', details:actionLogError.message, dbResult }, { status:500 });
     const { data: readback } = await supabase.from('whatsapp_human_handoffs').select('*').eq('identity_key',phone).maybeSingle();
-    return NextResponse.json({ success:true, action, dbResult, handoff:readback || handoff });
+    return NextResponse.json({ success:true, action, dbResult, handoff:readback || handoff, attended_at:new Date().toISOString(), attended_by:adminName });
   }
   if (action === 'context-reply-whatsapp-handoff') {
     const conversationKey = String(body.conversationKey || '').trim();
