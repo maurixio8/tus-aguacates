@@ -194,12 +194,6 @@ const attachRelatedOrders = (row: any) => {
   const dateParts = new Intl.DateTimeFormat('en-CA', { timeZone:'America/Bogota', year:'numeric', month:'2-digit', day:'2-digit' }).formatToParts(new Date());
   const todayUtc = Date.UTC(Number(dateParts.find(x=>x.type==='year')?.value), Number(dateParts.find(x=>x.type==='month')?.value)-1, Number(dateParts.find(x=>x.type==='day')?.value));
   const tomorrowDate = new Date(todayUtc + 86400000).toISOString().slice(0,10);
-  const tomorrowUtc = new Date(`${tomorrowDate}T00:00:00Z`);
-  const tomorrowDay = tomorrowUtc.getUTCDay();
-  const isFridayDelivery = tomorrowDay === 5;
-  const daysFromTuesday = (tomorrowDay - 2 + 7) % 7;
-  const fridayWindowStart = new Date(tomorrowUtc.getTime() - daysFromTuesday * 86400000 + 11 * 3600000);
-  const nowIso = new Date().toISOString();
   const stateMap = new Map<string,{ state:string; at:string; by:string }>();
   for (const row of deliveryStateResult.data || []) {
     const details = (row.details || {}) as Record<string, unknown>;
@@ -207,6 +201,38 @@ const attachRelatedOrders = (row: any) => {
     const state = String(details.state || (details.result === 'marked_contacted' ? 'contacted' : 'pending'));
     if (key !== ':' && !stateMap.has(key)) stateMap.set(key, { state, at:row.created_at, by:String(details.actor || '') });
   }
+  const extractOrderData = (order: any): Record<string, any> => {
+    if (!order?.order_data) return {};
+    if (typeof order.order_data === 'object') return order.order_data;
+    try { return JSON.parse(String(order.order_data)); } catch { return {}; }
+  };
+  const dateFieldFromOrder = (order: any): string | null => {
+    const data = extractOrderData(order);
+    for (const key of ['delivery_date','deliveryDate','scheduled_delivery_date','fecha_entrega']) {
+      const value = order?.[key] || data?.[key];
+      if (value) return String(value).slice(0, 10);
+    }
+    return null;
+  };
+  const deriveDeliveryDate = (order: any): { date: string | null; scheduledBy: string } => {
+    const explicit = dateFieldFromOrder(order);
+    if (explicit) return { date: explicit, scheduledBy: 'Fecha de entrega registrada' };
+    if (!order?.created_at) return { date: null, scheduledBy: 'Sin fecha de entrega' };
+    const parts = new Intl.DateTimeFormat('en-US', { timeZone:'America/Bogota', year:'numeric', month:'numeric', day:'numeric', weekday:'short', hour:'numeric', hour12:false }).formatToParts(new Date(order.created_at));
+    const value = (type: string) => parts.find(part => part.type === type)?.value || '';
+    const year = Number(value('year')); const month = Number(value('month')); const day = Number(value('day')); const hour = Number(value('hour'));
+    if (!year || !month || !day) return { date: null, scheduledBy: 'Sin fecha de entrega' };
+    const weekday = ({ Sun:0, Mon:1, Tue:2, Wed:3, Thu:4, Fri:5, Sat:6 } as Record<string, number>)[value('weekday')];
+    let delta: number;
+    if (weekday < 1) delta = weekday === 0 ? 1 : 0;
+    else if (weekday === 1) delta = hour >= 6 ? 3 : 0;
+    else if (weekday < 4) delta = 4 - weekday;
+    else if (weekday === 4) delta = 0;
+    else if (weekday === 5) delta = hour >= 6 ? 4 : 0;
+    else delta = 2;
+    const derived = new Date(Date.UTC(year, month - 1, day) + delta * 86400000).toISOString().slice(0, 10);
+    return { date: derived, scheduledBy: 'Fecha derivada por regla operativa de creación' };
+  };
   const itemsByOrder = new Map<string, any[]>();
   for (const item of orderItemsResult.data || []) {
     const orderId = String(item.order_id || '');
@@ -229,11 +255,11 @@ const attachRelatedOrders = (row: any) => {
     const guest = Object.prototype.hasOwnProperty.call(order, 'guest_phone');
     const address = guest ? order.guest_address : (typeof order.shipping_address === 'object' ? [order.shipping_address?.street_address, order.shipping_address?.additional_info, order.shipping_address?.city].filter(Boolean).join(', ') : String(order.shipping_address || order.delivery_address || ''));
     const createdAt = order.created_at || null;
-    const scheduledByFridayRule = Boolean(isFridayDelivery && createdAt && new Date(createdAt) >= fridayWindowStart && new Date(createdAt) <= new Date(nowIso));
-    return { source: guest ? 'guest_orders' : 'orders', id: order.id, order_number: order.order_number || order.id, customer_name: guest ? order.guest_name : (order.customer_name || order.shipping_address?.full_name || order.customer_email || 'Cliente'), phone: toFullPhone(guest ? order.guest_phone : order.customer_phone), address, total: Number(order.total_amount ?? order.total ?? 0), status: order.status || order.order_status || '', order_status: order.order_status || '', payment_status: order.payment_status || '', delivery_date: order.delivery_date || null, created_at: createdAt, scheduled_by: scheduledByFridayRule ? 'Ventas desde martes 6:00 a. m. para entrega viernes' : 'Fecha de entrega registrada', items: normalizeDeliveryItems(order, guest), contactedAt: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.at || null, confirmationState: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.state || 'pending', confirmationBy: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.by || '' };
+    const delivery = deriveDeliveryDate(order);
+    return { source: guest ? 'guest_orders' : 'orders', id: order.id, order_number: order.order_number || order.id, customer_name: guest ? order.guest_name : (order.customer_name || order.shipping_address?.full_name || order.customer_email || 'Cliente'), phone: toFullPhone(guest ? order.guest_phone : order.customer_phone), address, total: Number(order.total_amount ?? order.total ?? 0), status: order.status || order.order_status || '', order_status: order.order_status || '', payment_status: order.payment_status || '', delivery_date: delivery.date, created_at: createdAt, scheduled_by: delivery.scheduledBy, items: normalizeDeliveryItems(order, guest), contactedAt: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.at || null, confirmationState: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.state || 'pending', confirmationBy: stateMap.get(`${guest ? 'guest_orders' : 'orders'}:${String(order.id)}`)?.by || '' };
   }).filter((order: any) => {
     const active = !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.status).toLowerCase()) && !['cancelled','cancelado','delivered','entregado','completado'].includes(String(order.order_status).toLowerCase());
-    return Boolean(order.phone && active && (order.delivery_date === tomorrowDate || (isFridayDelivery && order.scheduled_by.includes('martes 6:00'))));
+    return Boolean(order.phone && active && order.delivery_date === tomorrowDate);
   });
   return NextResponse.json({ success: true, findings: enrichedFindings, recovery: enrichedRecovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts: pendingContexts, decided_contexts: decidedContexts, priorityCases: activePriorityCases, attendedToday, tomorrowDate, tomorrowOrders });
 }
