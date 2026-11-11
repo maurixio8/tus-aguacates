@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { getCheckoutRecoveryCopy, getCheckoutRecoveryState } from '@/lib/checkout-order-state';
 
 interface DuplicateOrderModalProps {
     isOpen: boolean;
@@ -10,10 +11,11 @@ interface DuplicateOrderModalProps {
     existingOrderId: string;
     existingOrderTime: string;
     customerName: string;
-    /** Estado del pedido existente para decidir si mostrar "Reintentar pago" */
     existingOrderStatus?: string;
-    /** Método de pago del pedido existente */
     existingPaymentMethod?: string;
+    existingCheckoutState?: string;
+    paymentAttemptedAt?: string | null;
+    paymentFailedAt?: string | null;
 }
 
 export default function DuplicateOrderModal({
@@ -24,154 +26,91 @@ export default function DuplicateOrderModal({
     customerName,
     existingOrderStatus,
     existingPaymentMethod,
+    existingCheckoutState,
+    paymentAttemptedAt,
+    paymentFailedAt,
 }: DuplicateOrderModalProps) {
     const router = useRouter();
-
     if (!isOpen) return null;
 
-    // Mostrar "Reintentar pago" solo si el pedido está pendiente o con pago fallido
-    // y fue con tarjeta (Bold) — los demás métodos requieren acción manual
-    const canRetryPayment = existingOrderStatus &&
-        ['pendiente', 'pago_fallido', 'confirmado'].includes(existingOrderStatus) &&
-        (!existingPaymentMethod || existingPaymentMethod === 'tarjeta' || existingPaymentMethod === 'bold');
+    const firstName = customerName.split(' ')[0] || 'amigo';
+    const state = getCheckoutRecoveryState({
+        status: existingOrderStatus,
+        paymentMethod: existingPaymentMethod,
+        checkoutState: existingCheckoutState,
+        paymentAttemptedAt,
+        paymentFailedAt,
+    });
+    const copy = getCheckoutRecoveryCopy(state, firstName);
+    const isPendingMethod = state === 'payment_method_pending';
+    const isPaymentFailed = state === 'payment_failed';
+    const deferredLabel = existingPaymentMethod === 'nequi' ? 'Nequi al recibir' : 'Efectivo contra entrega';
 
-    const handleRetryPayment = () => {
-        // Guardar el orderId en sessionStorage para que el checkout lo retome
+    const handleContinue = () => {
         sessionStorage.setItem('retry_order_id', existingOrderId);
-        if (existingPaymentMethod) {
-            sessionStorage.setItem('retry_payment_method', existingPaymentMethod);
-        }
+        sessionStorage.removeItem('retry_payment_method');
         onClose();
         router.push('/checkout');
     };
 
+    const whatsappMessage = isPaymentFailed
+        ? `Hola, intenté pagar mi pedido #${existingOrderId.slice(-8)} pero no se completó. Necesito ayuda.`
+        : `Hola, tengo una duda sobre mi pedido #${existingOrderId.slice(-8)}.`;
+
     return (
         <AnimatePresence>
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                {/* Backdrop */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                    className="absolute inset-0 bg-slate-950/70 backdrop-blur-sm"
                     onClick={onClose}
                 />
-
-                {/* Modal Content */}
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                    initial={{ opacity: 0, scale: 0.92, y: 24 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                    className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden z-10"
+                    exit={{ opacity: 0, scale: 0.92, y: 24 }}
+                    transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+                    className="relative z-10 w-full max-w-md overflow-hidden rounded-[2rem] bg-white shadow-2xl"
                 >
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 p-6 text-center relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
-
+                    <div className={`relative overflow-hidden px-6 pb-7 pt-8 text-center ${isPendingMethod ? 'bg-gradient-to-br from-emerald-950 via-green-800 to-emerald-600' : isPaymentFailed ? 'bg-gradient-to-br from-amber-950 via-amber-800 to-orange-600' : 'bg-gradient-to-br from-green-950 via-green-800 to-green-600'}`}>
+                        <div className="pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full bg-white/10 blur-2xl" />
+                        <div className="pointer-events-none absolute -bottom-16 -left-12 h-40 w-40 rounded-full bg-yellow-300/20 blur-2xl" />
                         <motion.div
-                            initial={{ scale: 0 }}
-                            animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-                            className="w-20 h-20 bg-white rounded-full mx-auto flex items-center justify-center shadow-lg mb-4"
+                            initial={{ scale: 0, rotate: -12 }}
+                            animate={{ scale: 1, rotate: 0 }}
+                            transition={{ type: 'spring', stiffness: 220, damping: 14 }}
+                            className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-xl"
                         >
-                            <span className="text-4xl">
-                                {canRetryPayment ? '🔄' : '🥑'}
-                            </span>
+                            <span className="text-5xl">{isPendingMethod ? '🥑' : isPaymentFailed ? '💳' : '🎉'}</span>
                         </motion.div>
-
-                        <h2 className="text-xl font-bold text-white mb-1">
-                            {canRetryPayment
-                                ? `¡Ey ${customerName.split(' ')[0]}!`
-                                : `¡Hola ${customerName.split(' ')[0]}!`
-                            }
-                        </h2>
-                        <p className="text-blue-100 text-sm">
-                            {canRetryPayment
-                                ? 'Tienes un pedido pendiente por pagar'
-                                : 'Ya recibimos tu pedido de hoy'
-                            }
-                        </p>
+                        <h2 className="text-2xl font-black tracking-tight text-white">{copy.title}</h2>
+                        <p className="mt-1 text-sm font-medium text-green-100">{copy.subtitle}</p>
+                        {isPendingMethod && <p className="mt-3 text-xs font-bold uppercase tracking-[0.18em] text-yellow-200">¡Vas muy bien!</p>}
                     </div>
 
-                    {/* Body */}
-                    <div className="p-6 space-y-6">
-                        <div className="text-center space-y-2">
-                            <p className="text-gray-600">
-                                {canRetryPayment
-                                    ? 'Parece que el pago anterior no se completó. Puedes intentar pagar de nuevo o consultarnos por WhatsApp.'
-                                    : 'Para garantizar el mejor servicio, solo procesamos un pedido confirmado por día por persona.'
-                                }
-                            </p>
-
-                            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100 mt-4 text-left">
-                                <p className="text-xs text-blue-600 font-bold uppercase mb-2">Tu pedido activo:</p>
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-gray-600 text-sm">Número:</span>
-                                    <span className="font-mono font-bold text-gray-900">#{existingOrderId.slice(-8)}</span>
-                                </div>
-                                <div className="flex justify-between items-center mb-1">
-                                    <span className="text-gray-600 text-sm">Hora:</span>
-                                    <span className="text-gray-900 font-medium">{existingOrderTime}</span>
-                                </div>
-                                {existingOrderStatus && (
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-gray-600 text-sm">Estado:</span>
-                                        <span className={`font-medium text-sm ${
-                                            existingOrderStatus === 'pendiente' || existingOrderStatus === 'pago_fallido'
-                                                ? 'text-amber-600'
-                                                : 'text-green-600'
-                                        }`}>
-                                            {existingOrderStatus === 'pendiente' ? 'Pendiente de pago' :
-                                             existingOrderStatus === 'pago_fallido' ? 'Pago fallido' :
-                                             existingOrderStatus === 'confirmado' ? 'Confirmado' :
-                                             existingOrderStatus}
-                                        </span>
-                                    </div>
-                                )}
+                    <div className="space-y-5 p-6">
+                        <p className="text-center text-[15px] leading-6 text-slate-600">{copy.body}</p>
+                        <div className="rounded-2xl border border-green-100 bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+                            <p className="mb-3 text-xs font-black uppercase tracking-[0.14em] text-green-700">Tu pedido está guardado</p>
+                            <div className="space-y-2 text-sm">
+                                <div className="flex items-center justify-between gap-3"><span className="text-slate-500">Número</span><span className="font-mono font-bold text-slate-900">#{existingOrderId.slice(-8)}</span></div>
+                                <div className="flex items-center justify-between gap-3"><span className="text-slate-500">Hora</span><span className="font-semibold text-slate-900">{existingOrderTime}</span></div>
+                                <div className="flex items-center justify-between gap-3"><span className="text-slate-500">Estado</span><span className={`text-right font-bold ${isPaymentFailed ? 'text-amber-700' : 'text-green-700'}`}>{copy.status}</span></div>
+                                {state === 'deferred_payment' && <div className="flex items-center justify-between gap-3"><span className="text-slate-500">Pago</span><span className="font-bold text-slate-900">{deferredLabel}</span></div>}
                             </div>
                         </div>
-
                         <div className="space-y-3">
-                            {canRetryPayment && (
-                                <Button
-                                    onClick={handleRetryPayment}
-                                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                                >
-                                    <span>🔄</span>
-                                    Reintentar pago
-                                </Button>
-                            )}
-
-                            <Button
-                                onClick={() => {
-                                    const message = canRetryPayment
-                                        ? `Hola, intenté pagar mi pedido #${existingOrderId.slice(-8)} pero no se completó. Necesito ayuda.`
-                                        : `Hola, tengo una duda sobre mi pedido #${existingOrderId.slice(-8)}`;
-                                    window.location.href = `https://wa.me/573042582777?text=${encodeURIComponent(message)}`;
-                                }}
-                                className={`w-full font-bold py-6 rounded-xl shadow-lg transition-all ${
-                                    canRetryPayment
-                                        ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                                        : 'bg-blue-600 hover:bg-blue-700 text-white'
-                                }`}
-                            >
-                                Consultar en WhatsApp
+                            {(isPendingMethod || isPaymentFailed) && <Button onClick={handleContinue} className={`w-full rounded-2xl py-6 text-base font-black text-white shadow-lg transition-all hover:-translate-y-0.5 ${isPendingMethod ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'}`}>
+                                <span className="mr-2">{isPendingMethod ? '✨' : '🔄'}</span>{copy.primary}
+                            </Button>}
+                            <Button onClick={() => { window.location.href = `https://wa.me/573042582777?text=${encodeURIComponent(whatsappMessage)}`; }} className="w-full rounded-2xl bg-[#25D366] py-6 text-base font-black text-white shadow-lg hover:bg-[#128C7E]">
+                                <span className="mr-2">💬</span>Consultar por WhatsApp
                             </Button>
-
-                            <button
-                                onClick={onClose}
-                                className="w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2"
-                            >
-                                Volver a la tienda
-                            </button>
+                            <button onClick={onClose} className="w-full rounded-xl py-2 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-slate-700">Volver a la tienda</button>
                         </div>
-
-                        <p className="text-xs text-gray-400 text-center">
-                            {canRetryPayment
-                                ? 'Al hacer clic en "Reintentar pago" te llevaremos al checkout para que completes el pago.'
-                                : 'Si necesitas agregar algo a tu pedido, escríbenos por WhatsApp y te ayudamos.'
-                            }
-                        </p>
+                        <p className="text-center text-xs leading-5 text-slate-400">{copy.footer}</p>
                     </div>
                 </motion.div>
             </div>

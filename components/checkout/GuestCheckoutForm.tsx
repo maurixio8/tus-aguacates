@@ -67,6 +67,8 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         };
         setFormData(prev => ({ ...prev, paymentMethod: retryPaymentMethod }));
         setPaymentMethod(methodMap[retryPaymentMethod] || 'cash');
+      } else {
+        setFormData(prev => ({ ...prev, paymentMethod: '' }));
       }
     }
   }, [setPaymentMethod]);
@@ -133,6 +135,9 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
     time: string;
     status?: string;
     paymentMethod?: string;
+    checkoutState?: string;
+    paymentAttemptedAt?: string | null;
+    paymentFailedAt?: string | null;
   } | null>(null);
   const [whatsappUrlForSuccess, setWhatsappUrlForSuccess] = useState('');
 
@@ -290,11 +295,17 @@ export function GuestCheckoutForm({ onSuccess }: GuestCheckoutFormProps) {
         });
 
         // Activar Modal de Duplicado en lugar de lanzar error
+        const checkout = typeof order.order_data === 'string'
+          ? (() => { try { return JSON.parse(order.order_data || '{}').checkout || {}; } catch { return {}; } })()
+          : (order.order_data?.checkout || {});
         setDuplicateOrderInfo({
           id: order.id,
           time: orderTime,
           status: order.status,
           paymentMethod: order.payment_method,
+          checkoutState: checkout.state,
+          paymentAttemptedAt: checkout.payment_attempted_at || null,
+          paymentFailedAt: checkout.payment_failed_at || null,
         });
         setShowDuplicateModal(true);
         setLoading(false);
@@ -782,6 +793,9 @@ ${orderData.items.map(item => `• ${getWhatsAppSafeEmoji(item.productName)} ${i
       customerName={formData.name || 'cliente'}
       existingOrderStatus={duplicateOrderInfo?.status}
       existingPaymentMethod={duplicateOrderInfo?.paymentMethod}
+      existingCheckoutState={duplicateOrderInfo?.checkoutState}
+      paymentAttemptedAt={duplicateOrderInfo?.paymentAttemptedAt}
+      paymentFailedAt={duplicateOrderInfo?.paymentFailedAt}
     />
   );
 
