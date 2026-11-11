@@ -57,7 +57,7 @@ export function getCheckoutRecoveryCopy(state: CheckoutRecoveryState, firstName:
       title: '¡Tu pedido está guardado!',
       subtitle: `Pago al recibir, ${firstName}`,
       body: 'No necesitas pagar en línea ahora. Tu pedido queda pendiente de confirmación y el pago se realiza al recibirlo.',
-      status: `Pedido guardado · ${String(state)}`,
+      status: 'Pedido guardado · pago al recibir',
       primary: '',
       footer: 'Si quieres agregar algo o necesitas ayuda, escríbenos por WhatsApp.',
     };
