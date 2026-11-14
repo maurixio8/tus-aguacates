@@ -15,6 +15,8 @@ export interface ProductSupplierMapping {
   supplierId: string;
   priority: number; // 1 = principal, 2 = alternativo
   note?: string;
+  sub_location_hint?: string;
+  fallback_zone_id?: string;
 }
 
 export const SUPPLIERS: Supplier[] = [
@@ -352,6 +354,47 @@ export const PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
     note: 'No se tiene en el sistema'
   },
 ];
+
+/** Authoritative exact routing for the current 25-item purchase list. */
+export const PURCHASE_PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
+  { productName: 'Maracuyá', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Lechuga Hidropónica', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Mandarina', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Coliflor', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Plátano verde', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Batata Rosada', supplierId: 'especies', priority: 1 },
+  { productName: 'Brócoli', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Eucalipto', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Mazorca desgranada fresca', supplierId: 'especies', priority: 1 },
+  { productName: 'Rúcula', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Ajo Nacional', supplierId: 'especies', priority: 1 },
+  { productName: 'Auyama Sakata', supplierId: 'especies', priority: 1 },
+  { productName: 'Chiles', supplierId: 'especies', priority: 1 },
+  { productName: 'Cidra', supplierId: 'especies', priority: 1 },
+  { productName: 'Ciruela nacional', supplierId: 'reina', priority: 1 },
+  { productName: 'Espárragos', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Granada', supplierId: 'reina', priority: 1 },
+  { productName: 'Kale crespo', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Red Globe nacional', supplierId: 'reina', priority: 1 },
+  { productName: 'Sandía Baby', supplierId: 'reina', priority: 1 },
+  { productName: 'Acelga', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Albahaca', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Arveja en vaina', supplierId: 'especies', priority: 1 },
+  { productName: 'Berenjena', supplierId: 'hierbas', priority: 1, fallback_zone_id: 'especies' },
+  { productName: 'Cebollín', supplierId: 'hierbas', priority: 1 },
+];
+
+export function normalizeSupplierProductName(productName: string): string {
+  return productName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+export function findPurchaseSupplierForProduct(productName: string): ProductSupplierMapping | null {
+  const normalizedName = normalizeSupplierProductName(productName);
+  const exact = PURCHASE_PRODUCT_SUPPLIER_MAPPING.find(mapping => normalizeSupplierProductName(mapping.productName) === normalizedName);
+  if (exact) return exact;
+  const historical = findSupplierForProduct(productName);
+  return historical ? { ...historical } : null;
+}
 
 // Función para encontrar el proveedor de un producto
 export function findSupplierForProduct(productName: string): ProductSupplierMapping | null {

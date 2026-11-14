@@ -2,7 +2,7 @@
 
 import { Building2, Store, Copy, ChevronDown, ChevronUp, CheckCircle } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { SUPPLIERS, getSupplierById } from '@/lib/suppliers-config';
+import { SUPPLIERS, findPurchaseSupplierForProduct, getSupplierById } from '@/lib/suppliers-config';
 import type { ProductGrouped } from './page';
 
 interface SupplierViewProps {
@@ -194,6 +194,16 @@ export default function SupplierView({
                             <p className="font-medium text-gray-900 dark:text-white">
                               {product.total_quantity}x {product.product_name} {variantDisplay}
                             </p>
+                            {(() => {
+                              const mapping = findPurchaseSupplierForProduct(product.product_name);
+                              const fallback = mapping?.fallback_zone_id ? getSupplierById(mapping.fallback_zone_id) : undefined;
+                              return (mapping?.sub_location_hint || fallback) ? (
+                                <div className="mt-1 flex flex-wrap gap-1 text-[11px] font-bold">
+                                  {mapping?.sub_location_hint && <span className="rounded bg-amber-200 px-2 py-1 text-amber-950">{mapping.sub_location_hint}</span>}
+                                  {fallback && <span className="rounded bg-orange-200 px-2 py-1 text-orange-950">↪ respaldo: {fallback.name}</span>}
+                                </div>
+                              ) : null;
+                            })()}
                             {product.unit_price > 0 && (
                               <p className="text-sm text-green-600 dark:text-green-400">
                                 {formatPrice(product.unit_price)} c/u

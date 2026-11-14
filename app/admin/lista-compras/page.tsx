@@ -31,7 +31,8 @@ import { format, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
-import { SUPPLIERS } from '@/lib/suppliers-config';
+import PurchaseCapturePanel from './PurchaseCapturePanel';
+import { findPurchaseSupplierForProduct, getSupplierById, SUPPLIERS } from '@/lib/suppliers-config';
 import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 import { nextDeliveryDate } from '@/lib/admin-route';
 
@@ -2144,43 +2145,9 @@ const normalizeVariant = (variant: string | null): string => {
       });
     });
 
-    const productSupplierMap: Record<string, string> = {
-      'aguacate': 'corabastos',
-      'hass': 'corabastos',
-      'fresa': 'corabastos',
-      'arandano': 'corabastos',
-      'arándano': 'corabastos',
-      'banano': 'corabastos',
-      'tomate': 'corabastos',
-      'cebolla': 'corabastos',
-      'papa': 'corabastos',
-      'zanahoria': 'corabastos',
-      'limon': 'corabastos',
-      'mango': 'corabastos',
-      'uva': 'corabastos',
-      'durazno': 'corabastos',
-      'manzana': 'corabastos',
-      'kiwi': 'plaza',
-      'pera': 'plaza',
-      'ciruela': 'plaza',
-      'cereza': 'plaza',
-      'aceite': 'deposito',
-      'pasta de ajo': 'deposito',
-      'semillas': 'deposito',
-      'zumo': 'deposito',
-      'manzanilla': 'deposito',
-      'flor de jamaica': 'deposito',
-    };
-
     filteredProducts.forEach(product => {
-      const name = product.product_name.toLowerCase();
-      let assignedSupplier = 'corabastos';
-      for (const [keyword, supplierId] of Object.entries(productSupplierMap)) {
-        if (name.includes(keyword)) {
-          assignedSupplier = supplierId;
-          break;
-        }
-      }
+      const mapping = findPurchaseSupplierForProduct(product.product_name);
+      const assignedSupplier = mapping?.supplierId || 'reina';
       const supplierData = supplierMap.get(assignedSupplier);
       if (supplierData) {
         supplierData.products.push(product);
@@ -2599,6 +2566,7 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
           </div>
         ) : (
           <>
+            <PurchaseCapturePanel totalSales={salesSummary.grandTotal} formatPrice={formatPrice} />
             {/* Stats Compactos (Una sola fila) - MEJORADO */}
               {orders.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
@@ -2985,9 +2953,21 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
                           </button>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-start justify-between gap-2">
-                              <p className={`font-semibold text-sm leading-tight break-words ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-900 dark:text-white'}`}>
+                              <p className={`font-black text-base leading-tight break-words ${isPurchased ? 'text-gray-500 line-through' : 'text-gray-950 dark:text-white'}`}>
                                 {getWhatsAppSafeEmoji(product.product_name)} {product.display_name}
                               </p>
+                              {(() => {
+                                const mapping = findPurchaseSupplierForProduct(product.product_name);
+                                const supplier = mapping ? getSupplierById(mapping.supplierId) : undefined;
+                                const fallback = mapping?.fallback_zone_id ? getSupplierById(mapping.fallback_zone_id) : undefined;
+                                return (mapping || supplier) ? (
+                                  <div className="mt-1 flex flex-wrap gap-1 text-[11px] font-bold">
+                                    <span className="rounded bg-slate-900 px-2 py-1 text-white">{supplier?.icon} {supplier?.name || mapping?.supplierId}</span>
+                                    {mapping?.sub_location_hint && <span className="rounded bg-amber-200 px-2 py-1 text-amber-950">{mapping.sub_location_hint}</span>}
+                                    {fallback && <span className="rounded bg-orange-200 px-2 py-1 text-orange-950">↪ respaldo: {fallback.name}</span>}
+                                  </div>
+                                ) : null;
+                              })()}
                               <p className="text-sm font-bold text-orange-600 dark:text-orange-400 whitespace-nowrap">
                                 {totalCost > 0 ? formatPrice(totalCost) : '-'}
                               </p>
