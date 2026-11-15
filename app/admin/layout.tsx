@@ -59,13 +59,14 @@ export default function AdminLayout({
         .then(async (response) => {
           const data = await response.json().catch(() => null);
           if (!response.ok || !data?.success || !data.buyer) {
-            window.location.href = '/admin/login';
+            setBuyer(null);
+            setLoading(false);
             return;
           }
           setBuyer(data.buyer);
           setLoading(false);
         })
-        .catch(() => { window.location.href = '/admin/login'; });
+        .catch(() => { setBuyer(null); setLoading(false); });
       return;
     }
 
@@ -117,7 +118,6 @@ export default function AdminLayout({
 
   if (isBuyerPurchasePage) {
     if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando compras…</div>;
-    if (!buyer) return null;
     return <main className="min-h-screen bg-gray-100 p-4 lg:p-8">{children}</main>;
   }
 
