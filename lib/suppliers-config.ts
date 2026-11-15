@@ -17,9 +17,18 @@ export interface ProductSupplierMapping {
   note?: string;
   sub_location_hint?: string;
   fallback_zone_id?: string;
+  ghost?: boolean;
 }
 
 export const SUPPLIERS: Supplier[] = [
+  {
+    id: 'medio-fruver',
+    name: 'Medio Frúver',
+    color: 'blue',
+    icon: '🍌',
+    order: 1,
+    location: 'Medio Frúver'
+  },
   {
     id: 'hierbas',
     name: 'Bodega de Hierbas',
@@ -51,6 +60,14 @@ export const SUPPLIERS: Supplier[] = [
     icon: '🥑',
     order: 4,
     location: 'Nuestra ubicación'
+  },
+  {
+    id: 'popular',
+    name: 'Bodega Popular',
+    color: 'purple',
+    icon: '🛒',
+    order: 5,
+    location: 'Mayorista / Minorista'
   }
 ];
 
@@ -268,12 +285,6 @@ export const PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
     priority: 1
   },
   {
-    productName: 'semillas',
-    supplierId: 'reina',
-    priority: 1,
-    note: 'Chía, linaza - Jessica'
-  },
-  {
     productName: 'flor de jamaica',
     supplierId: 'reina',
     priority: 1
@@ -331,11 +342,6 @@ export const PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
     note: 'En malla, para separar del apio'
   },
   {
-    productName: 'piña',
-    supplierId: 'reina',
-    priority: 1
-  },
-  {
     productName: 'sandía grande',
     supplierId: 'reina',
     priority: 1,
@@ -384,12 +390,58 @@ export const PURCHASE_PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
   { productName: 'Cebollín', supplierId: 'hierbas', priority: 1 },
 ];
 
+export const DEFINITIVE_PRODUCT_SUPPLIER_MAPPING: ProductSupplierMapping[] = [
+  { productName: 'Banano criollo', supplierId: 'medio-fruver', priority: 1 },
+  { productName: 'Mango Azúcar', supplierId: 'medio-fruver', priority: 1 },
+  { productName: 'Mango Común', supplierId: 'medio-fruver', priority: 1 },
+  { productName: 'Papa sabanera', supplierId: 'medio-fruver', priority: 1 },
+  { productName: 'Limón Tahití', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Costado Sur' },
+  { productName: 'Limón Mandarino', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Costado Sur' },
+  { productName: 'Tomate chonto', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Tomate chonto tamaño mixto', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Cebolla cabezona blanca', supplierId: 'especies', priority: 1 },
+  { productName: 'Cebolla larga', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Zanahoria', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Pepino cohombro', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Pimentón', supplierId: 'especies', priority: 1, sub_location_hint: '📍 Alero Sur' },
+  { productName: 'Agraz', supplierId: 'especies', priority: 1, note: 'Paquete de 125g' },
+  { productName: 'Tomate uvalina', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Tomate cherry', supplierId: 'hierbas', priority: 1 },
+  { productName: 'Banano bocadillo', supplierId: 'reina', priority: 1 },
+  { productName: 'Naranja Valencia', supplierId: 'reina', priority: 1, note: 'Mallas' },
+  { productName: 'Fresas Premium', supplierId: 'reina', priority: 1 },
+  { productName: 'Fresa Económica', supplierId: 'reina', priority: 1 },
+  { productName: 'Frambuesas', supplierId: 'reina', priority: 1 },
+  { productName: 'Moras', supplierId: 'reina', priority: 1 },
+  { productName: 'Mora Real Norteamericana', supplierId: 'reina', priority: 1 },
+  { productName: 'Uvas', supplierId: 'reina', priority: 1 },
+  { productName: 'Manzanas', supplierId: 'reina', priority: 1 },
+  { productName: 'Peras', supplierId: 'reina', priority: 1 },
+  { productName: 'Kiwi', supplierId: 'reina', priority: 1 },
+  { productName: 'Granadilla', supplierId: 'reina', priority: 1 },
+  { productName: 'Toronja', supplierId: 'reina', priority: 1 },
+  { productName: 'Duraznos', supplierId: 'popular', priority: 1, sub_location_hint: '📍 Mayorista' },
+  { productName: 'Arándanos Orgánicos', supplierId: 'popular', priority: 1, sub_location_hint: '📍 Minorista', fallback_zone_id: 'reina' },
+  { productName: 'Mangostinos', supplierId: 'popular', priority: 1, sub_location_hint: '📍 Minorista', fallback_zone_id: 'reina' },
+  { productName: 'Piña', supplierId: 'unresolved', priority: 1, ghost: true },
+  { productName: 'Semillas de Jessica', supplierId: 'unresolved', priority: 1, ghost: true },
+];
+
+
 export function normalizeSupplierProductName(productName: string): string {
   return productName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+export function isUnresolvedPurchaseProduct(productName: string): boolean {
+  const normalizedName = normalizeSupplierProductName(productName);
+  return DEFINITIVE_PRODUCT_SUPPLIER_MAPPING.some(mapping => mapping.ghost && normalizeSupplierProductName(mapping.productName) === normalizedName);
+}
+
 export function findPurchaseSupplierForProduct(productName: string): ProductSupplierMapping | null {
   const normalizedName = normalizeSupplierProductName(productName);
+  const definitive = DEFINITIVE_PRODUCT_SUPPLIER_MAPPING.find(mapping => normalizeSupplierProductName(mapping.productName) === normalizedName);
+  if (definitive?.ghost) return null;
+  if (definitive) return definitive;
   const exact = PURCHASE_PRODUCT_SUPPLIER_MAPPING.find(mapping => normalizeSupplierProductName(mapping.productName) === normalizedName);
   if (exact) return exact;
   const historical = findSupplierForProduct(productName);

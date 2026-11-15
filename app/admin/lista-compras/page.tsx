@@ -32,7 +32,8 @@ import { es } from 'date-fns/locale';
 import SupplierView from './SupplierView';
 import { getWhatsAppSafeEmoji } from '@/utils/productEmojis';
 import PurchaseCapturePanel from './PurchaseCapturePanel';
-import { findPurchaseSupplierForProduct, getSupplierById, SUPPLIERS } from '@/lib/suppliers-config';
+import PurchaseOfflineSessionPanel from './PurchaseOfflineSessionPanel';
+import { findPurchaseSupplierForProduct, getSupplierById, SUPPLIERS, isUnresolvedPurchaseProduct } from '@/lib/suppliers-config';
 import { resolveComboComponents } from '@/lib/purchase-list-resolvers';
 import { nextDeliveryDate } from '@/lib/admin-route';
 
@@ -2146,6 +2147,7 @@ const normalizeVariant = (variant: string | null): string => {
     });
 
     filteredProducts.forEach(product => {
+      if (isUnresolvedPurchaseProduct(product.product_name)) return;
       const mapping = findPurchaseSupplierForProduct(product.product_name);
       const assignedSupplier = mapping?.supplierId || 'reina';
       const supplierData = supplierMap.get(assignedSupplier);
@@ -2567,6 +2569,24 @@ const formatBoxQuantity = (productName: string, boxCount: number): { display: st
         ) : (
           <>
             <PurchaseCapturePanel totalSales={salesSummary.grandTotal} formatPrice={formatPrice} />
+            <PurchaseOfflineSessionPanel
+              triggerLines={orders.filter(order => selectedOrders.has(order.id)).flatMap(order => extractItemsFromOrder(order).map(item => ({
+                name: item.product_snapshot?.name || item.product_name || item.productName || 'Producto',
+                variant: item.product_snapshot?.variant_value || item.variantName,
+                quantity: item.quantity,
+                unit: item.unit || 'unidad',
+                customerName: order.customer_name || 'Cliente sin nombre',
+                orderId: order.id,
+              })))}
+              missingLines={groupedProducts.flatMap(product => product.customer_breakdown.map(customer => ({
+                customerName: customer.customer_name,
+                orderId: customer.order_id,
+                productName: product.product_name,
+                requestedQuantity: customer.quantity,
+                purchasedQuantity: purchasedProducts.has(product.grouping_key) ? customer.quantity : 0,
+                missingQuantity: 0,
+              })))}
+            />
             {/* Stats Compactos (Una sola fila) - MEJORADO */}
               {orders.length > 0 && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
