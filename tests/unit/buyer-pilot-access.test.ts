@@ -19,4 +19,15 @@ describe('buyer pilot access contract', () => {
     expect(route).toContain('BUYER_SESSION_MAX_AGE_SECONDS');
     expect(route).toContain("claims.role !== 'buyer'");
   });
+
+  it('projects packing items without customer contact or sales price fields', () => {
+    const route = fs.readFileSync(path.join(root, 'app/api/buyer/purchase-data/route.ts'), 'utf8');
+    expect(route).toContain('packing_items');
+    expect(route).toContain('ripeness_note_snapshot');
+    expect(route).toContain('is_promo_gift');
+    expect(route).not.toContain('customer_phone');
+    expect(route).not.toContain('delivery_address');
+    expect(route).not.toContain('unit_price');
+    expect(route).not.toContain('total_amount');
+  });
 });

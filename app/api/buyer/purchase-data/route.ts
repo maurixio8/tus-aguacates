@@ -9,33 +9,10 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   const deliveryDate = searchParams.get('deliveryDate');
   const supabase = createSupabaseClient();
 
-  let sessionsQuery = supabase
-    .from('purchase_sessions')
-    .select(`
-      id,
-      delivery_date,
-      status,
-      purchase_items (
-        id,
-        source_order_id,
-        product_id,
-        product_name,
-        variant_value,
-        requested_qty,
-        purchased_qty,
-        missing_qty,
-        unit,
-        supplier_id,
-        sub_location_hint,
-        is_promo_gift
-      )
-    `)
-    .eq('buyer_id', auth.claims.sub)
-    .order('delivery_date', { ascending: false })
-    .limit(30);
-  if (deliveryDate) sessionsQuery = sessionsQuery.eq('delivery_date', deliveryDate);
-
-  const { data, error } = await sessionsQuery;
+  const { data, error } = await supabase.rpc('get_buyer_purchase_projection', {
+    p_buyer_id: auth.claims.sub,
+    p_delivery_date: deliveryDate || null,
+  });
   if (error) {
     return NextResponse.json(
       { success: false, code: 'PURCHASE_SCHEMA_NOT_READY', error: 'Purchase session schema is not applied' },
@@ -43,24 +20,28 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
     );
   }
 
-  const orders = (data || []).map((session: any) => ({
+  const sessions = Array.isArray(data) ? data : [];
+  const orders = sessions.map((session: any) => ({
     id: session.id,
     order_number: session.id,
     delivery_date: session.delivery_date,
     customer_name: 'Jornada de compras',
-    delivery_address: null,
-    items: (session.purchase_items || []).map((item: any) => ({
+    items: Array.isArray(session.items) ? session.items : [],
+    packing_items: Array.isArray(session.packing_items) ? session.packing_items.map((item: any) => ({
       id: item.id,
+      order_label: item.source_order_number || (item.source_order_id ? `Pedido #${String(item.source_order_id).slice(0, 8)}` : 'Pedido'),
+      customer_name: item.customer_name || 'Cliente',
       product_id: item.product_id,
-      quantity: item.requested_qty,
       product_name: item.product_name,
+      variant_name: item.variant_name || null,
       variant_value: item.variant_value || null,
-      unit: item.unit || null,
-      missing_quantity: item.missing_qty,
-      supplier_id: item.supplier_id,
-      sub_location_hint: item.sub_location_hint,
+      requested_qty: item.requested_qty,
+      picked_qty: item.picked_qty,
+      missing_qty: item.missing_qty,
+      ripeness_note_snapshot: item.ripeness_note_snapshot || null,
       is_promo_gift: item.is_promo_gift,
-    })),
+      status: item.status,
+    })) : [],
   }));
 
   return NextResponse.json({ success: true, buyer_id: auth.claims.sub, orders });

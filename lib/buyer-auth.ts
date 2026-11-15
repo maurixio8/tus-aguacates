@@ -25,7 +25,7 @@ export interface BuyerAuthOptions {
 }
 
 export const BUYER_SESSION_COOKIE = 'buyer-session';
-export const BUYER_SESSION_MAX_AGE_SECONDS = 15 * 60;
+export const BUYER_SESSION_MAX_AGE_SECONDS = 12 * 60 * 60;
 
 function configuredSecret(options?: BuyerAuthOptions): string {
   const secret = options?.secret ?? process.env.BUYER_JWT_SECRET;
@@ -53,7 +53,7 @@ function forbidden(message: string) {
 }
 
 export function issueBuyerJwt(claims: BuyerClaims, options: BuyerAuthOptions & { expiresIn?: SignOptions['expiresIn'] } = {}): string {
-  const { secret, expiresIn = '15m', issuer, audience } = options;
+  const { secret, expiresIn = '12h', issuer, audience } = options;
   return jwt.sign(claims, configuredSecret({ secret }), {
     algorithm: 'HS256',
     expiresIn,
