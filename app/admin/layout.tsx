@@ -40,15 +40,32 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [buyer, setBuyer] = useState<{ id: string; name?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // No aplicar layout en la página de login
   const isLoginPage = pathname === '/admin/login';
+  const isBuyerPurchasePage = pathname === '/admin/compras';
 
   useEffect(() => {
     if (isLoginPage) {
       setLoading(false);
+      return;
+    }
+
+    if (isBuyerPurchasePage) {
+      void fetch('/api/auth/buyer/session', { credentials: 'include', cache: 'no-store' })
+        .then(async (response) => {
+          const data = await response.json().catch(() => null);
+          if (!response.ok || !data?.success || !data.buyer) {
+            window.location.href = '/admin/login';
+            return;
+          }
+          setBuyer(data.buyer);
+          setLoading(false);
+        })
+        .catch(() => { window.location.href = '/admin/login'; });
       return;
     }
 
@@ -80,7 +97,7 @@ export default function AdminLayout({
     };
 
     void checkAuth();
-  }, [isLoginPage]);
+  }, [isLoginPage, isBuyerPurchasePage]);
 
   const handleLogout = async () => {
     try {
@@ -96,6 +113,12 @@ export default function AdminLayout({
   // Si es la página de login, renderizar sin layout
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  if (isBuyerPurchasePage) {
+    if (loading) return <div className="min-h-screen flex items-center justify-center">Cargando compras…</div>;
+    if (!buyer) return null;
+    return <main className="min-h-screen bg-gray-100 p-4 lg:p-8">{children}</main>;
   }
 
   if (loading) {

@@ -24,6 +24,9 @@ export interface BuyerAuthOptions {
   audience?: string;
 }
 
+export const BUYER_SESSION_COOKIE = 'buyer-session';
+export const BUYER_SESSION_MAX_AGE_SECONDS = 15 * 60;
+
 function configuredSecret(options?: BuyerAuthOptions): string {
   const secret = options?.secret ?? process.env.BUYER_JWT_SECRET;
   if (!secret?.trim()) throw new Error('Missing BUYER_JWT_SECRET');
@@ -35,6 +38,10 @@ function bearerToken(request: NextRequest): string | null {
   if (!value) return null;
   const [scheme, token] = value.trim().split(/\s+/, 2);
   return scheme?.toLowerCase() === 'bearer' && token ? token : null;
+}
+
+function requestToken(request: NextRequest): string | null {
+  return bearerToken(request) || request.cookies.get(BUYER_SESSION_COOKIE)?.value || null;
 }
 
 function unauthorized(message: string) {
@@ -70,7 +77,7 @@ export function verifyBuyerJwt(token: string, options: BuyerAuthOptions = {}): B
 }
 
 export function requireBuyerAuth(request: NextRequest, options: BuyerAuthOptions = {}): BuyerAuthContext | Response {
-  const token = bearerToken(request);
+  const token = requestToken(request);
   if (!token) return unauthorized('Missing bearer token');
 
   let claims: BuyerClaims;
