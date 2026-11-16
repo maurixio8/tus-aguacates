@@ -75,7 +75,7 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   ]);
   const rows = [...(ordersResult.data || []), ...(guestResult.data || [])].filter((row: any) => isRouteEligible(row) && deliveryDateOf(row) === deliveryDate && new Date(row.created_at || 0) >= TUESDAY_CUTOFF);
   const orderItemVariants = new Map<string, any>();
-  const orderItemRows = rows.length ? await supabase.from('order_items').select('order_id,product_id,variant_id,product_snapshot').in('order_id', rows.map((row: any) => row.id)) : { data: [], error: null } as any;
+  const orderItemRows = rows.length ? await supabase.from('order_items').select('order_id,product_id,product_snapshot').in('order_id', rows.map((row: any) => row.id)) : { data: [], error: null } as any;
   for (const item of orderItemRows.data || []) { const snapshot = item.product_snapshot && typeof item.product_snapshot === 'object' ? item.product_snapshot : {}; orderItemVariants.set(`${item.order_id}|${item.product_id}`, { variant_id: item.variant_id, variant_name: snapshot.variant_name, variant_value: snapshot.variant_value }); }
   const catalogProductIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).map((item: any) => text(item.productId) || text(item.product_id)).filter(Boolean)))];
   const [catalogProductsResult, catalogVariantsResult] = await Promise.all([
