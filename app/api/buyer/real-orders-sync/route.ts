@@ -1,35 +1,41 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createBuyerGuardedHandler } from '@/lib/buyer-auth';
 import { createSupabaseClient } from '@/lib/auth-admin';
+import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
 
 export const dynamic = 'force-dynamic';
-
-const cancelled = /cancel|rechaz|declin|failed|fallid/i;
-function scheduledDate(value: any): string | null {
-  return value?.delivery_date || value?.deliveryDate || value?.order_data?.delivery_date || value?.order_data?.deliveryDate || value?.order_data?.shippingInfo?.deliveryDate || null;
-}
-function isActive(value: any): boolean {
-  return !cancelled.test(`${value?.status || ''} ${value?.order_status || ''}`);
-}
+const TUESDAY_CUTOFF_UTC = '2026-11-13T11:00:00.000Z';
 
 export const POST = createBuyerGuardedHandler(async (request: NextRequest) => {
   const body = await request.json().catch(() => null);
   const deliveryDate = typeof body?.delivery_date === 'string' ? body.delivery_date : '2026-11-17';
+  const cutoff = deliveryDate === '2026-11-17' ? new Date(TUESDAY_CUTOFF_UTC) : new Date(0);
   const supabase = createSupabaseClient();
   const [ordersResult, guestResult] = await Promise.all([
-    supabase.from('orders').select('id,order_number,status,order_status,customer_name,order_data,created_at').order('created_at', { ascending: false }).limit(500),
+    supabase.from('orders').select('id,order_number,status,order_status,customer_name,order_data,created_at,delivered_at').order('created_at', { ascending: false }).limit(500),
     supabase.from('guest_orders').select('id,guest_name,status,order_status,delivery_date,order_data,created_at').order('created_at', { ascending: false }).limit(500),
   ]);
   if (ordersResult.error || guestResult.error) return NextResponse.json({ success: false, error: 'No se pudieron leer los pedidos reales' }, { status: 503 });
-  const matching = [...(ordersResult.data || []), ...(guestResult.data || [])].filter(order => isActive(order) && scheduledDate(order) === deliveryDate);
+  const all = [...(ordersResult.data || []), ...(guestResult.data || [])];
+  const matching = all.filter((order: any) => {
+    const created = new Date(order.created_at || 0);
+    return isRouteEligible(order) && deliveryDateOf(order) === deliveryDate && created >= cutoff;
+  });
   const itemLines = matching.reduce((sum, order: any) => sum + (Array.isArray(order.order_data?.items) ? order.order_data.items.length : 0), 0);
+  const statusCounts = matching.reduce<Record<string, number>>((counts, order: any) => {
+    const status = String(order.status || order.order_status || 'sin_estado').toLowerCase();
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
   return NextResponse.json({
     success: true,
     delivery_date: deliveryDate,
+    cutoff_utc: cutoff.toISOString(),
     real_order_count: matching.length,
     real_item_lines: itemLines,
+    status_counts: statusCounts,
     applied: false,
-    code: matching.length ? 'REAL_ORDERS_FOUND_SYNC_ADAPTER_PENDING' : 'NO_SCHEDULED_ORDERS',
-    message: matching.length ? 'Hay pedidos fechados para la jornada; la revisión de mapeo queda pendiente antes de mezclarlos con la compra.' : 'No hay pedidos reales con fecha explícita para esta jornada.',
+    code: matching.length ? 'REAL_ORDERS_SELECTED_BY_ACTIVE_CYCLE' : 'NO_ACTIVE_ORDERS_FOR_CYCLE',
+    message: matching.length ? `${matching.length} pedidos reales elegibles por ciclo activo; la escritura se mantiene bloqueada hasta aplicar el adaptador de sincronización.` : 'No hay pedidos reales elegibles para esta jornada.',
   });
 });
