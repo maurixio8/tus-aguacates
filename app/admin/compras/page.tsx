@@ -1,7 +1,7 @@
 'use client';
 
-import BuyerPurchaseWorkspaceV2 from './BuyerPurchaseWorkspaceV2';
+import BuyerPurchaseWorkspaceV3 from './BuyerPurchaseWorkspaceV3';
 
 export default function BuyerComprasPage() {
-  return <BuyerPurchaseWorkspaceV2 />;
+  return <BuyerPurchaseWorkspaceV3 />;
 }
