@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
+type HandoffRow={phone?:string;status?:string};
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +21,9 @@ export async function GET(request: NextRequest) {
   const findings = findingsResult.data || [];
   const recovery = recoveryResult.data || [];
   const contexts = contextResult.error ? [] : (contextResult.data || []);
-  const validPhone = (value: unknown) => /^57\\d{10}$/.test(String(value || '').replace(/\\D/g, ''));
+  const validPhone = (value: unknown) => /^57\d{10}$/.test(String(value || '').replace(/\D/g, ''));
   const phoneFromConversationKey = (value: unknown) => {
-    const match = String(value || '').match(/^phone:(57\\d{10})$/);
+    const match = String(value || '').match(/^phone:(57\d{10})$/);
     return match && validPhone(match[1]) ? match[1] : null;
   };
   const priorityCases = [
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       source_kind: 'finding',
       source_id: row.id,
       customer_masked: row.customer_masked,
-      contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
+      contact_phone: String(row.contact_phone).replace(/\D/g, ''),
       phone_source: row.phone_source || 'whatsapp_audit_findings.contact_phone',
       phone_confidence: row.phone_confidence || 'alta',
       last_seen_at: row.received_at,
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
       source_kind: 'recovery',
       source_id: row.id,
       customer_masked: row.customer_masked,
-      contact_phone: String(row.contact_phone).replace(/\\D/g, ''),
+      contact_phone: String(row.contact_phone).replace(/\D/g, ''),
       phone_source: row.phone_source || 'whatsapp_recovery_opportunities.contact_phone',
       phone_confidence: row.phone_confidence || 'alta',
       conversation_key: row.conversation_key || '',
@@ -94,7 +95,15 @@ export async function GET(request: NextRequest) {
       intent_level: row.intent || '',
       intent_score: 100,
     })),
-  ].sort((a, b) => Number(new Date(b.last_seen_at || 0)) - Number(new Date(a.last_seen_at || 0)));
+  ].map((item) => ({
+    ...item,
+    last_contact_at: item.last_seen_at || null,
+    human_handoff_active: (handoffsResult.data || []).some((handoff: HandoffRow) => String(handoff.phone || '').replace(/\D/g, '') === String(item.contact_phone || '').replace(/\D/g, '') && handoff.status === 'active'),
+  })).sort((a, b) => {
+    const aTime = a.last_contact_at ? Number(new Date(a.last_contact_at)) : Number.POSITIVE_INFINITY;
+    const bTime = b.last_contact_at ? Number(new Date(b.last_contact_at)) : Number.POSITIVE_INFINITY;
+    return aTime - bTime;
+  });
   return NextResponse.json({ success: true, findings, recovery, ripeness: ripenessResult.data || [], handoffs: handoffsResult.data || [], contexts, priorityCases });
 }
 
@@ -118,8 +127,8 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ success: true, data });
   }
   if (action === 'pause-priority' || action === 'resume-priority') {
-    const phone = String(body.phone || '').replace(/\\D/g, '');
-    if (!/^57\\d{10}$/.test(phone)) return NextResponse.json({ error: 'Teléfono reconciliado inválido' }, { status: 400 });
+    const phone = String(body.phone || '').replace(/\D/g, '');
+    if (!/^57\d{10}$/.test(phone)) return NextResponse.json({ error: 'Teléfono reconciliado inválido' }, { status: 400 });
     const webhookUrl = process.env.N8N_DB_TOOL_WEBHOOK_URL || 'https://n8n.tusaguacates.com/webhook/db-tool-executor';
     const webhookSecret = process.env.N8N_DB_TOOL_WEBHOOK_SECRET;
     if (!webhookSecret) return NextResponse.json({ error: 'Falta configurar la conexión segura con el ejecutor local' }, { status: 503 });
