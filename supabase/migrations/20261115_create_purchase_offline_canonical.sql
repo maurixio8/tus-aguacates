@@ -180,3 +180,50 @@ $$;
 
 revoke all on function public.get_buyer_purchase_projection(uuid, date) from public, anon, authenticated;
 grant execute on function public.get_buyer_purchase_projection(uuid, date) to service_role;
+
+-- Scoped buyer mutation RPC; keeps purchase_offline private while allowing
+-- the authenticated pilot to persist purchase captures safely.
+create or replace function public.update_buyer_purchase_item(
+  p_buyer_id uuid,
+  p_session_id uuid,
+  p_item_id uuid default null,
+  p_purchased_qty numeric default null,
+  p_weight_kg numeric default null,
+  p_blind_price numeric default null,
+  p_actual_total_paid numeric default null,
+  p_operational_expenses jsonb default null,
+  p_mutation_id text default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, purchase_offline
+as $$
+declare
+  v_session purchase_offline.purchase_sessions%rowtype;
+  v_item purchase_offline.purchase_items%rowtype;
+begin
+  select * into v_session from purchase_offline.purchase_sessions where id = p_session_id and buyer_id = p_buyer_id;
+  if not found then raise exception 'Jornada no autorizada'; end if;
+  if p_item_id is not null then
+    update purchase_offline.purchase_items
+    set purchased_qty = coalesce(p_purchased_qty, purchased_qty), weight_kg = p_weight_kg, updated_at = now()
+    where id = p_item_id and session_id = p_session_id
+    returning * into v_item;
+    if not found then raise exception 'Producto no pertenece a la jornada'; end if;
+    if p_blind_price is not null or p_actual_total_paid is not null or p_weight_kg is not null then
+      insert into purchase_offline.purchase_price_observations
+        (session_id, purchase_item_id, blind_price, actual_total_paid, weight_kg, notes)
+      values
+        (p_session_id, p_item_id, coalesce(p_blind_price, p_actual_total_paid, 0), p_actual_total_paid, p_weight_kg, concat('mutation_id:', coalesce(p_mutation_id, '')));
+    end if;
+  end if;
+  if p_operational_expenses is not null then
+    update purchase_offline.purchase_sessions set operational_expenses = p_operational_expenses, updated_at = now()
+    where id = p_session_id and buyer_id = p_buyer_id;
+  end if;
+  return jsonb_build_object('success', true, 'mutation_id', p_mutation_id, 'item_id', p_item_id);
+end;
+$$;
+revoke all on function public.update_buyer_purchase_item(uuid, uuid, uuid, numeric, numeric, numeric, numeric, jsonb, text) from public, anon, authenticated;
+grant execute on function public.update_buyer_purchase_item(uuid, uuid, uuid, numeric, numeric, numeric, numeric, jsonb, text) to service_role;
