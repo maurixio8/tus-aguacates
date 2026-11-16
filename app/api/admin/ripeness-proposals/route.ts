@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
 type HandoffRow={phone?:string;status?:string};
+type PrioritySourceRef={source_kind:'finding'|'recovery'|'context';source_id:string};
 
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
     const match = String(value || '').match(/^phone:(57\d{10})$/);
     return match && validPhone(match[1]) ? match[1] : null;
   };
-  const priorityCases = [
+  const priorityCases = [...(
+    [
     ...findings.filter((row: any) => row.severity === 'rojo' && validPhone(row.contact_phone)).map((row: any) => ({
       key: `finding:${row.id}`,
       source: 'hallazgo crítico',
@@ -97,9 +99,31 @@ export async function GET(request: NextRequest) {
     })),
   ].map((item) => ({
     ...item,
+    source_refs: [{ source_kind: item.source_kind, source_id: item.source_id }],
     last_contact_at: item.last_seen_at || null,
     human_handoff_active: (handoffsResult.data || []).some((handoff: HandoffRow) => String(handoff.phone || '').replace(/\D/g, '') === String(item.contact_phone || '').replace(/\D/g, '') && handoff.status === 'active'),
-  })).sort((a, b) => {
+  })).reduce((merged, item) => {
+    const identity = item.contact_phone || item.key;
+    const previous = merged.get(identity);
+    if (!previous) {
+      merged.set(identity, item);
+      return merged;
+    }
+    const rank = (source: string) => source === 'finding' ? 3 : source === 'context' ? 2 : 1;
+    const preferred = rank(item.source_kind) > rank(previous.source_kind) ? item : previous;
+    const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
+    merged.set(identity, {
+      ...preferred,
+      source: unique([previous.source, item.source]).join(' + '),
+      source_refs: [...previous.source_refs, ...item.source_refs].filter((ref: PrioritySourceRef, index: number, refs: PrioritySourceRef[]) => refs.findIndex((candidate) => candidate.source_kind === ref.source_kind && candidate.source_id === ref.source_id) === index),
+      last_contact_at: [previous.last_contact_at, item.last_contact_at].filter(Boolean).sort().at(-1) || null,
+      summary: unique([previous.summary, item.summary]).join(' · '),
+      evidence: unique([previous.evidence || '', item.evidence || '']).join(' · '),
+      next_action: unique([previous.next_action || '', item.next_action || '']).join(' · '),
+      human_handoff_active: Boolean(previous.human_handoff_active || item.human_handoff_active),
+    });
+    return merged;
+  }, new Map<string, any>()).values())].sort((a, b) => {
     const aTime = a.last_contact_at ? Number(new Date(a.last_contact_at)) : Number.POSITIVE_INFINITY;
     const bTime = b.last_contact_at ? Number(new Date(b.last_contact_at)) : Number.POSITIVE_INFINITY;
     return aTime - bTime;
@@ -152,12 +176,18 @@ export async function PATCH(request: NextRequest) {
     }
     const { data: handoff, error: handoffError } = await supabase.from('whatsapp_human_handoffs').update({ status: 'closed', ended_at: new Date().toISOString(), resolution: 'Atendido por Mauricio desde Prioridad Alta', updated_at: new Date().toISOString() }).eq('identity_key', phone).eq('status', 'active').select().maybeSingle();
     if (handoffError) return NextResponse.json({ error: 'PostgreSQL local cambió, pero no se pudo cerrar el handoff', details: handoffError.message, dbResult }, { status: 500 });
-    if (body.sourceKind === 'finding') {
-      const { error } = await supabase.from('whatsapp_audit_findings').update({ review_status: 'approved', updated_at: new Date().toISOString() }).eq('id', String(body.sourceId || ''));
-      if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar el hallazgo como atendido', details: error.message, dbResult }, { status: 500 });
-    } else if (body.sourceKind === 'recovery') {
-      const { error } = await supabase.from('whatsapp_recovery_opportunities').update({ status: 'resolved', assigned_to: adminName, resolution: 'Atendido por Mauricio desde Prioridad Alta', updated_at: new Date().toISOString() }).eq('id', String(body.sourceId || ''));
-      if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar la oportunidad como resuelta', details: error.message, dbResult }, { status: 500 });
+    const sourceRefs: PrioritySourceRef[] = Array.isArray(body.sourceRefs) && body.sourceRefs.length
+      ? body.sourceRefs
+      : [{ source_kind: body.sourceKind, source_id: String(body.sourceId || '') }];
+    for (const ref of sourceRefs) {
+      if (!ref.source_id) continue;
+      if (ref.source_kind === 'finding') {
+        const { error } = await supabase.from('whatsapp_audit_findings').update({ review_status: 'approved', updated_at: new Date().toISOString() }).eq('id', ref.source_id);
+        if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudo marcar todos los hallazgos como atendidos', details: error.message, dbResult }, { status: 500 });
+      } else if (ref.source_kind === 'recovery') {
+        const { error } = await supabase.from('whatsapp_recovery_opportunities').update({ status: 'resolved', assigned_to: adminName, resolution: 'Atendido por Mauricio desde Prioridad Alta', updated_at: new Date().toISOString() }).eq('id', ref.source_id);
+        if (error) return NextResponse.json({ error: 'Se reactivó Luz, pero no se pudieron marcar todas las oportunidades como resueltas', details: error.message, dbResult }, { status: 500 });
+      }
     }
     const { data: readback } = await supabase.from('whatsapp_human_handoffs').select('*').eq('identity_key', phone).maybeSingle();
     return NextResponse.json({ success: true, action, dbResult, handoff: readback || handoff });
