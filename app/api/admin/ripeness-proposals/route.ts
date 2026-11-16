@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSupabaseClient, requireAdminRole } from '@/lib/auth-admin';
-type HandoffRow={phone?:string;status?:string};
-type PrioritySourceRef={source_kind:'finding'|'recovery'|'context';source_id:string};
+type HandoffRow={id?:string;phone?:string;status?:string;started_at?:string;last_human_message_at?:string;updated_at?:string};
+type PrioritySourceKind='finding'|'recovery'|'context'|'handoff';
+type PrioritySourceRef={source_kind:PrioritySourceKind;source_id:string};
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,10 @@ export async function GET(request: NextRequest) {
   const phoneFromConversationKey = (value: unknown) => {
     const match = String(value || '').match(/^phone:(57\d{10})$/);
     return match && validPhone(match[1]) ? match[1] : null;
+  };
+  const maskPhone = (value: unknown) => {
+    const digits = String(value || '').replace(/\D/g, '');
+    return digits.length >= 4 ? `***${digits.slice(-4)}` : 'Cliente WhatsApp';
   };
   const priorityCases = [...(
     [
@@ -97,6 +102,28 @@ export async function GET(request: NextRequest) {
       intent_level: row.intent || '',
       intent_score: 100,
     })),
+    ...(handoffsResult.data || []).filter((handoff: HandoffRow) => validPhone(handoff.phone)).map((handoff: HandoffRow) => ({
+      key: `handoff:${handoff.id || handoff.phone}`,
+      source: 'atención humana activa',
+      source_kind: 'handoff' as const,
+      source_id: handoff.id || String(handoff.phone),
+      customer_masked: maskPhone(handoff.phone),
+      contact_phone: String(handoff.phone).replace(/\D/g, ''),
+      phone_source: 'whatsapp_human_handoffs.phone',
+      phone_confidence: 'alta',
+      last_seen_at: handoff.last_human_message_at || handoff.started_at || handoff.updated_at,
+      priority: 'alta',
+      priority_reason: 'La conversación está actualmente en atención humana y debe seguir visible hasta reactivar Luz.',
+      summary: 'Conversación tomada por Mao; requiere continuidad humana.',
+      incoming_text: '',
+      luz_response: '',
+      evidence: 'handoff activo persistido',
+      next_action: 'Continuar la conversación o marcar atendido y reactivar Luz.',
+      order_state: '',
+      intent_level: '',
+      intent_score: 100,
+      human_handoff_active: true,
+    })),
   ].map((item) => ({
     ...item,
     source_refs: [{ source_kind: item.source_kind, source_id: item.source_id }],
@@ -109,7 +136,7 @@ export async function GET(request: NextRequest) {
       merged.set(identity, item);
       return merged;
     }
-    const rank = (source: string) => source === 'finding' ? 3 : source === 'context' ? 2 : 1;
+    const rank = (source: string) => source === 'handoff' ? 4 : source === 'finding' ? 3 : source === 'context' ? 2 : 1;
     const preferred = rank(item.source_kind) > rank(previous.source_kind) ? item : previous;
     const unique = (values: string[]) => [...new Set(values.filter(Boolean))];
     merged.set(identity, {
