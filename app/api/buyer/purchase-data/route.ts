@@ -26,16 +26,29 @@ function unitFor(name: string, item: any): string { return clean(name).includes(
 function sourceItems(row: any): any[] { return Array.isArray(row?.order_data?.items) ? row.order_data.items : []; }
 function keyFor(name: string, variant: string | null, zone: string): string { return `${clean(name)}|${clean(variant || '')}|${zone}`; }
 function packingKeyFor(item: any): string { return `${text(item.source_order_number) || text(item.order_label)}|${text(item.customer_name)}|${clean(productName(item))}|${clean(variantValue(item) || '')}|${item.is_promo_gift ? 'gift' : 'normal'}`; }
+function catalogResolved(raw: any, catalog: { products: Map<string, any>; variants: Map<string, any> }) {
+  const productId = text(raw.productId) || text(raw.product_id) || null;
+  const variantId = text(raw.variantId) || text(raw.variant_id) || null;
+  const product = productId ? catalog.products.get(productId) : null;
+  const variant = variantId ? catalog.variants.get(variantId) : null;
+  const name = text(product?.name) || productName(raw);
+  const rawVariant = variantValue(raw);
+  const exactVariant = text(variant?.variant_value) || (rawVariant && !/^(peso|cantidad|presentacion|presentación)$/i.test(rawVariant) ? rawVariant : null);
+  const description = text(product?.description);
+  const slug = text(product?.slug);
+  const presentationLabel = /championes[-_ ]tajados|vienen en bandeja/i.test(`${slug} ${description}`) ? 'Bandeja' : exactVariant;
+  return { productId, variantId, product, variant, name, exactVariant, presentationLabel };
+}
 
-function buildRealProjection(rows: any[]) {
+function buildRealProjection(rows: any[], catalog: { products: Map<string, any>; variants: Map<string, any> }) {
   const itemMap = new Map<string, any>(); const packing: any[] = []; let realItemLines = 0;
   for (const row of rows) {
     const orderNumber = text(row.order_number) || `Pedido ${String(row.id).slice(0, 8)}`;
     const customerName = text(row.customer_name) || text(row.guest_name) || 'Cliente';
     const items = sourceItems(row); realItemLines += items.length;
     for (const raw of items) {
-      const name = productName(raw); const variant = variantValue(raw); const zone = zoneFor(name); const qty = quantity(raw);
-      const line = { source_order_id: text(row.id) || null, source_order_line_id: text(raw.id) || text(raw.lineId) || text(raw.line_id) || null, product_id: text(raw.productId) || text(raw.product_id) || null, product_name: name, variant_id: text(raw.variantId) || text(raw.variant_id) || null, variant_name: variant, variant_value: variant, requested_qty: qty, purchased_qty: 0, missing_qty: qty, surplus_qty: 0, weight_kg: null, unit: unitFor(name, raw), supplier_id: zone, sub_location_hint: subLocation(name), ripeness_note_snapshot: null, is_promo_gift: false };
+      const resolved = catalogResolved(raw, catalog); const name = resolved.name; const variant = resolved.exactVariant; const zone = zoneFor(name); const qty = quantity(raw);
+      const line = { source_order_id: text(row.id) || null, source_order_line_id: text(raw.id) || text(raw.lineId) || text(raw.line_id) || null, product_id: resolved.productId, product_name: name, variant_id: resolved.variantId, variant_name: text(resolved.variant?.variant_name) || variant, variant_value: variant, presentation_label: resolved.presentationLabel, requested_qty: qty, purchased_qty: 0, missing_qty: qty, surplus_qty: 0, weight_kg: null, unit: unitFor(name, raw), supplier_id: zone, sub_location_hint: subLocation(name), ripeness_note_snapshot: null, is_promo_gift: false };
       const key = keyFor(name, variant, zone); const existing = itemMap.get(key); if (existing) existing.requested_qty += qty; else itemMap.set(key, line);
       packing.push({ id: `real-pack-${row.id}-${packing.length}`, source_order_id: text(row.id) || null, source_order_line_id: text(raw.id) || text(raw.lineId) || text(raw.line_id) || null, source_order_number: orderNumber, order_label: orderNumber, customer_name: customerName, product_name: name, variant_name: variant, variant_value: variant, requested_qty: qty, picked_qty: 0, missing_qty: qty, ripeness_note_snapshot: null, is_promo_gift: false, status: 'pending' });
       if (/caja\s*de\s*24/.test(clean(name))) {
@@ -58,9 +71,16 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
     supabase.from('guest_orders').select('id,guest_name,status,order_status,delivery_date,order_data,created_at').order('created_at', { ascending: false }).limit(500),
   ]);
   const rows = [...(ordersResult.data || []), ...(guestResult.data || [])].filter((row: any) => isRouteEligible(row) && deliveryDateOf(row) === deliveryDate && new Date(row.created_at || 0) >= TUESDAY_CUTOFF);
-  const real = buildRealProjection(rows);
+  const catalogIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).flatMap((item: any) => [text(item.productId) || text(item.product_id), text(item.variantId) || text(item.variant_id)]).filter(Boolean)))];
+  const [catalogProductsResult, catalogVariantsResult] = await Promise.all([
+    catalogIds.length ? supabase.from('products').select('id,name,slug,description,unit,is_active').in('id', catalogIds) : Promise.resolve({ data: [], error: null } as any),
+    catalogIds.length ? supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,is_active').in('id', catalogIds) : Promise.resolve({ data: [], error: null } as any),
+  ]);
+  const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>((catalogVariantsResult.data || []).map((item: any) => [item.id, item])) };
+  const real = buildRealProjection(rows, catalog);
   const existingByKey = new Map<string, any>((session.items || []).map((item: any) => [keyFor(item.product_name, item.variant_value, item.supplier_id || zoneFor(item.product_name)), item]));
-  const items = real.real_order_count > 0 ? real.items.map((item: any) => { const saved = existingByKey.get(keyFor(item.product_name, item.variant_value, item.supplier_id)); return saved ? { ...item, id: saved.id, purchased_qty: Number(saved.purchased_qty || 0), missing_qty: Math.max(item.requested_qty - Number(saved.purchased_qty || 0), 0), surplus_qty: Math.max(Number(saved.purchased_qty || 0) - item.requested_qty, 0), weight_kg: saved.weight_kg || null } : { ...item, id: `real-${keyFor(item.product_name, item.variant_value, item.supplier_id)}` }; }) : (session.items || []);
+  const existingByName = new Map<string, any[]>(); for (const item of session.items || []) { const key = clean(item.product_name); const list = existingByName.get(key) || []; list.push(item); existingByName.set(key, list); }
+  const items = real.real_order_count > 0 ? real.items.map((item: any) => { const saved = existingByKey.get(keyFor(item.product_name, item.variant_value, item.supplier_id)) || ((existingByName.get(clean(item.product_name)) || []).length === 1 ? existingByName.get(clean(item.product_name))?.[0] : null); return saved ? { ...item, id: saved.id, purchased_qty: Number(saved.purchased_qty || 0), missing_qty: Math.max(item.requested_qty - Number(saved.purchased_qty || 0), 0), surplus_qty: Math.max(Number(saved.purchased_qty || 0) - item.requested_qty, 0), weight_kg: saved.weight_kg || null } : { ...item, id: `real-${keyFor(item.product_name, item.variant_value, item.supplier_id)}` }; }) : (session.items || []);
   const savedPackingByKey = new Map<string, any>((session.packing_items || []).map((item: any) => [packingKeyFor(item), item]));
   const packing_items = real.real_order_count > 0 ? real.packing_items.map((item: any) => { const saved = savedPackingByKey.get(packingKeyFor(item)); return saved ? { ...item, id: saved.id, picked_qty: Number(saved.picked_qty || 0), status: saved.status || 'pending' } : item; }) : (session.packing_items || []);
   return NextResponse.json({ success: true, buyer_id: auth.claims.sub, real_order_count: real.real_order_count, real_item_lines: real.real_item_lines, orders: [{ id: session.id, order_number: session.id, delivery_date: session.delivery_date, status: session.status, cash_advanced: Number(session.cash_advanced || 0), actual_total_paid: Number(session.actual_total_paid || 0), operational_expenses: session.operational_expenses || {}, promo_gift_enabled: Boolean(session.promo_gift_enabled), promo_gift_qty_per_trigger: Number(session.promo_gift_qty_per_trigger || 0), customer_name: 'Jornada de compras', items, packing_items }] });
