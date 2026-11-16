@@ -101,10 +101,10 @@ function draftFor(item: Item, drafts: Record<string, Draft>): Draft {
   };
 }
 
-import BuyerPurchaseWorkspace from './BuyerPurchaseWorkspace';
+import BuyerPurchaseWorkspaceV2 from './BuyerPurchaseWorkspaceV2';
 
 export default function BuyerComprasPage() {
-  return <BuyerPurchaseWorkspace />;
+  return <BuyerPurchaseWorkspaceV2 />;
 }
 
 function LegacyBuyerComprasPage() {

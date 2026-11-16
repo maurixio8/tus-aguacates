@@ -227,3 +227,25 @@ end;
 $$;
 revoke all on function public.update_buyer_purchase_item(uuid, uuid, uuid, numeric, numeric, numeric, numeric, jsonb, text) from public, anon, authenticated;
 grant execute on function public.update_buyer_purchase_item(uuid, uuid, uuid, numeric, numeric, numeric, numeric, jsonb, text) to service_role;
+
+create or replace function public.update_buyer_purchase_session(
+  p_buyer_id uuid,
+  p_session_id uuid,
+  p_cash_advanced numeric default null,
+  p_operational_expenses jsonb default null
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, purchase_offline
+as $$
+begin
+  update purchase_offline.purchase_sessions
+  set cash_advanced = coalesce(p_cash_advanced, cash_advanced), operational_expenses = coalesce(p_operational_expenses, operational_expenses), updated_at = now()
+  where id = p_session_id and buyer_id = p_buyer_id;
+  if not found then raise exception 'Jornada no autorizada'; end if;
+  return jsonb_build_object('success', true, 'session_id', p_session_id);
+end;
+$$;
+revoke all on function public.update_buyer_purchase_session(uuid, uuid, numeric, jsonb) from public, anon, authenticated;
+grant execute on function public.update_buyer_purchase_session(uuid, uuid, numeric, jsonb) to service_role;
