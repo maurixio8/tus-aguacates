@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   };
   const priorityCases = [...(
     [
-    ...findings.filter((row: any) => row.severity === 'rojo' && validPhone(row.contact_phone)).map((row: any) => ({
+    ...findings.filter((row: any) => row.severity === 'rojo' && row.review_status === 'pending' && validPhone(row.contact_phone)).map((row: any) => ({
       key: `finding:${row.id}`,
       source: 'hallazgo crítico',
       source_kind: 'finding',
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
       intent_level: '',
       intent_score: 100,
     })),
-    ...recovery.filter((row: any) => ['alta', 'high'].includes(String(row.intent_level || '').toLowerCase()) && validPhone(row.contact_phone)).map((row: any) => ({
+    ...recovery.filter((row: any) => !['resolved', 'dismissed'].includes(String(row.status || '').toLowerCase()) && ['alta', 'high'].includes(String(row.intent_level || '').toLowerCase()) && validPhone(row.contact_phone)).map((row: any) => ({
       key: `recovery:${row.id}`,
       source: 'oportunidad de recuperación',
       source_kind: 'recovery',
