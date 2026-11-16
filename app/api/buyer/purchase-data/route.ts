@@ -25,6 +25,7 @@ function quantity(item: any): number { const value = Number(item.quantity ?? ite
 function unitFor(name: string, item: any): string { return clean(name).includes('maracuya') ? 'kg' : text(item.unit) || 'unidad'; }
 function sourceItems(row: any): any[] { return Array.isArray(row?.order_data?.items) ? row.order_data.items : []; }
 function keyFor(name: string, variant: string | null, zone: string): string { return `${clean(name)}|${clean(variant || '')}|${zone}`; }
+function packingKeyFor(item: any): string { return `${text(item.source_order_number) || text(item.order_label)}|${text(item.customer_name)}|${clean(productName(item))}|${clean(variantValue(item) || '')}|${item.is_promo_gift ? 'gift' : 'normal'}`; }
 
 function buildRealProjection(rows: any[]) {
   const itemMap = new Map<string, any>(); const packing: any[] = []; let realItemLines = 0;
@@ -34,13 +35,13 @@ function buildRealProjection(rows: any[]) {
     const items = sourceItems(row); realItemLines += items.length;
     for (const raw of items) {
       const name = productName(raw); const variant = variantValue(raw); const zone = zoneFor(name); const qty = quantity(raw);
-      const line = { product_id: text(raw.productId) || text(raw.product_id) || null, product_name: name, variant_name: variant, variant_value: variant, requested_qty: qty, purchased_qty: 0, missing_qty: qty, surplus_qty: 0, weight_kg: null, unit: unitFor(name, raw), supplier_id: zone, sub_location_hint: subLocation(name), ripeness_note_snapshot: null, is_promo_gift: false };
+      const line = { source_order_id: text(row.id) || null, source_order_line_id: text(raw.id) || text(raw.lineId) || text(raw.line_id) || null, product_id: text(raw.productId) || text(raw.product_id) || null, product_name: name, variant_id: text(raw.variantId) || text(raw.variant_id) || null, variant_name: variant, variant_value: variant, requested_qty: qty, purchased_qty: 0, missing_qty: qty, surplus_qty: 0, weight_kg: null, unit: unitFor(name, raw), supplier_id: zone, sub_location_hint: subLocation(name), ripeness_note_snapshot: null, is_promo_gift: false };
       const key = keyFor(name, variant, zone); const existing = itemMap.get(key); if (existing) existing.requested_qty += qty; else itemMap.set(key, line);
-      packing.push({ id: `${row.id}-${packing.length}`, order_label: orderNumber, customer_name: customerName, product_name: name, variant_name: variant, variant_value: variant, requested_qty: qty, picked_qty: 0, missing_qty: qty, ripeness_note_snapshot: null, is_promo_gift: false, status: 'pending' });
+      packing.push({ id: `real-pack-${row.id}-${packing.length}`, source_order_id: text(row.id) || null, source_order_line_id: text(raw.id) || text(raw.lineId) || text(raw.line_id) || null, source_order_number: orderNumber, order_label: orderNumber, customer_name: customerName, product_name: name, variant_name: variant, variant_value: variant, requested_qty: qty, picked_qty: 0, missing_qty: qty, ripeness_note_snapshot: null, is_promo_gift: false, status: 'pending' });
       if (/caja\s*de\s*24/.test(clean(name))) {
         const giftName = 'Duraznos'; const giftKey = keyFor(giftName, 'Paquete de 5-6', 'popular'); const gift = itemMap.get(giftKey);
         if (gift) gift.requested_qty += qty; else itemMap.set(giftKey, { product_id: null, product_name: giftName, variant_name: 'Paquete de 5-6', variant_value: '5-6 duraznos', requested_qty: qty, purchased_qty: 0, missing_qty: qty, surplus_qty: 0, weight_kg: null, unit: 'paquete', supplier_id: 'popular', sub_location_hint: '📍 Mayorista', ripeness_note_snapshot: '🎁 OBSEQUIO PROMO: Paquete de 5-6 Duraznos gratis', is_promo_gift: true });
-        packing.push({ id: `${row.id}-gift-${packing.length}`, order_label: orderNumber, customer_name: customerName, product_name: giftName, variant_name: 'Paquete de 5-6', variant_value: '5-6 duraznos', requested_qty: qty, picked_qty: 0, missing_qty: qty, ripeness_note_snapshot: '🎁 OBSEQUIO PROMO: Paquete de 5-6 Duraznos gratis', is_promo_gift: true, status: 'pending' });
+        packing.push({ id: `real-pack-${row.id}-gift-${packing.length}`, source_order_id: text(row.id) || null, source_order_number: orderNumber, order_label: orderNumber, customer_name: customerName, product_name: giftName, variant_name: 'Paquete de 5-6', variant_value: '5-6 duraznos', requested_qty: qty, picked_qty: 0, missing_qty: qty, ripeness_note_snapshot: '🎁 OBSEQUIO PROMO: Paquete de 5-6 Duraznos gratis', is_promo_gift: true, status: 'pending' });
       }
     }
   }
@@ -60,7 +61,8 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   const real = buildRealProjection(rows);
   const existingByKey = new Map<string, any>((session.items || []).map((item: any) => [keyFor(item.product_name, item.variant_value, item.supplier_id || zoneFor(item.product_name)), item]));
   const items = real.real_order_count > 0 ? real.items.map((item: any) => { const saved = existingByKey.get(keyFor(item.product_name, item.variant_value, item.supplier_id)); return saved ? { ...item, id: saved.id, purchased_qty: Number(saved.purchased_qty || 0), missing_qty: Math.max(item.requested_qty - Number(saved.purchased_qty || 0), 0), surplus_qty: Math.max(Number(saved.purchased_qty || 0) - item.requested_qty, 0), weight_kg: saved.weight_kg || null } : { ...item, id: `real-${keyFor(item.product_name, item.variant_value, item.supplier_id)}` }; }) : (session.items || []);
-  const packing_items = real.real_order_count > 0 ? real.packing_items : (session.packing_items || []);
+  const savedPackingByKey = new Map<string, any>((session.packing_items || []).map((item: any) => [packingKeyFor(item), item]));
+  const packing_items = real.real_order_count > 0 ? real.packing_items.map((item: any) => { const saved = savedPackingByKey.get(packingKeyFor(item)); return saved ? { ...item, id: saved.id, picked_qty: Number(saved.picked_qty || 0), status: saved.status || 'pending' } : item; }) : (session.packing_items || []);
   return NextResponse.json({ success: true, buyer_id: auth.claims.sub, real_order_count: real.real_order_count, real_item_lines: real.real_item_lines, orders: [{ id: session.id, order_number: session.id, delivery_date: session.delivery_date, status: session.status, cash_advanced: Number(session.cash_advanced || 0), actual_total_paid: Number(session.actual_total_paid || 0), operational_expenses: session.operational_expenses || {}, promo_gift_enabled: Boolean(session.promo_gift_enabled), promo_gift_qty_per_trigger: Number(session.promo_gift_qty_per_trigger || 0), customer_name: 'Jornada de compras', items, packing_items }] });
 });
 

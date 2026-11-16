@@ -10,7 +10,7 @@ export const POST = createBuyerGuardedHandler(async (request: NextRequest, auth)
   const cash = body?.cash_advanced === null || body?.cash_advanced === '' ? null : Number(body?.cash_advanced);
   if (!sessionId || (cash !== null && (!Number.isFinite(cash) || cash < 0))) return NextResponse.json({ success: false, error: 'Datos de jornada inválidos' }, { status: 400 });
   const supabase = createSupabaseClient();
-  const { data, error } = await supabase.rpc('update_buyer_purchase_session', {
+  const { data, error } = await supabase.rpc('update_buyer_session_finances', {
     p_buyer_id: auth.claims.sub,
     p_session_id: sessionId,
     p_cash_advanced: cash,
