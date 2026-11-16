@@ -50,5 +50,6 @@ export const POST = createBuyerGuardedHandler(async (request: NextRequest, auth)
     p_operational_expenses: body?.operational_expenses && typeof body.operational_expenses === 'object' ? body.operational_expenses : null,
   });
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 403 });
+  if (!data?.item_id) return NextResponse.json({ success: false, error: 'RPC de compra no devolvió item_id; la mutación no quedó persistida' }, { status: 502 });
   return NextResponse.json(data || { success: true, mutation_id: mutationId });
 });

@@ -26,6 +26,13 @@ function unitFor(name: string, item: any): string { return clean(name).includes(
 function sourceItems(row: any): any[] { return Array.isArray(row?.order_data?.items) ? row.order_data.items : []; }
 function keyFor(name: string, variant: string | null, zone: string): string { return `${clean(name)}|${clean(variant || '')}|${zone}`; }
 function packingKeyFor(item: any): string { return `${text(item.source_order_number) || text(item.order_label)}|${text(item.customer_name)}|${clean(productName(item))}|${clean(variantValue(item) || '')}|${item.is_promo_gift ? 'gift' : 'normal'}`; }
+function presentationFor(name: string, exactVariant: string | null, product: any): string | null {
+  const n = clean(name);
+  const packageLabel = /arandano|agraz|fresa|frambuesa|cereza/.test(n) ? 'Contenedor' : /naranja valencia/.test(n) ? 'Malla' : /uva|manzana|durazno|kiwi|ciruela/.test(n) ? 'Bandeja' : /championes[-_ ]tajados|vienen en bandeja/i.test(`${text(product?.slug)} ${text(product?.description)}`) ? 'Bandeja' : null;
+  if (!packageLabel) return exactVariant;
+  if (/championes[-_ ]tajados|vienen en bandeja/i.test(`${text(product?.slug)} ${text(product?.description)}`)) return packageLabel;
+  return exactVariant ? `${packageLabel} ${exactVariant}` : packageLabel;
+}
 function catalogResolved(raw: any, catalog: { products: Map<string, any>; variants: Map<string, any>; variantsByProduct: Map<string, any[]> }, orderItemFallback?: any) {
   const productId = text(raw.productId) || text(raw.product_id) || null;
   const variantId = text(raw.variantId) || text(raw.variant_id) || null;
@@ -37,9 +44,7 @@ function catalogResolved(raw: any, catalog: { products: Map<string, any>; varian
   const name = text(product?.name) || productName(raw);
   const rawVariant = variantValue(raw);
   const exactVariant = text(variant?.variant_value) || fallbackVariantValue || (rawVariant && !/^(peso|cantidad|presentacion|presentación)$/i.test(rawVariant) ? rawVariant : null);
-  const description = text(product?.description);
-  const slug = text(product?.slug);
-  const presentationLabel = /championes[-_ ]tajados|vienen en bandeja/i.test(`${slug} ${description}`) ? 'Bandeja' : exactVariant;
+  const presentationLabel = presentationFor(name, exactVariant, product);
   return { productId, variantId, product, variant, name, exactVariant, variantName: text(variant?.variant_name) || fallbackVariantName || exactVariant, presentationLabel };
 }
 

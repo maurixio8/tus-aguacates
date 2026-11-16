@@ -35,5 +35,6 @@ export const POST = createBuyerGuardedHandler(async (request: NextRequest, auth)
     p_status: textOrNull(body?.status) || 'pending',
   });
   if (error) return NextResponse.json({ success: false, error: error.message }, { status: 403 });
+  if (!data?.item_id) return NextResponse.json({ success: false, error: 'RPC de alistamiento no devolvió item_id; la mutación no quedó persistida' }, { status: 502 });
   return NextResponse.json(data || { success: true, session_id: sessionId });
 });

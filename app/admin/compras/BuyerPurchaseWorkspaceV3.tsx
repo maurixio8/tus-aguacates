@@ -44,7 +44,7 @@ export default function BuyerPurchaseWorkspaceV2() {
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || 'sync');
       setRealOrderCount(Number(data.real_order_count || 0));
-      setRealSyncMessage(data.message || 'Sincronización consultada');
+      setRealSyncMessage(data.real_order_count ? `${data.real_order_count} pedidos reales consultados` : 'No hay pedidos reales para esta jornada');
     } catch { setRealSyncMessage('No se pudo consultar pedidos reales; la jornada local sigue disponible.'); }
   };
 
