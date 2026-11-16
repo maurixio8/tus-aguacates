@@ -101,7 +101,13 @@ function draftFor(item: Item, drafts: Record<string, Draft>): Draft {
   };
 }
 
+import BuyerPurchaseWorkspace from './BuyerPurchaseWorkspace';
+
 export default function BuyerComprasPage() {
+  return <BuyerPurchaseWorkspace />;
+}
+
+function LegacyBuyerComprasPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [email, setEmail] = useState('');
