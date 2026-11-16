@@ -2,10 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBuyerGuardedHandler } from '@/lib/buyer-auth';
 import { createSupabaseClient } from '@/lib/auth-admin';
 import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
+import { buyerPurchaseCycle, buyerPurchaseCycleForDeliveryDate } from '@/lib/buyer-cycle';
 
 export const dynamic = 'force-dynamic';
-const TUESDAY_DATE = '2026-11-17';
-const TUESDAY_CUTOFF = new Date('2026-11-13T11:00:00.000Z');
 
 function text(value: unknown): string { return typeof value === 'string' ? value.trim() : ''; }
 function clean(value: string): string { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
@@ -70,7 +69,14 @@ function buildRealProjection(rows: any[], catalog: { products: Map<string, any>;
 }
 
 export const GET = createBuyerGuardedHandler(async (request, auth) => {
-  const { searchParams } = new URL(request.url); const deliveryDate = searchParams.get('deliveryDate') || TUESDAY_DATE; const supabase = createSupabaseClient();
+  const { searchParams } = new URL(request.url);
+  const currentCycle = buyerPurchaseCycle();
+  const requestedDate = searchParams.get('deliveryDate');
+  const cycle = requestedDate ? buyerPurchaseCycleForDeliveryDate(requestedDate) : currentCycle;
+  const deliveryDate = cycle.deliveryDate;
+  const supabase = createSupabaseClient();
+  const { data: ensuredSessionId, error: ensureError } = await supabase.rpc('ensure_buyer_purchase_session', { p_buyer_id: auth.claims.sub, p_delivery_date: deliveryDate });
+  if (ensureError || !ensuredSessionId) return NextResponse.json({ success: false, code: 'PURCHASE_SESSION_NOT_READY', error: 'No se pudo preparar la jornada de compras para este ciclo' }, { status: 503 });
   const { data, error } = await supabase.rpc('get_buyer_purchase_projection', { p_buyer_id: auth.claims.sub, p_delivery_date: deliveryDate });
   if (error) return NextResponse.json({ success: false, code: 'PURCHASE_SCHEMA_NOT_READY', error: 'Purchase session schema is not applied' }, { status: 503 });
   const session = Array.isArray(data) ? data[0] : null; if (!session) return NextResponse.json({ success: true, buyer_id: auth.claims.sub, orders: [] });
@@ -78,7 +84,7 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
     supabase.from('orders').select('id,order_number,customer_name,status,order_status,order_data,created_at,delivered_at').order('created_at', { ascending: false }).limit(500),
     supabase.from('guest_orders').select('id,guest_name,status,order_status,delivery_date,order_data,created_at').order('created_at', { ascending: false }).limit(500),
   ]);
-  const rows = [...(ordersResult.data || []), ...(guestResult.data || [])].filter((row: any) => isRouteEligible(row) && deliveryDateOf(row) === deliveryDate && new Date(row.created_at || 0) >= TUESDAY_CUTOFF);
+  const rows = [...(ordersResult.data || []), ...(guestResult.data || [])].filter((row: any) => isRouteEligible(row) && deliveryDateOf(row) === deliveryDate && new Date(row.created_at || 0) >= cycle.startsAt && new Date(row.created_at || 0) < cycle.endsAt);
   const orderItemVariants = new Map<string, any>();
   const orderItemRows = rows.length ? await supabase.from('order_items').select('order_id,product_id,product_snapshot').in('order_id', rows.map((row: any) => row.id)) : { data: [], error: null } as any;
   for (const item of orderItemRows.data || []) { const snapshot = item.product_snapshot && typeof item.product_snapshot === 'object' ? item.product_snapshot : {}; orderItemVariants.set(`${item.order_id}|${item.product_id}`, { variant_id: item.variant_id, variant_name: snapshot.variant_name, variant_value: snapshot.variant_value }); }
@@ -95,7 +101,7 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   const items = real.real_order_count > 0 ? real.items.map((item: any) => { const saved = existingByKey.get(keyFor(item.product_name, item.variant_value, item.supplier_id)) || ((existingByName.get(clean(item.product_name)) || []).length === 1 ? existingByName.get(clean(item.product_name))?.[0] : null); return saved ? { ...item, id: saved.id, purchased_qty: Number(saved.purchased_qty || 0), missing_qty: Math.max(item.requested_qty - Number(saved.purchased_qty || 0), 0), surplus_qty: Math.max(Number(saved.purchased_qty || 0) - item.requested_qty, 0), weight_kg: saved.weight_kg || null } : { ...item, id: `real-${keyFor(item.product_name, item.variant_value, item.supplier_id)}` }; }) : (session.items || []);
   const savedPackingByKey = new Map<string, any>((session.packing_items || []).map((item: any) => [packingKeyFor(item), item]));
   const packing_items = real.real_order_count > 0 ? real.packing_items.map((item: any) => { const saved = savedPackingByKey.get(packingKeyFor(item)); return saved ? { ...item, id: saved.id, picked_qty: Number(saved.picked_qty || 0), status: saved.status || 'pending' } : item; }) : (session.packing_items || []);
-  return NextResponse.json({ success: true, buyer_id: auth.claims.sub, real_order_count: real.real_order_count, real_item_lines: real.real_item_lines, orders: [{ id: session.id, order_number: session.id, delivery_date: session.delivery_date, status: session.status, cash_advanced: Number(session.cash_advanced || 0), actual_total_paid: Number(session.actual_total_paid || 0), operational_expenses: session.operational_expenses || {}, promo_gift_enabled: Boolean(session.promo_gift_enabled), promo_gift_qty_per_trigger: Number(session.promo_gift_qty_per_trigger || 0), customer_name: 'Jornada de compras', items, packing_items }] });
+  return NextResponse.json({ success: true, buyer_id: auth.claims.sub, delivery_date: deliveryDate, cycle_starts_at: cycle.startsAt.toISOString(), cycle_ends_at: cycle.endsAt.toISOString(), handoff_at: cycle.handoffAt.toISOString(), real_order_count: real.real_order_count, real_item_lines: real.real_item_lines, orders: [{ id: session.id, order_number: session.id, delivery_date: session.delivery_date, status: session.status, cash_advanced: Number(session.cash_advanced || 0), actual_total_paid: Number(session.actual_total_paid || 0), operational_expenses: session.operational_expenses || {}, promo_gift_enabled: Boolean(session.promo_gift_enabled), promo_gift_qty_per_trigger: Number(session.promo_gift_qty_per_trigger || 0), customer_name: 'Jornada de compras', items, packing_items }] });
 });
 
 export async function OPTIONS(_request: NextRequest) { return new NextResponse(null, { status: 204 }); }

@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createBuyerGuardedHandler } from '@/lib/buyer-auth';
 import { createSupabaseClient } from '@/lib/auth-admin';
 import { deliveryDateOf, isRouteEligible } from '@/lib/admin-route';
+import { buyerPurchaseCycle, buyerPurchaseCycleForDeliveryDate } from '@/lib/buyer-cycle';
 
 export const dynamic = 'force-dynamic';
-const TUESDAY_CUTOFF_UTC = '2026-11-13T11:00:00.000Z';
 
 export const POST = createBuyerGuardedHandler(async (request: NextRequest) => {
   const body = await request.json().catch(() => null);
-  const deliveryDate = typeof body?.delivery_date === 'string' ? body.delivery_date : '2026-11-17';
-  const cutoff = deliveryDate === '2026-11-17' ? new Date(TUESDAY_CUTOFF_UTC) : new Date(0);
+  const requestedDate = typeof body?.delivery_date === 'string' ? body.delivery_date : null;
+  const cycle = requestedDate ? buyerPurchaseCycleForDeliveryDate(requestedDate) : buyerPurchaseCycle();
+  const deliveryDate = cycle.deliveryDate;
+  const cutoff = cycle.startsAt;
   const supabase = createSupabaseClient();
   const [ordersResult, guestResult] = await Promise.all([
     supabase.from('orders').select('id,order_number,status,order_status,customer_name,order_data,created_at,delivered_at').order('created_at', { ascending: false }).limit(500),
@@ -19,7 +21,7 @@ export const POST = createBuyerGuardedHandler(async (request: NextRequest) => {
   const all = [...(ordersResult.data || []), ...(guestResult.data || [])];
   const matching = all.filter((order: any) => {
     const created = new Date(order.created_at || 0);
-    return isRouteEligible(order) && deliveryDateOf(order) === deliveryDate && created >= cutoff;
+    return isRouteEligible(order) && deliveryDateOf(order) === deliveryDate && created >= cycle.startsAt && created < cycle.endsAt;
   });
   const itemLines = matching.reduce((sum, order: any) => sum + (Array.isArray(order.order_data?.items) ? order.order_data.items.length : 0), 0);
   const statusCounts = matching.reduce<Record<string, number>>((counts, order: any) => {
@@ -31,6 +33,8 @@ export const POST = createBuyerGuardedHandler(async (request: NextRequest) => {
     success: true,
     delivery_date: deliveryDate,
     cutoff_utc: cutoff.toISOString(),
+    ends_at_utc: cycle.endsAt.toISOString(),
+    handoff_at_utc: cycle.handoffAt.toISOString(),
     real_order_count: matching.length,
     real_item_lines: itemLines,
     status_counts: statusCounts,
