@@ -25,6 +25,12 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
     id: session.id,
     order_number: session.id,
     delivery_date: session.delivery_date,
+    status: session.status,
+    cash_advanced: Number(session.cash_advanced || 0),
+    actual_total_paid: Number(session.actual_total_paid || 0),
+    operational_expenses: session.operational_expenses || {},
+    promo_gift_enabled: Boolean(session.promo_gift_enabled),
+    promo_gift_qty_per_trigger: Number(session.promo_gift_qty_per_trigger || 0),
     customer_name: 'Jornada de compras',
     items: Array.isArray(session.items) ? session.items : [],
     packing_items: Array.isArray(session.packing_items) ? session.packing_items.map((item: any) => ({
