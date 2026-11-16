@@ -85,7 +85,7 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   const catalogProductIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).map((item: any) => text(item.productId) || text(item.product_id)).filter(Boolean)))];
   const [catalogProductsResult, catalogVariantsResult] = await Promise.all([
     catalogProductIds.length ? supabase.from('products').select('id,name,slug,description,unit,is_active').in('id', catalogProductIds) : Promise.resolve({ data: [], error: null } as any),
-    supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,price,is_active').order('id').limit(1000),
+    supabase.from('product_variants').select('id,product_id,variant_name,variant_value,price,is_active').order('id').limit(1000),
   ]);
   const variantsByProduct = new Map<string, any[]>(); for (const item of catalogVariantsResult.data || []) { const list = variantsByProduct.get(item.product_id) || []; list.push(item); variantsByProduct.set(item.product_id, list); }
   const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>((catalogVariantsResult.data || []).map((item: any) => [item.id, item])), variantsByProduct };
