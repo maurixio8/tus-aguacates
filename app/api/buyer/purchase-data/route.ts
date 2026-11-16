@@ -72,14 +72,11 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   ]);
   const rows = [...(ordersResult.data || []), ...(guestResult.data || [])].filter((row: any) => isRouteEligible(row) && deliveryDateOf(row) === deliveryDate && new Date(row.created_at || 0) >= TUESDAY_CUTOFF);
   const catalogProductIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).map((item: any) => text(item.productId) || text(item.product_id)).filter(Boolean)))];
-  const catalogVariantIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).map((item: any) => text(item.variantId) || text(item.variant_id)).filter(Boolean)))];
-  const [catalogProductsResult, catalogVariantsByIdResult, catalogVariantsByProductResult] = await Promise.all([
+  const [catalogProductsResult, catalogVariantsResult] = await Promise.all([
     catalogProductIds.length ? supabase.from('products').select('id,name,slug,description,unit,is_active').in('id', catalogProductIds) : Promise.resolve({ data: [], error: null } as any),
-    catalogVariantIds.length ? supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,is_active').in('id', catalogVariantIds) : Promise.resolve({ data: [], error: null } as any),
-    catalogProductIds.length ? supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,is_active').in('product_id', catalogProductIds) : Promise.resolve({ data: [], error: null } as any),
+    supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,is_active').order('id').limit(1000),
   ]);
-  const catalogVariants = [...(catalogVariantsByIdResult.data || []), ...(catalogVariantsByProductResult.data || [])].filter((item: any, index: number, all: any[]) => all.findIndex((candidate: any) => candidate.id === item.id) === index);
-  const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>(catalogVariants.map((item: any) => [item.id, item])) };
+  const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>((catalogVariantsResult.data || []).map((item: any) => [item.id, item])) };
   const real = buildRealProjection(rows, catalog);
   const existingByKey = new Map<string, any>((session.items || []).map((item: any) => [keyFor(item.product_name, item.variant_value, item.supplier_id || zoneFor(item.product_name)), item]));
   const existingByName = new Map<string, any[]>(); for (const item of session.items || []) { const key = clean(item.product_name); const list = existingByName.get(key) || []; list.push(item); existingByName.set(key, list); }
