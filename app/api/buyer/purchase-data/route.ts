@@ -26,11 +26,12 @@ function unitFor(name: string, item: any): string { return clean(name).includes(
 function sourceItems(row: any): any[] { return Array.isArray(row?.order_data?.items) ? row.order_data.items : []; }
 function keyFor(name: string, variant: string | null, zone: string): string { return `${clean(name)}|${clean(variant || '')}|${zone}`; }
 function packingKeyFor(item: any): string { return `${text(item.source_order_number) || text(item.order_label)}|${text(item.customer_name)}|${clean(productName(item))}|${clean(variantValue(item) || '')}|${item.is_promo_gift ? 'gift' : 'normal'}`; }
-function catalogResolved(raw: any, catalog: { products: Map<string, any>; variants: Map<string, any> }) {
+function catalogResolved(raw: any, catalog: { products: Map<string, any>; variants: Map<string, any>; variantsByProduct: Map<string, any[]> }) {
   const productId = text(raw.productId) || text(raw.product_id) || null;
   const variantId = text(raw.variantId) || text(raw.variant_id) || null;
   const product = productId ? catalog.products.get(productId) : null;
-  const variant = variantId ? catalog.variants.get(variantId) : null;
+  const productVariants = productId ? catalog.variantsByProduct.get(productId) || [] : [];
+  const variant = (variantId ? catalog.variants.get(variantId) : null) || productVariants.find((candidate: any) => Number(candidate.price) === Number(raw.price)) || null;
   const name = text(product?.name) || productName(raw);
   const rawVariant = variantValue(raw);
   const exactVariant = text(variant?.variant_value) || (rawVariant && !/^(peso|cantidad|presentacion|presentación)$/i.test(rawVariant) ? rawVariant : null);
@@ -40,7 +41,7 @@ function catalogResolved(raw: any, catalog: { products: Map<string, any>; varian
   return { productId, variantId, product, variant, name, exactVariant, presentationLabel };
 }
 
-function buildRealProjection(rows: any[], catalog: { products: Map<string, any>; variants: Map<string, any> }) {
+function buildRealProjection(rows: any[], catalog: { products: Map<string, any>; variants: Map<string, any>; variantsByProduct: Map<string, any[]> }) {
   const itemMap = new Map<string, any>(); const packing: any[] = []; let realItemLines = 0;
   for (const row of rows) {
     const orderNumber = text(row.order_number) || `Pedido ${String(row.id).slice(0, 8)}`;
@@ -74,9 +75,10 @@ export const GET = createBuyerGuardedHandler(async (request, auth) => {
   const catalogProductIds = [...new Set(rows.flatMap((row: any) => sourceItems(row).map((item: any) => text(item.productId) || text(item.product_id)).filter(Boolean)))];
   const [catalogProductsResult, catalogVariantsResult] = await Promise.all([
     catalogProductIds.length ? supabase.from('products').select('id,name,slug,description,unit,is_active').in('id', catalogProductIds) : Promise.resolve({ data: [], error: null } as any),
-    supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,is_active').order('id').limit(1000),
+    supabase.from('product_variants').select('id,product_id,variant_name,variant_value,unit,price,is_active').order('id').limit(1000),
   ]);
-  const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>((catalogVariantsResult.data || []).map((item: any) => [item.id, item])) };
+  const variantsByProduct = new Map<string, any[]>(); for (const item of catalogVariantsResult.data || []) { const list = variantsByProduct.get(item.product_id) || []; list.push(item); variantsByProduct.set(item.product_id, list); }
+  const catalog = { products: new Map<string, any>((catalogProductsResult.data || []).map((item: any) => [item.id, item])), variants: new Map<string, any>((catalogVariantsResult.data || []).map((item: any) => [item.id, item])), variantsByProduct };
   const real = buildRealProjection(rows, catalog);
   const existingByKey = new Map<string, any>((session.items || []).map((item: any) => [keyFor(item.product_name, item.variant_value, item.supplier_id || zoneFor(item.product_name)), item]));
   const existingByName = new Map<string, any[]>(); for (const item of session.items || []) { const key = clean(item.product_name); const list = existingByName.get(key) || []; list.push(item); existingByName.set(key, list); }
