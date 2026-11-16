@@ -11,7 +11,7 @@ function text(value: unknown): string { return typeof value === 'string' ? value
 function clean(value: string): string { return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase(); }
 function zoneFor(name: string): string {
   const n = clean(name);
-  if (/aguacate|hass|injerto|caja de 24|caja seleccion 18|caja de 18/.test(n)) return 'aguacates';
+  if (/aguacate|hass|injerto|caja de 24|caja seleccion 18|caja de 18|caja de 12.*premium|paquete 4.*premium/.test(n)) return 'aguacates';
   if (/arandano|durazno/.test(n)) return 'popular';
   if (/banano criollo|banano bocadillo|mango comun|mango azucar|papa sabanera/.test(n)) return 'medio-fruver';
   if (/fresa|frambuesa|mora|uva|manzana|pera|kiwi|granadilla|toronja|papaya|naranja|ciruela|cereza|agraz|sandia/.test(n)) return 'reina';
