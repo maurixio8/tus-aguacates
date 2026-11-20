@@ -46,7 +46,9 @@ export function buyerPurchaseCycle(now = new Date()): BuyerPurchaseCycle {
   // The Tuesday screen remains active while Nicolás is working. The visible
   // handoff to Friday happens Tuesday at 18:00 COT, not Tuesday at 06:00.
   if (parts.weekday === 2 && parts.hour < 18) deliveryDate = today;
-  else if ((parts.weekday === 2 && parts.hour >= 18) || parts.weekday === 3 || parts.weekday === 4 || (parts.weekday === 5 && parts.hour < 6)) deliveryDate = addDays(today, 5 - parts.weekday);
+  // Order intake closes at 06:00, but the buyer is still purchasing/packing.
+  // Keep the delivery-day workspace until the same 18:00 handoff as Tuesday.
+  else if ((parts.weekday === 2 && parts.hour >= 18) || parts.weekday === 3 || parts.weekday === 4 || (parts.weekday === 5 && parts.hour < 18)) deliveryDate = addDays(today, 5 - parts.weekday);
   else if (parts.weekday === 5) deliveryDate = addDays(today, 4);
   else deliveryDate = addDays(today, (2 - parts.weekday + 7) % 7 || 7);
 
