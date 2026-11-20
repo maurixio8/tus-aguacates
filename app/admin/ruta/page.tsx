@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   Truck,
@@ -100,6 +100,9 @@ export default function RutaPage() {
   const [copiedIndex, setCopiedIndex] = useState<string | null>(null);
   const [dateDesde, setDateDesde] = useState(() => routeSearch.get('desde') || '');
   const [dateHasta, setDateHasta] = useState(() => routeSearch.get('hasta') || '');
+  const [activeMode, setActiveMode] = useState(() => routeSearch.get('active') !== '0' && !routeSearch.get('desde') && !routeSearch.get('hasta'));
+  const requestSequence = useRef(0);
+  const pendingRequest = useRef<AbortController | null>(null);
   const [originAddress] = useState('Corabastos, Bogotá');
   const [excludedOrders, setExcludedOrders] = useState<Set<string>>(new Set());
   const [showMap, setShowMap] = useState(true);
@@ -111,15 +114,21 @@ export default function RutaPage() {
   const [correctionLoading, setCorrectionLoading] = useState<string | null>(null);
 
   const fetchRoute = useCallback(async () => {
+    pendingRequest.current?.abort();
+    const controller = new AbortController();
+    pendingRequest.current = controller;
+    const sequence = ++requestSequence.current;
+    setSelectedOrders(new Set());
     setLoading(true);
     setError('');
     try {
       const params = new URLSearchParams();
       if (dateDesde) params.set('desde', dateDesde);
       if (dateHasta) params.set('hasta', dateHasta);
-      params.set('active', '1');
-      const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store' });
+      params.set('active', activeMode ? '1' : '0');
+      const res = await fetch(`/api/admin/ruta?${params.toString()}`, { credentials: 'include', cache: 'no-store', signal: controller.signal });
       const json = await res.json().catch(() => null);
+      if (sequence !== requestSequence.current) return;
       if (!res.ok) throw new Error(json?.error || 'Error al cargar ruta');
       // Excluir pedidos pausados
       if (excludedOrders.size > 0 && json.orders) {
@@ -142,11 +151,11 @@ export default function RutaPage() {
         setExpandedZones(new Set(Object.keys(json.zones)));
       }
     } catch (err: any) {
-      setError(err.message || 'Error de conexión');
+      if (sequence === requestSequence.current && !controller.signal.aborted) setError(err.message || 'Error de conexión');
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
-  }, [dateDesde, dateHasta, excludedOrders]);
+  }, [activeMode, dateDesde, dateHasta, excludedOrders]);
 
   useEffect(() => {
     fetchRoute();
@@ -287,7 +296,7 @@ export default function RutaPage() {
 
   // Marcar seleccionados como entregados
   const markAsDelivered = async () => {
-    if (selectedOrders.size === 0) return;
+    if (!activeMode || selectedOrders.size === 0) return;
     if (!confirm(`¿Marcar ${selectedOrders.size} pedido${selectedOrders.size > 1 ? 's' : ''} como entregado${selectedOrders.size > 1 ? 's' : ''}?`)) return;
 
     setMarkingLoading(true);
@@ -535,6 +544,10 @@ export default function RutaPage() {
           />
         </div>
 
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
+          <button type="button" onClick={() => { setActiveMode(true); setDateDesde(''); setDateHasta(''); }} className="rounded-lg border px-3 py-2">Volver a ruta activa</button>
+          <span>{activeMode ? 'Ruta activa' : 'Histórico por fecha de entrega · incluye entregados'}</span>
+        </div>
         {/* Filtros: Rango de fechas + Origen */}
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-4 gap-2">
           <div>
@@ -542,7 +555,7 @@ export default function RutaPage() {
             <input
               type="date"
               value={dateDesde}
-              onChange={(e) => setDateDesde(e.target.value)}
+              onChange={(e) => { setActiveMode(false); setDateDesde(e.target.value); }}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -551,7 +564,7 @@ export default function RutaPage() {
             <input
               type="date"
               value={dateHasta}
-              onChange={(e) => setDateHasta(e.target.value)}
+              onChange={(e) => { setActiveMode(false); setDateHasta(e.target.value); }}
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
             />
           </div>
@@ -590,7 +603,7 @@ export default function RutaPage() {
 
         <button
           onClick={markAsDelivered}
-          disabled={selectedOrders.size === 0 || markingLoading}
+          disabled={!activeMode || selectedOrders.size === 0 || markingLoading}
           className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
             selectedOrders.size === 0
               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -911,6 +924,7 @@ function OrderCard({
 
             <div className="flex items-center gap-3 mt-1.5">
               <span className="text-xs font-medium text-indigo-700">Entrega: {order.deliveryDate || 'sin fecha'}</span>
+              <span className={order.isDelivered ? 'text-xs font-medium text-green-700' : 'text-xs font-medium text-amber-700'}>{order.isDelivered ? 'Entregado' : 'Pendiente de entrega'}</span>
               <span className="text-xs text-gray-400">Creado: {toColombiaTime(order.createdAt)}</span>
               <span className="text-xs text-gray-400">{order.itemCount} items</span>
               {itemsSummary && (

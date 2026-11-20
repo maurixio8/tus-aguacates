@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import zones from '@/config/zonas-entrega.json';
 
@@ -26,6 +26,7 @@ const COLORS: Record<string, string> = { dentro: '#15803d', por_confirmar: '#d97
 const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
 export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMapProps) {
+  const [mapUnavailable, setMapUnavailable] = useState(false);
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -34,7 +35,14 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
     maplibregl.setWorkerUrl('https://unpkg.com/maplibre-gl@6.15.0/dist/maplibre-gl-worker.mjs');
-    const map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
+    let map: maplibregl.Map;
+    try {
+      map = new maplibregl.Map({ container: mapContainer.current, style: OPENFREEMAP_STYLE, center: [origin.lng, origin.lat], zoom: 11 });
+    } catch {
+      // Unsupported WebGL must not take down the route list or its date filters.
+      setMapUnavailable(true);
+      return;
+    }
     map.addControl(new maplibregl.NavigationControl(), 'top-right');
     map.on('load', () => {
       mapRef.current = map;
@@ -107,7 +115,7 @@ export default function RouteMap({ orders, lineOrderIds = [], origin }: RouteMap
           ? 'Línea azul: orden de ruta shadow (Spoke optimiza el orden al importar).'
           : `Mapa: ${located} ubicado${located === 1 ? '' : 's'} · ${unresolved.length} pendiente${unresolved.length === 1 ? '' : 's'} de ubicación.`}
       </div>
-      <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />
+      {mapUnavailable ? <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">Mapa no disponible en este navegador. Puedes consultar la lista y los filtros de entrega.</p> : <div ref={mapContainer} className="w-full rounded-lg border border-gray-200 overflow-hidden bg-gray-100" style={{ height: '460px' }} />}
       {unresolved.length > 0 && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
           <p className="font-semibold">Pedidos seleccionados sin parada en el mapa</p>

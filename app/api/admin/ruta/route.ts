@@ -4,8 +4,9 @@ import { createSupabaseClient, verifyAdminAuth } from '@/lib/auth-admin';
 import { evaluateCoverage } from '@/lib/coverage';
 import { classifyLocationCandidates } from '@/lib/location-candidates';
 import { geocodeDeliveryAddress } from '@/lib/location-geocoding';
-import { addressParts, activeDeliveryCycle, AdminRouteOrder, deliveryDateOf, isChia, isInActiveDeliveryCycle, isRouteEligible, nextDeliveryDate, normalizeStatus, orderItems, parseOrderData } from '@/lib/admin-route';
+import { addressParts, activeDeliveryCycle, AdminRouteOrder, deliveryDateOf, isChia, isInActiveDeliveryCycle, isRouteEligible, orderItems, parseOrderData } from '@/lib/admin-route';
 import { normalizeDeliveryAddress } from '@/lib/location-resolution';
+import { isDeliveredRouteOrder, isHistoricalRouteEligible, routeDateRange } from '@/lib/route-history';
 
 export const dynamic = 'force-dynamic';
 const CORABASTOS = { lat: 4.63205, lng: -74.15534, address: 'Corabastos, Bogotá' };
@@ -92,7 +93,7 @@ async function normalizeRow(row: any, source: 'orders' | 'guest_orders', resolut
     id: String(row.id), source, orderNumber: String(row.order_number || row.orderNumber || row.id || ''),
     customerName: String(row.customer_name || row.guest_name || row.name || 'Cliente'), customerPhone: String(row.customer_phone || row.guest_phone || row.phone || ''),
     deliveryAddress: parts.address, deliveryDate: deliveryDateOf(row), createdAt: row.created_at || null, totalAmount: Number(row.total_amount || row.total || 0), items, itemCount: items.length,
-    isDelivered: Boolean(row.delivered_at) || ['delivered', 'entregado'].includes(normalizeStatus(row)), paymentStatus: String(row.payment_status || 'pending'), notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
+    isDelivered: isDeliveredRouteOrder(row), paymentStatus: String(row.payment_status || 'pending'), notes: String(row.notes || row.delivery_notes || data.delivery_notes || ''),
     latitude, longitude, coordinateSource, confidence, coverage, coverageReason, coverageZone, city: parts.city || 'Bogotá', resolutionStatus, resolutionCandidates,
     correctedAddress: saved?.corrected_address || null,
     normalizedAddress: saved?.normalized_address || normalizedAddress,
@@ -114,13 +115,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const requestedDesde = searchParams.get('desde') || searchParams.get('dateFrom') || '';
     const requestedHasta = searchParams.get('hasta') || searchParams.get('dateTo') || '';
-    const active = searchParams.get('active') !== '0';
     const cycle = activeDeliveryCycle();
-    const desde = active ? cycle.deliveryDate : (requestedDesde || nextDeliveryDate());
-    const hasta = active ? cycle.deliveryDate : (requestedHasta || desde);
+    let range;
+    try { range = routeDateRange(searchParams, cycle.deliveryDate); }
+    catch { return NextResponse.json({ error: 'Rango de entrega inválido' }, { status: 400 }); }
+    const { active, desde, hasta } = range;
     const [orders, guests, resolutionBundle] = await Promise.all([fetchAll('orders'), fetchAll('guest_orders'), fetchResolutions()]);
     const all = [...orders.map(row => ({ row, source: 'orders' as const })), ...guests.map(row => ({ row, source: 'guest_orders' as const }))];
-    const selected = all.filter(({ row }) => isEligible(row) && (
+    const selected = all.filter(({ row }) => (active ? isEligible(row) : isHistoricalRouteEligible(row)) && (
       active
         ? isInActiveDeliveryCycle(row)
         : (deliveryDateOf(row) != null && deliveryDateOf(row)! >= desde && deliveryDateOf(row)! <= hasta)
@@ -139,7 +141,7 @@ export async function GET(request: NextRequest) {
     const zones = normalized.length ? { todos: { name: 'Pedidos del rango', orders: normalized, count: normalized.length } } : {};
     const canonicalDateSource = active
       ? `ciclo activo de entrega ${cycle.deliveryDate}: pedidos creados desde ${cycle.startsAt.toISOString()} hasta ahora; excluye pedidos pendientes de ciclos anteriores`
-      : 'rango manual por fecha de entrega: delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota';
+      : 'histórico por fecha de entrega (incluye entregados; no cambia estados): delivery_date|deliveryDate|scheduled_delivery_date|fecha_entrega; si faltan, derivada desde created_at en America/Bogota';
     return NextResponse.json({ orders: normalized, zones, total: normalized.length, totalAmount: normalized.reduce((sum, o) => sum + o.totalAmount, 0), counts, dateFrom: desde, dateTo: hasta, requestedDateFrom: requestedDesde || null, requestedDateTo: requestedHasta || null, activeCycle: active, canonicalDateSource, origin: CORABASTOS });
   } catch (error) { console.error('Error in GET /api/admin/ruta', error); return NextResponse.json({ error: 'Error al obtener pedidos de ruta' }, { status: 500 }); }
 }
