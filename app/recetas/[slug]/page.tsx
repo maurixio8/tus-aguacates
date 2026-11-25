@@ -21,8 +21,16 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
     return { title: 'Receta no encontrada | Tus Aguacates', robots: { index: false, follow: false } };
   }
 
+  // Recipe artwork is externally hosted: do not advertise a dead image to crawlers.
+  let image: string | undefined = recipe.image;
+  try {
+    const response = await fetch(new URL(recipe.image, 'https://www.tusaguacates.com'), {
+      method: 'HEAD', signal: AbortSignal.timeout(5000), next: { revalidate: 86400 },
+    });
+    if (!response.ok || !response.headers.get('content-type')?.startsWith('image/')) image = undefined;
+  } catch { image = undefined; }
   return buildSocialMetadata({ title: `${recipe.title} | Recetas Tus Aguacates`, description: recipe.description,
-    path: `/recetas/${encodeURIComponent(recipe.slug)}`, image: recipe.image, imageAlt: recipe.title, type: 'article' });
+    path: `/recetas/${encodeURIComponent(recipe.slug)}`, image, imageAlt: recipe.title, type: 'article' });
 }
 
 export async function generateStaticParams() {
