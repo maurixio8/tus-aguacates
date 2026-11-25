@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
+import { buildSocialMetadata, SITE_URL } from '@/lib/social-metadata';
 import { getProducts } from '@/lib/productStorage';
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
@@ -21,7 +23,7 @@ const isUUID = (id: string): boolean => {
   return uuidRegex.test(id);
 };
 
-async function getProductById(id: string) {
+const getProductById = cache(async (id: string) => {
   // 1. Si es un UUID, consultar directamente Supabase (más rápido y preciso)
   if (isUUID(id)) {
     const { data, error } = await supabase
@@ -58,7 +60,7 @@ async function getProductById(id: string) {
   // 3. Fallback: buscar en la lista completa (para IDs tipo 'product-1')
   const allProducts = await getProducts();
   return allProducts.find(p => p.id === id);
-}
+});
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
   const { id } = await params;
@@ -69,17 +71,23 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   const price = product.discount_price || product.price;
   const description = product.description || `${product.name} fresco a domicilio en Bogotá. Consulta presentación, precio y disponibilidad actual.`;
-  return {
+  const productPath = `/productos/${product.slug || product.id}`;
+  const image = product.main_image_url
+    ? `${SITE_URL}/productos/${product.id}/imagen-social?v=${encodeURIComponent(product.updated_at || '1')}`
+    : undefined;
+  const social = buildSocialMetadata({
     title: `${product.name} | Tus Aguacates`,
     description: description.slice(0, 160),
-    alternates: { canonical: `/productos/${product.slug || product.id}` },
-    openGraph: {
-      title: `${product.name} | Tus Aguacates`,
-      description,
-      url: `https://tusaguacates.com/productos/${product.slug || product.id}`,
-      type: 'website',
-      images: product.main_image_url ? [{ url: product.main_image_url, alt: product.name }] : undefined,
-    },
+    path: productPath,
+    image,
+    imageAlt: product.name,
+  });
+  return {
+    ...social,
+    // Our own JPEG endpoint always produces this exact size.
+    ...(image ? { openGraph: { ...social.openGraph, images: [{
+      url: image, width: 1200, height: 630, type: 'image/jpeg', alt: product.name,
+    }] } } : {}),
     other: {
       'product:price:amount': String(price),
       'product:price:currency': 'COP',
@@ -95,7 +103,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const productUrl = `https://tusaguacates.com/productos/${product.slug || product.id}`;
+  const productUrl = `${SITE_URL}/productos/${product.slug || product.id}`;
   const productPrice = product.discount_price || product.price;
   const productJsonLd = {
     '@context': 'https://schema.org',

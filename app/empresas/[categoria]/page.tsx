@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -82,6 +84,16 @@ async function CategoryHeader({ categoria }: { categoria: string }) {
       </div>
     </div>
   );
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { categoria } = await params;
+  const { data: category } = await supabase.from('b2b_categories')
+    .select('name,description,image_url').eq('slug', categoria).eq('is_active', true).maybeSingle();
+  if (!category) return { title: 'Categoría no encontrada | Tus Aguacates', robots: { index: false, follow: false } };
+  return buildSocialMetadata({ title: `${category.name} para empresas | Tus Aguacates`,
+    description: category.description || `Conoce ${category.name} para empresas en Tus Aguacates.`,
+    path: `/empresas/${encodeURIComponent(categoria)}`, image: category.image_url, imageAlt: category.name });
 }
 
 export default async function EmpresasCategoriaPage({ params }: Props) {

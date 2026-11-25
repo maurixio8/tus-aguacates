@@ -1,17 +1,8 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import type { Metadata } from 'next';
 import PromotionsProducts from './PromotionsProducts';
 
-export const metadata: Metadata = {
-  title: 'Promociones y productos destacados | Tus Aguacates',
-  description: 'Descubre las promociones y productos destacados de Tus Aguacates con domicilio en Bogotá, Chía y Soacha.',
-  alternates: { canonical: '/tienda/promociones' },
-  openGraph: {
-    title: 'Promociones y productos destacados | Tus Aguacates',
-    description: 'Compra productos frescos destacados y promociones de Tus Aguacates.',
-    url: 'https://tusaguacates.com/tienda/promociones',
-    type: 'website',
-  },
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Promociones y productos destacados | Tus Aguacates', description: 'Descubre las promociones y productos destacados de Tus Aguacates en Bogotá.', path: '/tienda/promociones' }) };
 
 export default function PromotionsPage() {
   return (

@@ -1,3 +1,4 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 /**
  * Página del Catálogo B2B
  * "Tus Aguacates" - E-commerce Platform
@@ -10,10 +11,7 @@ import Link from 'next/link';
 import { B2BProductGrid } from '@/components/b2b/catalog/B2BProductGrid';
 import { B2BCategoryFilter } from '@/components/b2b/catalog/B2BCategoryFilter';
 
-export const metadata = {
-  title: 'Catálogo Empresas - Tus Aguacates',
-  description: 'Catálogo de productos al por mayor para empresas. Precios especiales por volumen.',
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Catálogo Empresas | Tus Aguacates', description: 'Explora el catálogo de productos de Tus Aguacates para empresas.', path: '/empresas/catalogo' }) };
 
 export default async function B2BCatalogPage({
   searchParams,

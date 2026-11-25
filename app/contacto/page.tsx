@@ -1,12 +1,9 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Metadata } from 'next';
 import ContactForm from '@/components/contact/ContactForm';
 import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'Contacto | Tus Aguacates',
-  description: 'Contacta con Tus Aguacates para resolver tus dudas, realizar pedidos o conocer más sobre nuestros productos frescos del Eje Cafetero.',
-  keywords: 'contacto, teléfono, email, ubicación, Tus Aguacates, Eje Cafetero',
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Contacto | Tus Aguacates', description: 'Contacta a Tus Aguacates para resolver tus dudas o conocer nuestros productos.', path: '/contacto' }) };
 
 export default function ContactoPage() {
   return (

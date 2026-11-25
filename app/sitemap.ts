@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { supabase } from '@/lib/supabase';
 
-const baseUrl = 'https://tusaguacates.com';
+const baseUrl = 'https://www.tusaguacates.com';
 
 const staticRoutes: MetadataRoute.Sitemap = [
   '',

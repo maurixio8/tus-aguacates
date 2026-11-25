@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, Heart, ShoppingCart, Share2 } from 'lucide-react';
 import type { Product } from '@/lib/productStorage';
 import { dedupeVariants } from '@/lib/product-variants';
+import { SITE_URL } from '@/lib/social-metadata';
 import { formatPrice, calculateDiscount } from '@/lib/utils';
 import { useCartStore } from '@/lib/cart-store';
 import { useWishlistStore } from '@/lib/wishlist-store';
@@ -165,7 +166,7 @@ export function ProductDetailModal({ isOpen, onClose, product }: ProductDetailMo
   const getShareUrl = () => {
     // Usar slug si existe (URL limpia y legible), si no el UUID
     const idOrSlug = product.slug || product.id;
-    return `${window.location.origin}/productos/${idOrSlug}`;
+    return `${SITE_URL}/productos/${encodeURIComponent(idOrSlug)}`;
   };
 
   const handleShare = async () => {

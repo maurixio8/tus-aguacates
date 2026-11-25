@@ -1,17 +1,10 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Metadata } from 'next';
 import { ChefHat, Sparkles, Wand2, Clock, UtensilsCrossed } from 'lucide-react';
 import { ChefVirtualGenerator } from './generator';
 import { isChefVirtualAvailable } from '@/lib/gemini-recipe-service';
 
-export const metadata: Metadata = {
-  title: 'Chef Virtual | Tus Aguacates',
-  description: 'El Chef Virtual genera recetas personalizadas basadas en los ingredientes que tienes en casa. ¡Dile qué ingredientes tienes y obtén una receta única!',
-  openGraph: {
-    title: 'Chef Virtual | Tus Aguacates',
-    description: 'Genera recetas personalizadas con IA usando los ingredientes que tienes en casa.',
-    type: 'website',
-  },
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Chef Virtual | Tus Aguacates', description: 'Genera recetas personalizadas con los ingredientes que tienes en casa.', path: '/chef-virtual' }) };
 
 export default async function ChefVirtualPage() {
   const isAvailable = isChefVirtualAvailable();

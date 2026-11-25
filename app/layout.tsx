@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -41,30 +42,11 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  // Open Graph para redes sociales (WhatsApp, Facebook, etc.)
-  openGraph: {
-    type: 'website',
-    locale: 'es_CO',
-    url: 'https://tusaguacates.com',
-    siteName: 'Tus Aguacates',
-    title: 'Tus Aguacates - El #1 en Aguacates Premium del Eje Cafetero',
-    description: 'El proveedor líder de aguacates premium. Entregas martes y viernes en Bogotá, Chía y Soacha. Más de 500 clientes satisfechos.',
-    images: [
-      {
-        url: 'https://tusaguacates.com/images/og-social.png',
-        width: 1200,
-        height: 630,
-        alt: 'Tus Aguacates - Aguacates Premium del Eje Cafetero',
-      },
-    ],
-  },
-  // Twitter Card (también funciona para WhatsApp)
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Tus Aguacates - El #1 en Aguacates Premium',
-    description: 'El proveedor líder de aguacates premium. Entregas martes y viernes en Bogotá, Chía y Soacha.',
-    images: ['https://tusaguacates.com/images/og-social.png'],
-  },
+  ...buildSocialMetadata({
+    title: 'Tus Aguacates | Aguacates y productos frescos en Bogotá',
+    description: 'Compra aguacates y productos frescos a domicilio en Bogotá. Consulta el catálogo, precios y disponibilidad actual.',
+    path: '/',
+  }),
   // Otros metadatos
   other: {
     'theme-color': '#166534',

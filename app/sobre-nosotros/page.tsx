@@ -1,3 +1,4 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Metadata } from 'next';
 import Image from 'next/image';
 import { 
@@ -12,11 +13,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'Sobre Nosotros | Tus Aguacates',
-  description: 'Conoce la historia de Tus Aguacates, nuestra misión de llevar productos frescos del Eje Cafetero directamente a tu mesa.',
-  keywords: 'sobre nosotros, historia, misión, visión, valores, Tus Aguacates, Eje Cafetero',
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Sobre Nosotros | Tus Aguacates', description: 'Conoce la historia y misión de Tus Aguacates.', path: '/sobre-nosotros' }) };
 
 export default function SobreNosotrosPage() {
   return (

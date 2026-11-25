@@ -1,3 +1,4 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Metadata } from 'next';
 import { Suspense } from 'react';
 import { recipes, recipeCategories, getRecipesByCategory, getFeaturedRecipes, type RecipeCategory } from '@/data/recipes';
@@ -5,15 +6,7 @@ import { RecipeCard, RecipeCategoryCard } from '@/components/recipes';
 import { Search } from 'lucide-react';
 import { getRecipeCategoryBySlug } from '@/lib/recipe-categories';
 
-export const metadata: Metadata = {
-  title: 'Recetas Saludables | Tus Aguacates',
-  description: 'Descubre recetas deliciosas y saludables con aguacate y frutas tropicales frescas. Desde guacamole hasta smoothies energizantes.',
-  openGraph: {
-    title: 'Recetas Saludables | Tus Aguacates',
-    description: 'Descubre recetas deliciosas y saludables con aguacate y frutas tropicales frescas.',
-    type: 'website',
-  },
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Recetas | Tus Aguacates', description: 'Descubre recetas con aguacate, frutas y productos frescos.', path: '/recetas' }) };
 
 interface RecetasPageProps {
   searchParams: Promise<{ categoria?: string; buscar?: string }>;

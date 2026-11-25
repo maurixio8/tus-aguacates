@@ -1,3 +1,4 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
@@ -17,21 +18,11 @@ export async function generateMetadata({ params }: RecipePageProps): Promise<Met
   const recipe = getRecipeBySlug(slug);
 
   if (!recipe) {
-    return {
-      title: 'Receta no encontrada | Tus Aguacates',
-    };
+    return { title: 'Receta no encontrada | Tus Aguacates', robots: { index: false, follow: false } };
   }
 
-  return {
-    title: `${recipe.title} | Recetas Tus Aguacates`,
-    description: recipe.description,
-    openGraph: {
-      title: recipe.title,
-      description: recipe.shortDescription,
-      images: [{ url: recipe.image }],
-      type: 'article',
-    },
-  };
+  return buildSocialMetadata({ title: `${recipe.title} | Recetas Tus Aguacates`, description: recipe.description,
+    path: `/recetas/${encodeURIComponent(recipe.slug)}`, image: recipe.image, imageAlt: recipe.title, type: 'article' });
 }
 
 export async function generateStaticParams() {

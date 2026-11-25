@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Social crawlers must receive metadata in <head>, not streamed after the body.
+  htmlLimitedBots: /facebookexternalhit|Facebot|WhatsApp|Twitterbot|LinkedInBot|Slackbot|TelegramBot|Discordbot|Pinterest|Googlebot|bingbot/i,
   // Fix workspace root issue
   outputFileTracingRoot: __dirname,
 

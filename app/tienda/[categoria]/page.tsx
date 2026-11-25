@@ -1,3 +1,4 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
@@ -129,18 +130,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   const description = category.description || `Compra ${category.name.toLowerCase()} frescos a domicilio en Bogotá. Revisa precios, presentaciones y disponibilidad actual.`;
-  return {
+  return buildSocialMetadata({
     title: `${category.name} a domicilio en Bogotá | Tus Aguacates`,
-    description,
-    alternates: { canonical: `/tienda/${categoria}` },
-    openGraph: {
-      title: `${category.name} a domicilio en Bogotá`,
-      description,
-      url: `https://tusaguacates.com/tienda/${categoria}`,
-      type: 'website',
-      images: category.image_url ? [{ url: category.image_url, alt: category.name }] : undefined,
-    },
-  };
+    description, path: `/tienda/${encodeURIComponent(categoria)}`, image: category.image_url, imageAlt: category.name,
+  });
 }
 
 export default async function CategoriaPage({ params }: Props) {

@@ -1,11 +1,8 @@
+import { buildSocialMetadata } from '@/lib/social-metadata';
 import type { Metadata } from 'next';
 import AllProducts from './AllProducts';
 
-export const metadata: Metadata = {
-  title: 'Todos los productos | Aguacates, frutas y verduras en Bogotá',
-  description: 'Explora todos los productos activos de Tus Aguacates: aguacates, frutas, verduras, combos y alimentos frescos con precios y presentaciones actuales.',
-  alternates: { canonical: '/tienda/todos' },
-};
+export const metadata = { ...buildSocialMetadata({ title: 'Todos los productos | Tus Aguacates', description: 'Explora aguacates, frutas, verduras y otros productos de Tus Aguacates.', path: '/tienda/todos' }) };
 
 export default function TodosProductosPage() {
   return (
